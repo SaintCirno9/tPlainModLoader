@@ -72,10 +72,11 @@ namespace SuspiciousPlayer.Content.Event1
         }
     }
 
-    public class SetVPPos : PatchMain
+    public class Init : PatchMain
     {
         public override void Initialize()
         {
+            //丢物品传送
             Patch.PatchItem.OnNewItem += (x, y, type) =>
             {
                 if (type != ItemID.SlimeGun) return;
@@ -93,9 +94,30 @@ namespace SuspiciousPlayer.Content.Event1
                     else if (pos.Y > Main.maxTilesY * 16) pos.Y = Main.maxTilesY * 16;
 
                     player.Center = pos;
+                    
+                    Rectangle location = new Rectangle((int)pos.X, (int)pos.Y, 0, 0);
+                    Color color = Color.Green;
+                    string text = $"传送到:{location.X},{location.Y}";
 
-                    NetMessage.SendData(13, number: player.whoAmI);//控制,属性,位置
+                    if (Main.netMode == 2)
+                    {
+                        NetMessage.SendData(13, number: player.whoAmI);//控制,属性,位置
+                        NetMessage.SendData(MessageID.CombatTextString, text: NetworkText.FromLiteral(text),
+                            number: (int)color.PackedValue, number2: location.X, number3: location.Y);
+                    }
+                    else
+                    {
+                        CombatText.NewText(location, color, text, false, false);
+                    }
+
+                    ContentPatch.PrintTry(text);
                 }
+            };
+
+            //虚拟玩家不生成墓碑
+            Patch.PatchPlayer.OnCanDropTombstone += p =>
+            {
+                return VP.vps?.Contains(p) != true;
             };
         }
     }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
@@ -106,6 +107,10 @@ namespace tContentPatch.Content.UI
             Terraria.GameInput.PlayerInput.WritingText = true;
             Main.instance.HandleIME();
             string s = Main.GetInputText(Text);
+
+            Terraria.UI.CalculatedStyle size = GetDimensions();
+            DrawIME.NeedIME = true;
+            DrawIME.IME_P = new Vector2(size.X, size.Y + size.Height + 36);
 
             SetText(s);
         }

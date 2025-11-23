@@ -16,6 +16,7 @@ namespace SuspiciousPlayer.Content.Event1
             Event.CanSpawnNPC = true;//npc生成
             Event.CanSpawnNPC_SolarCrawltipede = true;//npc生成
             Event.player = null;//目标
+            Event.playerCount = 0;
         }
 
         public static void end()

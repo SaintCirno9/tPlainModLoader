@@ -25,8 +25,10 @@ namespace SuspiciousPlayer.Content.Event1
         {
             poss.Clear();
             countMax = 0;
-            countTime = 60 * 4;
-            countTime += 60 * 3 * 4;
+            int hasTime = 4 - Event.playerCount + 1;
+            if (hasTime < 1) hasTime = 1;
+            countTime = 60 * 3;//基础时间用于清理蜈蚣
+            countTime += 60 * 3 * hasTime;//清理心脏
 
             int v = ActionSpawnTile.width / (1 + 4);
             AddShadowOrb_crimson(ActionSpawnTile.spawnX + v * 1, ActionSpawnTile.spawnY + (200 / 16));
@@ -117,7 +119,7 @@ namespace SuspiciousPlayer.Content.Event1
             }
 
             //蜈蚣少于上限就主动召唤
-            if (Main.GameUpdateCount % (60 * 5) == 0)
+            if (Main.GameUpdateCount % (60 * 4) == 0)
             {
                 int count = Enumerable.Count(Main.npc, i => i.active && i.type == NPCID.SolarCrawltipedeHead);
                 if (count >= countMax) return;

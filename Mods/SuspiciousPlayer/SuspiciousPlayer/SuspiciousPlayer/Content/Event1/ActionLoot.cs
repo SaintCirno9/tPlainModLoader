@@ -37,12 +37,12 @@ namespace SuspiciousPlayer.Content.Event1
                 item.Add((ItemID.LunarOre, getR()));
                 item.Add((ItemID.LunarOre, getR()));
 
-                item.Add((ItemID.Meowmere, getR()));
-                item.Add((ItemID.StarWrath, getR()));
-                item.Add((ItemID.SDMG, getR()));
-                item.Add((ItemID.Celeb2, getR()));
-                item.Add((ItemID.LastPrism, getR()));
-                item.Add((ItemID.LunarFlareBook, getR()));
+                item.Add((ItemID.Meowmere, 1));
+                item.Add((ItemID.StarWrath, 1));
+                item.Add((ItemID.SDMG, 1));
+                item.Add((ItemID.Celeb2, 1));
+                item.Add((ItemID.LastPrism, 1));
+                item.Add((ItemID.LunarFlareBook, 1));
             }
 
             ActionLoot.item = new List<(int, int)>();

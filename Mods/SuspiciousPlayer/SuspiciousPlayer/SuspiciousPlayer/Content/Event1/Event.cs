@@ -56,6 +56,7 @@ namespace SuspiciousPlayer.Content.Event1
         public static int EventState = 0;
         public static Vector2 EventPos = Vector2.Zero;
         public static Player player = null;
+        public static int playerCount = 0;
         private static Dictionary<int, ActionState> states = null;
 
         public override void Load()
@@ -136,9 +137,10 @@ namespace SuspiciousPlayer.Content.Event1
             }
 
             Event.player = null;
+            Event.playerCount = ps.Count;
 
             //范围内没玩家就退出事件
-            if (ps.Count < 1)
+            if (Event.playerCount < 1)
             {
                 Event.SetEventState(Event.EventState_None);
                 return;
@@ -172,7 +174,7 @@ namespace SuspiciousPlayer.Content.Event1
                     v.Normalize();
                     v *= 5;
 
-                    Projectile.NewProjectile(null, pos, v, ProjectileID.InsanityShadowHostile, 200, 1, ai0: 210);
+                    Projectile.NewProjectile(null, pos, v, ProjectileID.InsanityShadowHostile, 90, 1, ai0: 210);
                     if (Main.netMode == 2) NetMessage.SendData(55, number: i.whoAmI, number2: BuffID.Obstructed, number3: 60);//buff
                     else i.AddBuff(BuffID.Obstructed, 60);
                 }

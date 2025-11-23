@@ -17,8 +17,6 @@ namespace SuspiciousPlayer.Patch
             MethodInfo patch = typeof(PatchItem).GetMethod("NewItem");
             Type[] ts = patch.GetParameters().ToList().ConvertAll(i => i.ParameterType).ToArray();
 
-            var a = typeof(Terraria.Item).GetMethod("NewItem", ts);
-
             addPatch.AddPostfix(typeof(Terraria.Item).GetMethod("NewItem", ts),
                 patch);
         }
