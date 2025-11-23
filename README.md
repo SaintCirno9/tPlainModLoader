@@ -13,7 +13,7 @@
 tPML是使用**替换方法**的方式实现的，具体看[Harmony](https://github.com/pardeike/Harmony)。这种方法只要程序的代码结构没有更改就能正常使用，也就是说只要1.4.5没有改变被替换的方法的位置和名字tPML就能正常使用，即使之后游戏再次更新也不会影响。
 
 ## 使用
-直接运行`tPlainModLoader.exe`即可，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
+直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
 
 ## 模组
 > 目前[Mods](Mods)中的模组在游戏里的UI可能会无法被鼠标点击，还不知道为什么，重新打开基本能解决问题。
