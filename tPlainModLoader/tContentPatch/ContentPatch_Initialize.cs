@@ -32,6 +32,7 @@ namespace tContentPatch
             Initialized = true;
 
             Log.Add($"{nameof(ContentPatch)}:初始化完成");
+            Log.SaveTry();
 
             if (Main.dedServ)
             {
@@ -53,10 +54,10 @@ namespace tContentPatch
             //加载完成时
             LoaderControl.OnModLoad_Ok += () =>
             {
+                Log.SaveTry();
+
                 if (Main.netMode != 0 && Main.netMode != 1) return;
                 Main.menuMode = MenuID.Title;
-
-                Log.SaveTry();
             };
             //取消时
             LoaderControl.OnModLoad_Cancel += (e) => Content.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
