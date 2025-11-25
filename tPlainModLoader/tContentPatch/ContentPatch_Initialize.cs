@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using tContentPatch.Content.Menus.ModLoadException;
 using tContentPatch.Content.Menus.ModManager;
 using tContentPatch.ModLoad;
@@ -26,15 +27,16 @@ namespace tContentPatch
             Initialize_ModDirectory();
             Initialize_AddPatch();
             Initialize_ModLoader();
+            Initialize_CMD();
 
             Initialized = true;
+
+            Log.Add($"{nameof(ContentPatch)}:初始化完成");
 
             if (Main.dedServ)
             {
                 LoaderControl.Load();
             }
-
-            Log.Add($"{nameof(ContentPatch)}:初始化完成");
         }
 
         private void Initialize_ModLoader()
@@ -53,6 +55,8 @@ namespace tContentPatch
             {
                 if (Main.netMode != 0 && Main.netMode != 1) return;
                 Main.menuMode = MenuID.Title;
+
+                Log.SaveTry();
             };
             //取消时
             LoaderControl.OnModLoad_Cancel += (e) => Content.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
@@ -106,6 +110,24 @@ namespace tContentPatch
             if (Directory.Exists(ModDirectory) == false) throw new Exception($"目录不存在[{ModDirectory}]");
 
             Log.Add($"{nameof(ContentPatch)}:模组目录:{ModDirectory}");
+        }
+
+        private void Initialize_CMD()
+        {
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        RunCommand(Console.ReadLine());
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"指令运行失败:{ex.Message}");
+                    }
+                }
+            });
         }
     }
 }

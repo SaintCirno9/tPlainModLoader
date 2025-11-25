@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using tContentPatch;
 using tContentPatch.Utils;
 
@@ -88,15 +89,7 @@ namespace tPlainModLoader
                 "哈!哈!你发现了彩蛋!"};
             Console.Title = titles[new Random().Next(0, titles.Length - 1)];
 
-            while (true)
-            {
-                string s = Console.ReadLine();
-                try { ContentPatch.RunCommand(s); }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"指令运行失败:{ex.Message}");
-                }
-            }
+            while (true) Thread.Sleep(1);
 
             //!
             Console.WriteLine("ok");
