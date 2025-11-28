@@ -49,30 +49,7 @@ namespace tContentPatch.Command
 
         public static CommandObject GetCO_OutputCOList(List<CommandObject> cos, string tip = null)
         {
-            CommandMethod help = new CommandMethod("?");
-            help.Runing += args =>
-            {
-                string s = null;
-                foreach (CommandObject i in cos)
-                {
-                    if (i == help) continue;
-
-                    if (s == null)
-                    {
-                        s = $"{i.Text}";
-                    }
-                    else
-                    {
-                        s += $", {i.Text}";
-                    }
-                }
-
-                if (s == null) s = "no cmd";
-                if (tip != null) s = $"{s}//{tip}";
-                ContentPatch.PrintTry(s);
-            };
-
-            return help;
+            return new CommandPrintList(cos, tip, ContentPatch.PrintTry);
         }
     }
 }
