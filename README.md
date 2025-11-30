@@ -14,6 +14,8 @@ tPML是使用**替换方法**的方式实现的，具体看[Harmony](https://git
 
 ## 使用
 直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
+### `tPlainModLoader.exe`启动失败?
+[看这里](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
 
 ## 模组
 > 目前[Mods](Mods)中的模组在游戏里的UI可能会无法被鼠标点击，还不知道为什么，重新打开基本能解决问题。
