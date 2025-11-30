@@ -13,16 +13,16 @@ namespace tContentPatch
         /// </summary>
         public virtual void Initialize() { }
         /// <summary>
-        /// 进入世界时, 仅在客户端有效
+        /// 进入世界时, 仅在单人和客户端有效
         /// </summary>
         public virtual void OnEnterWorld() { }
         /// <summary>
-        /// Terraria.Main.Update前调用
+        /// <see cref="Main.Update(GameTime)"/>前调用
         /// </summary>
         /// <param name="gameTime"></param>
         public virtual void UpdatePrefix(GameTime gameTime) { }
         /// <summary>
-        /// Terraria.Main.Update后调用
+        /// <see cref="Main.Update(GameTime)"/>后调用
         /// </summary>
         /// <param name="gameTime"></param>
         public virtual void UpdatePostfix(GameTime gameTime) { }
