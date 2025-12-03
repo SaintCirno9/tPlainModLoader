@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.DataStructures;
 
 namespace tContentPatch.ModPatch
 {
@@ -30,6 +32,24 @@ namespace tContentPatch.ModPatch
         public static void KillPrefix(Projectile __instance)
         {
             mod.ForTry(item => item.KillPrefix(__instance));
+        }
+
+        [HarmonyPatch("NewProjectile", new Type[]
+        {
+            typeof(IEntitySource),
+            typeof(float), typeof(float), typeof(float), typeof(float),
+            typeof(int), typeof(int), typeof(float), typeof(int),
+            typeof(float),typeof(float),typeof(float)
+        })]
+        [HarmonyPostfix]
+        internal static void NewProjectilePostfix(int __result,
+            IEntitySource spawnSource,
+            float X, float Y, float SpeedX, float SpeedY,
+            int Type, int Damage, float KnockBack, int Owner,
+            float ai0, float ai1, float ai2)
+        {
+            mod.ForTry(item => item.NewProjectilePostfix(
+                __result, spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2));
         }
     }
 }

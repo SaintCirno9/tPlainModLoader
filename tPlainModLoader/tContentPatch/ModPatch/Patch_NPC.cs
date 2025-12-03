@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.DataStructures;
 
 namespace tContentPatch.ModPatch
 {
@@ -23,6 +24,15 @@ namespace tContentPatch.ModPatch
         public static void UpdateNPCPostfix(NPC __instance, int i)
         {
             mod.ForTry(item => item.UpdateNPCPostfix(__instance, i));
+        }
+
+        [HarmonyPatch("NewNPC")]
+        [HarmonyPostfix]
+        public static void NewNPCPostfix(int __result, IEntitySource source,
+            int X, int Y, int Type, int Start, float ai0, float ai1, float ai2, float ai3, int Target)
+        {
+            mod.ForTry(item => item.NewNPCPostfix(__result, source,
+                X, Y, Type, Start, ai0, ai1, ai2, ai3, Target));
         }
     }
 }
