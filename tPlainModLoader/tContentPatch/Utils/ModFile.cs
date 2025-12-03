@@ -7,6 +7,7 @@ using tContentPatch.ModLoad;
 
 namespace tContentPatch.Utils
 {
+    /// <summary/>
     public static class ModFile
     {
         /// <summary>

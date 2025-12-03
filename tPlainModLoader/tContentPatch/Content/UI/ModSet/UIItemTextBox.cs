@@ -10,11 +10,15 @@ namespace tContentPatch.Content.UI.ModSet
     /// </summary>
     public class UIItemTextBox : UIItem
     {
+        /// <summary/>
         public Action<string> OnTextChanged = null;
+        /// <summary/>
         public Action OnLostFocus = null;
+        /// <summary/>
         public StyleDimension TextBoxWidth { set => textBox.Width = value; }
         private UITextBox textBox = null;
 
+        /// <summary/>
         public UIItemTextBox(string text_default = "", int Text_MaxLength = -1,
             Texture2D ico = null, string text = null) : base(ico, text)
         {
@@ -33,11 +37,13 @@ namespace tContentPatch.Content.UI.ModSet
             Append(textBox);
         }
 
+        /// <summary/>
         public void SetText(string s)
         {
             textBox.Text = s;
         }
 
+        /// <summary/>
         public string GetText()
         {
             return textBox.Text;

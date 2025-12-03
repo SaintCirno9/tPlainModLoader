@@ -17,6 +17,7 @@ namespace tContentPatch.Content.UI
     public class UIRadioButton : UIElement
     {
         private bool _isChecked = false;
+        /// <summary/>
         public bool IsChecked
         {
             get => _isChecked;
@@ -27,10 +28,14 @@ namespace tContentPatch.Content.UI
                 if (_isChecked) Checked();
             }
         }
+        /// <summary/>
         public Action OnChecked = null;
+        /// <summary/>
         public string MouseHoveringText = null;
+        /// <summary/>
         protected UIImage ico1 = null;
 
+        /// <summary/>
         public UIRadioButton()
         {
             OnLeftClick += (e, s) =>
@@ -40,6 +45,7 @@ namespace tContentPatch.Content.UI
             };
         }
 
+        /// <summary/>
         public UIRadioButton(Texture2D ico, int width, int height) : this()
         {
             Width.Set(width, 0);
@@ -48,6 +54,7 @@ namespace tContentPatch.Content.UI
             SetIco(ico);
         }
 
+        /// <summary/>
         public void SetIco(Texture2D ico)
         {
             if (ico1 == null)
@@ -89,6 +96,7 @@ namespace tContentPatch.Content.UI
             //}
         }
 
+        /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
@@ -99,6 +107,7 @@ namespace tContentPatch.Content.UI
             }
         }
 
+        /// <inheritdoc/>
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             if (IsChecked == false) return;

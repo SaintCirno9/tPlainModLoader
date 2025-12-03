@@ -12,8 +12,10 @@ using Terraria.ID;
 
 namespace tContentPatch
 {
+    /// <summary/>
     public partial class ContentPatch
     {
+        /// <summary/>
         public void Initialize(bool pipe = false)
         {
             Log.Add($"{nameof(ContentPatch)}:初始化");
@@ -92,6 +94,7 @@ namespace tContentPatch
             typePatch.AddPatch(new ModPatch.Patch_Projectile());
             typePatch.AddPatch(new ModPatch.Patch_TileLightScanner());
             typePatch.AddPatch(new ModPatch.Patch_RemadeChatMonitor());
+            typePatch.AddPatch(new ModPatch.Patch_WorldFile());
         }
 
         private void Initialize_ModDirectory()

@@ -12,9 +12,13 @@ namespace tContentPatch.Content.UI
     /// </summary>
     public class UIWindow : UIPanel
     {
+        /// <summary/>
         public Action OnOpen = null;
+        /// <summary/>
         public Action OnClose = null;
-        public UIElement Children { get; protected set; } = null;
+        /// <summary/>
+        public UIElement Child { get; protected set; } = null;
+        /// <summary/>
         public bool IsOpen { get; protected set; } = false;
         private UIElement WindowParent = null;
         private UIElement uie = null;
@@ -24,6 +28,7 @@ namespace tContentPatch.Content.UI
         private bool dragSize = false;
         private Vector2 dragSizeOff = Vector2.Zero;
 
+        /// <summary/>
         public UIWindow(string title, int width, int height)
         {
             Width.Pixels = width;
@@ -34,8 +39,8 @@ namespace tContentPatch.Content.UI
             Top.Set(Main.screenHeight / 2 - Height.Pixels / 2, 0);
             SetPadding(10);
 
-            Children = new UIElement();
-            Children.Width.Precent = 1;
+            Child = new UIElement();
+            Child.Width.Precent = 1;
 
             uie = new UIElement();
             uie.Width.Precent = 1;
@@ -67,10 +72,11 @@ namespace tContentPatch.Content.UI
             uie.Append(ui_title);
             uie.Append(ui_close);
             Append(uie);
-            Append(Children);
+            Append(Child);
             Append(ui_dragSize_img);
         }
 
+        /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
             if (IsOpen == false) return;
@@ -110,12 +116,13 @@ namespace tContentPatch.Content.UI
 
             //
             uie.UpdateContainer_Height();
-            Children.Height.Set(-(uie.Height.Pixels + ui_dragSize_img.Height.Pixels), 1);
-            Children.Top.Pixels = uie.Height.Pixels;
+            Child.Height.Set(-(uie.Height.Pixels + ui_dragSize_img.Height.Pixels), 1);
+            Child.Top.Pixels = uie.Height.Pixels;
 
             if (IsMouseHovering) Main.LocalPlayer.mouseInterface = true;
         }
 
+        /// <inheritdoc/>
         public override void Draw(SpriteBatch spriteBatch)
         {
             if (IsOpen == false) return;
@@ -123,6 +130,7 @@ namespace tContentPatch.Content.UI
             base.Draw(spriteBatch);
         }
 
+        /// <summary/>
         public virtual void Open(UIElement windowParent)
         {
             WindowParent?.RemoveChild(this);
@@ -135,6 +143,7 @@ namespace tContentPatch.Content.UI
             OnOpen?.Invoke();
         }
 
+        /// <summary/>
         public virtual void Close()
         {
             WindowParent?.RemoveChild(this);

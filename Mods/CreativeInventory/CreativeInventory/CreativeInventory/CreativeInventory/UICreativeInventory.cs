@@ -81,8 +81,8 @@ namespace CreativeInventory.CreativeInventory
 
             //
 
-            Children.Append(panel_rows);
-            Children.Append(panel_items);
+            Child.Append(panel_rows);
+            Child.Append(panel_items);
             panel_items.Append(panel_items_sv);
             panel_items_sv.SetChild(panel_items_wp);
             //
@@ -190,7 +190,7 @@ namespace CreativeInventory.CreativeInventory
             panel_rows.UpdateSize_Height();
             panel_items_wp.UpdateSize_Height();
             panel_items.Top.Pixels = panel_rows.GetDimensions().Height + 10;//在rows下面
-            panel_items.Height.Pixels = Children.GetInnerDimensions().Height - panel_rows.Height.Pixels - 10;//填满剩余空间
+            panel_items.Height.Pixels = Child.GetInnerDimensions().Height - panel_rows.Height.Pixels - 10;//填满剩余空间
 
             //
             if (Search_Text_cd > 0)

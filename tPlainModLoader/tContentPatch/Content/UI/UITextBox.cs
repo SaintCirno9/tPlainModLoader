@@ -1,18 +1,22 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 
 namespace tContentPatch.Content.UI
 {
+    /// <summary/>
     public class UITextBox : UIPanel
     {
+        /// <summary/>
         public Action<string> OnTextChanged = null;
+        /// <summary/>
         public Action OnLostFocus = null;
+        /// <summary/>
         public int Text_MaxLength = -1;
 
         private bool focus = false;
+        /// <summary/>
         public bool Focus
         {
             get => focus;
@@ -23,12 +27,14 @@ namespace tContentPatch.Content.UI
             }
         }
         private string text = null;
+        /// <summary/>
         public string Text
         {
             get => text;
             set => SetText(value);
         }
         private string textDefault = null;
+        /// <summary/>
         public string TextDefault
         {
             get => textDefault;
@@ -40,7 +46,7 @@ namespace tContentPatch.Content.UI
         private int time1 = 0;
         private bool mouseLeftOld = false;
 
-
+        /// <summary/>
         public UITextBox(string text_default = "")
         {
             Text = string.Empty;
@@ -59,6 +65,7 @@ namespace tContentPatch.Content.UI
             Append(ui_text);
         }
 
+        /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
@@ -115,6 +122,7 @@ namespace tContentPatch.Content.UI
             SetText(s);
         }
 
+        /// <summary/>
         public void SetText(string s)
         {
             if (s == null) s = string.Empty;
@@ -131,6 +139,7 @@ namespace tContentPatch.Content.UI
             OnTextChanged?.Invoke(Text);
         }
 
+        /// <summary/>
         public void SetTextScale(float textScale)
         {
             ui_text.SetText(text, textScale, false);

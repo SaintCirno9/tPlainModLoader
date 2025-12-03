@@ -2,6 +2,7 @@
 
 namespace tContentPatch
 {
+    /// <summary/>
     public abstract class PatchItem
     {
         /// <summary>
@@ -11,14 +12,10 @@ namespace tContentPatch
         /// <summary>
         /// <see cref="Item.UpdateItem(int)"/>前调用
         /// </summary>
-        /// <param name="This"></param>
-        /// <param name="i"></param>
         public virtual void UpdateItemPrefix(Item This, int i) { }
         /// <summary>
         /// <see cref="Item.UpdateItem(int)"/>后调用
         /// </summary>
-        /// <param name="This"></param>
-        /// <param name="i"></param>
         public virtual void UpdateItemPostfix(Item This, int i) { }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using CommandHelp;
 using CommandHelp.Exceptions;
-using System;
 using System.Collections.Generic;
 
 namespace tContentPatch.Command
@@ -47,6 +46,7 @@ namespace tContentPatch.Command
             return msg;
         }
 
+        /// <summary/>
         public static CommandObject GetCO_OutputCOList(List<CommandObject> cos, string tip = null)
         {
             return new CommandPrintList(cos, tip, ContentPatch.PrintTry);

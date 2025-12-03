@@ -12,6 +12,7 @@ namespace tContentPatch.Content.UI.ModSet
     /// </summary>
     public class UIItemTitle : UIElement
     {
+        /// <summary/>
         public UIItemTitle(Texture2D ico = null, string text = null)
         {
             Width.Precent = 1;
@@ -42,6 +43,7 @@ namespace tContentPatch.Content.UI.ModSet
             if (ui_text != null) Append(ui_text);
         }
 
+        /// <inheritdoc/>
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             base.DrawSelf(spriteBatch);

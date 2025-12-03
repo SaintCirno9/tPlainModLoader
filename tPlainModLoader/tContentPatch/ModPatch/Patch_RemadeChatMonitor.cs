@@ -18,14 +18,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void DrawChatPostfix(bool drawingPlayerChat)
         {
-            try
-            {
-                mod.For(item => item.DrawChatPostfix(drawingPlayerChat));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.DrawChatPostfix(drawingPlayerChat));
         }
 
         [HarmonyPatch("AddNewMessage")]

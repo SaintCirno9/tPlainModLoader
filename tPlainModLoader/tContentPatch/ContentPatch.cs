@@ -9,8 +9,11 @@ namespace tContentPatch
 {
     public partial class ContentPatch
     {
+        /// <summary/>
         public const string VersionTPlainModLoader = "1.4.4.9.1-beta1";
+        /// <summary/>
         public static string ModDirectory { get; private set; } = null;
+        /// <summary/>
         public static bool Initialized { get; private set; } = false;
 
         internal const string patchId_tContentPatch = "tContentPatch.gamePatch";
@@ -27,6 +30,7 @@ namespace tContentPatch
         private ContentPatch() { }
 
 
+        /// <summary/>
         public bool CanInitialize()
         {
             if (Main.dedServ)
@@ -53,7 +57,6 @@ namespace tContentPatch
         /// <summary>
         /// 返回复制的已加载模组列表, 加载失败时为null
         /// </summary>
-        /// <returns></returns>
         public static List<ModObject> GetModObjects()
         {
             List<ModObject> mos = LoaderControl.GetModObjects();
@@ -72,7 +75,6 @@ namespace tContentPatch
         /// <summary>
         /// 用已有的指令列表运行指令
         /// </summary>
-        /// <param name="command"></param>
         public static void RunCommand(string command)
         {
             Command.ProgramCommand.Run(command);
@@ -81,7 +83,6 @@ namespace tContentPatch
         /// <summary>
         /// 输出到控制台, 如果管道启用则同时发送到管道
         /// </summary>
-        /// <param name="s"></param>
         public static void PrintTry(string s)
         {
             try

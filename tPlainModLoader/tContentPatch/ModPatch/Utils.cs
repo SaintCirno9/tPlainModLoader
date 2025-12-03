@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using tContentPatch.Utils;
 
 namespace tContentPatch.ModPatch
 {
@@ -30,9 +31,27 @@ namespace tContentPatch.ModPatch
 
     internal static class ListHelp
     {
-        public static void For<T>(this List<T> list, Action<T> action)
+        public static void ForTry<T>(this List<T> list, Action<T> action)
         {
-            foreach (T item in list) action(item);
+            if (list == null || action == null) return;
+            try
+            {
+                foreach (T item in list)
+                {
+                    try
+                    {
+                        action(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        OutputDebug.OutputException(ex, 2);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputDebug.OutputException(ex);
+            }
         }
     }
 }

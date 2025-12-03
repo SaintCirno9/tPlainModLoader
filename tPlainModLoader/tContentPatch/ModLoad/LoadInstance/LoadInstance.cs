@@ -61,6 +61,9 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_patchRemadeChatMonitor = Utils.CreateInstance<PatchRemadeChatMonitor>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchWorldFile = Utils.CreateInstance<PatchWorldFile>(mo.assembly);
                 }
                 catch (Exception ex)
                 {

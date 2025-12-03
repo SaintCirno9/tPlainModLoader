@@ -11,6 +11,7 @@ namespace tContentPatch.Content.UI.ModSet
     /// </summary>
     public class UIItemValueSlider : UIItem
     {
+        /// <summary/>
         public Action<float> OnValUpdate = null;
         /// <summary>
         /// 值会显示在标题右方, <see cref="FloatToString"/>则用于修改显示的文本, 为<see langword="null"/>时显示原本的值
@@ -32,11 +33,15 @@ namespace tContentPatch.Content.UI.ModSet
         private bool isInt = false;
         private bool hasSetVal = false;
 
+        /// <summary>
+        /// 整型值
+        /// </summary>
         public UIItemValueSlider(int min, int max, Texture2D ico = null, string text = null) : this((float)min, max, ico, text)
         {
             isInt = true;
         }
 
+        /// <summary/>
         public UIItemValueSlider(float min, float max, Texture2D ico = null, string text = null) : base(ico, text)
         {
             PaddingRight = 0;
@@ -95,6 +100,7 @@ namespace tContentPatch.Content.UI.ModSet
             if (text != null) UpdateFloatToString();
         }
 
+        /// <summary/>
         public void UpdateFloatToString()
         {
             float getV = GetVal(val);

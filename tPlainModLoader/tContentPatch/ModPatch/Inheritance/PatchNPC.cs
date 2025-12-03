@@ -2,6 +2,7 @@
 
 namespace tContentPatch
 {
+    /// <summary/>
     public abstract class PatchNPC
     {
         /// <summary>
@@ -11,14 +12,10 @@ namespace tContentPatch
         /// <summary>
         /// <see cref="NPC.UpdateNPC(int)"/>前调用
         /// </summary>
-        /// <param name="This"></param>
-        /// <param name="i"></param>
         public virtual void UpdateNPCPrefix(NPC This, int i) { }
         /// <summary>
         /// <see cref="NPC.UpdateNPC(int)"/>后调用
         /// </summary>
-        /// <param name="This"></param>
-        /// <param name="i"></param>
         public virtual void UpdateNPCPostfix(NPC This, int i) { }
     }
 }

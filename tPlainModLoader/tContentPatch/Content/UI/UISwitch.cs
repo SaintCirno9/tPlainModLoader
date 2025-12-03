@@ -14,11 +14,13 @@ namespace tContentPatch.Content.UI
     /// </summary>
     public class UISwitch : UIElement
     {
+        /// <summary/>
         public Action<bool> OnValUpdate = null;
         private bool val = false;
         private Action<bool> updateText = null;
         private Action<bool> updateImg = null;
 
+        /// <summary/>
         public UISwitch()
         {
             Width.Pixels = 50;
@@ -58,6 +60,7 @@ namespace tContentPatch.Content.UI
             Append(uie);
         }
 
+        /// <summary/>
         public void SetVal(bool v)
         {
             if (v == val) return;
@@ -67,6 +70,7 @@ namespace tContentPatch.Content.UI
             updateImg(val);
         }
 
+        /// <summary/>
         public bool GetVal() => val;
     }
 }

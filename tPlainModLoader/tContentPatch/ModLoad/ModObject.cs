@@ -5,10 +5,11 @@ using tContentPatch.Utils;
 namespace tContentPatch.ModLoad
 {
     /// <summary>
-    /// 模组对象
+    /// 模组对象, inheritance_xxx的可能为<see langword="null"/>
     /// </summary>
     public class ModObject
     {
+        /// <exception cref="System.ArgumentNullException"></exception>
         public ModObject(ModConfig config)
         {
             if (config == null) throw new System.ArgumentNullException(nameof(config));
@@ -48,11 +49,18 @@ namespace tContentPatch.ModLoad
         /// 继承了<see cref="PatchPlayer"/>的类
         /// </summary>
         public List<PatchPlayer> inheritance_patchPlayer = null;
+        /// <summary/>
         public List<PatchNPC> inheritance_patchNPC = null;
+        /// <summary/>
         public List<PatchItem> inheritance_patchItem = null;
+        /// <summary/>
         public List<PatchProjectile> inheritance_patchProjectile = null;
+        /// <summary/>
         public List<PatchTileLightScanner> inheritance_patchTileLightScanner = null;
+        /// <summary/>
         public List<PatchRemadeChatMonitor> inheritance_patchRemadeChatMonitor = null;
+        /// <summary/>
+        public List<PatchWorldFile> inheritance_patchWorldFile = null;
 
         /// <summary>
         /// 复制模组对象的字段, <see cref="config"/>,<see cref="info"/>也为复制对象

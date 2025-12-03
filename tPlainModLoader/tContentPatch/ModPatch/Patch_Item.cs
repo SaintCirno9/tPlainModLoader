@@ -1,7 +1,5 @@
 ﻿using HarmonyLib;
-using System;
 using System.Collections.Generic;
-using tContentPatch.Utils;
 using Terraria;
 
 namespace tContentPatch.ModPatch
@@ -17,28 +15,14 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void UpdateItemPrefix(Item __instance, int i)
         {
-            try
-            {
-                mod.For(item => item.UpdateItemPrefix(__instance, i));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.UpdateItemPrefix(__instance, i));
         }
 
         [HarmonyPatch("UpdateItem")]
         [HarmonyPostfix]
         public static void UpdateItemPostfix(Item __instance, int i)
         {
-            try
-            {
-                mod.For(item => item.UpdateItemPostfix(__instance, i));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.UpdateItemPostfix(__instance, i));
         }
     }
 }

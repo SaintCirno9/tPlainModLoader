@@ -3,6 +3,7 @@ using Terraria.UI;
 
 namespace tContentPatch.Content.UI
 {
+    /// <summary/>
     public static class Utils
     {
         /// <summary>

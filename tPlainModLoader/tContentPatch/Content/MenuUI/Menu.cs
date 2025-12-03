@@ -3,8 +3,10 @@ using Terraria.UI;
 
 namespace tContentPatch.Content.MenuUI
 {
+    /// <summary/>
     public class Menu
     {
+        /// <summary/>
         public static bool OpenMenu(UIState uistate, bool inGame = false)
         {
             if (Main.dedServ) return false;
@@ -23,6 +25,7 @@ namespace tContentPatch.Content.MenuUI
             return true;
         }
 
+        /// <summary/>
         public static bool OpenInGameMenu(UIState uistate)
         {
             return OpenMenu(uistate, true);

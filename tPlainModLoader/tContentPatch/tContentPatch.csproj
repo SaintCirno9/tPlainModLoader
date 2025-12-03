@@ -93,6 +93,8 @@
     <Compile Include="ModLoad\ModInfo.cs" />
     <Compile Include="ModLoad\ModLoader\Initialize.cs" />
     <Compile Include="ModPatch\Inheritance\PatchItem.cs" />
+    <Compile Include="ModPatch\Inheritance\PatchWorldFile.cs" />
+    <Compile Include="ModPatch\Patch_WorldFile.cs" />
     <Compile Include="ModPatch\TypePatch.cs" />
     <Compile Include="ModPatch\Inheritance\PatchMain.cs" />
     <Compile Include="ModPatch\Inheritance\PatchNPC.cs" />

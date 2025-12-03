@@ -33,6 +33,7 @@ namespace tContentPatch.Content
         private static Color textColor = Color.White;
         private static string[] ss = null;
 
+        /// <summary/>
         public static void SetDraw(Color color, Color textColor, params string[] ss)
         {
             DrawTip.color = color;
@@ -40,16 +41,19 @@ namespace tContentPatch.Content
             DrawTip.ss = ss;
         }
 
+        /// <summary/>
         public static void SetDraw(params string[] ss)
         {
             SetDraw(new Color(23, 25, 81, 255) * 0.925f, Color.White, ss);
         }
 
+        /// <summary/>
         public static void Draw(SpriteBatch spriteBatch, string[] ss)
         {
             Draw(spriteBatch, ss, new Color(23, 25, 81, 255) * 0.925f, Color.White);
         }
 
+        /// <summary/>
         public static void Draw(SpriteBatch spriteBatch, string[] ss, Color color, Color textColor)
         {
             int toolTipDistance = 20;

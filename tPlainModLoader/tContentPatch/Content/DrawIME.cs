@@ -11,7 +11,13 @@ namespace tContentPatch.Content
     [HarmonyPatch(typeof(Main), "DoDraw")]
     public static class DrawIME
     {
+        /// <summary>
+        /// 需要绘制输入法
+        /// </summary>
         public static bool NeedIME = false;
+        /// <summary>
+        /// 输入法位置
+        /// </summary>
         public static Vector2 IME_P = Vector2.Zero;
 
         internal static void Postfix(GameTime gameTime)

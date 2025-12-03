@@ -52,6 +52,8 @@ namespace tContentPatch.ModLoad
                     Utils.ForHelp(mo.inheritance_patchTileLightScanner, item => item.Initialize(), ex => exMess(mo, ex));
 
                     Utils.ForHelp(mo.inheritance_patchRemadeChatMonitor, item => item.Initialize(), ex => exMess(mo, ex));
+
+                    Utils.ForHelp(mo.inheritance_patchWorldFile, item => item.Initialize(), ex => exMess(mo, ex));
                 },
                 mo =>
                 {
@@ -68,6 +70,7 @@ namespace tContentPatch.ModLoad
                         ContentPatch.typePatch.Get<PatchProjectile>().AddRange(mo.inheritance_patchProjectile);
                         ContentPatch.typePatch.Get<PatchTileLightScanner>().AddRange(mo.inheritance_patchTileLightScanner);
                         ContentPatch.typePatch.Get<PatchRemadeChatMonitor>().AddRange(mo.inheritance_patchRemadeChatMonitor);
+                        ContentPatch.typePatch.Get<PatchWorldFile>().AddRange(mo.inheritance_patchWorldFile);
                     }
                     catch (Exception ex)
                     {

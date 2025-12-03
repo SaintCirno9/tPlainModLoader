@@ -3,16 +3,20 @@ using System.IO;
 
 namespace tContentPatch.Utils
 {
+    /// <summary/>
     public class ConfigHelp<T>
     {
+        /// <summary/>
         public T config { get; private set; } = default;
         private string filePath = null;
 
+        /// <summary/>
         public ConfigHelp(string filePath)
         {
             this.filePath = filePath;
         }
 
+        /// <summary/>
         public void UpdateConfig(Func<T> repair = null)
         {
             try
@@ -27,6 +31,7 @@ namespace tContentPatch.Utils
             catch { }
         }
 
+        /// <summary/>
         public void SaveConfig()
         {
             try

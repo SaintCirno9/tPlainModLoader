@@ -20,23 +20,32 @@ namespace tContentPatch.Content.UI
         /// 为<see langword="false"/>时不调用<see cref="Draw"/>
         /// </summary>
         public bool isDraw = true;
+        /// <summary/>
         public Color EnableColorBack = new Color(63, 82, 151) * 0.8f;
+        /// <summary/>
         public Color EnableColorBoredr = Color.Black;
+        /// <summary/>
         public Color NoEnableColorBack = Color.Gray * 0.8f;
+        /// <summary/>
         public Color NoEnableColorBoredr = Color.Black;
+        /// <summary/>
         public Color MouseOverColorBack = new Color(73, 94, 171);
+        /// <summary/>
         public Color MouseOverColorBoredr = Colors.FancyUIFatButtonMouseOver;
 
+        /// <summary/>
         public UIButton1(string text, float textScale = 1f, bool large = false) : base(text, textScale, large)
         {
             OnMouseOver += FadedMouseOver;
         }
 
+        /// <inheritdoc/>
         public override void LeftClick(UIMouseEvent evt)
         {
             if (isEnable) base.LeftClick(evt);
         }
 
+        /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
@@ -61,6 +70,7 @@ namespace tContentPatch.Content.UI
             }
         }
 
+        /// <inheritdoc/>
         public override void Draw(SpriteBatch spriteBatch)
         {
             if (isDraw == false) return;

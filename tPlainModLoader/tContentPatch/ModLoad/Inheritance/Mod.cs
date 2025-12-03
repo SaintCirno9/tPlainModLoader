@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace tContentPatch
 {
+    /// <summary/>
     public abstract class Mod
     {
         /// <summary>
@@ -25,13 +26,11 @@ namespace tContentPatch
         /// <a href="https://harmony.pardeike.net/articles/intro.html"/><para/>
         /// <a href="https://harmony.pardeike.net"/><para/>
         /// <a href="https://github.com/pardeike/Harmony/wiki"/></summary>
-        /// <param name="addPatch"></param>
         public virtual void AddPatch(Patch.IAddPatch addPatch) { }
         /// <summary>
         /// 获取指令用于添加指令<para/>
         /// <see cref="CommandHelp"/>项目地址 <a href="https://github.com/github-user-64/CommandHelp"/>
         /// </summary>
-        /// <returns></returns>
         public virtual List<CommandObject> GetCommands() => null;
     }
 }

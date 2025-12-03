@@ -8,9 +8,11 @@ namespace tContentPatch.Content.UI.ModSet
     /// </summary>
     public class UIItemSwitch : UIItem
     {
+        /// <summary/>
         public Action<bool> OnValUpdate = null;
         private UISwitch ui_s = null;
 
+        /// <summary/>
         public UIItemSwitch(Texture2D ico = null, string text = null) : base(ico, text)
         {
             ui_s = new UISwitch();
@@ -22,11 +24,13 @@ namespace tContentPatch.Content.UI.ModSet
             Append(ui_s);
         }
 
+        /// <summary/>
         public void SetVal(bool v)
         {
             ui_s.SetVal(v);
         }
 
+        /// <summary/>
         public bool GetVal()
         {
             return ui_s.GetVal();

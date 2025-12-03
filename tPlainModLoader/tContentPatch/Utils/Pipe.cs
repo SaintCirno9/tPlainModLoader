@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 
 namespace tContentPatch.Utils
 {
+    /// <summary/>
     public static class Pipe
     {
+        /// <summary/>
         public static void Pipe_receive(string path, Action<string> action)
         {
             while (true)
@@ -40,6 +42,7 @@ namespace tContentPatch.Utils
             }
         }
 
+        /// <summary/>
         public static void Pipe_send(string path, string s)
         {
             if (s == null) return;

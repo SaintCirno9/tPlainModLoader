@@ -31,6 +31,7 @@ namespace tContentPatch.Content.UI
             Append(ui_sb);
         }
 
+        /// <summary/>
         public void SetChild(UIElement uie)
         {
             ui_list.Clear();

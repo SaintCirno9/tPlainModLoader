@@ -34,10 +34,10 @@ namespace tContentPatch.ModPatch
 
                 if (___CanUpdateGameplay_old == false && _UpdatePrefix_CanUpdateGameplay_old == true)
                 {
-                    mod.For(item => item.OnEnterWorld());
+                    mod.ForTry(item => item.OnEnterWorld());
                 }
 
-                mod.For(item => item.UpdatePrefix(gameTime));
+                mod.ForTry(item => item.UpdatePrefix(gameTime));
             }
             catch (Exception ex)
             {
@@ -49,14 +49,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void UpdatePostfix(GameTime gameTime)
         {
-            try
-            {
-                mod.For(item => item.UpdatePostfix(gameTime));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.UpdatePostfix(gameTime));
         }
 
         [HarmonyPatch("SetupDrawInterfaceLayers")]
@@ -72,7 +65,7 @@ namespace tContentPatch.ModPatch
 
                 List<GameInterfaceLayer> gameInterfaceLayers = (List<GameInterfaceLayer>)_gameInterfaceLayers_fi.GetValue(Main.instance);
 
-                mod.For(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
+                mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
             }
             catch (Exception ex)
             {
@@ -84,84 +77,42 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void UpdateUIStatesPrefix(GameTime gameTime)
         {
-            try
-            {
-                mod.For(item => item.UpdateUIStatesPrefix(gameTime));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.UpdateUIStatesPrefix(gameTime));
         }
 
         [HarmonyPatch("UpdateUIStates")]
         [HarmonyPostfix]
         public static void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            try
-            {
-                mod.For(item => item.UpdateUIStatesPostfix(gameTime));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.UpdateUIStatesPostfix(gameTime));
         }
 
         [HarmonyPatch("DoUpdateInWorld")]
         [HarmonyPrefix]
         public static void DoUpdateInWorldPrefix(Stopwatch sw)
         {
-            try
-            {
-                mod.For(item => item.DoUpdateInWorldPrefix(sw));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.DoUpdateInWorldPrefix(sw));
         }
 
         [HarmonyPatch("DoUpdateInWorld")]
         [HarmonyPostfix]
         public static void DoUpdateInWorldPostfix(Stopwatch sw)
         {
-            try
-            {
-                mod.For(item => item.DoUpdateInWorldPostfix(sw));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.DoUpdateInWorldPostfix(sw));
         }
 
         [HarmonyPatch("DrawMap")]
         [HarmonyPostfix]
         public static void DrawMapPostfix(GameTime gameTime)
         {
-            try
-            {
-                mod.For(item => item.DrawMapPostfix(gameTime));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.DrawMapPostfix(gameTime));
         }
 
         [HarmonyPatch("DrawMenu")]
         [HarmonyPrefix]
         public static void DrawMenuPrefix(GameTime gameTime)
         {
-            try
-            {
-                mod.For(item => item.DrawMenuPrefix(gameTime));
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
-            }
+            mod.ForTry(item => item.DrawMenuPrefix(gameTime));
         }
 
         [HarmonyPatch("MouseText_DrawItemTooltip_GetLinesInfo")]

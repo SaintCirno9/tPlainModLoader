@@ -13,9 +13,11 @@ namespace tContentPatch.Content.UI.ModSet
     /// </summary>
     public class UIItem : UIElement
     {
+        /// <summary/>
         public Color color = new Color(73, 94, 171);
         private Action<string> setText = null;
 
+        /// <summary/>
         public UIItem(Texture2D ico = null, string text = null)
         {
             Width.Precent = 1;
@@ -47,11 +49,13 @@ namespace tContentPatch.Content.UI.ModSet
             if (ui_text != null) Append(ui_text);
         }
 
+        /// <summary/>
         public void SetTitle(string text)
         {
             setText?.Invoke(text);
         }
 
+        /// <inheritdoc/>
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             base.DrawSelf(spriteBatch);

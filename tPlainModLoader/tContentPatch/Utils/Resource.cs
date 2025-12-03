@@ -5,6 +5,7 @@ using System.Reflection;
 
 namespace tContentPatch.Utils
 {
+    /// <summary/>
     public static class Resource
     {
         /// <summary>

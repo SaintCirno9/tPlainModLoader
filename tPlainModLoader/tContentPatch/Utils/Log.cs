@@ -5,11 +5,14 @@ using System.Text;
 
 namespace tContentPatch.Utils
 {
+    /// <summary/>
     public static class Log
     {
+        /// <summary/>
         public static string path { get; private set; } = null;
         private static List<string> logs = new List<string>();
 
+        /// <summary/>
         public static void Add(string s)
         {
             DateTime time = DateTime.Now;
@@ -18,6 +21,7 @@ namespace tContentPatch.Utils
             logs.Add(ss);
         }
 
+        /// <summary/>
         public static void SaveTry()
         {
             try
@@ -32,6 +36,7 @@ namespace tContentPatch.Utils
             catch { }
         }
 
+        /// <summary/>
         public static void SetPath(string filePath)
         {
             if (filePath == null) return;

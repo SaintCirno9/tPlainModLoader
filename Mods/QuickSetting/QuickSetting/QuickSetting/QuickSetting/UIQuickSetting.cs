@@ -33,10 +33,10 @@ namespace QuickSetting.QuickSetting
             ui_children.VAlign = 1;
             ui_children.ItemMargin = 2;
 
-            Children.PaddingTop = 4;
+            Child.PaddingTop = 4;
 
-            Children.Append(ui_wp);
-            Children.Append(ui_children);
+            Child.Append(ui_wp);
+            Child.Append(ui_children);
         }
 
         public override void Update(GameTime gameTime)

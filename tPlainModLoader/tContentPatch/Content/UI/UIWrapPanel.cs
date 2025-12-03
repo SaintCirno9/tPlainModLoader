@@ -8,8 +8,10 @@ namespace tContentPatch.Content.UI
     /// </summary>
     public class UIWrapPanel : UIElement
     {
+        /// <summary/>
         public float ItemMargin = 0f;
 
+        /// <inheritdoc/>
         public override void Recalculate()
         {
             float x = 0;

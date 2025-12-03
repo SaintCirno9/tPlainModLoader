@@ -2,12 +2,17 @@
 
 namespace tContentPatch.Content.UI
 {
+    /// <summary/>
     public class UIStackPanel : Terraria.UI.UIElement
     {
+        /// <summary/>
         public float ItemMargin = 0f;
+        /// <summary/>
         public bool Horizontal = false;
+        /// <summary/>
         public bool IsAutoUpdateSize = false;
 
+        /// <inheritdoc/>
         public override void RecalculateChildren()
         {
             base.RecalculateChildren();
@@ -33,6 +38,7 @@ namespace tContentPatch.Content.UI
             }
         }
 
+        /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);

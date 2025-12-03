@@ -8,6 +8,7 @@ namespace tContentPatch.Content.UI
     /// </summary>
     public class UIScrollViewer2 : UIElement
     {
+        /// <summary/>
         public int ItemMargin = 0;
         private UIStackPanel ui_sp = null;
 
@@ -29,6 +30,7 @@ namespace tContentPatch.Content.UI
             Append(ui_sv);
         }
 
+        /// <summary/>
         public void AddChild(UIElement uie)
         {
             if (uie == null) return;
@@ -36,11 +38,13 @@ namespace tContentPatch.Content.UI
             ui_sp.Append(uie);
         }
 
+        /// <summary/>
         public void ClearChild()
         {
             ui_sp.RemoveAllChildren();
         }
 
+        /// <summary/>
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);

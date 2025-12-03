@@ -7,7 +7,7 @@ namespace PixelArt.Content
     {
         public Window(string title, int width, int height) : base(title, width, height)
         {
-            Children.PaddingTop = Children.PaddingBottom = 4;
+            Child.PaddingTop = Child.PaddingBottom = 4;
 
             UIScrollViewer2 sv = new UIScrollViewer2();
             sv.Width.Precent = 1;
@@ -20,7 +20,7 @@ namespace PixelArt.Content
                 sv.AddChild(ui);
             }
 
-            Children.Append(sv);
+            Child.Append(sv);
         }
     }
 }
