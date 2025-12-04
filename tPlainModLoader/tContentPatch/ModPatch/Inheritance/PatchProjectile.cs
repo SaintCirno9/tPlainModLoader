@@ -23,6 +23,10 @@ namespace tContentPatch
         /// </summary>
         public virtual void KillPrefix(Projectile This) { }
         /// <summary>
+        /// <see cref="Projectile.Kill"/>后调用
+        /// </summary>
+        public virtual void KillPostfix(Projectile This) { }
+        /// <summary>
         /// <see cref="Projectile.NewProjectile(IEntitySource, float, float, float, float, int, int, float, int, float, float, float)"/>后调用
         /// </summary>
         public virtual void NewProjectilePostfix(int result, IEntitySource spawnSource,

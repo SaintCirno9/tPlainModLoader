@@ -34,6 +34,13 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.KillPrefix(__instance));
         }
 
+        [HarmonyPatch("Kill")]
+        [HarmonyPostfix]
+        public static void KillPostfix(Projectile __instance)
+        {
+            mod.ForTry(item => item.KillPostfix(__instance));
+        }
+
         [HarmonyPatch("NewProjectile", new Type[]
         {
             typeof(IEntitySource),
