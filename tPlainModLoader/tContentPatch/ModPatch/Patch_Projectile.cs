@@ -41,6 +41,20 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.KillPostfix(__instance));
         }
 
+        [HarmonyPatch("SetDefaults")]
+        [HarmonyPrefix]
+        public static void SetDefaultsPrefix(Projectile __instance, int Type)
+        {
+            mod.ForTry(item => item.SetDefaultsPrefix(__instance, Type));
+        }
+
+        [HarmonyPatch("SetDefaults")]
+        [HarmonyPostfix]
+        public static void SetDefaultsPostfix(Projectile __instance, int Type)
+        {
+            mod.ForTry(item => item.SetDefaultsPostfix(__instance, Type));
+        }
+
         [HarmonyPatch("NewProjectile", new Type[]
         {
             typeof(IEntitySource),
@@ -49,7 +63,7 @@ namespace tContentPatch.ModPatch
             typeof(float),typeof(float),typeof(float)
         })]
         [HarmonyPostfix]
-        internal static void NewProjectilePostfix(int __result,
+        public static void NewProjectilePostfix(int __result,
             IEntitySource spawnSource,
             float X, float Y, float SpeedX, float SpeedY,
             int Type, int Damage, float KnockBack, int Owner,
