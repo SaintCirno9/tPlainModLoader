@@ -26,6 +26,20 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.UpdateNPCPostfix(__instance, i));
         }
 
+        [HarmonyPatch("SetDefaults")]
+        [HarmonyPrefix]
+        public static void SetDefaultsPrefix(NPC __instance, int Type, NPCSpawnParams spawnparams)
+        {
+            mod.ForTry(item => item.SetDefaultsPrefix(__instance, Type, spawnparams));
+        }
+
+        [HarmonyPatch("SetDefaults")]
+        [HarmonyPostfix]
+        public static void SetDefaultsPostfix(NPC __instance, int Type, NPCSpawnParams spawnparams)
+        {
+            mod.ForTry(item => item.SetDefaultsPostfix(__instance, Type, spawnparams));
+        }
+
         [HarmonyPatch("NewNPC")]
         [HarmonyPostfix]
         public static void NewNPCPostfix(int __result, IEntitySource source,

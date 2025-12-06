@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.GameContent.Items;
 
 namespace tContentPatch.ModPatch
 {
@@ -25,6 +26,20 @@ namespace tContentPatch.ModPatch
         public static void UpdateItemPostfix(Item __instance, int i)
         {
             mod.ForTry(item => item.UpdateItemPostfix(__instance, i));
+        }
+
+        [HarmonyPatch("SetDefaults", new Type[] {typeof(int), typeof(bool), typeof(ItemVariant)})]
+        [HarmonyPrefix]
+        public static void SetDefaultsPrefix(Item __instance, int Type, bool noMatCheck, ItemVariant variant)
+        {
+            mod.ForTry(item => item.SetDefaultsPrefix(__instance, Type, noMatCheck, variant));
+        }
+
+        [HarmonyPatch("SetDefaults", new Type[] { typeof(int), typeof(bool), typeof(ItemVariant) })]
+        [HarmonyPostfix]
+        public static void SetDefaultsPostfix(Item __instance, int Type, bool noMatCheck, ItemVariant variant)
+        {
+            mod.ForTry(item => item.SetDefaultsPostfix(__instance, Type, noMatCheck, variant));
         }
 
         [HarmonyPatch("NewItem", new Type[]

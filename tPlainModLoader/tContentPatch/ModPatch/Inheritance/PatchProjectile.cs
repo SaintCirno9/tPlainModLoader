@@ -23,9 +23,9 @@ namespace tContentPatch
         /// <summary/>
         public virtual void KillPostfix(Projectile This) { }
         /// <summary/>
-        public virtual void SetDefaultsPrefix(Projectile __instance, int Type) { }
+        public virtual void SetDefaultsPrefix(Projectile This, int Type) { }
         /// <summary/>
-        public virtual void SetDefaultsPostfix(Projectile __instance, int Type) { }
+        public virtual void SetDefaultsPostfix(Projectile This, int Type) { }
         /// <summary/>
         public virtual void NewProjectilePostfix(int result, IEntitySource spawnSource,
             float X, float Y, float SpeedX, float SpeedY,

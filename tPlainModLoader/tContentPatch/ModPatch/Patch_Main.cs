@@ -21,21 +21,13 @@ namespace tContentPatch.ModPatch
         private static FieldInfo _gameInterfaceLayers_fi = null;
         #endregion
 
-        private static bool _UpdatePrefix_CanUpdateGameplay_old = false;
-
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
         public static void UpdatePrefix(GameTime gameTime)
         {
             try
             {
-                bool ___CanUpdateGameplay_old = _UpdatePrefix_CanUpdateGameplay_old;
-                _UpdatePrefix_CanUpdateGameplay_old = Main.CanUpdateGameplay;
-
-                if (___CanUpdateGameplay_old == false && _UpdatePrefix_CanUpdateGameplay_old == true)
-                {
-                    mod.ForTry(item => item.OnEnterWorld());
-                }
+                UpdatePrefix_CanUpdateGameplay();
 
                 mod.ForTry(item => item.UpdatePrefix(gameTime));
             }
@@ -43,6 +35,24 @@ namespace tContentPatch.ModPatch
             {
                 OutputDebug.OutputException(ex);
             }
+        }
+
+        private static bool _UpdatePrefix_CanUpdateGameplay_old = false;
+
+        private static void UpdatePrefix_CanUpdateGameplay()
+        {
+            if (Main.netMode != 0 && Main.netMode != 1) return;
+
+            if (_UpdatePrefix_CanUpdateGameplay_old == false && Main.CanUpdateGameplay == true)
+            {
+                mod.ForTry(item => item.OnEnterWorld());
+            }
+            else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
+            {
+                mod.ForTry(item => item.OnEnterWorldPrefix());
+            }
+
+            _UpdatePrefix_CanUpdateGameplay_old = Main.CanUpdateGameplay;
         }
 
         [HarmonyPatch("Update")]
