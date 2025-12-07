@@ -61,6 +61,10 @@ namespace tContentPatch.ModLoad
         public List<PatchRemadeChatMonitor> inheritance_patchRemadeChatMonitor = null;
         /// <summary/>
         public List<PatchWorldFile> inheritance_patchWorldFile = null;
+        /// <summary/>
+        public List<PatchNetMessage> inheritance_patchNetMessage = null;
+        /// <summary/>
+        public List<PatchMessageBuffer> inheritance_patchMessageBuffer = null;
 
         /// <summary>
         /// 复制模组对象的字段, <see cref="config"/>,<see cref="info"/>也为复制对象

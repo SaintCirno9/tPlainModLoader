@@ -64,6 +64,12 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_patchWorldFile = Utils.CreateInstance<PatchWorldFile>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchNetMessage = Utils.CreateInstance<PatchNetMessage>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchMessageBuffer = Utils.CreateInstance<PatchMessageBuffer>(mo.assembly);
                 }
                 catch (Exception ex)
                 {

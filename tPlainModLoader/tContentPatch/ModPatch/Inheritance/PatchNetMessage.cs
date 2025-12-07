@@ -1,0 +1,34 @@
+﻿using Terraria;
+using Terraria.Localization;
+
+namespace tContentPatch
+{
+    /// <summary/>
+    public abstract class PatchNetMessage
+    {
+        /// <summary>
+        /// <see cref="Mod.Loaded"/>后调用
+        /// </summary>
+        public virtual void Initialize() { }
+        /// <summary>
+        /// <see cref="NetMessage.SendData(int, int, int, NetworkText, int, float, float, float, int, int, int)"/>前调用
+        /// </summary>
+        public virtual void SendDataPrefix(int msgType, int remoteClient, int ignoreClient, NetworkText text,
+            int number, float number2, float number3, float number4, int number5, int number6, int number7)
+        { }
+        /// <summary>
+        /// <see cref="NetMessage.SendData(int, int, int, NetworkText, int, float, float, float, int, int, int)"/>后调用
+        /// </summary>
+        public virtual void SendDataPostfix(int msgType, int remoteClient, int ignoreClient, NetworkText text,
+            int number, float number2, float number3, float number4, int number5, int number6, int number7)
+        { }
+        /// <summary>
+        /// 服务端在同步已连接玩家前
+        /// </summary>
+        public virtual void SyncConnectedPlayerPrefix(int plr) { }
+        /// <summary>
+        /// 服务端在同步断开连接玩家前
+        /// </summary>
+        public virtual void SyncDisconnectedPlayerPrefix(int plr) { }
+    }
+}

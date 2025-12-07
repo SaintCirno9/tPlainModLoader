@@ -95,6 +95,8 @@ namespace tContentPatch
             typePatch.AddPatch(new ModPatch.Patch_TileLightScanner());
             typePatch.AddPatch(new ModPatch.Patch_RemadeChatMonitor());
             typePatch.AddPatch(new ModPatch.Patch_WorldFile());
+            typePatch.AddPatch(new ModPatch.Patch_NetMessage());
+            typePatch.AddPatch(new ModPatch.Patch_MessageBuffer());
         }
 
         private void Initialize_ModDirectory()
