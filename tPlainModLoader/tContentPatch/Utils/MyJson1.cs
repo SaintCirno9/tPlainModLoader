@@ -61,8 +61,9 @@ namespace tContentPatch.Utils
         /// </summary>
         /// <param name="val">要保存的对象</param>
         /// <param name="FilePath1">文件路径</param>
+        /// <param name="indented">缩进</param>
         /// <exception cref="Exception"></exception>
-        public static void Save(object val, string FilePath1)
+        public static void Save(object val, string FilePath1, bool indented = false)
         {
             try
             {
@@ -70,7 +71,11 @@ namespace tContentPatch.Utils
 
                 if (!Directory.Exists(directory)) throw new Exception($"目录不存在:{directory}");
 
-                File.WriteAllText(FilePath1, JsonConvert.SerializeObject(val), Encoding.UTF8);
+                string text = null;
+                if (indented) text = JsonConvert.SerializeObject(val, Formatting.Indented);
+                else text = JsonConvert.SerializeObject(val);
+
+                File.WriteAllText(FilePath1, text, Encoding.UTF8);
             }
             catch (Exception ex)
             {
