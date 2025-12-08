@@ -27,8 +27,16 @@ namespace tContentPatch
         /// </summary>
         public virtual void SyncConnectedPlayerPrefix(int plr) { }
         /// <summary>
+        /// 服务端在同步已连接玩家后
+        /// </summary>
+        public virtual void SyncConnectedPlayerPostfix(int plr) { }
+        /// <summary>
         /// 服务端在同步断开连接玩家前
         /// </summary>
         public virtual void SyncDisconnectedPlayerPrefix(int plr) { }
+        /// <summary>
+        /// 服务端在同步断开连接玩家后
+        /// </summary>
+        public virtual void SyncDisconnectedPlayerPostfix(int plr) { }
     }
 }

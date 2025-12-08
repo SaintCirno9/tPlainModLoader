@@ -39,6 +39,15 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.SyncConnectedPlayerPrefix(plr));
         }
 
+        [HarmonyPatch("SyncConnectedPlayer")]
+        [HarmonyPostfix]
+        public static void SyncConnectedPlayerPostfix(int plr)
+        {
+            if (Main.netMode != 2) return;
+
+            mod.ForTry(item => item.SyncConnectedPlayerPostfix(plr));
+        }
+
         [HarmonyPatch("SyncDisconnectedPlayer")]
         [HarmonyPrefix]
         public static void SyncDisconnectedPlayerPrefix(int plr)
@@ -46,6 +55,15 @@ namespace tContentPatch.ModPatch
             if (Main.netMode != 2) return;
 
             mod.ForTry(item => item.SyncDisconnectedPlayerPrefix(plr));
+        }
+
+        [HarmonyPatch("SyncDisconnectedPlayer")]
+        [HarmonyPostfix]
+        public static void SyncDisconnectedPlayerPostfix(int plr)
+        {
+            if (Main.netMode != 2) return;
+
+            mod.ForTry(item => item.SyncDisconnectedPlayerPostfix(plr));
         }
     }
 }
