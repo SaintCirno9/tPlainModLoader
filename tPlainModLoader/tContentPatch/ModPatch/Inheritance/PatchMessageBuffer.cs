@@ -10,6 +10,14 @@ namespace tContentPatch
         /// </summary>
         public virtual void Initialize() { }
         /// <summary>
+        /// 如果返回<see langword="false"/>那么以下方法不会被调用:
+        /// <para/>原版<see cref="MessageBuffer.GetData(int, int, out int)"/>
+        /// <para/>不影响:
+        /// <para/><see cref="GetDataPrefix(MessageBuffer, int, int, int)"/>
+        /// <para/><see cref="GetDataPostfix(MessageBuffer, int, int, int)"/>
+        /// </summary>
+        public virtual bool CanGetData(MessageBuffer This, int start, int length, int messageType) => true;
+        /// <summary>
         /// <see cref="MessageBuffer.GetData(int, int, out int)"/>前调用
         /// </summary>
         public virtual void GetDataPrefix(MessageBuffer This, int start, int length, int messageType) { }
