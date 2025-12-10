@@ -18,6 +18,7 @@ tPML是使用**替换方法**的方式实现的，具体看[Harmony](https://git
 [看这里](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
 
 ## 模组
+📌部分模组在[tPMods](https://github.com/github-user-64/tPMods)
 > 目前[Mods](Mods)中的模组在游戏里的UI可能会无法被鼠标点击，还不知道为什么，重新打开基本能解决问题。
 
 > 最近在试的时候发现最切出游戏窗口再切回来时，原本不能点击的UI又可以用了，而且在全屏状态下UI不能点击的问题好像必定出现，不知道是不是游戏窗口没刷新大小的原因。啊啊啊~未来再修吧:L
@@ -33,8 +34,6 @@ tPML是使用**替换方法**的方式实现的，具体看[Harmony](https://git
 在**tPlainModLoader**中制作模组和在**tModLoader**中完全不同，**tPlainModLoader**基本上只是添加了加载模组的功能，需要制作模组的话会更艰难且没人家灵活。
 
 不过你可以使用`tContentPatch.Mod.AddPatch`对游戏的任何地方进行修补，不过再次加载模组时可能会导致程序使用已卸载的模组中的方法来修补，所以使用该方法的模组需要重新加载时最好是关闭软件重新打开。
-
-📌部分模组在[tPMods](https://github.com/github-user-64/tPMods)
 
 ## 引用
 ### 项目引用
