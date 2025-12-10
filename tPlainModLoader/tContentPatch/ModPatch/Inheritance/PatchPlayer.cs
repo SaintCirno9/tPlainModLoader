@@ -1,4 +1,5 @@
 ﻿using Terraria;
+using Terraria.IO;
 
 namespace tContentPatch
 {
@@ -19,5 +20,13 @@ namespace tContentPatch
         public virtual void UpdatePostfix(Player This, int playerI) { }
         /// <summary/>
         public virtual void UpdateArmorSetsPostfix(Player This, int playerI) { }
+        /// <summary>
+        /// 保存玩家数据前, 单人和客户端有效
+        /// </summary>
+        public virtual void SavePlayerPrefix(PlayerFileData playerFile, bool skipMapSave) { }
+        /// <summary>
+        /// 保存玩家数据后, 单人和客户端有效
+        /// </summary>
+        public virtual void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave) { }
     }
 }
