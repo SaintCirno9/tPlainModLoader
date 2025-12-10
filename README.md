@@ -34,6 +34,8 @@ tPML是使用**替换方法**的方式实现的，具体看[Harmony](https://git
 
 不过你可以使用`tContentPatch.Mod.AddPatch`对游戏的任何地方进行修补，不过再次加载模组时可能会导致程序使用已卸载的模组中的方法来修补，所以使用该方法的模组需要重新加载时最好是关闭软件重新打开。
 
+📌部分模组在[tPMods](https://github.com/github-user-64/tPMods)
+
 ## 引用
 ### 项目引用
 **Harmony**<https://github.com/pardeike/Harmony/>
