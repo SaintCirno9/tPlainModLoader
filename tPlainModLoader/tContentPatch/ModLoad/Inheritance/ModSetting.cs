@@ -36,25 +36,30 @@ namespace tContentPatch
         /// 数据类型
         /// </summary>
         public virtual Type DataType => null;
+
         /// <summary>
-        /// 在<see cref="Mod.Load"/>之后调用, 根据<see cref="FilePath"/>读取文件, 读取失败为<see langword="null"/>
+        /// 在<see cref="Mod.Load"/>之后调用, 根据<see cref="FilePath"/>读取文件, 读取失败<paramref name="v"/>为<see langword="null"/>
         /// </summary>
         /// <param name="v"></param>
         public virtual void Load(object v) { }
+
         /// <summary>
         /// 获取设置界面
         /// </summary>
         /// <returns></returns>
         public virtual UIElement GetUI() => null;
+
         /// <summary>
         /// 设为默认
         /// </summary>
         public virtual void SetDefault() { }
+
         /// <summary>
         /// 获取需要保存的数据
         /// </summary>
         /// <returns>需要保存的数据</returns>
         public virtual object GetSaveData() => null;
+
         /// <summary>
         /// 保存
         /// </summary>
@@ -73,10 +78,11 @@ namespace tContentPatch
 
             NeedSave = false;
         }
+
         /// <summary>
-        /// 读取
+        /// 读取, 读取失败返回<see langword="null"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>读取到的数据</returns>
         public virtual object Read()
         {
             Assembly assembly = GetType().Assembly;
