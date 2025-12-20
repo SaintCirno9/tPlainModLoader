@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using tContentPatch;
 using tContentPatch.Utils;
 
@@ -30,16 +31,25 @@ namespace tPlainModLoaderInjector
                 Log.Add($"{nameof(InjectorGame)}:已附加到程序");
                 Log.Add($"{nameof(InjectorGame)}:日志位置:[{Log.path}]");
 
-                if (ContentPatch.Initialized) return 2;
+                ContentPatch cp = null;
+
+                if (ContentPatch.Initialized)//如果已注入
+                {
+                    //启用管道
+                    FieldInfo fi = typeof(ContentPatch).GetField("Instance", BindingFlags.Static | BindingFlags.NonPublic);
+                    cp = (ContentPatch)fi.GetValue(null);
+                    cp.Initialize_CommandPipe(true);
+                    return 2;
+                }
 
                 Initialize_AssemblyResolveEvent();
 
                 Type type = typeof(ContentPatch);
-                ContentPatch cp = (ContentPatch)Activator.CreateInstance(type, true);
+                cp = (ContentPatch)Activator.CreateInstance(type, true);
 
-                var a = AppDomain.CurrentDomain.GetAssemblies();
+                //var a = AppDomain.CurrentDomain.GetAssemblies();
 
-                while (cp.CanInitialize() == false) ;
+                while (cp.CanInitialize() == false) Thread.Sleep(1);//等待可以初始化
 
                 try
                 {

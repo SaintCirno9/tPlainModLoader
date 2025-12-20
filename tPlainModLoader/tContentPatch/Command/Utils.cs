@@ -17,6 +17,7 @@ namespace tContentPatch.Command
         /// <returns>异常信息</returns>
         public static string CommandRun(string command, List<CommandObject> cos)
         {
+            if (command == null) return "指令为null";
             CommandException ex = RunCommand.ParseRun(command, cos);
 
             if (ex == null) return null;

@@ -27,6 +27,9 @@ namespace tContentPatch
         private static FieldInfo reflection_Terraria_Main_inRun = null;
 
 
+        /// <summary>
+        /// 不允许用正常方式创建
+        /// </summary>
         private ContentPatch() { }
 
 
@@ -88,7 +91,7 @@ namespace tContentPatch
             try
             {
                 Console.WriteLine(s);
-                if (Command.Pipe.EnablePipe) Utils.Pipe.Pipe_send(Command.Pipe.pipe_toOutput, s);
+                Command.Pipe.SendMsg(s);
             }
             catch { }
         }

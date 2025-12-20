@@ -13,7 +13,12 @@ namespace tPlainModLoaderInjector
         {
             _ = Task.Run(() =>
             {
-                tContentPatch.Utils.Pipe.Pipe_receive(pipe_toOutput, s => Console.WriteLine(s));
+                tContentPatch.Utils.Pipe.Pipe_receive(pipe_toOutput, s =>
+                {
+                    if (s == null) return;
+                    s = s.Trim();
+                    Console.WriteLine(s);
+                });
             });
         }
 

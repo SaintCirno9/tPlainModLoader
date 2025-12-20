@@ -25,7 +25,7 @@ namespace tContentPatch
 
             Initialized = false;
 
-            Command.Pipe.Initialize(pipe);
+            Initialize_CommandPipe(pipe);
             Initialize_ModDirectory();
             Initialize_AddPatch();
             Initialize_ModLoader();
@@ -40,6 +40,12 @@ namespace tContentPatch
             {
                 LoaderControl.Load();
             }
+        }
+
+        /// <summary/>
+        public void Initialize_CommandPipe(bool enable)
+        {
+            Command.Pipe.Initialize(enable);
         }
 
         private void Initialize_ModLoader()
@@ -126,7 +132,10 @@ namespace tContentPatch
                 {
                     try
                     {
-                        RunCommand(Console.ReadLine());
+                        System.Threading.Thread.Sleep(1);
+                        string s = Console.ReadLine();//注入的没有控制台时这玩意会直接返回null
+                        if (s == null) continue;
+                        RunCommand(s);
                     }
                     catch (Exception ex)
                     {

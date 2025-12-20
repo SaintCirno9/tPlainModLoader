@@ -24,7 +24,6 @@ namespace tContentPatch.Utils
                             using (StreamReader sr = new StreamReader(pipeServer1))
                             {
                                 string s = sr.ReadToEnd();
-                                if (path == Command.Pipe.pipe_toTContentPatch) s = s.Trim();
                                 action?.Invoke(s);
                             }
                         }
@@ -43,10 +42,10 @@ namespace tContentPatch.Utils
         }
 
         /// <summary/>
-        public static void Pipe_send(string path, string s)
+        public static void Pipe_send(string path, string s, Action onTimeout = null)
         {
             if (s == null) return;
-            if (s.Length == 0) return;
+            if (s.Length < 1) return;
 
             _ = Task.Run(() =>
             {
@@ -56,13 +55,17 @@ namespace tContentPatch.Utils
                     {
                         try
                         {
-                            pipeClient.Connect(1000);
+                            pipeClient.Connect(250);
 
                             using (StreamWriter sw = new StreamWriter(pipeClient))
                             {
                                 sw.AutoFlush = true;
                                 sw.WriteLine(s);
                             }
+                        }
+                        catch (TimeoutException)
+                        {
+                            onTimeout?.Invoke();
                         }
                         catch
                         {
