@@ -16,7 +16,7 @@ namespace tContentPatch
     public partial class ContentPatch
     {
         /// <summary/>
-        public void Initialize(bool pipe = false)
+        public void Initialize()
         {
             Log.Add($"{nameof(ContentPatch)}:初始化");
 
@@ -25,7 +25,7 @@ namespace tContentPatch
 
             Initialized = false;
 
-            Initialize_CommandPipe(pipe);
+            Initialize_CommandMsg();
             Initialize_ModDirectory();
             Initialize_AddPatch();
             Initialize_ModLoader();
@@ -42,10 +42,9 @@ namespace tContentPatch
             }
         }
 
-        /// <summary/>
-        public void Initialize_CommandPipe(bool enable)
+        private void Initialize_CommandMsg()
         {
-            Command.Pipe.Initialize(enable);
+            Command.MsgCommand.Initialize();
         }
 
         private void Initialize_ModLoader()

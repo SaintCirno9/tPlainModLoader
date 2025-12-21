@@ -48,7 +48,7 @@
   <ItemGroup>
     <Compile Include="Injector.cs" />
     <Compile Include="LauncherConfig.cs" />
-    <Compile Include="CommandPipe.cs" />
+    <Compile Include="CommandTCP.cs" />
     <Compile Include="ProcessUtils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="InjectorGame.cs" />

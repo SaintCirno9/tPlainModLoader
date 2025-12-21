@@ -84,14 +84,14 @@ namespace tContentPatch
         }
 
         /// <summary>
-        /// 输出到控制台, 如果管道启用则同时发送到管道
+        /// 输出到控制台和其它消息接收端
         /// </summary>
         public static void PrintTry(string s)
         {
             try
             {
                 Console.WriteLine(s);
-                Command.Pipe.SendMsg(s);
+                Command.MsgCommand.SendMsg(s);
             }
             catch { }
         }

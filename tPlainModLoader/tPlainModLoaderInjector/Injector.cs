@@ -8,7 +8,7 @@ namespace tPlainModLoaderInjector
 
         public static int InjectManaged(uint tID, string dllPath, Type type, Func<string, int> action, string args)
         {
-            if (isStart) return 2;
+            if (isStart) return -3;
 
             string namespaceAclass = type.FullName;
             string method = action.Method.Name;
@@ -20,13 +20,16 @@ namespace tPlainModLoaderInjector
 
             switch (returnV)
             {
-                case 1:
-                    isStart = true;
-                    return 1;
-                case 2: return 2;
+                //case 1:
+                //    isStart = true;
+                //    return 1;
+                //case 2: return 2;
                 case -1: return -1;
                 case -2: return -2;
-                default: return 0;
+                case -3:
+                    isStart = true;
+                    return -3;
+                default: return returnV;
             }
         }
     }

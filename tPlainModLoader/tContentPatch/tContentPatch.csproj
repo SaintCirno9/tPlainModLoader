@@ -59,6 +59,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command\MsgCommand.cs" />
     <Compile Include="Command\Pipe.cs" />
     <Compile Include="Command\ProgramCommand.cs" />
     <Compile Include="Command\Utils.cs" />
@@ -156,6 +157,8 @@
     <Compile Include="Utils\OutputDebug.cs" />
     <Compile Include="Utils\Pipe.cs" />
     <Compile Include="Utils\Resource.cs" />
+    <Compile Include="Utils\TCPUtils\TCPC.cs" />
+    <Compile Include="Utils\TCPUtils\TCPS.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

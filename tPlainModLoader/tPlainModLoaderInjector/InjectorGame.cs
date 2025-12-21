@@ -31,21 +31,12 @@ namespace tPlainModLoaderInjector
                 Log.Add($"{nameof(InjectorGame)}:已附加到程序");
                 Log.Add($"{nameof(InjectorGame)}:日志位置:[{Log.path}]");
 
-                ContentPatch cp = null;
-
-                if (ContentPatch.Initialized)//如果已注入
-                {
-                    //启用管道
-                    FieldInfo fi = typeof(ContentPatch).GetField("Instance", BindingFlags.Static | BindingFlags.NonPublic);
-                    cp = (ContentPatch)fi.GetValue(null);
-                    cp.Initialize_CommandPipe(true);
-                    return 2;
-                }
+                if (ContentPatch.Initialized) return GetMsgCommandPort(-3);//如果已注入
 
                 Initialize_AssemblyResolveEvent();
 
                 Type type = typeof(ContentPatch);
-                cp = (ContentPatch)Activator.CreateInstance(type, true);
+                ContentPatch cp = (ContentPatch)Activator.CreateInstance(type, true);
 
                 //var a = AppDomain.CurrentDomain.GetAssemblies();
 
@@ -54,10 +45,10 @@ namespace tPlainModLoaderInjector
                 try
                 {
                     Log.Add($"{nameof(InjectorGame)}:初始化内容补丁");
-                    cp.Initialize(true);
+                    cp.Initialize();
                     Log.Add($"{nameof(InjectorGame)}:初始化内容补丁成功");
 
-                    return 1;
+                    return GetMsgCommandPort(-3);
                 }
                 catch (Exception ex)
                 {
@@ -74,6 +65,11 @@ namespace tPlainModLoaderInjector
             {
                 Log.SaveTry();
             }
+        }
+
+        private static int GetMsgCommandPort(int def)
+        {
+            return tContentPatch.Command.MsgCommand.Prot > 1 ? tContentPatch.Command.MsgCommand.Prot : def;
         }
 
         public static void Initialize_AssemblyResolveEvent()
