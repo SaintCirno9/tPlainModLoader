@@ -47,7 +47,7 @@ namespace tContentPatch.Content.UI
             uie.Height.Pixels = 40;
             uie.OnLeftMouseDown += (e, s) =>
             {
-                dragPosOff = new Vector2(Main.mouseX - Left.Pixels, Main.mouseY - Top.Pixels);
+                dragPosOff = new Vector2(Left.Pixels - Main.mouseX, Top.Pixels - Main.mouseY);
                 dragPos = true;
             };
 
@@ -65,7 +65,7 @@ namespace tContentPatch.Content.UI
             ui_dragSize_img.ScaleToFit = true;
             ui_dragSize_img.OnLeftMouseDown += (e, s) =>
             {
-                dragSizeOff = new Vector2(Main.mouseX, Main.mouseY);
+                dragSizeOff = new Vector2(Left.Pixels + Width.Pixels - Main.mouseX, Top.Pixels + Height.Pixels - Main.mouseY);
                 dragSize = true;
             };
 
@@ -79,15 +79,15 @@ namespace tContentPatch.Content.UI
         /// <inheritdoc/>
         public override void Update(GameTime gameTime)
         {
-            if (IsOpen == false) return;
+            //if (IsOpen == false) return;
 
             base.Update(gameTime);
 
             #region 拖动位置
             if (dragPos)
             {
-                Left.Pixels = Main.mouseX - dragPosOff.X;
-                Top.Pixels = Main.mouseY - dragPosOff.Y;
+                Left.Pixels = Main.mouseX + dragPosOff.X;
+                Top.Pixels = Main.mouseY + dragPosOff.Y;
                 if (Main.mouseLeft == false) dragPos = false;
             }
             #endregion
@@ -95,24 +95,34 @@ namespace tContentPatch.Content.UI
             #region 拖动大小
             if (dragSize)
             {
-                Width.Pixels += Main.mouseX - dragSizeOff.X;
-                Height.Pixels += Main.mouseY - dragSizeOff.Y;
-                dragSizeOff = new Vector2(Main.mouseX, Main.mouseY);
+                Width.Pixels = Main.mouseX + dragSizeOff.X - Left.Pixels;
+                Height.Pixels = Main.mouseY + dragSizeOff.Y - Top.Pixels;
                 if (Main.mouseLeft == false) dragSize = false;
             }
             #endregion
 
-            //限制位置
             int margin = 10;
-            if (Top.Pixels + Height.Pixels > Main.screenHeight - margin) Top.Pixels = Main.screenHeight - margin - Height.Pixels;
-            else if (Top.Pixels < margin) Top.Pixels = margin;
 
             //限制大小
             if (Width.Pixels < MinWidth.Pixels) Width.Pixels = MinWidth.Pixels;
+            else
+            {
+                if (Width.Pixels > MaxWidth.Pixels && MaxWidth.Pixels > MinWidth.Pixels) Width.Pixels = MaxWidth.Pixels;
+                if (Width.Pixels > Main.screenWidth - margin * 2) Width.Pixels = Main.screenWidth - margin * 2;
+            }
             if (Height.Pixels < MinHeight.Pixels) Height.Pixels = MinHeight.Pixels;
+            else
+            {
+                if (Height.Pixels > MaxHeight.Pixels && MaxHeight.Pixels > MinHeight.Pixels) Height.Pixels = MaxHeight.Pixels;
+                if (Height.Pixels > Main.screenHeight - margin * 2) Height.Pixels = Main.screenHeight - margin * 2;
+            }
 
+            //限制位置
             if (Left.Pixels + Width.Pixels > Main.screenWidth - margin) Left.Pixels = Main.screenWidth - margin - Width.Pixels;
             else if (Left.Pixels < margin) Left.Pixels = margin;
+
+            if (Top.Pixels + Height.Pixels > Main.screenHeight - margin) Top.Pixels = Main.screenHeight - margin - Height.Pixels;
+            else if (Top.Pixels < margin) Top.Pixels = margin;
 
             //
             uie.UpdateContainer_Height();
@@ -122,13 +132,13 @@ namespace tContentPatch.Content.UI
             if (IsMouseHovering) Main.LocalPlayer.mouseInterface = true;
         }
 
-        /// <inheritdoc/>
-        public override void Draw(SpriteBatch spriteBatch)
-        {
-            if (IsOpen == false) return;
+        ///// <inheritdoc/>
+        //public override void Draw(SpriteBatch spriteBatch)
+        //{
+        //    if (IsOpen == false) return;
 
-            base.Draw(spriteBatch);
-        }
+        //    base.Draw(spriteBatch);
+        //}
 
         /// <summary/>
         public virtual void Open(UIElement windowParent)
