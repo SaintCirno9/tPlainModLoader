@@ -16,6 +16,8 @@ namespace tContentPatch.Content.UI.ModSet
         public Action OnLostFocus = null;
         /// <summary/>
         public StyleDimension TextBoxWidth { set => textBox.Width = value; }
+        /// <summary/>
+        public bool Focus => textBox.Focus;
         private UITextBox textBox = null;
 
         /// <summary/>
