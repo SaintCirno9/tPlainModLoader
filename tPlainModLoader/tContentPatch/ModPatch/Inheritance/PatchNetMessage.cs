@@ -32,11 +32,21 @@ namespace tContentPatch
         public virtual void SyncConnectedPlayerPostfix(int plr) { }
         /// <summary>
         /// 服务端在同步断开连接玩家前
+        /// <para/>可能会失效, 建议在<see cref="SyncOnePlayerPrefix(int, int, int)"/>中判断玩家的<see cref="Entity.active"/>
         /// </summary>
         public virtual void SyncDisconnectedPlayerPrefix(int plr) { }
         /// <summary>
         /// 服务端在同步断开连接玩家后
+        /// <para/>可能会失效, 建议在<see cref="SyncOnePlayerPostfix(int, int, int)"/>中判断玩家的<see cref="Entity.active"/>
         /// </summary>
         public virtual void SyncDisconnectedPlayerPostfix(int plr) { }
+        /// <summary>
+        /// 服务端同步玩家前
+        /// </summary>
+        public virtual void SyncOnePlayerPrefix(int plr, int toWho, int fromWho) { }
+        /// <summary>
+        /// 服务端同步玩家后
+        /// </summary>
+        public virtual void SyncOnePlayerPostfix(int plr, int toWho, int fromWho) { }
     }
 }
