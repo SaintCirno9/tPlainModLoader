@@ -15,7 +15,9 @@ namespace tContentPatch
     /// <summary/>
     public partial class ContentPatch
     {
-        /// <summary/>
+        /// <summary>
+        /// 在修补前启动的线程使用的方法还是修补前的, 最好在有线程启动前修补
+        /// </summary>
         public void Initialize()
         {
             Log.Add($"{nameof(ContentPatch)}:初始化");
@@ -24,6 +26,7 @@ namespace tContentPatch
             else throw new Exception("不可重复初始化");
 
             Initialized = false;
+            Log.Add($"{nameof(ContentPatch)}:网络模式:{Main.netMode}");
 
             Initialize_CommandMsg();
             Initialize_ModDirectory();
@@ -86,8 +89,23 @@ namespace tContentPatch
             };
         }
 
+        private void CheckNetplayConnect()
+        {
+            bool has = false;
+            if (Netplay.TcpListener != null) has = true;
+            else if (Main.netMode == 1) has = true;
+
+            if (has == false) return;
+
+            string s = $"{nameof(ContentPatch)}:在修补前已有线程启动(在多人游戏中或服务端已启动),一些功能会失效";
+            Log.Add(s);
+            PrintTry(s);
+        }
+
         private void Initialize_AddPatch()
         {
+            CheckNetplayConnect();
+
             gamePatch = new AddPatch(patchId_tContentPatch);
             gamePatch.AllPatch();
 

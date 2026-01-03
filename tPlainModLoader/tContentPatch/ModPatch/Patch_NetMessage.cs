@@ -48,6 +48,13 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.SyncConnectedPlayerPostfix(plr));
         }
 
+        /// <summary>
+        /// <see cref="NetMessage.SyncDisconnectedPlayer(int)"/>的修补有可能失效
+        /// <para/>在服务端启动后修补这个就没效果了
+        /// <para/>服务端是运行在另一个线程上的<see cref="Netplay.StartServer"/>
+        /// <para/>这个方法就是由另一个线程调用的, 所以可能是因为这个原因导致的
+        /// <para/>所以最好在有线程启动前修补
+        /// </summary>
         [HarmonyPatch("SyncDisconnectedPlayer")]
         [HarmonyPrefix]
         public static void SyncDisconnectedPlayerPrefix(int plr)
