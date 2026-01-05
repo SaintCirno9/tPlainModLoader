@@ -120,6 +120,7 @@ namespace tContentPatch
             typePatch.AddPatch(new ModPatch.Patch_WorldFile());
             typePatch.AddPatch(new ModPatch.Patch_NetMessage());
             typePatch.AddPatch(new ModPatch.Patch_MessageBuffer());
+            typePatch.AddPatch(new ModPatch.Patch_Chest());
         }
 
         private void Initialize_ModDirectory()

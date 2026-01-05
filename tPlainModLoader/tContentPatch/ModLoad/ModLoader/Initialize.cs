@@ -58,6 +58,8 @@ namespace tContentPatch.ModLoad
                     Utils.ForHelp(mo.inheritance_patchNetMessage, item => item.Initialize(), ex => exMess(mo, ex));
 
                     Utils.ForHelp(mo.inheritance_patchMessageBuffer, item => item.Initialize(), ex => exMess(mo, ex));
+
+                    Utils.ForHelp(mo.inheritance_patchChest, item => item.Initialize(), ex => exMess(mo, ex));
                 },
                 mo =>
                 {
@@ -77,6 +79,7 @@ namespace tContentPatch.ModLoad
                         ContentPatch.typePatch.Get<PatchWorldFile>().AddRange(mo.inheritance_patchWorldFile);
                         ContentPatch.typePatch.Get<PatchNetMessage>().AddRange(mo.inheritance_patchNetMessage);
                         ContentPatch.typePatch.Get<PatchMessageBuffer>().AddRange(mo.inheritance_patchMessageBuffer);
+                        ContentPatch.typePatch.Get<PatchChest>().AddRange(mo.inheritance_patchChest);
                     }
                     catch (Exception ex)
                     {

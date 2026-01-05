@@ -70,6 +70,9 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_patchMessageBuffer = Utils.CreateInstance<PatchMessageBuffer>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchChest = Utils.CreateInstance<PatchChest>(mo.assembly);
                 }
                 catch (Exception ex)
                 {
