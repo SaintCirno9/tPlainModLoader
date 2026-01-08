@@ -26,7 +26,7 @@ namespace tContentPatch
             else throw new Exception("不可重复初始化");
 
             Initialized = false;
-            Log.Add($"{nameof(ContentPatch)}:网络模式:{Main.netMode}");
+            Log.Add($"{nameof(ContentPatch)}:服务端:{Main.dedServ}");
 
             Initialize_CommandMsg();
             Initialize_ModDirectory();
