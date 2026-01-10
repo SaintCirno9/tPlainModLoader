@@ -42,6 +42,8 @@ namespace tContentPatch
         public virtual void SyncDisconnectedPlayerPostfix(int plr) { }
         /// <summary>
         /// 服务端同步玩家前
+        /// <para/>如果是同步离线玩家, 那么在此之前玩家的信息会被清除
+        /// <para/>如需获取离线玩家的信息请使用<see cref="PatchRemoteClient.ResetPrefix(RemoteClient)"/>
         /// </summary>
         public virtual void SyncOnePlayerPrefix(int plr, int toWho, int fromWho) { }
         /// <summary>

@@ -67,6 +67,8 @@ namespace tContentPatch.ModLoad
         public List<PatchMessageBuffer> inheritance_patchMessageBuffer = null;
         /// <summary/>
         public List<PatchChest> inheritance_patchChest = null;
+        /// <summary/>
+        public List<PatchRemoteClient> inheritance_patchRemoteClient = null;
 
         /// <summary>
         /// 复制模组对象的字段, <see cref="config"/>,<see cref="info"/>也为复制对象

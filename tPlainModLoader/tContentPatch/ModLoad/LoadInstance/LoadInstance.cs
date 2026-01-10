@@ -73,6 +73,9 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_patchChest = Utils.CreateInstance<PatchChest>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchRemoteClient = Utils.CreateInstance<PatchRemoteClient>(mo.assembly);
                 }
                 catch (Exception ex)
                 {
