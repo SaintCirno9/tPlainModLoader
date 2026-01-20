@@ -14,6 +14,7 @@ namespace QuickSetting.ModLinkage
 
         public override void Loaded()
         {
+            if (Main.dedServ) return;
             if (IsLinkage == false) return;
 
             System.Collections.Generic.List<tContentPatch.ModLoad.ModObject> mos = ContentPatch.GetModObjects();

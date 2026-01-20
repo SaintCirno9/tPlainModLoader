@@ -40,6 +40,8 @@ namespace OptimizeAndTool.Content.ServerList
 
         public static void Initialize(List<ServerInfo> data)
         {
+            if (Main.dedServ) return;
+
             if (uistate == null)
             {
                 uistate = new UIServerList();

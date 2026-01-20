@@ -17,6 +17,8 @@ namespace WandsTool
 
         static feces()
         {
+            if (Main.dedServ) return;
+
             ui = new wandsPanel();
         }
 

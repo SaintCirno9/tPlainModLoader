@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using tContentPatch;
+using Terraria;
 using Terraria.UI;
 
 namespace QuickSetting.QuickSetting
@@ -16,6 +17,8 @@ namespace QuickSetting.QuickSetting
 
         public override void Load()
         {
+            if (Main.dedServ) return;
+
             ui_qs = new UIQuickSetting("设置", 350, 600);
             ui_qs.OnAddItem += (s1) =>
             {

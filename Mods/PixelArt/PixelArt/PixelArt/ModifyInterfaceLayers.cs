@@ -15,6 +15,8 @@ namespace PixelArt
 
         static ModifyInterfaceLayers()
         {
+            if (Main.dedServ) return;
+
             ui_state = new UIState();
             ui = new UserInterface();
             ui.SetState(ui_state);

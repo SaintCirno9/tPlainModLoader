@@ -21,6 +21,9 @@ namespace tContentPatch
         public void Initialize()
         {
             Log.Add($"{nameof(ContentPatch)}:初始化");
+            string p = $"{nameof(ContentPatch)}:版本:{VersionTPlainModLoader}";
+            Log.Add(p);
+            PrintTry(p);
 
             if (Instance == null) Instance = this;
             else throw new Exception("不可重复初始化");

@@ -17,6 +17,8 @@ namespace Skil.ModLinkage
 
         public override void Loaded()
         {
+            if (Main.dedServ) return;
+
             List<tContentPatch.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
             if (mos == null) return;
 

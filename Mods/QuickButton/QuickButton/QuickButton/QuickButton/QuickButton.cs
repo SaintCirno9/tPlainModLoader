@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using tContentPatch;
+using Terraria;
 using Terraria.UI;
 
 namespace QuickButton.QuickButton
@@ -12,6 +13,8 @@ namespace QuickButton.QuickButton
 
         public override void Load()
         {
+            if (Main.dedServ) return;
+
             ui_qb = new UIQuickButton();
             ModifyInterfaceLayers.ui_state.Append(ui_qb);
 
@@ -20,6 +23,7 @@ namespace QuickButton.QuickButton
 
         public static void Initialize_Key(List<string> keyOrder)
         {
+            if (Main.dedServ) return;
             if (keyOrder == null) return;
 
             keys.Clear();
@@ -45,7 +49,11 @@ namespace QuickButton.QuickButton
             ui_qb.KeyOrder(keys);
         }
 
-        public static void SetPos(int pos) => ui_qb.SetPos(pos);
+        public static void SetPos(int pos)
+        {
+            if (Main.dedServ) return;
+            ui_qb.SetPos(pos);
+        }
 
         public static List<string> GetContainsKey() => ui_qb.GetKeys();
 

@@ -15,6 +15,7 @@ namespace PixelArt.ModLinkage
 
         public override void Loaded()
         {
+            if (Main.dedServ) return;
             if (IsLinkage == false) return;
 
             List<tContentPatch.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
