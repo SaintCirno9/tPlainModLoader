@@ -12,6 +12,16 @@ namespace tContentPatch.Command
         /// <param name="command"></param>
         public static void Run(string command)
         {
+            List<CommandObject> cos = GetCos();
+
+            string msg = Utils.CommandRun(command, cos);
+            if (msg == null) return;
+            
+            ContentPatch.PrintTry(msg);
+        }
+
+        public static List<CommandObject> GetCos()
+        {
             List<CommandObject> cos = GetCO();
 
             List<CommandObject> cosMod = GetModCO();
@@ -19,11 +29,7 @@ namespace tContentPatch.Command
 
             cos.Add(Utils.GetCO_OutputCOList(cos));
 
-            string msg = Utils.CommandRun(command, cos);
-
-            if (msg == null) return;
-            
-            ContentPatch.PrintTry(msg);
+            return cos;
         }
 
         private static List<CommandObject> GetCO()

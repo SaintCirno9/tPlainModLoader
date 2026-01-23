@@ -66,6 +66,7 @@
     <Compile Include="ContentPatch_Initialize.cs" />
     <Compile Include="ContentPatch.cs" />
     <Compile Include="Content\AutoLoadMod.cs" />
+    <Compile Include="Content\DedServConsoleCommand.cs" />
     <Compile Include="Content\DrawIME.cs" />
     <Compile Include="Content\DrawTip.cs" />
     <Compile Include="Content\Menus\ModInfo\ModInfo.cs" />

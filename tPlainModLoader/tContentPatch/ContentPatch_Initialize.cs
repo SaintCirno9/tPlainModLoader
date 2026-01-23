@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using tContentPatch.Content;
 using tContentPatch.Content.Menus.ModLoadException;
 using tContentPatch.Content.Menus.ModManager;
 using tContentPatch.ModLoad;
@@ -148,6 +149,12 @@ namespace tContentPatch
 
         private void Initialize_CMD()
         {
+            if (Main.dedServ)
+            {
+                DedServConsoleCommand.Enable = true;
+                return;
+            }
+
             _ = Task.Run(() =>
             {
                 while (true)
