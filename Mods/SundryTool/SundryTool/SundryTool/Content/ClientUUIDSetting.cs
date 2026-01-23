@@ -51,12 +51,20 @@ namespace SundryTool.Content
 
         public static void PrintClientUUID()
         {
-            Console.WriteLine($"[{Main.clientUUID}]");
-            Main.NewText($"[{Main.clientUUID}]");
+            string s = $"[{Main.clientUUID}]";
+
+            ContentPatch.PrintTry(s);
+
+            if (Main.netMode != 0 && Main.netMode != 1) return;
+            Main.NewText(s);
         }
 
         public static List<CommandObject> GetCO()
         {
+            List<CommandObject> cos = new List<CommandObject>();
+
+            if (Function1.Function.NoPublic) return cos;
+
             CommandObject uuid = new CommandObject("uuid");
             CommandMethod update = new CommandMethod("update");
             CommandMethod get = new CommandMethod("get");
@@ -69,7 +77,8 @@ namespace SundryTool.Content
 
             get.Runing += _ => PrintClientUUID();
 
-            return new List<CommandObject>() { uuid };
+            cos.Add(uuid);
+            return cos;
         }
     }
 }
