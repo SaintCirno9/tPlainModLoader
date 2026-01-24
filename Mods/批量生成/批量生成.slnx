@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="../ChatAi/ChatAi/ChatAi/ChatAi.csproj" />
+  <Project Path="../CreativeInventory/CreativeInventory/CreativeInventory/CreativeInventory.csproj" />
+  <Project Path="../OptimizeAndTool/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool.csproj" />
+  <Project Path="../PixelArt/PixelArt/PixelArt/PixelArt.csproj" />
+  <Project Path="../QuickButton/QuickButton/QuickButton/QuickButton.csproj" />
+  <Project Path="../QuickSetting/QuickSetting/QuickSetting/QuickSetting.csproj" />
+  <Project Path="../Skil/Skil/Skil/Skil.csproj" />
+  <Project Path="../SundryTool/SundryTool/SundryTool/SundryTool.csproj" />
+  <Project Path="../SuspiciousPlayer/SuspiciousPlayer/SuspiciousPlayer/SuspiciousPlayer.csproj" />
+  <Project Path="../WandsTool/WandsTool/WandsTool/WandsTool.csproj" />
+</Solution>
