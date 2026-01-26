@@ -64,7 +64,11 @@ namespace tContentPatch.Command
                 if (ip != "127.0.0.1") return false;
                 Process pr = UsePortWithProcess(port);
                 if (pr == null) return false;
-                if (pr.MainWindowTitle != JoinWindowTile) return false;
+                if (pr.MainWindowTitle != JoinWindowTile)
+                {
+                    Console.WriteLine($"窗口名不匹配:{pr.MainWindowTitle}");
+                    return false;
+                }
 
                 return true;
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using tContentPatch.Utils.TCPUtils;
@@ -37,6 +38,9 @@ namespace tPlainModLoaderInjector
 
         public static void Run()
         {
+            Console.InputEncoding = Encoding.Unicode;//为啥是这格式啊
+            Console.OutputEncoding = Encoding.Unicode;
+
             while (true)
             {
                 try
