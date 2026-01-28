@@ -10,7 +10,7 @@ namespace tContentPatch
     public partial class ContentPatch
     {
         /// <summary/>
-        public const string VersionTPlainModLoader = "1-beta6-alpha1-t1.4.5";
+        public const string VersionTPlainModLoader = "1-beta6-alpha2-t1.4.5";
         /// <summary/>
         public static string ModDirectory { get; private set; } = null;
         /// <summary/>
