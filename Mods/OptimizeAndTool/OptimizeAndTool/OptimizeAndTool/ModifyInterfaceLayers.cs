@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
@@ -42,7 +43,9 @@ namespace OptimizeAndTool
 
         public override void DrawMenuPrefix(GameTime gameTime)
         {
+            Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.None, Main.Rasterizer, null, Main.UIScaleMatrix);
             ui_menu.Draw(Main.spriteBatch, gameTime);
+            Main.spriteBatch.End();
         }
     }
 }
