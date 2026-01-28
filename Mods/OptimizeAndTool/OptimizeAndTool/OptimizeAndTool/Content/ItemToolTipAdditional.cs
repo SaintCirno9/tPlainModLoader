@@ -1,4 +1,5 @@
 ﻿using CommandHelp;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -37,7 +38,7 @@ namespace OptimizeAndTool.Content
             return uis;
         }
 
-        public override void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref bool[] preFixLine, ref bool[] badPreFixLine)
+        public override void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors)
         {
             if (Enable.val == false) return;
 

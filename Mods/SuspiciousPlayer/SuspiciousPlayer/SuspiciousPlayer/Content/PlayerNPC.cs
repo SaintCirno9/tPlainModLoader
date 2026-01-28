@@ -65,7 +65,7 @@ namespace SuspiciousPlayer.Content.Event1
                 if (rect1.Intersects(rect2))
                 {
                     This.Kill();
-                    player.AddBuff(137, 1500, quiet: false);
+                    player.AddBuff(137, 1500, false);
                     NetMessage.SendData(50, number: player.whoAmI);//buff
                 }
             }

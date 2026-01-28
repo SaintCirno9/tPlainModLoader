@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Linq;
+using System.Reflection;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
@@ -39,8 +40,8 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
                 LocalizedText lt = Language.GetText("UI.ResourcePacks");
                 if (lt.Value == Language.GetText("UI.Workshop").Value) return;
 
-                System.Reflection.PropertyInfo pi = typeof(LocalizedText).GetProperty("Value");
-                pi.SetValue(lt, Language.GetText("UI.Workshop").Value);
+                MethodInfo mi = typeof(LocalizedText).GetMethod("SetValue", BindingFlags.Instance | BindingFlags.NonPublic);
+                mi.Invoke(lt, new object[] { Language.GetText("UI.Workshop").Value });
             }
         }
 
@@ -49,7 +50,7 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
         {
             internal static void Postfix(UIWorkshopHub __instance)
             {
-                System.Reflection.FieldInfo fi = typeof(UIWorkshopHub).GetField("_descriptionText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                FieldInfo fi = typeof(UIWorkshopHub).GetField("_descriptionText", BindingFlags.NonPublic | BindingFlags.Instance);
                 UIText _descriptionText = (UIText)fi.GetValue(__instance);
 
                 Action ShowOptionDescription = () => _descriptionText.SetText("管理模组的启用, 设置和删除");

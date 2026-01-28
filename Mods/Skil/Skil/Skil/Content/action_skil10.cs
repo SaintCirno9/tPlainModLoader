@@ -61,8 +61,7 @@ namespace Skil.Content
                 skil10_state1_count = 0;
                 skil10_state = 1;
             }
-            else
-            if (skil10_state == 1)
+            else if (skil10_state == 1)
             {
                 if (Main.GameUpdateCount % 4 != 0) return;
 
@@ -81,7 +80,10 @@ namespace Skil.Content
                 Item item = new Item();
                 item.SetDefaults(Utils.getRand(1, Terraria.ID.ItemID.Count));
 
-                Chest.VisualizeChestTransfer(p, skil10_position, item, 0);
+                Chest.ItemTransferVisualizationSettings settings = new Chest.ItemTransferVisualizationSettings();
+                settings.TransitionIn = true;
+                settings.Fullbright = true;
+                Chest.VisualizeChestTransfer(p, skil10_position, item.type, settings);
 
                 if (++skil10_state1_count > 30)
                 {
@@ -89,8 +91,7 @@ namespace Skil.Content
                     skil10_state = 2;
                 }
             }
-            else
-            if (skil10_state == 2)
+            else if (skil10_state == 2)
             {
                 if (Main.GameUpdateCount % 5 != 0) return;
 
@@ -108,8 +109,7 @@ namespace Skil.Content
                     skil10_state = 3;
                 }
             }
-            else
-            if (skil10_state == 3)
+            else if (skil10_state == 3)
             {
                 Vector2 v = -Vector2.UnitY * Utils.getRand(4, 9);
                 v = v.RotatedBy(Utils.getRand(-45, 45) * MathHelper.TwoPi / 360);

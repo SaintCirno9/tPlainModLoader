@@ -178,8 +178,8 @@ namespace CreativeInventory
             {
                 ItemsSort_Gets2(ID_Tile, ID_Tile_wall)?.Items?.Add(i.type);
             }
-            else if (i.type <= ItemID.Sets.SortingPriorityBossSpawns?.Length
-                && ItemID.Sets.SortingPriorityBossSpawns[i.type] != -1)//bossÕÙ»½Îï
+            else if (i.type <= ItemID.Sets.SortingPriorityMiscBossBags?.Length
+                && ItemID.Sets.SortingPriorityMiscBossBags[i.type] != -1)//bossÕÙ»½Îï
             {
                 ItemsSort_Gets2(ID_BossSpawn)?.Items?.Add(i.type);
             }

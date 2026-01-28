@@ -46,6 +46,6 @@ namespace tContentPatch
         /// <summary/>
         public virtual void DrawMenuPrefix(GameTime gameTime) { }
         /// <summary/>
-        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref bool[] preFixLine, ref bool[] badPreFixLine) { }
+        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
     }
 }

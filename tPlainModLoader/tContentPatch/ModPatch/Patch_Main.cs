@@ -128,12 +128,12 @@ namespace tContentPatch.ModPatch
         [HarmonyPatch("MouseText_DrawItemTooltip_GetLinesInfo")]
         [HarmonyPostfix]
         public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine,
-            ref float oldKB, ref int numLines, ref string[] toolTipLine, ref bool[] preFixLine, ref bool[] badPreFixLine)
+            ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors)
         {
             try
             {
                 foreach (PatchMain i in mod) i.MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref researchLine,
-                    ref oldKB, ref numLines, ref toolTipLine, ref preFixLine, ref badPreFixLine);
+                    ref oldKB, ref numLines, ref toolTipLine, ref lineColors);
             }
             catch (Exception ex)
             {

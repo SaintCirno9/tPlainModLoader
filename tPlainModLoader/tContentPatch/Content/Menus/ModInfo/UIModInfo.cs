@@ -135,6 +135,7 @@ namespace tContentPatch.Content.Menus.ModInfo
 
                 for (int i = 0; i < lineAmount + 1; ++i)
                 {
+                    if (ss[i] == null) continue;
                     ui_sv.AddChild(new UIText(ss[i]));
                 }
             }

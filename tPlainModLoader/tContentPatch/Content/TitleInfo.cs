@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.OS;
 using System;
+using System.Collections.Generic;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -77,7 +78,7 @@ namespace tContentPatch.Content
             color.B = color.G;
             color.A = (byte)(color.A * 0.3f);
 
-            TextSnippet[] snippets = ChatManager.ParseMessage(text, color).ToArray();
+            List<TextSnippet> snippets = ChatManager.ParseMessage(text, color);
             ChatManager.ConvertNormalSnippets(snippets);
 
             ChatManager.DrawColorCodedStringShadow(Main.spriteBatch, FontAssets.MouseText.Value, snippets,

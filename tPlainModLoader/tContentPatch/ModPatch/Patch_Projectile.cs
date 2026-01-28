@@ -60,17 +60,19 @@ namespace tContentPatch.ModPatch
             typeof(IEntitySource),
             typeof(float), typeof(float), typeof(float), typeof(float),
             typeof(int), typeof(int), typeof(float), typeof(int),
-            typeof(float),typeof(float),typeof(float)
+            typeof(float),typeof(float),typeof(float),
+            typeof(NewProjectileModifier)
         })]
         [HarmonyPostfix]
         public static void NewProjectilePostfix(int __result,
             IEntitySource spawnSource,
             float X, float Y, float SpeedX, float SpeedY,
             int Type, int Damage, float KnockBack, int Owner,
-            float ai0, float ai1, float ai2)
+            float ai0, float ai1, float ai2,
+            NewProjectileModifier modifer)
         {
             mod.ForTry(item => item.NewProjectilePostfix(
-                __result, spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2));
+                __result, spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2, modifer));
         }
     }
 }

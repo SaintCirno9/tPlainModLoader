@@ -29,10 +29,11 @@ namespace CreativeInventory.CreativeInventory
             {
                 Player player = Main.LocalPlayer;
                 if (player != null) player.mouseInterface = true;
-                ItemSlot.OverrideHover(ref _item, _itemSlotContext);
-                ItemSlot.LeftClick(ref _item, _itemSlotContext);
-                ItemSlot.RightClick(ref _item, _itemSlotContext);
-                ItemSlot.MouseHover(ref _item, _itemSlotContext);
+                Item[] items = new Item[] { _item };
+                ItemSlot.OverrideHover(items, _itemSlotContext);
+                ItemSlot.LeftClick(items, _itemSlotContext);
+                ItemSlot.RightClick(items, _itemSlotContext);
+                ItemSlot.MouseHover(items, _itemSlotContext);
             }
         }
 

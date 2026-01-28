@@ -29,7 +29,7 @@ namespace tContentPatch
         /// <summary/>
         public virtual void NewProjectilePostfix(int result, IEntitySource spawnSource,
             float X, float Y, float SpeedX, float SpeedY,
-            int Type, int Damage, float KnockBack, int Owner, float ai0, float ai1, float ai2)
+            int Type, int Damage, float KnockBack, int Owner, float ai0, float ai1, float ai2, NewProjectileModifier modifer)
         { }
     }
 }
