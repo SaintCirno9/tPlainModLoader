@@ -26,14 +26,8 @@ namespace tContentPatch.Content
 
             NeedIME = false;
 
-            //Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-            Main.spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, Main.UIScaleMatrix);
-            //Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.SamplerStateForCursor, DepthStencilState.None, RasterizerState.CullCounterClockwise, null, Main.UIScaleMatrix);
-
             Main.instance.SetIMEPanelAnchor(IME_P, 0f);
             Main.instance.DrawIMEPanel();//输入法
-
-            Main.spriteBatch.End();
         }
     }
 }
