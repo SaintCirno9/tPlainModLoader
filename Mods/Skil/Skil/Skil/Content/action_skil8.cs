@@ -65,7 +65,7 @@ namespace Skil.Content
             if (Types.val > 2) Types.val = 2;
 
             //已生成法阵的行为
-            a1_skil8_type2_attack_update();
+            a1_skil8_type2_attack_update(player);
             List<List<Projectile>> skil8_ps_del = new List<List<Projectile>>();
             for (int i = 0; i < skil8_ps.Count; ++i)
             {
@@ -97,9 +97,9 @@ namespace Skil.Content
                 //攻击
                 switch (type)
                 {
-                    case 0: a1_skil8_type0_attack(ref attackCount, position, velocity); break;
-                    case 1: a1_skil8_type1_attack(ref attackCount, position, velocity); break;
-                    case 2: a1_skil8_type2_attack(ref attackCount, position, velocity); break;
+                    case 0: a1_skil8_type0_attack(player, ref attackCount, position, velocity); break;
+                    case 1: a1_skil8_type1_attack(player, ref attackCount, position, velocity); break;
+                    case 2: a1_skil8_type2_attack(player, ref attackCount, position, velocity); break;
                     default: break;
                 }
 
@@ -182,7 +182,7 @@ namespace Skil.Content
 
                 if (Main.GameUpdateCount % cd != 0) return;
 
-                int id = Projectile.NewProjectile(null, projInfo.position, projInfo.velocity, projInfo.type, 0, 0,
+                int id = Projectile.NewProjectile(null, projInfo.position, projInfo.velocity, projInfo.type, 0, 0, player.whoAmI,
                     ai1: projInfo.ai[1]);
 
                 NetMessage.SendData(27, -1, -1, null, id);
@@ -365,7 +365,7 @@ namespace Skil.Content
 
             return spawnInfo;
         }
-        private static void a1_skil8_type0_attack(ref int attackCount, Vector2 position, Vector2 velocity)
+        private static void a1_skil8_type0_attack(Player player, ref int attackCount, Vector2 position, Vector2 velocity)
         {
             if (Main.GameUpdateCount % 8 == 0)
             {
@@ -374,7 +374,7 @@ namespace Skil.Content
                 //612日耀ai1设置太大在服务器会出不来
                 //953破晓ai1小于1大于2会在服务器出不来
                 //978火山
-                int id = Projectile.NewProjectile(null, position, velocity, 953, SkilListControl1.damage.val, 1, ai1: scale);
+                int id = Projectile.NewProjectile(null, position, velocity, 953, SkilListControl1.damage.val, 1, player.whoAmI, ai1: scale);
                 NetMessage.SendData(27, -1, -1, null, id);
 
                 ++attackCount;
@@ -462,7 +462,7 @@ namespace Skil.Content
 
             return spawnInfo;
         }
-        private static void a1_skil8_type1_attack(ref int attackCount, Vector2 position, Vector2 velocity)
+        private static void a1_skil8_type1_attack(Player player, ref int attackCount, Vector2 position, Vector2 velocity)
         {
             if (Main.GameUpdateCount % 5 == 0)
             {
@@ -485,7 +485,7 @@ namespace Skil.Content
                 position += Vector2.Normalize(velocity) * 80;//向前一点
 
                 //974魔光剑, ai0用于修改大小
-                int id = Projectile.NewProjectile(null, position, velocity, 974, SkilListControl1.damage.val, 1, ai0: scale);
+                int id = Projectile.NewProjectile(null, position, velocity, 974, SkilListControl1.damage.val, 1, player.whoAmI, ai0: scale);
                 //NetMessage.SendData(27, -1, -1, null, id);
 
                 ++attackCount;
@@ -610,7 +610,7 @@ namespace Skil.Content
             return spawnInfo;
         }
         private static List<Projectile> a1_skil8_type2_attack_update_ps = new List<Projectile>();
-        private static void a1_skil8_type2_attack_update()
+        private static void a1_skil8_type2_attack_update(Player player)
         {
             List<Projectile> ps = a1_skil8_type2_attack_update_ps;
 
@@ -634,7 +634,7 @@ namespace Skil.Content
 
                 }
 
-                Projectile.NewProjectile(null, p.Center, Vector2.Normalize(p.Center - new Vector2(p.ai[0], p.ai[1])) * 4, 978, p.damage, 1);
+                Projectile.NewProjectile(null, p.Center, Vector2.Normalize(p.Center - new Vector2(p.ai[0], p.ai[1])) * 4, 978, p.damage, 1, player.whoAmI);
 
                 ps.RemoveAt(i);
                 i--;
@@ -650,13 +650,13 @@ namespace Skil.Content
                 v *= getRand(50, 300) * 0.01f;
 
                 int id = Projectile.NewProjectile(null, p.Center, v,
-                    p.type, p.damage - 100, p.knockBack);
+                    p.type, p.damage - 100, p.knockBack, player.whoAmI);
                 ps[i] = Main.projectile[id];
                 ps[i].localAI[2] = p.localAI[2] - 1;
                 ps[i].tileCollide = false;
             }
         }
-        private static void a1_skil8_type2_attack(ref int attackCount, Vector2 position, Vector2 velocity)
+        private static void a1_skil8_type2_attack(Player player, ref int attackCount, Vector2 position, Vector2 velocity)
         {
             if (Main.GameUpdateCount % 5 == 0)
             {
@@ -672,7 +672,7 @@ namespace Skil.Content
 
                 velocity = Vector2.Normalize(velocity) * getRand(50, 300) * 0.01f;
 
-                int id = Projectile.NewProjectile(null, position, velocity, 434, 700, 1);
+                int id = Projectile.NewProjectile(null, position, velocity, 434, 700, 1, player.whoAmI);
                 Projectile p = Main.projectile[id];
                 p.localAI[2] = getRand(2, 4);
                 p.tileCollide = false;

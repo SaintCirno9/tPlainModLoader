@@ -79,7 +79,7 @@ namespace Skil.Content
 
             if (skil1_ps.Count < Count.val)
             {
-                int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, projId, SkilListControl1.damage.val, 1);
+                int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, projId, SkilListControl1.damage.val, 1, player.whoAmI);
                 skil1_ps.Add(Main.projectile[id]);
             }
 

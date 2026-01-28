@@ -61,7 +61,7 @@ namespace SuspiciousPlayer.Content.Event1
 
             if (Main.GameUpdateCount % 4 == 0)
             {
-                ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)24, new ParticleOrchestraSettings
+                ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)25, new ParticleOrchestraSettings
                 {
                     PositionInWorld = ActionLunarTowerDead.pos,
                 });

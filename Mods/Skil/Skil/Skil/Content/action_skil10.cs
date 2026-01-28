@@ -65,7 +65,7 @@ namespace Skil.Content
             {
                 if (Main.GameUpdateCount % 4 != 0) return;
 
-                ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)24, new ParticleOrchestraSettings
+                ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)25, new ParticleOrchestraSettings
                 {
                     PositionInWorld = skil10_position,
                 });
@@ -101,7 +101,7 @@ namespace Skil.Content
 
                 float scale = 1 + Utils.getRandFloat();
 
-                _ = Projectile.NewProjectile(null, p, Vector2.Zero, 953, SkilListControl1.damage.val, 1, ai1: scale);
+                _ = Projectile.NewProjectile(null, p, Vector2.Zero, 953, SkilListControl1.damage.val, 1, player.whoAmI, ai1: scale);
 
                 if (++skil10_state2_count > 6)
                 {
@@ -114,7 +114,7 @@ namespace Skil.Content
                 Vector2 v = -Vector2.UnitY * Utils.getRand(4, 9);
                 v = v.RotatedBy(Utils.getRand(-45, 45) * MathHelper.TwoPi / 360);
 
-                _ = Projectile.NewProjectile(null, skil10_position, v, 968, SkilListControl1.damage.val, 1, ai1: Utils.getRand(0, 24));
+                _ = Projectile.NewProjectile(null, skil10_position, v, 968, SkilListControl1.damage.val, 1, player.whoAmI, ai1: Utils.getRand(0, 24));
 
                 if (--skil10_state3_count < 1) skil10_state = 0;
             }

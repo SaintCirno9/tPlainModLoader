@@ -56,14 +56,14 @@ namespace Skil.Content
             {
                 if (Main.mouseRight && Main.mouseRightRelease && player.mouseInterface == false)
                 {
-                    int id = Projectile.NewProjectile(null, Main.MouseWorld, Vector2.Zero, 244, 0, 0);
+                    int id = Projectile.NewProjectile(null, Main.MouseWorld, Vector2.Zero, 244, 0, 0, player.whoAmI);
                     skil11_p = Main.projectile[id];
                 }
             }
             else
             if (Utils.projExist(skil11_p, 244, player) == false)
             {
-                int id = Projectile.NewProjectile(null, skil11_p.Center, Vector2.Zero, 244, 0, 0);
+                int id = Projectile.NewProjectile(null, skil11_p.Center, Vector2.Zero, 244, 0, 0, player.whoAmI);
                 skil11_p = Main.projectile[id];
             }
             #endregion
@@ -121,7 +121,7 @@ namespace Skil.Content
                     if (damage > 900) damage = 900;
                     else if (damage < 50) damage = 50;
 
-                    int id = Projectile.NewProjectile(null, position, velocity * ratio, 434, damage, 1);
+                    int id = Projectile.NewProjectile(null, position, velocity * ratio, 434, damage, 1, player.whoAmI);
                     skil11_attack_p = Main.projectile[id];
                 }
             }
@@ -129,9 +129,9 @@ namespace Skil.Content
             {
                 if (Vector2.Distance(skil11_attack_p.Center, skil11_attack_p_targetP) > 5)//雷没到目标位置, 说明击中了物体
                 {
-                    _ = Projectile.NewProjectile(null, skil11_attack_p.Center - new Vector2(0, 72), Vector2.Zero, 695, skil11_attack_p.damage, 1);//爆炸
+                    _ = Projectile.NewProjectile(null, skil11_attack_p.Center - new Vector2(0, 72), Vector2.Zero, 695, skil11_attack_p.damage, 1, player.whoAmI);//爆炸
 
-                    _ = Projectile.NewProjectile(null, skil11_attack_p.Center, Vector2.Zero, 612, 0, 0);
+                    _ = Projectile.NewProjectile(null, skil11_attack_p.Center, Vector2.Zero, 612, 0, 0, player.whoAmI);
 
                     skil11_attack_p = null;
                 }
@@ -151,7 +151,7 @@ namespace Skil.Content
                         int damage = skil11_attack_p.damage - 100;
                         if (damage < 50) damage = 50;
 
-                        int id = Projectile.NewProjectile(null, position, velocity * ratio, 434, damage, 1);
+                        int id = Projectile.NewProjectile(null, position, velocity * ratio, 434, damage, 1, player.whoAmI);
                         skil11_attack_p = Main.projectile[id];
                     }
                     else

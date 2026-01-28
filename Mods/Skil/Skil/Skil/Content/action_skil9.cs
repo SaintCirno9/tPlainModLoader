@@ -133,7 +133,7 @@ namespace Skil.Content
                 }
             }
 
-            int id = Projectile.NewProjectile(null, position, velocity, 434, SkilListControl1.damage.val, 1);
+            int id = Projectile.NewProjectile(null, position, velocity, 434, SkilListControl1.damage.val, 1, player.whoAmI);
             Main.projectile[id].tileCollide = TileCollide.val;
 
             ++skil9_i;

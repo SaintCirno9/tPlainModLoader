@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using tContentPatch;
 using Terraria;
+using Terraria.Map;
 using Terraria.UI;
 
 namespace SundryTool.Content.Function2
@@ -143,21 +144,30 @@ namespace SundryTool.Content.Function2
         }
         private static void lightMap()
         {
-            for (int i = 0; i < Main.maxTilesX; i++)
+            try
             {
-                for (int j = 0; j < Main.maxTilesY; j++)
+                for (int x = 0; x < Main.Map.MaxWidth; x++)
                 {
-                    if (playState.Update_noPlay)
+                    for (int y = 0; y < Main.Map.MaxHeight; y++)
                     {
-                        Main.refreshMap = true;
-                        return;
-                    }
+                        if (playState.Update_noPlay)
+                        {
+                            Main.refreshMap = true;
+                            return;
+                        }
 
-                    if (WorldGen.InWorld(i, j))
-                        Main.Map.Update(i, j, 255);
+                        MapTile mt = Main.Map[x, y];
+                        mt.Light = byte.MaxValue;
+                        Main.Map.SetTile(x, y, ref mt);
+                    }
                 }
+
+                Main.refreshMap = true;
             }
-            Main.refreshMap = true;
+            catch
+            {
+                Main.NewText("更新光照失败");
+            }
         }
     }
 }

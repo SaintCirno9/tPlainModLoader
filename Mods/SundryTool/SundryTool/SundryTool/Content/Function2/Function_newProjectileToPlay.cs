@@ -39,7 +39,7 @@ namespace SundryTool.Content.Function2
             if (player?.active == false) return;
 
             int i = Projectile.NewProjectile(null, player.Center, Vector2.Zero,
-                nptp_id.val, Function.functionDamage.val, 1);
+                nptp_id.val, Function.functionDamage.val, 1, player.whoAmI);
             Main.projectile[i].timeLeft = 50;
         }
 

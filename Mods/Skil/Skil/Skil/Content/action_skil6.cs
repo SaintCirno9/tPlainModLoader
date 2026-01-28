@@ -62,7 +62,7 @@ namespace Skil.Content
             {
                 if (Utils.projExist(skil6_ps[i], ID.val, player)) continue;
 
-                int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, ID.val, SkilListControl1.damage.val, 1);
+                int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, ID.val, SkilListControl1.damage.val, 1, player.whoAmI);
 
                 skil6_ps[i] = Main.projectile[id];
 

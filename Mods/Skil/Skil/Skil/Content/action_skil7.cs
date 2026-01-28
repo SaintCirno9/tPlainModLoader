@@ -53,7 +53,7 @@ namespace Skil.Content
             v = v.RotatedBy((MathHelper.TwoPi / 360) * Utils.getRand(-45, 45));
             v *= Utils.getRand(5, 14);
 
-            Projectile.NewProjectile(null, p, v, projId, SkilListControl1.damage.val, 1);
+            Projectile.NewProjectile(null, p, v, projId, SkilListControl1.damage.val, 1, player.whoAmI);
         }
     }
 }

@@ -86,7 +86,7 @@ namespace Skil.Content
             player.Center = spawnPos;
 
             NetMessage.SendData(13, number: player.whoAmI);
-            ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)(one ? 31 : 32), new ParticleOrchestraSettings
+            ParticleOrchestrator.BroadcastOrRequestParticleSpawn((ParticleOrchestraType)(one ? 32 : 33), new ParticleOrchestraSettings
             {
                 PositionInWorld = spawnPos,
             });

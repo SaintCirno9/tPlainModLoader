@@ -39,7 +39,7 @@ namespace SundryTool.Content.Function2
                 target.Center;
 
             int id = Projectile.NewProjectile(null, targetP, Vector2.Zero,
-                102, 0, 0);
+                102, 0, 0, This.whoAmI);
             Main.projectile[id].Damage();
         }
 

@@ -79,9 +79,9 @@ namespace Skil.Content
                 {
                     switch (Sequence.val[skil13_sequenceIndex])
                     {
-                        case '0': isOk = a1_skil13_type0_update(isOne, skil13_targetP); break;
-                        case '1': isOk = a1_skil13_type1_update(isOne, skil13_targetP); break;
-                        case '2': isOk = a1_skil13_type2_update(isOne, skil13_targetP); break;
+                        case '0': isOk = a1_skil13_type0_update(player, isOne, skil13_targetP); break;
+                        case '1': isOk = a1_skil13_type1_update(player, isOne, skil13_targetP); break;
+                        case '2': isOk = a1_skil13_type2_update(player, isOne, skil13_targetP); break;
                         default: isOk = true; break;
                     }
 
@@ -112,7 +112,7 @@ namespace Skil.Content
         private static Vector2 skil13_spawnLen_lock_p;
         private static Vector2 skil13_spawnLen_lock_v;
         private static int skil13_spawnLen_lock_count = 0;
-        private static Projectile a1_skil13_spawnLen_lock(bool one = false, float x = 0, float y = 0, float vx = 0, float vy = 0)
+        private static Projectile a1_skil13_spawnLen_lock(Player player, bool one = false, float x = 0, float y = 0, float vx = 0, float vy = 0)
         {
             if (one)
             {
@@ -135,15 +135,15 @@ namespace Skil.Content
 
             ++skil13_spawnLen_lock_count;
 
-            int id = Projectile.NewProjectile(null, p, -v, 876, 0, 0);
+            int id = Projectile.NewProjectile(null, p, -v, 876, 0, 0, player.whoAmI);
 
             return Main.projectile[id];
         }
 
         private static float skil13_spawnProj_color = 0;
-        private static void a1_skil13_spawnProj932(Vector2 p, Vector2 v)
+        private static void a1_skil13_spawnProj932(Player player, Vector2 p, Vector2 v)
         {
-            Projectile.NewProjectile(null, p, v, 932, SkilListControl1.damage.val, 1, ai1: skil13_spawnProj_color);
+            Projectile.NewProjectile(null, p, v, 932, SkilListControl1.damage.val, 1, player.whoAmI, ai1: skil13_spawnProj_color);
 
             if ((skil13_spawnProj_color += 0.1f) > 1) skil13_spawnProj_color = 0;
         }
@@ -153,7 +153,7 @@ namespace Skil.Content
         private static int skil13_types_lineRowThis = 0;
         private static List<Projectile> skil13_types_spawnInfo = new List<Projectile>();
         private static List<Projectile> skil13_types_clearP = new List<Projectile>();
-        private static bool a1_skil13_types_update(bool isOne, Vector2 spawnP, Vector2 spawnV, int projSpeed, int lineLen, int lineRow, out bool lineNext)
+        private static bool a1_skil13_types_update(Player player, bool isOne, Vector2 spawnP, Vector2 spawnV, int projSpeed, int lineLen, int lineRow, out bool lineNext)
         {
             lineNext = false;
 
@@ -175,11 +175,11 @@ namespace Skil.Content
                 {
                     skil13_types_spawnInfo.Add(new Projectile() { Center = spawnP, velocity = spawnV });
 
-                    p = a1_skil13_spawnLen_lock(true, spawnP.X, spawnP.Y, spawnV.X, spawnV.Y);
+                    p = a1_skil13_spawnLen_lock(player, true, spawnP.X, spawnP.Y, spawnV.X, spawnV.Y);
                 }
                 else
                 {
-                    p = a1_skil13_spawnLen_lock();
+                    p = a1_skil13_spawnLen_lock(player);
                 }
 
                 if (p != null) skil13_types_clearP.Add(p);
@@ -204,7 +204,7 @@ namespace Skil.Content
                     Projectile info = skil13_types_spawnInfo.First();
                     skil13_types_spawnInfo.RemoveAt(0);
 
-                    a1_skil13_spawnProj932(info.Center, Vector2.Normalize(info.velocity) * projSpeed);
+                    a1_skil13_spawnProj932(player, info.Center, Vector2.Normalize(info.velocity) * projSpeed);
                 }
                 else
                 {
@@ -223,7 +223,7 @@ namespace Skil.Content
         private static Vector2 skil13_type0_p;
         private static Vector2 skil13_type0_pOff;
         private static Vector2 skil13_type0_v;
-        private static bool a1_skil13_type0_update(bool isOne, Vector2 targetP)
+        private static bool a1_skil13_type0_update(Player player, bool isOne, Vector2 targetP)
         {
             int lineLen = 10;
             int lineRow = 5;
@@ -244,7 +244,7 @@ namespace Skil.Content
             Vector2 spawnP = skil13_type0_p;
             Vector2 spawnV = skil13_type0_v;
 
-            bool isOk = a1_skil13_types_update(isOne, spawnP, spawnV, 44, lineLen, lineRow, out bool lineNext);
+            bool isOk = a1_skil13_types_update(player, isOne, spawnP, spawnV, 44, lineLen, lineRow, out bool lineNext);
 
             if (isOk) return true;
 
@@ -261,7 +261,7 @@ namespace Skil.Content
         private static Vector2 skil13_type1_v;
         private static int skil13_type1_type = 0;
         private static int skil13_type1_lineRowThis = 0;
-        private static bool a1_skil13_type1_update(bool isOne, Vector2 targetP)
+        private static bool a1_skil13_type1_update(Player player, bool isOne, Vector2 targetP)
         {
             int lineLen = 8;
             int lineRow = 7;
@@ -291,7 +291,7 @@ namespace Skil.Content
             Vector2 spawnV = targetP - spawnP;
             spawnV = spawnV.RotatedBy((skil13_type1_lineRowThis - (lineRow / 2)) / 30f);
 
-            bool isOk = a1_skil13_types_update(isOne, spawnP, spawnV, 55, lineLen, lineRow, out bool lineNext);
+            bool isOk = a1_skil13_types_update(player, isOne, spawnP, spawnV, 55, lineLen, lineRow, out bool lineNext);
 
             if (isOk) return true;
 
@@ -306,7 +306,7 @@ namespace Skil.Content
         }
 
         private static int skil13_type2_countThis = 0;
-        private static bool a1_skil13_type2_update(bool isOne, Vector2 targetP)
+        private static bool a1_skil13_type2_update(Player player, bool isOne, Vector2 targetP)
         {
             int count = 30;
 
@@ -320,7 +320,7 @@ namespace Skil.Content
             Vector2 spawnP = targetP + off;
             Vector2 spawnV = off.RotatedBy(2.5);
 
-            bool isOk = a1_skil13_types_update(isOne, spawnP, spawnV, 44, 1, count, out bool lineNext);
+            bool isOk = a1_skil13_types_update(player, isOne, spawnP, spawnV, 44, 1, count, out bool lineNext);
 
             if (isOk) return true;
 

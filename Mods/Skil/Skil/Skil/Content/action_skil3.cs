@@ -207,7 +207,7 @@ namespace Skil.Content
                 if (skil3_state1_damage > SkilListControl1.damage.val) skil3_state1_damage = SkilListControl1.damage.val;
             }
 
-            int id = Projectile.NewProjectile(null, position, velocity, 434, skil3_state1_damage, 1);
+            int id = Projectile.NewProjectile(null, position, velocity, 434, skil3_state1_damage, 1, player.whoAmI);
             skil3_state1_oldP = Main.projectile[id];
             skil3_state1_oldP.tileCollide = false;
         }

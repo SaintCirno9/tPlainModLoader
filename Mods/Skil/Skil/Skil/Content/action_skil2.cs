@@ -134,7 +134,7 @@ namespace Skil.Content
                         if (Main.GameUpdateCount % 10 != 0) break;//生成cd
 
                         //ai1: 射弹大小缩放
-                        int id = Projectile.NewProjectile(null, skil2_pet.Center, Vector2.Zero, extraAttackType, SkilListControl1.damage.val, 1, ai1: 1);
+                        int id = Projectile.NewProjectile(null, skil2_pet.Center, Vector2.Zero, extraAttackType, SkilListControl1.damage.val, 1, player.whoAmI, ai1: 1);
                         skil2_extraAttack_ps[i] = Main.projectile[id];
 
                         break;
@@ -185,7 +185,7 @@ namespace Skil.Content
 
             int projId = skil3.Enable.val ? 440 : 606;
 
-            Projectile.NewProjectile(null, skil2_pet.Center, targetP * 20, projId, SkilListControl1.damage.val, 1);
+            Projectile.NewProjectile(null, skil2_pet.Center, targetP * 20, projId, SkilListControl1.damage.val, 1, player.whoAmI);
         }
         public static void a1_skil2_false(Player player)
         {

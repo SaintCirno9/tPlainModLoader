@@ -136,7 +136,7 @@ namespace Skil.Content
                 {
                     if (isOneSpawn)
                     {
-                        int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, 459, SkilListControl1.damage.val, 1);
+                        int id = Projectile.NewProjectile(null, player.Center, Vector2.Zero, 459, SkilListControl1.damage.val, 1, player.whoAmI);
                         skil12_ps[i] = Main.projectile[id];
                         isOneSpawn = false;
                     }

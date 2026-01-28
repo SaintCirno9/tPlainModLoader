@@ -14,6 +14,7 @@ namespace SundryTool.Content.Function2
     {
         public static GetSetReset<bool> particleSpawn = new GetSetReset<bool>();
         public static GetSetReset<int> particleSpawn_set = new GetSetReset<int>();
+        public static GetSetReset<int> particleSpawn_info = new GetSetReset<int>();
         public static GetSetReset<int> particleSpawn_cd = new GetSetReset<int>();
 
         public static List<CommandObject> GetCO()
@@ -22,7 +23,8 @@ namespace SundryTool.Content.Function2
             {
                 CommandBuild.get3("particleSpawn", particleSpawn,
                 new CommandHRA<int>("type", particleSpawn_set, new CommandInt()),
-                new CommandHRA<int>("cd", particleSpawn_cd, new CommandInt())),
+                new CommandHRA<int>("info", particleSpawn_info, new CommandInt())),
+                new CommandHRA<int>("cd", particleSpawn_cd, new CommandInt()),
             };
 
             return cos;
@@ -32,7 +34,8 @@ namespace SundryTool.Content.Function2
         {
             List<UIElement> uis = new List<UIElement>
             {
-                UIBuild.get1(particleSpawn, particleSpawn_set, int.Parse, "类型<int>", text: "生成粒子"),
+                UIBuild.get1(particleSpawn, particleSpawn_set, int.Parse, "类型<int>有的可能有问题:39,56-59", text: "生成粒子"),
+                new UI.UIItemTextBoxBind<int>(particleSpawn_info, int.Parse, null, "生成粒子信息"){ MouseText = "<int>" },
                 new UI.UIItemTextBoxBind<int>(particleSpawn_cd, int.Parse, null, "生成粒子cd"){ MouseText = "<int>" },
             };
 
@@ -45,7 +48,7 @@ namespace SundryTool.Content.Function2
             if (particleSpawn.val == false) return;
 
             if (particleSpawn_set.val < 0) particleSpawn_set.val = 0;
-            else if (particleSpawn_set.val > 32) particleSpawn_set.val = 32;
+            else if (particleSpawn_set.val > (int)ParticleOrchestraType.Count) particleSpawn_set.val = (int)ParticleOrchestraType.Count;
             if (particleSpawn_cd.val < 1) particleSpawn_cd.val = 1;
 
             if (Main.mouseLeft == false || This.mouseInterface) return;
@@ -57,6 +60,7 @@ namespace SundryTool.Content.Function2
             ParticleOrchestrator.BroadcastOrRequestParticleSpawn(type, new ParticleOrchestraSettings
             {
                 PositionInWorld = spawnPos,
+                UniqueInfoPiece = particleSpawn_info.val,
             });
         }
     }
