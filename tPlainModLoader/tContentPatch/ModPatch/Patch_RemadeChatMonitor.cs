@@ -15,6 +15,13 @@ namespace tContentPatch.ModPatch
         public Patch_RemadeChatMonitor() : base(mod) { }
 
         [HarmonyPatch("DrawChat")]
+        [HarmonyPrefix]
+        public static void DrawChatPrefix(bool drawingPlayerChat)
+        {
+            mod.ForTry(item => item.DrawChatPrefix(drawingPlayerChat));
+        }
+
+        [HarmonyPatch("DrawChat")]
         [HarmonyPostfix]
         public static void DrawChatPostfix(bool drawingPlayerChat)
         {

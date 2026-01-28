@@ -4,6 +4,8 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using tContentPatch;
+using Terraria;
+using Terraria.GameContent.UI.Chat;
 using Terraria.UI;
 using Terraria.UI.Chat;
 
@@ -35,27 +37,27 @@ namespace OptimizeAndTool.Content
             return uis;
         }
 
-        public static bool OnAddNewMessage(string text, Color color, int widthLimitInPixels = -1)
+        public static void OnAddNewMessage(ref string text, Color color, int widthLimitInPixels = -1)
         {
             if (Enable.val == false)
             {
                 cleanRepeatText_oldTextCount = 0;
-                return true;
+                return;
             }
 
-            return cleanRepeatText(text, color, widthLimitInPixels);
+            cleanRepeatText(ref text, color, widthLimitInPixels);
         }
 
-        private static bool cleanRepeatText(string text, Color color, int widthLimitInPixels = -1)
+        private static void cleanRepeatText(ref string text, Color color, int widthLimitInPixels = -1)
         {
             List<ChatMessageContainer> chats = Patch.Patch_RemadeChatMonitor._messages;
-            if (chats == null) return true;
+            if (chats == null) return;
 
             if (chats.Count < 1)
             {
                 cleanRepeatText_oldText = text;
                 cleanRepeatText_oldTextCount = 1;
-                return true;
+                return;
             }
 
             if (cleanRepeatText_oldTextCount < 1)
@@ -68,15 +70,14 @@ namespace OptimizeAndTool.Content
             {
                 ++cleanRepeatText_oldTextCount;
 
-                chats[0].SetContents($"{text} x{cleanRepeatText_oldTextCount}", color, widthLimitInPixels);
+                text = $"{text} x{cleanRepeatText_oldTextCount}";
+                chats.RemoveAt(0);
 
-                return false;
+                return;
             }
 
             cleanRepeatText_oldText = text;
             cleanRepeatText_oldTextCount = 1;
-
-            return true;
         }
     }
 }

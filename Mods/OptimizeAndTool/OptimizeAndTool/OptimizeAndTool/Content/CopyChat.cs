@@ -9,8 +9,10 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
+using Terraria.GameContent;
 using Terraria.UI;
 using Terraria.UI.Chat;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace OptimizeAndTool.Content
 {
@@ -62,10 +64,9 @@ namespace OptimizeAndTool.Content
             }
 
             int i = 0;
-            while (i < showCount && i2 < messages?.Count)
+            while (i < showCount && i2 < messages.Count)
             {
                 ChatMessageContainer chatMessageContainer = messages[i2];
-
                 if (!chatMessageContainer.Prepared || !(drawingPlayerChat | chatMessageContainer.CanBeShownWhenChatIsClosed))
                 {
                     break;

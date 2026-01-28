@@ -61,24 +61,18 @@ namespace OptimizeAndTool.Content.Patch
         public override void AddPatch(IAddPatch addPatch)
         {
             addPatch.AddPrefix(typeof(RemadeChatMonitor).GetMethod(nameof(RemadeChatMonitor.AddNewMessage)),
-                typeof(Patch_RemadeChatMonitor).GetMethod(nameof(AddNewMessageCan)));
+                typeof(Patch_RemadeChatMonitor).GetMethod(nameof(AddNewMessagePrefix)));
         }
 
-        public static bool AddNewMessageCan(string text, Color color, int widthLimitInPixels = -1)
+        public static void AddNewMessagePrefix(ref string text, Color color, int widthLimitInPixels = -1)
         {
             try
             {
-                bool returnV = true;
-
-                returnV &= CleanRepeatChat.OnAddNewMessage(text, color, widthLimitInPixels);
-
-                return returnV;
+                CleanRepeatChat.OnAddNewMessage(ref text, color, widthLimitInPixels);
             }
             catch (Exception ex)
             {
-                Terraria.Main.NewText($"{nameof(Patch_RemadeChatMonitor)}.{nameof(AddNewMessageCan)}:{ex.Message}");
-
-                return true;
+                Terraria.Main.NewText($"{nameof(Patch_RemadeChatMonitor)}.{nameof(AddNewMessagePrefix)}:{ex.Message}");
             }
         }
     }
