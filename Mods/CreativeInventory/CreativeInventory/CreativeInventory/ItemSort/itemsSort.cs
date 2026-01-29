@@ -178,10 +178,12 @@ namespace CreativeInventory
             {
                 ItemsSort_Gets2(ID_Tile, ID_Tile_wall)?.Items?.Add(i.type);
             }
-            else if (i.type <= ItemID.Sets.SortingPriorityMiscBossBags?.Length
-                && ItemID.Sets.SortingPriorityMiscBossBags[i.type] != -1)//bossÕÙ»½Îï
+            else if (i.type == 43 || i.type == 70 || i.type == 544 ||
+                i.type == 556 || i.type == 557 || i.type == 560 ||
+                i.type == 1133 || i.type == 1331 || i.type == 4988 ||
+                i.type == 5120 || i.type == 5334)
             {
-                ItemsSort_Gets2(ID_BossSpawn)?.Items?.Add(i.type);
+                ItemsSort_Gets2(ID_BossSpawn)?.Items?.Add(i.type);//bossÕÙ»½Îï
             }
             else if (i.buffType != 0)//Ò©Ë®
             {

@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using SundryTool.Utils;
 using SundryTool.Utils.quickBuild;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using tContentPatch;
 using Terraria;
@@ -156,9 +157,7 @@ namespace SundryTool.Content.Function2
                             return;
                         }
 
-                        MapTile mt = Main.Map[x, y];
-                        mt.Light = byte.MaxValue;
-                        Main.Map.SetTile(x, y, ref mt);
+                        Main.Map.UnlockMapSection(x, y);
                     }
                 }
 
