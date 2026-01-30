@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
@@ -73,6 +74,20 @@ namespace tContentPatch.ModPatch
         {
             mod.ForTry(item => item.NewProjectilePostfix(
                 __result, spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2, modifer));
+        }
+
+        [HarmonyPatch("AI_203_GetLightningColor")]
+        [HarmonyPostfix]
+        public static void AI_203_GetLightningColor(Projectile __instance, ref Color __result)
+        {
+            Color color = __result;
+
+            mod.ForTry(item =>
+            {
+                color = item.AI_203_GetLightningColor(__instance, color);
+            });
+
+            __result = color;
         }
     }
 }

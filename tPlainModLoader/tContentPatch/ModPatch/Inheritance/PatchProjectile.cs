@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using Microsoft.Xna.Framework;
+using Terraria;
 using Terraria.DataStructures;
 
 namespace tContentPatch
@@ -31,5 +32,7 @@ namespace tContentPatch
             float X, float Y, float SpeedX, float SpeedY,
             int Type, int Damage, float KnockBack, int Owner, float ai0, float ai1, float ai2, NewProjectileModifier modifer)
         { }
+        /// <summary/>
+        public virtual Color AI_203_GetLightningColor(Projectile This, Color color) => color;
     }
 }

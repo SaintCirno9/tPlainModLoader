@@ -53,5 +53,36 @@ namespace tContentPatch.ModPatch
                 OutputDebug.OutputException(ex);
             }
         }
+
+        /// <summary>
+        /// 全部为<see langword="true"/>时返回<see langword="true"/>. 所有<paramref name="list"/>都会执行
+        /// </summary>
+        public static bool ForTry<T>(this List<T> list, Func<T, bool> action)
+        {
+            if (list == null || action == null) return true;
+            try
+            {
+                bool result = true;
+
+                foreach (T item in list)
+                {
+                    try
+                    {
+                        result &= action(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        OutputDebug.OutputException(ex, 2);
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                OutputDebug.OutputException(ex);
+                return true;
+            }
+        }
     }
 }

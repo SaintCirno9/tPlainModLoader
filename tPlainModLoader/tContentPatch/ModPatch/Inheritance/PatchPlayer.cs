@@ -1,5 +1,6 @@
 ﻿using Terraria;
 using Terraria.IO;
+using Terraria.Localization;
 
 namespace tContentPatch
 {
@@ -28,5 +29,9 @@ namespace tContentPatch
         /// 保存玩家数据后, 单人和客户端有效
         /// </summary>
         public virtual void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave) { }
+        /// <summary>
+        /// 能否掉落墓碑
+        /// </summary>
+        public virtual bool CanDropTombstone(Player This, long coinsOwned, NetworkText deathText, int hitDirection) => true;
     }
 }

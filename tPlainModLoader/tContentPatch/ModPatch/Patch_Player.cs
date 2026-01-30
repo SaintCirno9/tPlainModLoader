@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Terraria;
 using Terraria.IO;
+using Terraria.Localization;
 
 namespace tContentPatch.ModPatch
 {
@@ -49,6 +50,13 @@ namespace tContentPatch.ModPatch
             if (Main.netMode != 0 && Main.netMode != 1) return;
 
             mod.ForTry(item => item.SavePlayerPostfix(playerFile, skipMapSave));
+        }
+
+        [HarmonyPatch("DropTombstone")]
+        [HarmonyPrefix]
+        internal static bool CanDropTombstone(Player __instance, long coinsOwned, NetworkText deathText, int hitDirection)
+        {
+            return mod.ForTry(item => item.CanDropTombstone(__instance, coinsOwned, deathText, hitDirection));
         }
     }
 }
