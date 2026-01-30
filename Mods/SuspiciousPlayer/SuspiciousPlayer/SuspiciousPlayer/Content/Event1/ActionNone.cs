@@ -1,8 +1,6 @@
-﻿using tContentPatch;
-
-namespace SuspiciousPlayer.Content.Event1
+﻿namespace SuspiciousPlayer.Content.Event1
 {
-    internal class ActionNone : PatchMain
+    internal class ActionNone
     {
         public static ActionState state = new ActionState(run, end);
 

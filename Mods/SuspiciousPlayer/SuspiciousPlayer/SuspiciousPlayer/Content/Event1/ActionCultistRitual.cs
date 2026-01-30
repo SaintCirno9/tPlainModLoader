@@ -45,7 +45,7 @@ namespace SuspiciousPlayer.Content.Event1
             if (Main.netMode == 2) NetMessage.SendData(MessageID.SyncNPC, number: n.whoAmI);
 
             if (fazhen == null)
-                fazhen = Main.projectile[Projectile.NewProjectile(null, Event.EventPos, Vector2.Zero, ProjectileID.CultistRitual, 0, 0, ai1: n.whoAmI)];
+                fazhen = Main.projectile[Projectile.NewProjectile(null, Event.EventPos, Vector2.Zero, ProjectileID.CultistRitual, 0, 0, Main.myPlayer, ai1: n.whoAmI)];
 
             if (fazhen.active == false || fazhen.type != ProjectileID.CultistRitual)
             {

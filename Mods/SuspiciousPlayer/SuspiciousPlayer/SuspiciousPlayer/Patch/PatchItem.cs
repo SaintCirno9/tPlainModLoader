@@ -1,27 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using tContentPatch;
-using tContentPatch.Patch;
-using Terraria.DataStructures;
+﻿using Terraria.DataStructures;
 
 namespace SuspiciousPlayer.Patch
 {
-    internal class PatchItem : Mod
+    internal class PatchItem : tContentPatch.PatchItem
     {
         public delegate void EventNewItem(int x, int y, int type);
         public static EventNewItem OnNewItem = null;
 
-        public override void AddPatch(IAddPatch addPatch)
-        {
-            MethodInfo patch = typeof(PatchItem).GetMethod("NewItem");
-            Type[] ts = patch.GetParameters().ToList().ConvertAll(i => i.ParameterType).ToArray();
-
-            addPatch.AddPostfix(typeof(Terraria.Item).GetMethod("NewItem", ts),
-                patch);
-        }
-
-        public static void NewItem(IEntitySource source, int X, int Y, int Width, int Height, int Type, int Stack = 1, bool noBroadcast = false, int pfix = 0, bool noGrabDelay = false, bool reverseLookup = false)
+        public override void NewItemPostfix(int __result, IEntitySource source, int X, int Y, int Width, int Height, int Type, int Stack, bool noBroadcast, int pfix, bool noGrabDelay)
         {
             OnNewItem?.Invoke(X, Y, Type);
         }

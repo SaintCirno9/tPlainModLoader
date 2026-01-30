@@ -15,7 +15,7 @@ namespace SundryTool.Content
 
         public override void Load(object v)
         {
-            if (Function1.Function.NoPublic) return;
+            if (ContentPatch.NoPublic) return;
 
             instance = this;
 
@@ -63,7 +63,7 @@ namespace SundryTool.Content
         {
             List<CommandObject> cos = new List<CommandObject>();
 
-            if (Function1.Function.NoPublic) return cos;
+            if (ContentPatch.NoPublic) return cos;
 
             CommandObject uuid = new CommandObject("uuid");
             CommandMethod update = new CommandMethod("update");

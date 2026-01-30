@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
+using SuspiciousPlayer.Content.Event1;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using tContentPatch;
 using Terraria;
 using Terraria.DataStructures;

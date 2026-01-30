@@ -50,8 +50,8 @@ namespace SuspiciousPlayer.Content.Event1
         public const int EventState_Loot = 14;
 
         public static bool CanSpawnVirtualPlayer = false;
-        public static bool CanSpawnNPC = false;
-        public static bool CanSpawnNPC_SolarCrawltipede = false;//蜈蚣
+        public static bool CanSpawnNPC = true;
+        public static bool CanSpawnNPC_SolarCrawltipede = true;//蜈蚣
 
         public static int EventState = 0;
         public static Vector2 EventPos = Vector2.Zero;

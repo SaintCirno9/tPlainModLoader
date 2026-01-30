@@ -28,9 +28,7 @@ namespace WandsTool
 
             root.SubCommand.Add(enable);
 
-            bool NoPublic = true;
-
-            if (NoPublic == false)
+            if (ContentPatch.NoPublic == false)
             {
                 CommandMethod updateCount = new CommandMethod("updateCount", 1);
                 updateCount.SubCommand.Add(new CommandInt());

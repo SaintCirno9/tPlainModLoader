@@ -7,6 +7,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using Terraria.Localization;
+using static Terraria.DataStructures.GameDifficultyData.LinearCurve;
 
 namespace SuspiciousPlayer.Content.Event1
 {
@@ -104,7 +105,7 @@ namespace SuspiciousPlayer.Content.Event1
                 if (Main.netMode == 2)
                 {
                     NetMessage.PlayNetSound(new NetMessage.NetSoundInfo(Event.EventPos,
-                        365, SoundID.NPCHit20.Style));
+                        419, SoundID.NPCHit20.Style));
                 }
                 else
                 {

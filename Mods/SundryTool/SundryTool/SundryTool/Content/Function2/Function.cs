@@ -22,7 +22,7 @@ namespace SundryTool.Content.Function2
 
         public static List<CommandObject> GetCO()
         {
-            bool ok = Function1.Function.NoPublic == false;
+            bool ok = ContentPatch.NoPublic == false;
 
             List<CommandObject> cos = new List<CommandObject>();
             if (ok) cos.Add(new CommandHRA<int>("functionDamage", functionDamage, new CommandInt()));
@@ -47,7 +47,7 @@ namespace SundryTool.Content.Function2
 
         public static List<UIElement> GetUI()
         {
-            bool ok = Function1.Function.NoPublic == false;
+            bool ok = ContentPatch.NoPublic == false;
 
             List<UIElement> uis = new List<UIElement>();
             if (ok) uis.Add(new UI.UIItemTextBoxBind<int>(functionDamage, int.Parse, null, "功能伤害"){ MouseText = "影响部分功能的伤害<int>" });

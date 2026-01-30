@@ -48,7 +48,7 @@ namespace SuspiciousPlayer.Content.Event1
             if (Main.netMode == 2)
             {
                 NetMessage.PlayNetSound(new NetMessage.NetSoundInfo(Event.EventPos,
-                    350, SoundID.NPCDeath7.Style));
+                    404, SoundID.NPCDeath7.Style));
             }
             else
             {
@@ -70,7 +70,7 @@ namespace SuspiciousPlayer.Content.Event1
             {
                 if (Main.GameUpdateCount % 4 != 0) return;
 
-                Projectile.NewProjectile(null, pos, Vector2.Zero, ProjectileID.FairyQueenLance, 150, 1, ai0: v);
+                Projectile.NewProjectile(null, pos, Vector2.Zero, ProjectileID.FairyQueenLance, 150, 1, Main.myPlayer, ai0: v);
                 pos += off;
 
                 --count;

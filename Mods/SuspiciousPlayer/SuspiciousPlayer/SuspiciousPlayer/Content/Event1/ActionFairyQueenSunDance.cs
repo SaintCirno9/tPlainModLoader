@@ -36,7 +36,7 @@ namespace SuspiciousPlayer.Content.Event1
             if (count > 60) pos.Y += (count - 60) * 7;
 
             Projectile.NewProjectile(null, pos, Vector2.Zero, ProjectileID.FairyQueenSunDance,
-                80, 1, ai0: 4.6f);
+                80, 1, Main.myPlayer, ai0: 4.6f);
 
             if (--count < 1) Event.SetEventState(Event.EventState_List);
         }
