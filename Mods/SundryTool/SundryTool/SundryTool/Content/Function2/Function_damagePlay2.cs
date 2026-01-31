@@ -5,7 +5,6 @@ using SundryTool.Utils;
 using SundryTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
 using System.Reflection;
 using tContentPatch;
 using Terraria;

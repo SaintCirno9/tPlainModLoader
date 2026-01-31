@@ -46,6 +46,17 @@ namespace tContentPatch
         /// <summary/>
         public virtual void DrawMenuPrefix(GameTime gameTime) { }
         /// <summary/>
+        public virtual void DrawMenuPostfix(GameTime gameTime) { }
+        /// <summary/>
         public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
+        /// <summary/>
+        public virtual void DoDrawPrefix(GameTime gameTime) { }
+        /// <summary/>
+        public virtual void DoDrawPostfix(GameTime gameTime) { }
+        /// <summary>
+        /// <paramref name="origin"/>是原本的值, <paramref name="modifi"/>是其它<see cref="PlayerFocusedScreenPosition(Vector2, Vector2)"/>修改过的值
+        /// <para/>如果不想影响其它<see cref="PlayerFocusedScreenPosition(Vector2, Vector2)"/>修改值就直接返回<paramref name="modifi"/>
+        /// </summary>
+        public virtual Vector2 PlayerFocusedScreenPosition(Vector2 origin, Vector2 modifi) => modifi;
     }
 }

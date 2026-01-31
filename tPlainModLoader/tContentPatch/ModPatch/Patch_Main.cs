@@ -125,6 +125,13 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.DrawMenuPrefix(gameTime));
         }
 
+        [HarmonyPatch("DrawMenu")]
+        [HarmonyPostfix]
+        public static void DrawMenuPostfix(GameTime gameTime)
+        {
+            mod.ForTry(item => item.DrawMenuPostfix(gameTime));
+        }
+
         [HarmonyPatch("MouseText_DrawItemTooltip_GetLinesInfo")]
         [HarmonyPostfix]
         public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine,
@@ -139,6 +146,32 @@ namespace tContentPatch.ModPatch
             {
                 OutputDebug.OutputException(ex);
             }
+        }
+
+        [HarmonyPatch("DoDraw")]
+        [HarmonyPrefix]
+        public static void DoDrawPrefix(GameTime gameTime)
+        {
+            mod.ForTry(item => item.DoDrawPrefix(gameTime));
+        }
+
+        [HarmonyPatch("DoDraw")]
+        [HarmonyPostfix]
+        public static void DoDrawPostfix(GameTime gameTime)
+        {
+            mod.ForTry(item => item.DoDrawPostfix(gameTime));
+        }
+
+        [HarmonyPatch("PlayerFocusedScreenPosition")]
+        [HarmonyPostfix]
+        public static void PlayerFocusedScreenPosition(ref Vector2 __result)
+        {
+            Vector2 origin = __result;
+            Vector2 modifi = __result;
+
+            mod.ForTry(item => modifi = item.PlayerFocusedScreenPosition(origin, modifi));
+
+            __result = modifi;
         }
     }
 }

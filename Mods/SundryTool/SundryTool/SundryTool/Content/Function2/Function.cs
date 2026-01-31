@@ -3,7 +3,6 @@ using SundryTool.Utils;
 using SundryTool.Utils.quickBuild;
 using System.Collections.Generic;
 using tContentPatch;
-using tContentPatch.Content.UI.ModSet;
 using Terraria;
 using Terraria.UI;
 
@@ -37,6 +36,7 @@ namespace SundryTool.Content.Function2
             cos.AddRange(Function_lightHack.GetCO());
             cos.AddRange(Function_mapRevealer.GetCO());
             cos.AddRange(Function_displayInfected.GetCO());
+            cos.AddRange(Function_screenOff.GetCO());
             if (ok) cos.AddRange(Function_chestAutoOpen.GetCO());
             if (ok) cos.AddRange(Function_chestAddAll.GetCO());
             if (ok) cos.AddRange(Function_chestDelAll.GetCO());
@@ -62,6 +62,7 @@ namespace SundryTool.Content.Function2
             uis.AddRange(Function_lightHack.GetUI());
             uis.AddRange(Function_mapRevealer.GetUI());
             uis.AddRange(Function_displayInfected.GetUI());
+            uis.AddRange(Function_screenOff.GetUI());
             if (ok) uis.AddRange(Function_chestAutoOpen.GetUI());
             if (ok) uis.AddRange(Function_chestAddAll.GetUI());
             if (ok) uis.AddRange(Function_chestDelAll.GetUI());
