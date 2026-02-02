@@ -41,7 +41,7 @@ namespace SundryTool.Content.Function1
             if (0 > id || id > Main.player?.Length - 1) return;
 
             Projectile.NewProjectile(null, This.Center, Vector2.Zero,
-                298, 0, 0, This.whoAmI, ai0: id, ai1: lifeRecoverProj_val.val);
+                298, 0, 0, This.whoAmI, id, lifeRecoverProj_val.val);
         }
 
         public static List<CommandObject> GetCO()

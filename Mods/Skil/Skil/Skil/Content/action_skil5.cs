@@ -111,7 +111,7 @@ namespace Skil.Content
 
             Projectile.NewProjectile(null, position, velocity * ShootSpeed.val,
                 projs[getRand(0, projs.Length)], SkilListControl1.damage.val, 1, player.whoAmI,
-                ai0: ai0, ai1: ai1, ai2: ai2);
+                ai0, ai1, ai2);
         }
     }
 }

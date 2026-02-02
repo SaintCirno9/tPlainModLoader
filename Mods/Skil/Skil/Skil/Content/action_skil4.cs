@@ -159,7 +159,7 @@ namespace Skil.Content
                     v = v.RotatedBy(angle);
 
                     int life = Terraria.Main.GameUpdateCount % 9 == 0 ? 1 : 0;
-                    Projectile.NewProjectile(null, player.Center + p, v, 298, 0, 0, ai0: player.whoAmI, ai1: life);
+                    Projectile.NewProjectile(null, player.Center + p, v, 298, 0, 0, player.whoAmI, player.whoAmI, life);
                 }
             }
 
