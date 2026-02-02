@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -57,7 +56,7 @@ namespace tPlainModLoaderInjector
             {
                 Log.Add($"{nameof(tPlainModLoaderInjector)}:选择目标程序pid");
                 Console.WriteLine("选择目标程序pid");
-                pid = SwitchPID();
+                pid = ProcessUtils.SwitchPID(InjectorProgramName);
             }
             catch (Exception ex)
             {
@@ -141,40 +140,6 @@ namespace tPlainModLoaderInjector
         private static void Initialize_Inject()
         {
             InjectDllFilePath = Path.Combine(ProgramPath, "tPlainModLoaderInjector.exe");
-        }
-
-        private static int SwitchPID()
-        {
-            Console.WriteLine("查找符合条件的程序");
-            System.Collections.Generic.List<Process> ids = ProcessUtils.GetProcessPID(InjectorProgramName);
-            if (ids == null || ids.Count < 1) throw new Exception("找不到符合条件的程序");
-
-            int index = 0;
-
-            Func<int, string> get = i => $"{i}:名称[{ids[i].ProcessName}],pid[{ids[i].Id}]";
-            while (true)
-            {
-                Console.Clear();
-                Console.WriteLine("输入要附加到第几个,什么都不输入以确认");
-                Console.WriteLine($"当前选择: {get(index)}");
-
-                for (int i = 0; i < ids.Count; ++i)
-                {
-                    Console.WriteLine(get(i));
-                }
-
-                string s = Console.ReadLine();
-                if (s == null) continue;
-                if (s == string.Empty) break;
-
-                int.TryParse(s, out index);
-                if (index < 0) index = 0;
-                else if (index >= ids.Count) index = ids.Count - 1;
-            }
-
-            Console.Clear();
-
-            return ids[index].Id;
         }
     }
 }
