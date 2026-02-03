@@ -91,4 +91,12 @@ namespace Skil.Content
             return skil12.GetUI();
         }
     }
+
+    public class SkilListControl5
+    {
+        public static List<UIElement> GetUI()
+        {
+            return skil15.skil15.GetUI();
+        }
+    }
 }

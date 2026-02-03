@@ -48,4 +48,15 @@ namespace Skil
             return UIBuild.get3(SkilListControl4.GetUI());
         }
     }
+
+    internal class SettingUI_SkilList5 : ModSetting
+    {
+        public override string Name => "技能列表5";
+        public override string Title => "魔法和技能: 技能列表5";
+
+        public override UIElement GetUI()
+        {
+            return UIBuild.get3(SkilListControl5.GetUI());
+        }
+    }
 }

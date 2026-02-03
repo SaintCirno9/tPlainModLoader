@@ -14,6 +14,7 @@ namespace Skil.ModLinkage
         public static bool IsLinkage_skil2_QuickSetting = true;
         public static bool IsLinkage_skil3_QuickSetting = true;
         public static bool IsLinkage_skil4_QuickSetting = true;
+        public static bool IsLinkage_skil5_QuickSetting = true;
 
         public override void Loaded()
         {
@@ -46,9 +47,14 @@ namespace Skil.ModLinkage
                 AddItem(mi, "Images/Item_3366", "技能列表3", Content.SkilListControl3.GetUI());
             }
 
-            if (IsLinkage_skil3_QuickSetting)
+            if (IsLinkage_skil4_QuickSetting)
             {
                 AddItem(mi, "Images/Item_3366", "技能列表4", Content.SkilListControl4.GetUI());
+            }
+
+            if (IsLinkage_skil5_QuickSetting)
+            {
+                AddItem(mi, "Images/Item_3366", "技能列表5", Content.SkilListControl5.GetUI());
             }
         }
 

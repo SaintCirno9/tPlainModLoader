@@ -28,6 +28,7 @@ namespace Skil.ModLinkage
                 (a => ModQuickSetting.IsLinkage_skil2_QuickSetting = a, "Images/Item_3366", "技能列表2: 添加到快捷设置"),
                 (a => ModQuickSetting.IsLinkage_skil3_QuickSetting = a, "Images/Item_3366", "技能列表3: 添加到快捷设置"),
                 (a => ModQuickSetting.IsLinkage_skil4_QuickSetting = a, "Images/Item_3366", "技能列表4: 添加到快捷设置"),
+                (a => ModQuickSetting.IsLinkage_skil5_QuickSetting = a, "Images/Item_3366", "技能列表5: 添加到快捷设置"),
             };
 
             if (v is List<bool> d)
