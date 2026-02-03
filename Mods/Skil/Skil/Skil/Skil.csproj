@@ -85,6 +85,10 @@
     <Compile Include="Content\action_skil4.cs" />
     <Compile Include="Content\action_skil3.cs" />
     <Compile Include="Content\action_skil2.cs" />
+    <Compile Include="Content\skil15\skil15_2.cs" />
+    <Compile Include="Content\skil15\skil15_1.cs" />
+    <Compile Include="Content\skil15\skil15_4.cs" />
+    <Compile Include="Content\skil15\skil15_3.cs" />
     <Compile Include="Content\skil15\skil15.cs" />
     <Compile Include="Content\SkilListControls.cs" />
     <Compile Include="Content\action_skil14.cs" />

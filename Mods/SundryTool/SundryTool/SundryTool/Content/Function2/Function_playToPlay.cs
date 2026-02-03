@@ -40,7 +40,7 @@ namespace SundryTool.Content.Function2
             This.position.X += playToPlay_x.val;
             This.position.Y += playToPlay_y.val;
             This.velocity = Vector2.Zero;
-            This.fallStart = (int)(This.position.Y / 16f);//重置下落高度
+            This.fallStart = This.fallStart2 = (int)(This.position.Y / 16f);//重置下落高度
 
             if (This.position.X < 0) This.position.X = 0;
             else if (This.position.X > Main.maxTilesX * 16) This.position.X = Main.maxTilesX * 16;

@@ -80,7 +80,7 @@ namespace SundryTool.Content.Function1
 
             This.position = fly2_p;
             This.velocity = Vector2.Zero;
-            This.fallStart = (int)(This.position.Y / 16f);//重置下落高度
+            This.fallStart = This.fallStart2 = (int)(This.position.Y / 16f);//重置下落高度
 
             NetMessage.SendData(13, number: This.whoAmI);
         }
