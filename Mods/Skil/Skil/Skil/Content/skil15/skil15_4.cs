@@ -145,7 +145,7 @@ namespace Skil.Content.skil15
             {
                 float r = Utils.getRand(0, (int)MathHelper.TwoPi);
                 r += Utils.getRandFloat();
-                int len = Utils.getRand(16 * 2, 16 * 5);
+                int len = Utils.getRand(16 * 3, 16 * 6);
 
                 Vector2 p = Vector2.UnitX.RotatedBy(r) * len;
                 p += pos;

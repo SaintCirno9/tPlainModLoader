@@ -23,7 +23,7 @@ namespace Skil.Content.skil15
         public static void Update(Projectile proj, Player localPlayer)
         {
             if (Enable.val == false) return;
-
+            if (proj.owner != localPlayer.whoAmI) return;
             if (proj.localAI[2] == 1) return;
 
             localPlayer.Center = proj.Center;
