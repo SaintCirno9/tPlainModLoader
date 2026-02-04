@@ -81,6 +81,7 @@
     <Compile Include="Content\Function2\Function_mapRevealer.cs" />
     <Compile Include="Content\Function2\Function_lightHack.cs" />
     <Compile Include="Content\Function2\Function_displayPlayMap.cs" />
+    <Compile Include="Content\Function2\Function_stopTileConvert.cs" />
     <Compile Include="Content\Function2\Function_screenOff.cs" />
     <Compile Include="Content\Function2\Function_playToPlay.cs" />
     <Compile Include="Content\Function2\Function_damagePlay2.cs" />

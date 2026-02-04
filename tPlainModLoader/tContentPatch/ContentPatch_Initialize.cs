@@ -126,6 +126,7 @@ namespace tContentPatch
             typePatch.AddPatch(new ModPatch.Patch_MessageBuffer());
             typePatch.AddPatch(new ModPatch.Patch_Chest());
             typePatch.AddPatch(new ModPatch.Patch_RemoteClient());
+            typePatch.AddPatch(new ModPatch.Patch_WorldGen());
         }
 
         private void Initialize_ModDirectory()

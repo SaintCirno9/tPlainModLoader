@@ -19,12 +19,11 @@ namespace SundryTool.Content.Function2
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
         public static GetSetReset<float> MoveSpeed = new GetSetReset<float>(16, 16);
         private static Vector2 off = new Vector2(float.NaN, float.NaN);
-        private static Vector2 pos = new Vector2(float.NaN, float.NaN);
 
         private bool CheckEnable()
         {
             if (Enable.val == false) return false;
-            if (Main.mouseRight == false) return Enable.val;
+            if (Main.mouseRight == false) return true;
 
             Enable.val = false;
             return Enable.val;
@@ -40,14 +39,11 @@ namespace SundryTool.Content.Function2
             if (CheckEnable() == false)
             {
                 off = Main.screenPosition;
-                pos = Main.LocalPlayer.position;
                 return;
             }
             if (off.HasNaNs()) off = Main.screenPosition;
-            if (pos.HasNaNs()) pos = Main.LocalPlayer.position;
 
-            Main.LocalPlayer.position = pos;
-            Main.LocalPlayer.velocity = Vector2.Zero;
+            Main.LocalPlayer.isOperatingAnotherEntity = true;//防止移动
 
             //
 
