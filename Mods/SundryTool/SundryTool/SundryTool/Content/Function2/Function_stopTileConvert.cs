@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.GameContent.Creative;
-using Terraria.ID;
 using Terraria.UI;
 
 namespace SundryTool.Content.Function2
@@ -17,17 +16,16 @@ namespace SundryTool.Content.Function2
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
 
-        public override bool CanConvert(int i2, int j2, int conversionType, bool tiles, bool walls)
-        {
-            ContentPatch.PrintTry($"{conversionType}convert tile");
-            if (Enable.val == false) return true;
+        //public override bool CanConvert(int i2, int j2, int conversionType, bool tiles, bool walls)
+        //{
+        //    if (Enable.val == false) return true;
 
-            if (conversionType != BiomeConversionID.Corruption &&
-                conversionType != BiomeConversionID.Hallow &&
-                conversionType != BiomeConversionID.Crimson) return true;
+        //    if (conversionType != BiomeConversionID.Corruption &&
+        //        conversionType != BiomeConversionID.Hallow &&
+        //        conversionType != BiomeConversionID.Crimson) return true;
 
-            return false;
-        }
+        //    return false;
+        //}
 
         public override void UpdateWorldPrefix()
         {
