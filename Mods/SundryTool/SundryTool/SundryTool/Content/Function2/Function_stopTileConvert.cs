@@ -52,7 +52,7 @@ namespace SundryTool.Content.Function2
             string tip = "默认启用" +
                 "\n单人和服务端可用" +
                 "\n在服务端使用该功能需要服务端加载该模组" +
-                "\n开服并开始游戏后使用tPlainModLoaderInjector注入服务端(一般叫TerrariaServer)也可以" +
+                "\n可以在开服并开始游戏后使用tPlainModLoaderInjector注入服务端(一般叫TerrariaServer)" +
                 "\n关闭注入的窗口不影响使用";
 
             List<UIElement> uis = new List<UIElement>

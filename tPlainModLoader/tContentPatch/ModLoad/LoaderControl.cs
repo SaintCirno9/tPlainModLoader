@@ -46,14 +46,14 @@ namespace tContentPatch.ModLoad
             if (CanLoad == false)
             {
                 Log.Add($"{nameof(LoaderControl)}:当前不可加载模组");
-                Console.WriteLine("当前不可加载模组");
+                ContentPatch.PrintTry("当前不可加载模组");
                 return;
             }
 
             Log.Add($"{nameof(LoaderControl)}:加载模组");
 
             ConsoleUtils.Clear();
-            Console.WriteLine("加载模组");
+            ContentPatch.PrintTry("加载模组");
 
             OnModLoad_Start?.Invoke(modLoader);
 
@@ -68,13 +68,13 @@ namespace tContentPatch.ModLoad
                     _ = modLoader.Load();
 
                     Log.Add($"{nameof(LoaderControl)}:加载模组成功");
-                    Console.WriteLine("加载完成");
+                    ContentPatch.PrintTry("加载完成");
                     OnModLoad_Ok?.Invoke();//成功
                 }
                 catch (TaskCanceledException)
                 {
                     Log.Add($"{nameof(LoaderControl)}:加载模组取消");
-                    Console.WriteLine("加载取消");
+                    ContentPatch.PrintTry("加载取消");
 
                     OnModLoad_Cancel?.Invoke(modLoader);//取消
 
@@ -85,7 +85,7 @@ namespace tContentPatch.ModLoad
                 catch (Exception ex)
                 {
                     Log.Add($"{nameof(LoaderControl)}:加载模组失败:{ex}");
-                    Console.WriteLine("加载失败");
+                    ContentPatch.PrintTry("加载失败");
 
                     OnModLoad_Exception?.Invoke(ex);//失败
 
@@ -98,7 +98,7 @@ namespace tContentPatch.ModLoad
         {
             Log.Add($"{nameof(LoaderControl)}:取消加载模组");
             ConsoleUtils.Clear();
-            Console.WriteLine("取消加载");
+            ContentPatch.PrintTry("取消加载");
 
             modLoader.CancelLoad();
         }
@@ -108,20 +108,20 @@ namespace tContentPatch.ModLoad
             try
             {
                 Log.Add($"{nameof(LoaderControl)}:卸载模组");
-                Console.WriteLine("卸载");
+                ContentPatch.PrintTry("卸载");
 
                 loadedMod = null;
                 modLoader.Unload();
 
                 Log.Add($"{nameof(LoaderControl)}:卸载模组完成");
-                Console.WriteLine("卸载完成");
+                ContentPatch.PrintTry("卸载完成");
 
                 return true;
             }
             catch (Exception ex)
             {
                 Log.Add($"{nameof(LoaderControl)}:卸载失败:{ex}");
-                Console.WriteLine("卸载失败");
+                ContentPatch.PrintTry("卸载失败");
 
                 OnModUnload_Exception?.Invoke(ex);
 

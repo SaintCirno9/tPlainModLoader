@@ -58,7 +58,7 @@ namespace tContentPatch.Content
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"指令运行失败:{ex.Message}");
+                ContentPatch.PrintTry($"指令运行失败:{ex.Message}");
             }
         }
     }

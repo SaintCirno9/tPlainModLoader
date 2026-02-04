@@ -73,7 +73,7 @@ namespace tContentPatch.Command
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取模组指令列表失败:{ex.Message}");
+                ContentPatch.PrintTry($"获取模组指令列表失败:{ex.Message}");
                 return null;
             }
         }

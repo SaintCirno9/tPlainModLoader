@@ -169,7 +169,7 @@ namespace tContentPatch
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"指令运行失败:{ex.Message}");
+                        PrintTry($"指令运行失败:{ex.Message}");
                     }
                 }
             });

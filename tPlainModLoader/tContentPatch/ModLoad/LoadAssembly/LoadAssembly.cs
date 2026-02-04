@@ -36,7 +36,7 @@ namespace tContentPatch.ModLoad
 
                 stateText = $"检查前置模组:{mo.info?.name ?? mo.config.key}";
 
-                Console.WriteLine($"已加载模组配置:{mo.info?.name ?? mo.config.key}");
+                ContentPatch.PrintTry($"已加载模组配置:{mo.info?.name ?? mo.config.key}");
 
                 if (mo.config.frontModKeys == null) continue;
 
@@ -81,7 +81,7 @@ namespace tContentPatch.ModLoad
                 mo.assembly = Assembly.Load(File.ReadAllBytes(filePath));
 
                 ++progressV;
-                Console.WriteLine($"已加载程序集:{filePath}");
+                ContentPatch.PrintTry($"已加载程序集:{filePath}");
             }
         }
 
