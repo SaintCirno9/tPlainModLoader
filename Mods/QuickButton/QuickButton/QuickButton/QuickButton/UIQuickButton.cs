@@ -122,6 +122,7 @@ namespace QuickButton.QuickButton
                 case 1:
                     float v = 20f + (10 * 56) * 0.85f;
                     Left.Pixels = v;
+                    Left.Pixels += 30;//和起床编辑按钮错开
                     Top.Pixels = 20;
                     break;
 

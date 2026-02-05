@@ -132,6 +132,7 @@ namespace WandsTool.Content
             Item item = FirstItem_Tile(player);
 
             if (item == null) return;
+            if (item.consumable) item.stack -= 1;
 
             if (tile?.active() == true)//有方块
             {
@@ -163,6 +164,7 @@ namespace WandsTool.Content
 
             if (item == null) return;
             if (item.createWall == tile.wall) return;
+            if (item.consumable) item.stack -= 1;
 
             if (tile?.wall > 0)
             {

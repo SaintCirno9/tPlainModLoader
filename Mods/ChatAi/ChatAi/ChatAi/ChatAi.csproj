@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9EDB6614-8022-472D-956C-64C4EAA482BA}</ProjectGuid>
+    <ProjectGuid>{EC4D850D-9BEA-4237-BE95-2451255FEFDE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WandsTool</RootNamespace>
-    <AssemblyName>WandsTool</AssemblyName>
+    <RootNamespace>ChatAi</RootNamespace>
+    <AssemblyName>ChatAi</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\tPlainModLoader\tPlainModLoader\bin\Debug\Mods\WandsTool\</OutputPath>
+    <OutputPath>..\..\..\..\tPlainModLoader\tPlainModLoader\bin\Debug\Mods\ChatAi\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -76,31 +76,31 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Apis\api_yaohu.cs" />
+    <Compile Include="Apis\JsonSerialize.cs" />
+    <Compile Include="Apis\RequestUrl.cs" />
+    <Compile Include="Apis\Chat.cs" />
     <Compile Include="Command.cs" />
-    <Compile Include="Content\action_utils.cs" />
-    <Compile Include="Content\gameMain.cs" />
-    <Compile Include="Content\wandsPanel.cs" />
-    <Compile Include="Content\Wands\WandAction.cs" />
-    <Compile Include="Content\Wands\Wands.cs" />
-    <Compile Include="Content\Wands\WandUtils.cs" />
-    <Compile Include="feces.cs" />
-    <Compile Include="ModLinkage\ModQuickButton.cs" />
+    <Compile Include="Content\GameChatAi.cs" />
+    <Compile Include="ChatAI.cs" />
+    <Compile Include="Content\UI\UIItemMouseText.cs" />
+    <Compile Include="Content\UI\UIItemSwitchBind.cs" />
+    <Compile Include="Content\UI\UIItemTextBoxASwitchBind.cs" />
+    <Compile Include="Content\UI\UIItemTextBoxBind.cs" />
+    <Compile Include="Content\UI\UIItemValueSliderBind.cs" />
+    <Compile Include="Content\UI\UITextBoxBind.cs" />
+    <Compile Include="ModLinkage\LinkageSetting.cs" />
+    <Compile Include="ModLinkage\ModQuickSetting.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resources\Resources.cs" />
-    <Compile Include="ModConfig.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\ShapesCircular.png" />
-    <EmbeddedResource Include="Resources\ShapesLine.png" />
-    <EmbeddedResource Include="Resources\ShapesRectangle.png" />
-    <EmbeddedResource Include="Resources\SlopeDownLeft.png" />
-    <EmbeddedResource Include="Resources\SlopeDownRight.png" />
-    <EmbeddedResource Include="Resources\SlopeHalfBlock.png" />
-    <EmbeddedResource Include="Resources\SlopeSolid.png" />
-    <EmbeddedResource Include="Resources\SlopeUpLeft.png" />
-    <EmbeddedResource Include="Resources\SlopeUpRight.png" />
-    <EmbeddedResource Include="Resources\Wand.png" />
-    <EmbeddedResource Include="Resources\WandCreate.png" />
+    <Compile Include="LoadKey.cs" />
+    <Compile Include="SettingUI.cs" />
+    <Compile Include="Utils\BindUIAVal.cs" />
+    <Compile Include="Utils\CommandHRA.cs" />
+    <Compile Include="Utils\CommandString.cs" />
+    <Compile Include="Utils\CommandVariable.cs" />
+    <Compile Include="Utils\GetSetReset.cs" />
+    <Compile Include="Utils\quickBuild\CommandBuild.cs" />
+    <Compile Include="Utils\quickBuild\UIBuild.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
