@@ -2,6 +2,7 @@
 using tContentPatch;
 using tContentPatch.Content.UI;
 using tContentPatch.Content.UI.ModSet;
+using Terraria;
 using Terraria.UI;
 
 namespace WandsTool
@@ -47,6 +48,19 @@ namespace WandsTool
             sv.Height.Set(0, 1);
 
             UIItemSwitch s = new UIItemSwitch(null, "消耗物品");
+            s.OnUpdate += _ =>
+            {
+                if (data == null) return;
+                s.SetVal(data.ConsumablesItem);
+                if (s.IsMouseHovering) Main.instance.MouseText("仅对方块和墙有效");
+            };
+            s.OnValUpdate += v =>
+            {
+                if (data == null) return;
+                if (data.ConsumablesItem == v) return;
+                data.ConsumablesItem = v;
+                NeedSave = true;
+            };
             sv.AddChild(s);
 
             return sv;

@@ -132,7 +132,7 @@ namespace WandsTool.Content
             Item item = FirstItem_Tile(player);
 
             if (item == null) return;
-            if (item.consumable) item.stack -= 1;
+            if (item.consumable && ModConfig.IsConsumablesItem()) item.stack -= 1;
 
             if (tile?.active() == true)//有方块
             {
@@ -164,7 +164,7 @@ namespace WandsTool.Content
 
             if (item == null) return;
             if (item.createWall == tile.wall) return;
-            if (item.consumable) item.stack -= 1;
+            if (item.consumable && ModConfig.IsConsumablesItem()) item.stack -= 1;
 
             if (tile?.wall > 0)
             {
@@ -415,30 +415,47 @@ namespace WandsTool.Content
 
         private static Item FirstItem_TileOrWall(Player player, bool isTile)
         {
-            if (player?.inventory == null) return null;
+            Item item = player.HeldItem;
 
-            if (isTile)
-            {
-                if (player.inventory[player.selectedItem]?.createTile >= 0) return player.HeldItem;
-            }
-            else
-            {
-                if (player.inventory[player.selectedItem]?.createWall > 0) return player.HeldItem;
-            }
-
-            for (int i = 0; i < player.inventory.Length; ++i)
+            if (HasItem(item))
             {
                 if (isTile)
                 {
-                    if (player.inventory[i]?.createTile >= 0) return player.inventory[i];
+                    if (item.createTile >= 0) return item;
                 }
                 else
                 {
-                    if (player.inventory[i]?.createWall > 0) return player.inventory[i];
+                    if (item.createWall > 0) return item;
+                }
+            }
+            
+            if (player?.inventory == null) return null;
+
+            for (int i = 0; i < player.inventory.Length; ++i)
+            {
+                item = player.inventory[i];
+                if (HasItem(item) != true) continue;
+
+                if (isTile)
+                {
+                    if (item.createTile >= 0) return item;
+                }
+                else
+                {
+                    if (item.createWall > 0) return item;
                 }
             }
 
             return null;
+        }
+
+        private static bool HasItem(Item item)
+        {
+            if (item == null) return false;
+            if (item.active != true) return false;
+            if (item.stack < 1) return false;
+            if (item.type == ItemID.None) return false;
+            return true;
         }
     }
 }
