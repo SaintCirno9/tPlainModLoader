@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
@@ -46,14 +47,27 @@ namespace WandsTool
                     {
                         if (gameMain.UI_WandsPanel1_isOpen && gameMain.Wand_isEnable)
                         {
-                            ui.Update(Main.gameTimeCache);
-                            ui.update(Main.gameTimeCache);
                             ui.Draw(Main.spriteBatch, Main.gameTimeCache);
                         }
 
                         return true;
                     },
                     InterfaceScaleType.UI));
+            }
+        }
+
+        public override void UpdateUIStatesPostfix(GameTime gameTime)
+        {
+            if (Main.gameMenu)
+            {
+                gameMain.Wand_isEnable = false;
+                return;
+            }
+
+            if (gameMain.UI_WandsPanel1_isOpen && gameMain.Wand_isEnable)
+            {
+                ui.Update(gameTime);
+                ui.update(gameTime);
             }
         }
 
