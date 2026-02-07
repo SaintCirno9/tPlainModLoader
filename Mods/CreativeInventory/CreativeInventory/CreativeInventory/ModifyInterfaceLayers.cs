@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
@@ -17,10 +18,10 @@ namespace CreativeInventory
             ui.SetState(ui_state);
         }
 
-        //public override void UpdateUIStatesPrefix(GameTime gameTime)
-        //{
-        //    ui.Update(gameTime);放在这文本控件会不能用
-        //}
+        public override void UpdateUIStatesPostfix(GameTime gameTime)
+        {
+            ui.Update(gameTime);
+        }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
@@ -31,7 +32,6 @@ namespace CreativeInventory
                     "StaticTile.CreativeInventory: InventoryPrefix",
                     () =>
                     {
-                        ui.Update(Main.gameTimeCache);
                         ui.Draw(Main.spriteBatch, Main.gameTimeCache);
                         return true;
                     },

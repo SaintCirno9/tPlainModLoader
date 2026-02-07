@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
@@ -22,8 +23,9 @@ namespace tContentPatch.Content.UI
             get => focus;
             set
             {
-                if (focus && !value) OnLostFocus?.Invoke();
+                if (focus == value) return;
                 focus = value;
+                if (focus == false) OnLostFocus?.Invoke();
             }
         }
         private string text = null;
@@ -73,17 +75,7 @@ namespace tContentPatch.Content.UI
             ++time1;
             if (time1 * 16 > 2000) time1 = 0;
 
-            if (Main.mouseLeft && mouseLeftOld == false)
-            {
-                Focus = IsMouseHovering;
-            }
-            mouseLeftOld = Main.mouseLeft;
-            if (Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Escape)) Focus = false;
-
-            if (Focus)
-            {
-                Update_Input();
-            }
+            UpdateFocus();
 
             string ui_text_text = null;
             if (Focus)
@@ -109,8 +101,33 @@ namespace tContentPatch.Content.UI
             ui_text.SetText(ui_text_text);
         }
 
-        private void Update_Input()
+        /// <summary/>
+        protected virtual void UpdateFocus()
         {
+            bool mouseLeftOld = this.mouseLeftOld;
+            this.mouseLeftOld = Main.mouseLeft;
+
+            if (
+                //Main.gamePaused ||
+                Main.drawingPlayerChat ||
+                Main.ingameOptionsWindow ||
+                Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Escape))
+            {
+                Focus = false;
+                return;
+            }
+
+            if (Main.mouseLeft && mouseLeftOld == false)
+            {
+                Focus = IsMouseHovering;
+            }
+        }
+
+        /// <summary/>
+        protected virtual void UpdateInput()
+        {
+            if (Focus == false) return;
+
             Terraria.GameInput.PlayerInput.WritingText = true;
             Main.instance.HandleIME();
             string s = Main.GetInputText(Text);
@@ -120,6 +137,20 @@ namespace tContentPatch.Content.UI
             DrawIME.IME_P = new Vector2(size.X, size.Y + size.Height + 36);
 
             SetText(s);
+        }
+
+        /// <summary/>
+        protected virtual void OnDrawUpdateInput()
+        {
+            UpdateInput();
+        }
+
+        /// <inheritdoc/>
+        protected override void DrawSelf(SpriteBatch spriteBatch)
+        {
+            base.DrawSelf(spriteBatch);
+
+            OnDrawUpdateInput();
         }
 
         /// <summary/>

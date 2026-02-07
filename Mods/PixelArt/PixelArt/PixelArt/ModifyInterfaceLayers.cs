@@ -33,7 +33,6 @@ namespace PixelArt
                     "StaticTile.SundryTool: Inventory Prefix UI",
                     () =>
                     {
-                        ui.Update(Main.gameTimeCache);
                         ui.Draw(Main.spriteBatch, Main.gameTimeCache);
                         return true;
                     },
@@ -48,6 +47,11 @@ namespace PixelArt
                     },
                     InterfaceScaleType.Game));
             }
+        }
+
+        public override void UpdateUIStatesPostfix(GameTime gameTime)
+        {
+            ui.Update(Main.gameTimeCache);
         }
 
         public override void UpdatePrefix(GameTime gameTime)

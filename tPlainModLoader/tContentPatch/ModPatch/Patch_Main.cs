@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Reflection;
 using tContentPatch.Utils;
 using Terraria;
+using Terraria.GameInput;
 using Terraria.UI;
 
 namespace tContentPatch.ModPatch
@@ -87,14 +88,30 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void UpdateUIStatesPrefix(GameTime gameTime)
         {
-            mod.ForTry(item => item.UpdateUIStatesPrefix(gameTime));
+            int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
+
+            mod.ForTry(item =>
+            {
+                PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                item.UpdateUIStatesPrefix(gameTime);
+            });
+
+            PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
         }
 
         [HarmonyPatch("UpdateUIStates")]
         [HarmonyPostfix]
         public static void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            mod.ForTry(item => item.UpdateUIStatesPostfix(gameTime));
+            int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
+
+            mod.ForTry(item =>
+            {
+                PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                item.UpdateUIStatesPostfix(gameTime);
+            });
+
+            PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
         }
 
         [HarmonyPatch("DoUpdateInWorld")]

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
@@ -17,10 +18,10 @@ namespace QuickSetting
             ui.SetState(ui_state);
         }
 
-        //public override void UpdateUIStatesPrefix(GameTime gameTime)
-        //{
-        //    ui.Update(gameTime);更新放在这会导致文本输入控件出问题
-        //}
+        public override void UpdateUIStatesPostfix(GameTime gameTime)
+        {
+            ui.Update(gameTime);
+        }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
@@ -28,14 +29,13 @@ namespace QuickSetting
             if (index != -1)
             {
                 gameInterfaceLayers.Insert(index, new LegacyGameInterfaceLayer(
-                "StaticTile.QuickSetting: Inventory Prefix",
-                () =>
-                {
-                    ui.Update(Main.gameTimeCache);
-                    ui.Draw(Main.spriteBatch, Main.gameTimeCache);
-                    return true;
-                },
-                InterfaceScaleType.UI));
+                    "StaticTile.QuickSetting: Inventory Prefix",
+                    () =>
+                    {
+                        ui.Draw(Main.spriteBatch, Main.gameTimeCache);
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
             }
         }
     }
