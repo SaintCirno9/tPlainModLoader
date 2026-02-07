@@ -51,7 +51,17 @@ namespace PixelArt
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            ui.Update(Main.gameTimeCache);
+            if (ui == null) return;
+
+            if (Main.gameMenu)
+            {
+                ui.SetState(null);
+            }
+            else
+            {
+                ui.SetState(ui_state);
+                ui.Update(gameTime);
+            }
         }
 
         public override void UpdatePrefix(GameTime gameTime)

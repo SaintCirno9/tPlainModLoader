@@ -38,7 +38,7 @@ namespace OptimizeAndTool
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            ui_menu.Update(gameTime);
+            ui_menu?.Update(gameTime);
         }
 
         public override void DrawMenuPrefix(GameTime gameTime)

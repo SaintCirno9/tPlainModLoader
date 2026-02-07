@@ -20,7 +20,17 @@ namespace QuickSetting
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            ui.Update(gameTime);
+            if (ui == null) return;
+
+            if (Main.gameMenu)
+            {
+                ui.SetState(null);
+            }
+            else
+            {
+                ui.SetState(ui_state);
+                ui.Update(gameTime);
+            }
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)

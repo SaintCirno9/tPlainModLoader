@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
@@ -20,7 +21,17 @@ namespace QuickButton
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            ui.Update(gameTime);
+            if (ui == null) return;
+
+            if (Main.gameMenu)
+            {
+                ui.SetState(null);
+            }
+            else
+            {
+                ui.SetState(ui_state);
+                ui.Update(gameTime);
+            }
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
