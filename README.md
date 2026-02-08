@@ -12,7 +12,7 @@
 
 ## 使用
 直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
-### `tPlainModLoader.exe`启动失败?
+### 遇到问题或`tPlainModLoader.exe`启动失败?
 [看这里](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
 
 ## 模组
