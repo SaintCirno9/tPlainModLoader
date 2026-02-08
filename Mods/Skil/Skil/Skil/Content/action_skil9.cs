@@ -5,6 +5,7 @@ using Skil.Utils.quickBuild;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
+using Terraria.GameContent.Drawing;
 using Terraria.UI;
 
 namespace Skil.Content
@@ -18,6 +19,7 @@ namespace Skil.Content
         public static GetSetReset<float> Speed = new GetSetReset<float>(0.01f, 0.01f);
         public static GetSetReset<int> CD = new GetSetReset<int>(1, 1);
         public static GetSetReset<bool> TileCollide = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> fire = new GetSetReset<bool>(true, true);
         public static GetSetReset<float> VelocityOff = new GetSetReset<float>();
         public static GetSetReset<float> R = new GetSetReset<float>(100, 100);//半径
         public static GetSetReset<int> Len = new GetSetReset<int>(100, 100);
@@ -32,6 +34,7 @@ namespace Skil.Content
                 .SkilCMDBuild("speed", Speed)
                 .SkilCMDBuild("cd", CD)
                 .SkilCMDBuild("tileCollide", TileCollide)
+                .SkilCMDBuild("fire", fire)
                 .SkilCMDBuild("velocityOff", VelocityOff)
                 .SkilCMDBuild("r", R)
                 .SkilCMDBuild("len", Len),
@@ -47,6 +50,7 @@ namespace Skil.Content
                 UIBuild.get6(Speed, float.Parse, "<int>", "Images/Buff_213", "技能9速度"),
                 UIBuild.get6(CD, int.Parse, "<int>", "Images/Buff_213", "技能9cd"),
                 UIBuild.get2(TileCollide, ico:"Images/Buff_213", text:"技能9方块碰撞"),
+                UIBuild.get2(fire, ico:"Images/Buff_213", text:"技能9碰撞火花"),
                 UIBuild.get6(VelocityOff, float.Parse, "<int>", "Images/Buff_213", "技能9角度"),
                 UIBuild.get6(R, float.Parse, "<int>", "Images/Buff_213", "技能9半径"),
                 UIBuild.get6(Len, int.Parse, "<int>", "Images/Buff_213", "技能9长度"),
@@ -88,7 +92,7 @@ namespace Skil.Content
             velocity = Vector2.Normalize(angle.ToRotationVector2());
             position += velocity * r;
 
-            velocity *= len * ratio;
+            velocity *= len;
             velocity = velocity.RotatedBy((MathHelper.TwoPi / 360) * VelocityOff.val);
 
             if (Mode.val == 0)
@@ -103,7 +107,7 @@ namespace Skil.Content
 
                     Vector2 v = targetP - position;
 
-                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v * ratio;
+                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v;
                 }
             }
             else if (Mode.val == 1)
@@ -118,7 +122,7 @@ namespace Skil.Content
 
                     Vector2 v = targetP - position;
 
-                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v * ratio;
+                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v;
                 }
             }
             else if (Mode.val == 2)
@@ -129,14 +133,43 @@ namespace Skil.Content
 
                     if (v.Length() > MaxLen) v = Vector2.Normalize(v) * MaxLen;
 
-                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v * ratio;
+                    if (v.HasNaNs() == false && v != Vector2.Zero) velocity = v;
                 }
             }
 
-            int id = Projectile.NewProjectile(null, position, velocity, 434, SkilListControl1.damage.val, 1, player.whoAmI);
+            int id = Projectile.NewProjectile(null, position, velocity * ratio, 434, SkilListControl1.damage.val, 1, player.whoAmI);
             Main.projectile[id].tileCollide = TileCollide.val;
 
             ++skil9_i;
+
+            if (fire.val) UpdateFire(Main.projectile[id], position + velocity, player);
+            else proj = null;
+        }
+
+        private static Projectile proj = null;
+        private static Vector2 projTargetP = Vector2.Zero;
+        private static void UpdateFire(Projectile p, Vector2 targetP, Player player)
+        {
+            Projectile old = proj;
+            if (Utils.projExist(old, 434, player))
+            {
+                proj = null;
+
+                if (Vector2.Distance(old.position, projTargetP) > 5)
+                {
+                    Vector2 v = Vector2.Normalize(old.position - new Vector2(old.ai[0], old.ai[1])) * -2;
+
+                    ParticleOrchestraType type = ParticleOrchestraType.BestReforge;
+                    ParticleOrchestrator.BroadcastOrRequestParticleSpawn(type, new ParticleOrchestraSettings
+                    {
+                        PositionInWorld = old.Center,
+                        MovementVector = v,
+                    });
+                }
+            }
+
+            projTargetP = targetP;
+            proj = p;
         }
     }
 }
