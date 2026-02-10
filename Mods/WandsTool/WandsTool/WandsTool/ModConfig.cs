@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using tContentPatch;
 using tContentPatch.Content.UI;
 using tContentPatch.Content.UI.ModSet;
@@ -18,6 +19,7 @@ namespace WandsTool
         public override string Name => "设置";
         public override string Title => "魔杖工具: 设置";
         public override string FilePath => "模组配置.txt";
+        public override Type DataType => typeof(Data);
         private static Data data = null;
 
         public override void Load(object v)
