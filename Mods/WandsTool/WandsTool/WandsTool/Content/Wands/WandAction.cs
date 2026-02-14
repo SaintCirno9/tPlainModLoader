@@ -153,7 +153,7 @@ namespace WandsTool.Content
                 if (v) SetSlopeFor(t.x, t.y, t.bt);
             }
 
-            action.updateData_placeTile(t.x, t.y);
+            action.updateData_placeTile(t.x, t.y, item.placeStyle);
         }
         private static void placeWall(tile t, Player player)
         {
