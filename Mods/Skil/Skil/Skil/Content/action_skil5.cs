@@ -22,6 +22,7 @@ namespace Skil.Content
         public static GetSetReset<float> Ai1 = new GetSetReset<float>();
         public static GetSetReset<float> Ai2 = new GetSetReset<float>();
         public static GetSetReset<int> Mode = new GetSetReset<int>();
+        public static GetSetReset<bool> OriginalDamage = new GetSetReset<bool>();
 
         public static List<CommandObject> GetCO()
         {
@@ -34,7 +35,8 @@ namespace Skil.Content
                 .SkilCMDBuild("ai0", Ai0)
                 .SkilCMDBuild("ai1", Ai1)
                 .SkilCMDBuild("ai2", Ai2)
-                .SkilCMDBuild("mode", Mode),
+                .SkilCMDBuild("mode", Mode)
+                .SkilCMDBuild("originalDamage", OriginalDamage),
             };
         }
 
@@ -49,6 +51,7 @@ namespace Skil.Content
                 UIBuild.get6(Ai0, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai0"),
                 UIBuild.get6(Ai1, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai1"),
                 UIBuild.get6(Ai2, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai2"),
+                UIBuild.get2(OriginalDamage, "开启后召唤物射弹才有伤害", "Images/Buff_322", "技能5设置原伤害"),
             };
         }
 
@@ -111,7 +114,11 @@ namespace Skil.Content
 
             Projectile.NewProjectile(null, position, velocity * ShootSpeed.val,
                 projs[getRand(0, projs.Length)], SkilListControl1.damage.val, 1, player.whoAmI,
-                ai0, ai1, ai2);
+                ai0, ai1, ai2,
+                p =>
+                {
+                    if (OriginalDamage.val) p.originalDamage = p.damage;
+                });
         }
     }
 }
