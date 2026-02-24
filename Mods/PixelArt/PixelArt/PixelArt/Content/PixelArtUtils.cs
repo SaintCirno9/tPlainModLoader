@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using Terraria;
 
 namespace PixelArt.Content
@@ -17,7 +18,7 @@ namespace PixelArt.Content
             return rDiff + gDiff + bDiff;
         }
 
-        private static List<PixelInfo> LoadImgToPixelInfo(string filePath, ref int width, ref int height)
+        private static List<PixelInfo> LoadImgToPixelInfo(string filePath, ref int width, ref int height, CancellationToken ct)
         {
             if (File.Exists(filePath) == false)
             {
@@ -36,14 +37,37 @@ namespace PixelArt.Content
                     for (int x = 0; x < width; ++x)
                     {
                         System.Drawing.Color c = bitmap.GetPixel(x, y);
-                        if (c.A != 255) continue;
-                        Color color = new Color(c.R, c.G, c.B, c.A);
 
-                        pixelInfos.Add(new PixelInfo(color, x, y));
+                        PixelInfo pi = null;
+
+                        if (c.A == byte.MaxValue)
+                        {
+                            Color color = new Color(c.R, c.G, c.B, c.A);
+                            pi = new PixelInfo(color, x, y);
+                        }
+                        
+                        pixelInfos.Add(pi);
                     }
                 }
             }
-            
+
+            for (int i = 0; i < pixelInfos.Count; ++i)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (pixelInfos[i] == null) continue;
+
+                Item item = LookupColorSimilarWallItem(pixelInfos[i].color);
+                if (item == null)
+                {
+                    pixelInfos[i] = null;
+                    continue;
+                }
+
+                pixelInfos[i].itemId = item.type;
+                pixelInfos[i].wallId = (ushort)item.createWall;
+            }
+
             return pixelInfos;
         }
 

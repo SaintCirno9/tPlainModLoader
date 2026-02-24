@@ -34,7 +34,6 @@ namespace tContentPatch
         /// </summary>
         private ContentPatch() { }
 
-
         /// <summary/>
         public bool CanInitialize()
         {

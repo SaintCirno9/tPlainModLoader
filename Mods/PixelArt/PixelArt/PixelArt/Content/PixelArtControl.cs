@@ -1,5 +1,7 @@
-﻿using PixelArt.Content.UI;
+﻿using Microsoft.Xna.Framework.Graphics;
+using PixelArt.Content.UI;
 using PixelArt.Utils.quickBuild;
+using ReLogic.Content;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
@@ -9,6 +11,8 @@ namespace PixelArt.Content
 {
     public partial class PixelArt : PatchMain
     {
+        private readonly static Texture2D ico1 = Main.Assets.Request<Texture2D>("Images/UI/Camera_6", AssetRequestMode.ImmediateLoad).Value;
+
         public override void OnEnterWorld()
         {
             initialize();
@@ -16,8 +20,13 @@ namespace PixelArt.Content
 
         public static List<UIElement> GetUI()
         {
+            UIItemTextButton getFile = new UIItemTextButton("选择", ico1, "选择文件并加载");
+            getFile.OnClick += CtlSetPathAndLoadPixelInfo;
+
             List<UIElement> uis = new List<UIElement>
             {
+                getFile,
+
                 new UIItemTextBoxBindSwitchAction<string>(
                     () => PixelInfoLoading, CtlLoadPixelInfo, CtlCancelLoadPixelInfo,
                     LoadPath, v => v, text: "加载图片数据"){ MouseText = "文件路径<string>" },
@@ -27,8 +36,6 @@ namespace PixelArt.Content
                 new UIItemSwitchAction(() => SpawPosSelecting, CtlSetSpawPos, CtlCancelSetSpawPos, text: "生成位置"),
 
                 new UIItemTextBoxBind<int>(SpawSpeed, int.Parse, null, "生成速度"){ MouseText = "<int>" },
-
-                UIBuild.get1(SpawDistance, SpawDistance_val, int.Parse, "<int>", text:"在范围内生成"),
 
                 UIBuild.get2(SetSelectedItem, text:"设置手中物品"),
 
@@ -43,9 +50,22 @@ namespace PixelArt.Content
                         return "-";
                     }
                 },
+
+                UIBuild.get2(DisplayWall, text:"显示预览"),
             };
 
             return uis;
+        }
+
+        public static void CtlSetPathAndLoadPixelInfo()
+        {
+            if (NoControl()) return;
+            if (foo(SwitchPathing == true, "无法选择, 正在选择")) return;
+
+            SwitchPath(() =>
+            {
+                CtlLoadPixelInfo();
+            });
         }
 
         #region 加载

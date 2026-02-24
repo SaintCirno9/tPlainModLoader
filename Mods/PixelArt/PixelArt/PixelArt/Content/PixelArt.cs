@@ -1,30 +1,37 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using PixelArt.Utils;
+using ReLogic.Content;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.GameContent;
 using Terraria.ID;
+using Utils1 = PixelArt.Utils;
 
 namespace PixelArt.Content
 {
     public partial class PixelArt
     {
-        public struct PixelInfo
+        public class PixelInfo
         {
             public PixelInfo(Color color, int x, int y)
             {
                 this.color = color;
                 this.x = x;
                 this.y = y;
+                this.itemId = ItemID.None;
+                this.wallId = WallID.None;
             }
 
             public Color color;
             public int x;
             public int y;
+            public int itemId;
+            public ushort wallId;
         }
 
         public static bool Loaded { get; protected set; } = false;
@@ -33,18 +40,19 @@ namespace PixelArt.Content
         public static bool PixelInfoLoaded { get; protected set; } = false;//像素信息加载完成
         public static bool SpawIng { get; protected set; } = false;//像素画生成中
         public static bool SpawPosSelecting = false;//生成位置选择中
+        public static bool SwitchPathing = false;//选择路径中
 
         public static GetSetReset<string> LoadPath = new GetSetReset<string>("img.png", "img.png");//加载路径
         public static GetSetReset<int> SpawSpeed = new GetSetReset<int>(1, 1);//每次更新的生成次数
-        public static GetSetReset<bool> SpawDistance = new GetSetReset<bool>(false, false);//玩家靠近生成
         public static GetSetReset<int> SpawDistance_val = new GetSetReset<int>(20, 20);
         public static GetSetReset<bool> SetSelectedItem = new GetSetReset<bool>(false, false);//设置玩家手中物品
         public static GetSetReset<int> SpawPosSelectV = new GetSetReset<int>(0, 0, v => v < 0 ? 0 : (v > 3 ? 3 : v));//生成位置选择方向
+        public static GetSetReset<bool> DisplayWall = new GetSetReset<bool>(false, false);//显示预览
         //
         private static Point16 spawPos = Point16.Zero;//生成位置
         //
         private static List<PixelInfo> pixelInfo = null;
-        private static List<PixelInfo> pixelInfo_copy = null;
+        private static int pixelInfo_index = 0;
         private static int pixelWidth = 0;
         private static int pixelHeight = 0;
         private static List<Item> wallItemIds = null;
@@ -123,73 +131,60 @@ namespace PixelArt.Content
 
         private static void Update_spaw(Player player)
         {
-            if (pixelInfo_copy.Count < 1)
+            for (int i = 0; Update_spaw_Place(player) && i < 2000; ++i) ;
+        }
+
+        private static bool Update_spaw_Place(Player player)
+        {
+            if (pixelInfo_index < pixelInfo.Count != true)
             {
                 SpawIng = false;
                 Main.NewText("生成完成");
-                return;
+                return false;
             }
 
-            PixelInfo? pi = null;
-            if (SpawDistance.val)
-            {
-                float min = SpawDistance_val.val;
+            PixelInfo pi = pixelInfo[pixelInfo_index];
+            ++pixelInfo_index;
+            if (pi == null) return true;
+            if (pi.wallId == WallID.None) return true;
+            
+            int x = spawPos.X + pi.x;
+            int y = spawPos.Y + pi.y;
 
-                for (int i = 0; i < pixelInfo_copy.Count; ++i)
-                {
-                    PixelInfo p = pixelInfo_copy[i];
-                    float d = Vector2.Distance(new Vector2(spawPos.X + p.x, spawPos.Y + p.y), player.Center / 16);
-                    if (d < min)
-                    {
-                        min = d;
-                        pi = p;
-                    }
-                }
+            //
+
+            if (WorldGen.InWorld(x, y) == false) return true;
+
+            Tile tile = Main.tile[x, y];
+            if (tile != null && tile.wall > WallID.None)
+            {
+                if (tile.wall == pi.wallId) return true;
+
+                if (SetSelectedItem.val) SetPlaySelectedItem(player, pi.itemId);
+                WorldGen.ReplaceWall(x, y, pi.wallId);
+                if (Main.netMode == 1) Utils.updateData_replaceWall(x, y);
             }
             else
             {
-                pi = pixelInfo_copy.First();
-            }
-            if (pi == null) return;
-
-            int x = spawPos.X + pi.Value.x;
-            int y = spawPos.Y + pi.Value.y;
-
-            if (WorldGen.InWorld(x, y) == false)
-            {
-                pixelInfo_copy.Remove(pi.Value);
-                return;
+                if (SetSelectedItem.val) SetPlaySelectedItem(player, pi.itemId);
+                WorldGen.PlaceWall(x, y, pi.wallId, true);
+                if (Main.netMode == 1) Utils.updateData_placeWall(x, y);
             }
 
-            if (Main.tile[x, y]?.wall > 0)
-            {
-                pixelInfo_copy.Remove(pi.Value);
-                Update_spaw(player);
-                return;
-            }
+            return false;
+        }
 
-            Item item = LookupColorSimilarWallItem(pi.Value.color);
-            if (item == null)
-            {
-                pixelInfo_copy.Remove(pi.Value);
-                return;
-            }
+        private static void SetPlaySelectedItem(Player player, int itemType)
+        {
+            if (player.inventory[player.selectedItem].type == itemType) return;
 
-            if (SetSelectedItem.val)
-            {
-                if (player.inventory[player.selectedItem].type != item.type)
-                {
-                    player.inventory[player.selectedItem].SetDefaults(item.type);
+            player.inventory[player.selectedItem].SetDefaults(itemType);
+            player.inventory[player.selectedItem].stack = 1;
 
-                    if (Main.netMode == 1) return;//停一下等服务端同步数据
-                }
-            }
+            if (Main.netMode != 1) return;
 
-            pixelInfo_copy.Remove(pi.Value);
-
-            WorldGen.PlaceWall(x, y, item.createWall);
-
-            if (Main.netMode == 1) Utils.updateData_placeWall(x, y);
+            NetMessage.TrySendData(MessageID.SyncEquipment, -1, -1, null,
+                player.whoAmI, PlayerItemSlotID.Inventory0 + player.selectedItem);
         }
 
         private static void LoadWallItemId()
@@ -212,6 +207,45 @@ namespace PixelArt.Content
             }
         }
 
+        public static void SwitchPath(Action fun)
+        {
+            if (SwitchPathing) return;
+            SwitchPathing = true;
+
+            try
+            {
+                Thread t = new Thread(() =>
+                {
+                    try
+                    {
+                        string path = Utils1.Utils.GetFileName();
+                        if (path == null)
+                        {
+                            Main.NewText("取消选择");
+                            return;
+                        }
+
+                        LoadPath.val = path;
+                        Main.NewText($"位置:{LoadPath.val}");
+
+                        fun?.Invoke();
+                    }
+                    finally
+                    {
+                        SwitchPathing = false;
+                    }
+                });
+
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+            }
+            catch
+            {
+                SwitchPathing = false;
+                Main.NewText("选择失败");
+            }
+        }
+
         #region 加载
         public static void LoadPixelInfo()
         {
@@ -227,6 +261,7 @@ namespace PixelArt.Content
         {
             PixelInfoLoading = true;
 
+            string path = LoadPath.val;
             ClearPixelInfo();
 
             pixelInfoLoad_cts = new CancellationTokenSource();
@@ -235,7 +270,7 @@ namespace PixelArt.Content
             {
                 try
                 {
-                    List<PixelInfo> v = LoadImgToPixelInfo(LoadPath.val, ref pixelWidth, ref pixelHeight);
+                    List<PixelInfo> v = LoadImgToPixelInfo(path, ref pixelWidth, ref pixelHeight, (CancellationToken)token);
 
                     if (Loaded == false) return null;
 
@@ -272,17 +307,21 @@ namespace PixelArt.Content
         #region 生成
         public static void StartSpaw()
         {
-            for (int i = 0; i < pixelInfo.Count; ++i)
+            int x = spawPos.X;
+            int y = spawPos.Y;
+            if (WorldGen.InWorld(x, y))
             {
-                PixelInfo pi = pixelInfo[i];
-                if (WorldGen.InWorld(spawPos.X + pi.x, spawPos.Y + pi.y)) continue;
+                x += pixelWidth - 1;
+                y += pixelHeight - 1;
+                if (WorldGen.InWorld(x, y) == false) Main.NewText("超出世界部分将跳过");
+            }
+            else
+            {
                 Main.NewText("超出世界部分将跳过");
-                break;
             }
 
+            pixelInfo_index = 0;
             SpawIng = true;
-            pixelInfo_copy = new List<PixelInfo>();
-            for (int i = 0; i < pixelInfo.Count; ++i) pixelInfo_copy.Add(pixelInfo[i]);
         }
 
         public static void EndSpaw()
@@ -294,6 +333,8 @@ namespace PixelArt.Content
         private static void ClearPixelInfo()
         {
             PixelInfoLoaded = false;
+            pixelWidth = 0;
+            pixelHeight = 0;
             pixelInfo?.Clear();
             pixelInfo = null;
         }
@@ -302,13 +343,66 @@ namespace PixelArt.Content
         {
             if (SpawPosSelecting)
             {
-                Vector2 positionWord = new Vector2(spawPos.X, spawPos.Y) * 16;
-                Vector2 size = new Vector2(pixelWidth, pixelHeight) * 16;
+                Rectangle rect = new Rectangle(spawPos.X, spawPos.Y, pixelWidth, pixelHeight);
 
                 Color borderColor = new Color(40, 250, 80);
 
-                DrawUtils.Draw_rectangle(positionWord, positionWord + size, borderColor, borderColor * 0.35f);
+                DrawUtils.Draw_rectangle(rect, borderColor, borderColor * 0.35f, 2);
             }
+
+            if (DisplayWall.val && PixelInfoLoaded) DrawWall();
+        }
+
+        private static void DrawWall()
+        {
+            Point p = Main.screenPosition.ToTileCoordinates();
+            Point s = Main.ScreenSize.ToVector2().ToTileCoordinates();
+
+            int add = 0;
+            Rectangle rect1 = new Rectangle(p.X - add, p.Y - add, s.X + add * 2, s.Y + add * 2);
+            Rectangle rect2 = new Rectangle(spawPos.X, spawPos.Y, pixelWidth, pixelHeight);
+
+            List<PixelInfo> pis = GetIntersectsTile(rect1, rect2, pixelInfo);
+            if (pis == null) return;
+
+            foreach (PixelInfo i in pis)
+            {
+                if (i.wallId < WallID.Count == false) continue;
+
+                Asset<Texture2D> asset = TextureAssets.Wall[i.wallId];
+                if (asset?.Value == null) continue;
+
+                Vector2 pos = (new Point(spawPos.X + i.x, spawPos.Y + i.y)).ToWorldCoordinates(0, 0) - Main.screenPosition;
+                Rectangle src = new Rectangle((32 + 4) * 2 + 8, (32 + 4) * 1 + 8, 16, 16);
+                Main.spriteBatch.Draw(asset.Value, pos, src, Color.White * 0.5f);
+            }
+        }
+
+        private static List<PixelInfo> GetIntersectsTile(Rectangle scope, Rectangle size, List<PixelInfo> pis)
+        {
+            Rectangle rect = Rectangle.Intersect(scope, size);
+            if (rect.IsEmpty) return null;
+
+            rect.X -= size.X;
+            rect.Y -= size.Y;
+
+            List<PixelInfo> list = new List<PixelInfo>();
+
+            for (int i = 0; i < rect.Height; i++)
+            {
+                for (int j = 0; j < rect.Width; j++)
+                {
+                    int index = (rect.Y + i) * size.Width;
+                    index += (rect.X + j);
+
+                    if (pis.IndexInRange(index) != true) continue;
+                    if (pis[index] == null) continue;
+
+                    list.Add(pis[index]);
+                }
+            }
+
+            return list;
         }
     }
 }

@@ -30,6 +30,8 @@ namespace tPlainModLoaderInjector
                 }
 
                 Log.SetPath(Path.Combine(ProgramPath, InfoList.Files.Log));
+                DateTime time = DateTime.Now;
+                Log.Add($"{nameof(Program)}:{time.Year}.{time.Month}.{time.Day}");
                 Log.Add($"{nameof(tPlainModLoaderInjector)}:初始化");
                 Console.WriteLine($"初始化");
 

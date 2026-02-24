@@ -24,7 +24,13 @@ namespace tPlainModLoaderInjector
         {
             Program.ProgramPath = args;
 
-            if (Log.path == null) Log.SetPath(Path.Combine(Program.ProgramPath, InfoList.Files.Log));
+            if (Log.path == null)
+            {
+                Log.SetPath(Path.Combine(Program.ProgramPath, InfoList.Files.Log));
+
+                DateTime time = DateTime.Now;
+                Log.Add($"{nameof(Program)}:{time.Year}.{time.Month}.{time.Day}");
+            }
 
             try
             {

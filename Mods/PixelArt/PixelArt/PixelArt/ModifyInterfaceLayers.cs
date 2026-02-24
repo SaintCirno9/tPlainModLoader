@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using PixelArt.Content;
 using System.Collections.Generic;
+using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
@@ -37,9 +38,13 @@ namespace PixelArt
                         return true;
                     },
                     InterfaceScaleType.UI));
+            }
 
+            index = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Laser Ruler");
+            if (index != -1)
+            {
                 gameInterfaceLayers.Insert(index, new LegacyGameInterfaceLayer(
-                    "StaticTile.SundryTool: Inventory Prefix Game",
+                    "StaticTile.SundryTool: Laser Ruler Prefix Game",
                     () =>
                     {
                         Content.PixelArt.Draw();
@@ -64,7 +69,7 @@ namespace PixelArt
             }
         }
 
-        public override void UpdatePrefix(GameTime gameTime)
+        public override void DoUpdateInWorldPrefix(Stopwatch sw)
         {
             Content.PixelArt.Update(Main.LocalPlayer);
         }
