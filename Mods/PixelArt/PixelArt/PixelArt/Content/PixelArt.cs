@@ -280,6 +280,8 @@ namespace PixelArt.Content
                     PixelInfoLoading = false;
                     PixelInfoLoaded = true;
 
+                    LoadWallTextureAssets(pixelInfo);//加载下, 不然绘制的时候纹理没加载就不绘制了
+
                     return "加载完成";
                 }
                 catch (Exception ex)
@@ -293,6 +295,17 @@ namespace PixelArt.Content
                     return $"加载失败, {ex.Message}";
                 }
             }, pixelInfoLoad_cts.Token);
+        }
+
+        private static void LoadWallTextureAssets(List<PixelInfo> pis)
+        {
+            foreach (PixelInfo i in pis)
+            {
+                if (i == null) continue;
+                if (i.wallId < WallID.Count == false) continue;
+
+                Main.instance.LoadWall(i.wallId);
+            }
         }
 
         public static void CancelLoadPixelInfo()
