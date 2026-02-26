@@ -183,10 +183,11 @@ namespace PixelArt.Content
 
         private static void SetPlaySelectedItem(Player player, int itemType)
         {
-            if (player.inventory[player.selectedItem].type == itemType) return;
+            Item item = player.inventory[player.selectedItem];
+            if (item.type == itemType && item.stack > 0) return;
 
-            player.inventory[player.selectedItem].SetDefaults(itemType);
-            player.inventory[player.selectedItem].stack = 1;
+            item.SetDefaults(itemType);
+            item.stack = 1;
 
             if (Main.netMode != 1) return;
 
