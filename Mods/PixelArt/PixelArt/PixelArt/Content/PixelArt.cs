@@ -59,15 +59,22 @@ namespace PixelArt.Content
         private static CancellationTokenSource pixelInfoLoad_cts = null;
 
 
-        private static void initialize()
+        private static void Close()
         {
             Loaded = false;
+
+            CancelLoadPixelInfo();
 
             EndSpaw();
 
             ClearPixelInfo();
 
             SpawPosSelecting = false;
+        }
+
+        private static void initialize()
+        {
+            Close();
 
             LoadWallItemId();
 

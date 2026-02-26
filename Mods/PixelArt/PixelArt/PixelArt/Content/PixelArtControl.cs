@@ -18,6 +18,14 @@ namespace PixelArt.Content
             initialize();
         }
 
+        private class OnUnload : Mod
+        {
+            public override void Unload()
+            {
+                Close();
+            }
+        }
+
         public static List<UIElement> GetUI()
         {
             UIItemTextButton getFile = new UIItemTextButton("选择", ico1, "选择文件并加载");
