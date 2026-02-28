@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PixelArt.Content.ColorToWall;
 using PixelArt.Utils;
 using ReLogic.Content;
 using System;
@@ -48,6 +49,7 @@ namespace PixelArt.Content
         public static GetSetReset<bool> SetSelectedItem = new GetSetReset<bool>(false, false);//设置玩家手中物品
         public static GetSetReset<int> SpawPosSelectV = new GetSetReset<int>(0, 0, v => v < 0 ? 0 : (v > 3 ? 3 : v));//生成位置选择方向
         public static GetSetReset<bool> DisplayWall = new GetSetReset<bool>(false, false);//显示预览
+        public static GetSetReset<int> LoadType = new GetSetReset<int>(0, 0, v => v < 0 ? 0 : (v > 1 ? 1 : v));//加载方式
         //
         private static Point16 spawPos = Point16.Zero;//生成位置
         //
@@ -56,6 +58,7 @@ namespace PixelArt.Content
         private static int pixelWidth = 0;
         private static int pixelHeight = 0;
         private static List<Item> wallItemIds = null;
+        private static IGetColorWall[] gcw = null;
         private static CancellationTokenSource pixelInfoLoad_cts = null;
 
 
@@ -69,6 +72,8 @@ namespace PixelArt.Content
 
             ClearPixelInfo();
 
+            gcw = null;
+
             SpawPosSelecting = false;
         }
 
@@ -77,6 +82,13 @@ namespace PixelArt.Content
             Close();
 
             LoadWallItemId();
+
+            //
+            List<ColorWall> cws = ItemToColorWall(wallItemIds);
+
+            gcw = new IGetColorWall[] { new Get1(), new Get2() };
+            foreach (IGetColorWall i in gcw) i.Init(cws);
+            //
 
             Loaded = true;
         }
@@ -186,13 +198,16 @@ namespace PixelArt.Content
             Item item = player.inventory[player.selectedItem];
             if (item.type == itemType && item.stack > 0) return;
 
-            item.SetDefaults(itemType);
-            item.stack = 1;
+            player.inventory[player.selectedItem] = new Item();
+            player.inventory[player.selectedItem].SetDefaults(itemType);
+            player.inventory[player.selectedItem].stack = 1;
 
             if (Main.netMode != 1) return;
 
             NetMessage.TrySendData(MessageID.SyncEquipment, -1, -1, null,
                 player.whoAmI, PlayerItemSlotID.Inventory0 + player.selectedItem);
+
+            player.inventory[player.selectedItem] = item;
         }
 
         private static void LoadWallItemId()
@@ -257,7 +272,9 @@ namespace PixelArt.Content
         #region 加载
         public static void LoadPixelInfo()
         {
-            _ = LoadPixelInfoAsync().ContinueWith(t =>
+            IGetColorWall gcw = PixelArt.gcw[LoadType.val];
+
+            _ = LoadPixelInfoAsync(gcw).ContinueWith(t =>
             {
                 if (t.IsCanceled) return;
                 if (t.Result == null) return;
@@ -265,7 +282,7 @@ namespace PixelArt.Content
             });
         }
 
-        private static async Task<string> LoadPixelInfoAsync()
+        private static async Task<string> LoadPixelInfoAsync(IGetColorWall gcw)
         {
             PixelInfoLoading = true;
 
@@ -278,7 +295,7 @@ namespace PixelArt.Content
             {
                 try
                 {
-                    List<PixelInfo> v = LoadImgToPixelInfo(path, ref pixelWidth, ref pixelHeight, (CancellationToken)token);
+                    List<PixelInfo> v = LoadImgToPixelInfo(path, ref pixelWidth, ref pixelHeight, gcw, (CancellationToken)token);
 
                     if (Loaded == false) return null;
 

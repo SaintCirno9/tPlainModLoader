@@ -60,6 +60,16 @@ namespace PixelArt.Content
                 },
 
                 UIBuild.get2(DisplayWall, text:"显示预览"),
+
+                new UIItemValueSliderBind<int>(LoadType, v => v, v => (int)v, 0, 1, text: "加载方式")
+                {
+                    FloatToString = v =>
+                    {
+                        if (v == 0) return "普通";
+                        if (v == 1) return "快速";
+                        return "-";
+                    }
+                },
             };
 
             return uis;

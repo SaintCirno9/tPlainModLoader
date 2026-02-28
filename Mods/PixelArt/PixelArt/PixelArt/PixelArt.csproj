@@ -74,6 +74,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Content\ColorToWall\ColorWall.cs" />
+    <Compile Include="Content\ColorToWall\Get1.cs" />
+    <Compile Include="Content\ColorToWall\Get2.cs" />
+    <Compile Include="Content\ColorToWall\IGetColorWall.cs" />
     <Compile Include="Content\UI\UIItemSwitchAction.cs" />
     <Compile Include="Content\UI\UIItemTextBoxBind.cs" />
     <Compile Include="Content\UI\UIItemTextBoxBindSwitchAction.cs" />

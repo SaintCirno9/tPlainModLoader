@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using PixelArt.Content.ColorToWall;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,16 +10,7 @@ namespace PixelArt.Content
 {
     public partial class PixelArt
     {
-        //获取两个颜色的 RGB 分量差之和
-        public static int ColorDifference(Color color1, Color color2)
-        {
-            int rDiff = Math.Abs(color1.R - color2.R);
-            int gDiff = Math.Abs(color1.G - color2.G);
-            int bDiff = Math.Abs(color1.B - color2.B);
-            return rDiff + gDiff + bDiff;
-        }
-
-        private static List<PixelInfo> LoadImgToPixelInfo(string filePath, ref int width, ref int height, CancellationToken ct)
+        private static List<PixelInfo> LoadImgToPixelInfo(string filePath, ref int width, ref int height, IGetColorWall gcw, CancellationToken ct)
         {
             if (File.Exists(filePath) == false)
             {
@@ -57,52 +49,33 @@ namespace PixelArt.Content
 
                 if (pixelInfos[i] == null) continue;
 
-                Item item = LookupColorSimilarWallItem(pixelInfos[i].color);
-                if (item == null)
-                {
-                    pixelInfos[i] = null;
-                    continue;
-                }
+                ColorWall cw = gcw.Get(pixelInfos[i].color);
 
-                pixelInfos[i].itemId = item.type;
-                pixelInfos[i].wallId = (ushort)item.createWall;
+                pixelInfos[i].itemId = cw.item;
+                pixelInfos[i].wallId = cw.wall;
             }
 
             return pixelInfos;
         }
 
-        private static Item LookupColorSimilarWallItem(Color color)
+        private static List<ColorWall> ItemToColorWall(List<Item> items)
         {
-            int difference = -1;
-            Item item = null;
+            List<ColorWall> cw = new List<ColorWall>();
+            if (items == null) return cw;
 
-            for (int i = 1; i < wallItemIds.Count; ++i)
+            foreach (Item i in items)
             {
-                int createWall = wallItemIds[i].createWall;
+                if (i == null) continue;
 
+                int createWall = i.createWall;
                 ushort wallId = Terraria.Map.MapHelper.wallLookup[createWall];
                 Color mapColor = MapHelper.colorLookup[wallId];
-                if (mapColor.A != 255) continue;
+                if (mapColor.A != byte.MaxValue) continue;
 
-                int s = ColorDifference(color, mapColor);
-                if (s == 0)
-                {
-                    return wallItemIds[i];
-                }
-                if (difference == -1)
-                {
-                    difference = s;
-                    item = wallItemIds[i];
-                    continue;
-                }
-                if (difference > s)
-                {
-                    difference = s;
-                    item = wallItemIds[i];
-                }
+                cw.Add(new ColorWall(mapColor, i.type, (ushort)createWall));
             }
 
-            return item;
+            return cw;
         }
     }
 }
