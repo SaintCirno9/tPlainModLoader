@@ -34,7 +34,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void SyncConnectedPlayerPrefix(int plr)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncConnectedPlayerPrefix(plr));
         }
@@ -43,7 +43,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void SyncConnectedPlayerPostfix(int plr)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncConnectedPlayerPostfix(plr));
         }
@@ -60,7 +60,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void SyncDisconnectedPlayerPrefix(int plr)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncDisconnectedPlayerPrefix(plr));
         }
@@ -72,7 +72,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void SyncDisconnectedPlayerPostfix(int plr)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncDisconnectedPlayerPostfix(plr));
         }
@@ -81,7 +81,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void SyncOnePlayerPrefix(int plr, int toWho, int fromWho)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncOnePlayerPrefix(plr, toWho, fromWho));
         }
@@ -90,7 +90,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void SyncOnePlayerPostfix(int plr, int toWho, int fromWho)
         {
-            if (Main.netMode != 2) return;
+            if (Main.dedServ == false) return;
 
             mod.ForTry(item => item.SyncOnePlayerPostfix(plr, toWho, fromWho));
         }

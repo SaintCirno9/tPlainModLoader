@@ -39,6 +39,8 @@ namespace tContentPatch.ModLoad
                 {
                     stateText = $"初始化模组:{mo.info?.name ?? mo.config.key}";
 
+                    Utils.ForHelp(mo.inheritance_netPacket, item => item.Initialize(), ex => exMess(mo, ex));
+
                     Utils.ForHelp(mo.inheritance_patchMain, item => item.Initialize(), ex => exMess(mo, ex));
 
                     Utils.ForHelp(mo.inheritance_patchPlayer, item => item.Initialize(), ex => exMess(mo, ex));
@@ -64,6 +66,20 @@ namespace tContentPatch.ModLoad
                     Utils.ForHelp(mo.inheritance_patchRemoteClient, item => item.Initialize(), ex => exMess(mo, ex));
 
                     Utils.ForHelp(mo.inheritance_patchWorldGen, item => item.Initialize(), ex => exMess(mo, ex));
+                },
+                mo =>
+                {
+                    string text = $"注册网络包:{mo.info?.name ?? mo.config.key}";
+                    stateText = text;
+
+                    try
+                    {
+                        Content.Network.ModNetworkPacket.Register(mo.inheritance_netPacket);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"失败:{text}", ex);
+                    }
                 },
                 mo =>
                 {

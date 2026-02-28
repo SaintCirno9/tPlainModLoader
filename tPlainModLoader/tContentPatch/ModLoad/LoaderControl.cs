@@ -32,7 +32,6 @@ namespace tContentPatch.ModLoad
         /// <summary>
         /// 获取加载的模组, 加载失败时为null, 需要修改内容建议使用返回复制内容的<see cref="ContentPatch.GetModObjects"/>
         /// </summary>
-        /// <returns></returns>
         internal static List<ModObject> GetModObjects()
         {
             return loadedMod?.ToList();

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using tContentPatch.Content.Network;
 using tContentPatch.Utils;
 using Terraria;
 using Terraria.GameInput;
@@ -54,6 +55,10 @@ namespace tContentPatch.ModPatch
             }
 
             _UpdatePrefix_CanUpdateGameplay_old = Main.CanUpdateGameplay;
+
+            //
+
+            if (Main.netMode == 1) NetTPMLModule.SendToServer();
         }
 
         [HarmonyPatch("Update")]

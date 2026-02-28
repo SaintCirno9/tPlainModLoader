@@ -41,6 +41,8 @@ namespace tContentPatch.ModLoad
         /// 继承了<see cref="ModSetting"/>的类
         /// </summary>
         public List<ModSetting> inheritance_setting = null;
+        /// <summary/>
+        public List<ModNetPacket> inheritance_netPacket = null;
         /// <summary>
         /// 继承了<see cref="PatchMain"/>的类
         /// </summary>

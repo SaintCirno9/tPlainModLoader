@@ -65,6 +65,9 @@
     <Compile Include="Command\Utils.cs" />
     <Compile Include="ContentPatch_Initialize.cs" />
     <Compile Include="ContentPatch.cs" />
+    <Compile Include="Content\Network\ModNetworkPacket.cs" />
+    <Compile Include="Content\Network\NetTPMLModule.cs" />
+    <Compile Include="Content\Network\RegisterNetModule.cs" />
     <Compile Include="Content\AutoLoadMod.cs" />
     <Compile Include="Content\DedServConsoleCommand.cs" />
     <Compile Include="Content\DrawIME.cs" />
@@ -89,6 +92,7 @@
     <Compile Include="Content\UI\UISwitch.cs" />
     <Compile Include="Content\UI\UITextBox.cs" />
     <Compile Include="Content\UI\UIWindow.cs" />
+    <Compile Include="ModLoad\Inheritance\ModNetPacket.cs" />
     <Compile Include="ModLoad\LoadInstance\LoadInstance.cs" />
     <Compile Include="ModLoad\LoadInstance\LoadInstance_IModLoader.cs" />
     <Compile Include="ModLoad\Intercept.cs" />

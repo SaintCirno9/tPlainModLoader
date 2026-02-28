@@ -16,7 +16,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPrefix]
         public static void SaveWorldPrefix(bool useCloudSaving, bool resetTime)
         {
-            if (Main.netMode != 0 && Main.netMode != 2) return;
+            if (Main.netMode != 0 && Main.dedServ == false) return;
 
             mod.ForTry(item => item.SaveWorldPrefix(useCloudSaving, resetTime));
         }
@@ -25,7 +25,7 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void SaveWorldPostfix(bool useCloudSaving, bool resetTime)
         {
-            if (Main.netMode != 0 && Main.netMode != 2) return;
+            if (Main.netMode != 0 && Main.dedServ == false) return;
 
             mod.ForTry(item => item.SaveWorldPostfix(useCloudSaving, resetTime));
         }
