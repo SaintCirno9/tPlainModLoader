@@ -16,7 +16,7 @@ namespace tContentPatch
         /// <summary/>
         public static bool Initialized { get; private set; } = false;
         /// <summary/>
-        public static bool NoPublic = false;
+        public static bool NoPublic = true;
 
         internal const string patchId_tContentPatch = "tContentPatch.gamePatch";
         internal const string patchId_mod = "tContentPatch.mod.patch";
