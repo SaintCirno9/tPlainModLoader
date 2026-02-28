@@ -95,7 +95,7 @@ namespace PixelArt.Content
 
         public static void Update(Player player)
         {
-            if (Loaded == false)
+            if (Loaded == false && Main.dedServ == false)
             {
                 initialize();
                 if (Loaded == false) return;
@@ -259,6 +259,7 @@ namespace PixelArt.Content
                     }
                 });
 
+                t.Name = "PixelArt SwitchPath";
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
             }

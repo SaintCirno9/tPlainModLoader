@@ -11,8 +11,6 @@ namespace PixelArt.Content
 {
     public partial class PixelArt : PatchMain
     {
-        private readonly static Texture2D ico1 = Main.Assets.Request<Texture2D>("Images/UI/Camera_6", AssetRequestMode.ImmediateLoad).Value;
-
         public override void OnEnterWorld()
         {
             initialize();
@@ -28,6 +26,8 @@ namespace PixelArt.Content
 
         public static List<UIElement> GetUI()
         {
+            Texture2D ico1 = Main.Assets.Request<Texture2D>("Images/UI/Camera_6", AssetRequestMode.ImmediateLoad).Value;
+
             UIItemTextButton getFile = new UIItemTextButton("选择", ico1, "选择文件并加载");
             getFile.OnClick += CtlSetPathAndLoadPixelInfo;
 
