@@ -15,7 +15,7 @@ namespace Skil.Content.skil15
     {
         private class enterWorld : PatchMain
         {
-            public override void OnEnterWorldPrefix()
+            public override void OnEnterWorld()
             {
                 runing = false;
             }

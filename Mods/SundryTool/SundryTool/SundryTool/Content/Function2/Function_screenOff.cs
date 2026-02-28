@@ -29,7 +29,7 @@ namespace SundryTool.Content.Function2
             return Enable.val;
         }
 
-        public override void OnEnterWorldPrefix()
+        public override void OnEnterWorld()
         {
             Enable.val = false;
         }

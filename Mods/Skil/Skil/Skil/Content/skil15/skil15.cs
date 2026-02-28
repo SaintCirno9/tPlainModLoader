@@ -23,7 +23,7 @@ namespace Skil.Content.skil15
             return uis;
         }
 
-        public override void OnEnterWorldPrefix()
+        public override void OnEnterWorld()
         {
             for (int i = 0; i < IsGoHome.Length; i++) IsGoHome[i] = false;
         }

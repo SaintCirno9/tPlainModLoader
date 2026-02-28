@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
+using tContentPatch.Content.Network;
 using Terraria;
 using Terraria.Localization;
 
@@ -28,6 +29,8 @@ namespace tContentPatch.ModPatch
         {
             mod.ForTry(item => item.SendDataPostfix(msgType, remoteClient, ignoreClient, text,
                 number, number2, number3, number4, number5, number6, number7));
+
+            if (msgType == Terraria.ID.MessageID.PlayerSpawn && Main.netMode == 1) NetTPMLModule.SendToServer();
         }
         
         [HarmonyPatch("SyncConnectedPlayer")]
