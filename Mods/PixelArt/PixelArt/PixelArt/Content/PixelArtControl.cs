@@ -71,10 +71,8 @@ namespace PixelArt.Content
                     }
                 },
 
-                UIBuild.get2(LoadUsePaint, mouseText: "不要频繁开关", text:"加载时使用油漆"),
-
                 new UIItemSwitchAction(() => LoadUsePaint.val, CtlSwitchLoadUsePaint, CtlSwitchLoadUsePaint,
-                text: "加载时使用油漆"){ MouseText = "切换后会停下其它操作. 不要频繁开关" },
+                text: "加载时使用油漆"){ MouseText = "不要频繁开关\n切换后会停下其它操作且需重新加载" },
             };
 
             return uis;

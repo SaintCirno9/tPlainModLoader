@@ -180,8 +180,8 @@ namespace PixelArt.Content
                 return !Utils.TileUtils.PlaceWall(x, y, pi.wall, pi.item, player, SetSelectedItem.val);
             }
 
-            bool rv = !Utils.TileUtils.PaintWall(x, y, pi.paint, player, SetSelectedItem.val);
-            rv &= !Utils.TileUtils.PlaceWall(x, y, pi.wall, pi.item, player, SetSelectedItem.val);
+            bool rv = !Utils.TileUtils.PlaceWall(x, y, pi.wall, pi.item, player, SetSelectedItem.val);
+            rv &= !Utils.TileUtils.PaintWall(x, y, pi.paint, player, SetSelectedItem.val);
 
             return rv;
         }

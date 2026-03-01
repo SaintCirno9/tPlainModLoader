@@ -37,12 +37,12 @@ namespace PixelArt.Content.Utils
                 if (replace)
                 {
                     WorldGen.ReplaceWall(x, y, wall);
-                    if (Main.netMode == 1) NetMessage.TrySendData(MessageID.TileManipulation, -1, -1, null, 22, x, y, tile.wall);
+                    if (Main.netMode == 1) NetMessage.TrySendData(MessageID.TileManipulation, -1, -1, null, 22, x, y, wall);
                 }
                 else
                 {
                     WorldGen.PlaceWall(x, y, wall, true);
-                    if (Main.netMode == 1) NetMessage.TrySendData(MessageID.TileManipulation, -1, -1, null, 3, x, y, tile.wall);
+                    if (Main.netMode == 1) NetMessage.TrySendData(MessageID.TileManipulation, -1, -1, null, 3, x, y, wall);
                 }
                 
                 return true;
@@ -55,7 +55,7 @@ namespace PixelArt.Content.Utils
             if (paint == PaintID.None) return false;
 
             Tile tile = Main.tile[x, y];
-            if (tile?.color() == paint) return false;
+            if (tile?.wallColor() == paint) return false;
 
             return ActionSetItem(player, ItemID.PaintRoller, setItem, () =>
             {
