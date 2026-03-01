@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Terraria;
+using Terraria.ID;
+using Terraria.Map;
 
 namespace PixelArt.Content
 {
@@ -51,14 +53,15 @@ namespace PixelArt.Content
 
                 ColorWall cw = gcw.Get(pixelInfos[i].color);
 
-                pixelInfos[i].itemId = cw.item;
-                pixelInfos[i].wallId = cw.wall;
+                pixelInfos[i].item = cw.item;
+                pixelInfos[i].wall = cw.wall;
+                pixelInfos[i].paint = cw.paint;
             }
 
             return pixelInfos;
         }
 
-        private static List<ColorWall> ItemToColorWall(List<Item> items)
+        private static List<ColorWall> ItemToColorWall(List<Item> items, bool usePaint)
         {
             List<ColorWall> cw = new List<ColorWall>();
             if (items == null) return cw;
@@ -67,12 +70,23 @@ namespace PixelArt.Content
             {
                 if (i == null) continue;
 
-                int createWall = i.createWall;
-                ushort wallId = Terraria.Map.MapHelper.wallLookup[createWall];
-                Color mapColor = MapHelper.colorLookup[wallId];
-                if (mapColor.A != byte.MaxValue) continue;
+                ushort type = Terraria.Map.MapHelper.wallLookup[i.createWall];//应该不是tile也不是wall, 而是都有
 
-                cw.Add(new ColorWall(mapColor, i.type, (ushort)createWall));
+                MapTile mt = new MapTile();
+                mt.Light = byte.MaxValue;
+                mt.Type = type;
+
+                int count = usePaint ? PaintID.Old_IlluminantPaint + 1 : 1;
+
+                for (byte j = PaintID.None; j < count; j++)
+                {
+                    mt.Color = j;
+
+                    Color mapColor = Terraria.Map.MapHelper.GetMapTileXnaColor(mt);
+                    if (mapColor.A != byte.MaxValue) continue;
+
+                    cw.Add(new ColorWall(mapColor, i.type, (ushort)i.createWall, j));
+                }
             }
 
             return cw;

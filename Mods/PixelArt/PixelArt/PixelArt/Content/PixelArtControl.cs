@@ -13,7 +13,7 @@ namespace PixelArt.Content
     {
         public override void OnEnterWorld()
         {
-            initialize();
+            InitPixelArt();
         }
 
         private class OnUnload : Mod
@@ -37,7 +37,7 @@ namespace PixelArt.Content
 
                 new UIItemTextBoxBindSwitchAction<string>(
                     () => PixelInfoLoading, CtlLoadPixelInfo, CtlCancelLoadPixelInfo,
-                    LoadPath, v => v, text: "加载图片数据"){ MouseText = "文件路径<string>" },
+                    LoadPath, v => v, ico1, "加载图片数据"){ MouseText = "文件路径<string>" },
 
                 new UIItemSwitchAction(() => SpawIng, CtlStartSpaw, CtlEndSpaw, text: "生成"),
 
@@ -70,9 +70,23 @@ namespace PixelArt.Content
                         return "-";
                     }
                 },
+
+                UIBuild.get2(LoadUsePaint, mouseText: "不要频繁开关", text:"加载时使用油漆"),
+
+                new UIItemSwitchAction(() => LoadUsePaint.val, CtlSwitchLoadUsePaint, CtlSwitchLoadUsePaint,
+                text: "加载时使用油漆"){ MouseText = "切换后会停下其它操作. 不要频繁开关" },
             };
 
             return uis;
+        }
+
+        public static void CtlSwitchLoadUsePaint()
+        {
+            if (NoControl()) return;
+
+            LoadUsePaint.val = !LoadUsePaint.val;
+
+            InitPixelArt();
         }
 
         public static void CtlSetPathAndLoadPixelInfo()

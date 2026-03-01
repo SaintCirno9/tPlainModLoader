@@ -85,7 +85,6 @@
     <Compile Include="Content\UI\UIItemValueSliderBind.cs" />
     <Compile Include="Content\UI\UISwitchAction.cs" />
     <Compile Include="Content\UI\UITextButton.cs" />
-    <Compile Include="Content\Utils.cs" />
     <Compile Include="Content\DrawUtils.cs" />
     <Compile Include="Content\PixelArt.cs" />
     <Compile Include="Content\MapHelp.cs" />
@@ -95,6 +94,8 @@
     <Compile Include="Content\UI\UIItemSwitchBind.cs" />
     <Compile Include="Content\UI\UIItemTextBoxASwitchBind.cs" />
     <Compile Include="Content\UI\UITextBoxBind.cs" />
+    <Compile Include="Content\Utils\ClientSendToServer.cs" />
+    <Compile Include="Content\Utils\TileUtils.cs" />
     <Compile Include="Content\Window.cs" />
     <Compile Include="ModifyInterfaceLayers.cs" />
     <Compile Include="ModLinkage\LinkageSetting.cs" />

@@ -24,15 +24,17 @@ namespace PixelArt.Content
                 this.color = color;
                 this.x = x;
                 this.y = y;
-                this.itemId = ItemID.None;
-                this.wallId = WallID.None;
+                this.item = ItemID.None;
+                this.wall = WallID.None;
+                this.paint = PaintID.None;
             }
 
             public Color color;
             public int x;
             public int y;
-            public int itemId;
-            public ushort wallId;
+            public int item;
+            public ushort wall;
+            public byte paint;
         }
 
         public static bool Loaded { get; protected set; } = false;
@@ -50,6 +52,7 @@ namespace PixelArt.Content
         public static GetSetReset<int> SpawPosSelectV = new GetSetReset<int>(0, 0, v => v < 0 ? 0 : (v > 3 ? 3 : v));//生成位置选择方向
         public static GetSetReset<bool> DisplayWall = new GetSetReset<bool>(false, false);//显示预览
         public static GetSetReset<int> LoadType = new GetSetReset<int>(0, 0, v => v < 0 ? 0 : (v > 1 ? 1 : v));//加载方式
+        public static GetSetReset<bool> LoadUsePaint = new GetSetReset<bool>(false, false);//加载时使用油漆
         //
         private static Point16 spawPos = Point16.Zero;//生成位置
         //
@@ -77,14 +80,14 @@ namespace PixelArt.Content
             SpawPosSelecting = false;
         }
 
-        private static void initialize()
+        private static void InitPixelArt()
         {
             Close();
 
             LoadWallItemId();
 
             //
-            List<ColorWall> cws = ItemToColorWall(wallItemIds);
+            List<ColorWall> cws = ItemToColorWall(wallItemIds, LoadUsePaint.val);
 
             gcw = new IGetColorWall[] { new Get1(), new Get2() };
             foreach (IGetColorWall i in gcw) i.Init(cws);
@@ -97,7 +100,7 @@ namespace PixelArt.Content
         {
             if (Loaded == false && Main.dedServ == false)
             {
-                initialize();
+                InitPixelArt();
                 if (Loaded == false) return;
             }
 
@@ -165,47 +168,22 @@ namespace PixelArt.Content
             PixelInfo pi = pixelInfo[pixelInfo_index];
             ++pixelInfo_index;
             if (pi == null) return true;
-            if (pi.wallId == WallID.None) return true;
+            if (pi.wall == WallID.None) return true;
             
             int x = spawPos.X + pi.x;
             int y = spawPos.Y + pi.y;
 
             //
 
-            if (WorldGen.InWorld(x, y) == false) return true;
-
-            Tile tile = Main.tile[x, y];
-            if (tile != null && tile.wall > WallID.None)
+            if (pi.paint == PaintID.None)
             {
-                if (tile.wall == pi.wallId) return true;
-
-                if (SetSelectedItem.val) SetPlaySelectedItem(player, pi.itemId);
-                WorldGen.ReplaceWall(x, y, pi.wallId);
-                if (Main.netMode == 1) Utils.updateData_replaceWall(x, y);
-            }
-            else
-            {
-                if (SetSelectedItem.val) SetPlaySelectedItem(player, pi.itemId);
-                WorldGen.PlaceWall(x, y, pi.wallId, true);
-                if (Main.netMode == 1) Utils.updateData_placeWall(x, y);
+                return !Utils.TileUtils.PlaceWall(x, y, pi.wall, pi.item, player, SetSelectedItem.val);
             }
 
-            return false;
-        }
+            bool rv = !Utils.TileUtils.PaintWall(x, y, pi.paint, player, SetSelectedItem.val);
+            rv &= !Utils.TileUtils.PlaceWall(x, y, pi.wall, pi.item, player, SetSelectedItem.val);
 
-        private static void SetPlaySelectedItem(Player player, int itemType)
-        {
-            if (Main.netMode != 1) return;
-
-            int index = player.selectedItem;
-            Item item = player.inventory[index];
-            if (item.type == itemType && item.stack > 0) return;
-
-            item.SetDefaults(itemType);
-            item.stack = 1;
-
-            NetMessage.TrySendData(MessageID.SyncEquipment, -1, -1, null,
-                player.whoAmI, PlayerItemSlotID.Inventory0 + index);
+            return rv;
         }
 
         private static void LoadWallItemId()
@@ -326,9 +304,9 @@ namespace PixelArt.Content
             foreach (PixelInfo i in pis)
             {
                 if (i == null) continue;
-                if (i.wallId < WallID.Count == false) continue;
+                if (i.wall < WallID.Count == false) continue;
 
-                Main.instance.LoadWall(i.wallId);
+                Main.instance.LoadWall(i.wall);
             }
         }
 
@@ -404,9 +382,9 @@ namespace PixelArt.Content
 
             foreach (PixelInfo i in pis)
             {
-                if (i.wallId < WallID.Count == false) continue;
+                if (i.wall < WallID.Count == false) continue;
 
-                Asset<Texture2D> asset = TextureAssets.Wall[i.wallId];
+                Asset<Texture2D> asset = TextureAssets.Wall[i.wall];
                 if (asset?.Value == null) continue;
 
                 Vector2 pos = (new Point(spawPos.X + i.x, spawPos.Y + i.y)).ToWorldCoordinates(0, 0) - Main.screenPosition;
