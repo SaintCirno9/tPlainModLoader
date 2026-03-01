@@ -197,17 +197,12 @@ namespace PixelArt.Content
         {
             if (Main.netMode != 1) return;
 
-            Item item = player.inventory[player.selectedItem];
+            int index = player.selectedItem;
+            Item item = player.inventory[index];
             if (item.type == itemType && item.stack > 0) return;
 
-            player.inventory[player.selectedItem] = new Item();
-            player.inventory[player.selectedItem].SetDefaults(itemType);
-            player.inventory[player.selectedItem].stack = 1;
-
             NetMessage.TrySendData(MessageID.SyncEquipment, -1, -1, null,
-                player.whoAmI, PlayerItemSlotID.Inventory0 + player.selectedItem);
-
-            player.inventory[player.selectedItem] = item;
+                player.whoAmI, PlayerItemSlotID.Inventory0 + index);
         }
 
         private static void LoadWallItemId()
