@@ -201,6 +201,9 @@ namespace PixelArt.Content
             Item item = player.inventory[index];
             if (item.type == itemType && item.stack > 0) return;
 
+            item.SetDefaults(itemType);
+            item.stack = 1;
+
             NetMessage.TrySendData(MessageID.SyncEquipment, -1, -1, null,
                 player.whoAmI, PlayerItemSlotID.Inventory0 + index);
         }
