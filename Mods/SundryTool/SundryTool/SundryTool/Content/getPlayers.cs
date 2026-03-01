@@ -20,7 +20,7 @@ namespace SundryTool.Content
 
                     string s = $"{i},{player.whoAmI}[{player.name}]";
 
-                    System.Console.WriteLine(s);
+                    tContentPatch.ContentPatch.PrintTry(s);
                 }
             };
 
