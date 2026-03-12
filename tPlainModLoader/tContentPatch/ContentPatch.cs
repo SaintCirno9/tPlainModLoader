@@ -10,13 +10,13 @@ namespace tContentPatch
     public partial class ContentPatch
     {
         /// <summary/>
-        public const string VersionTPlainModLoader = "1-beta12-t1.4.5.4";
+        public const string VersionTPlainModLoader = "1-beta12-t1.4.5.6";
         /// <summary/>
         public static string ModDirectory { get; private set; } = null;
         /// <summary/>
         public static bool Initialized { get; private set; } = false;
         /// <summary/>
-        public static bool NoPublic = false;
+        public static bool NoPublic = true;
 
         internal const string patchId_tContentPatch = "tContentPatch.gamePatch";
         internal const string patchId_mod = "tContentPatch.mod.patch";

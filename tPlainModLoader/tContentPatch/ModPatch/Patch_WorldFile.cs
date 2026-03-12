@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using Terraria;
 
@@ -12,22 +11,22 @@ namespace tContentPatch.ModPatch
 
         public Patch_WorldFile() : base(mod) { }
 
-        [HarmonyPatch("SaveWorld", new Type[] { typeof(bool), typeof(bool) })]
+        [HarmonyPatch("_SaveWorld")]
         [HarmonyPrefix]
-        public static void SaveWorldPrefix(bool useCloudSaving, bool resetTime)
+        public static void SaveWorldPrefix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)
         {
             if (Main.netMode != 0 && Main.dedServ == false) return;
 
-            mod.ForTry(item => item.SaveWorldPrefix(useCloudSaving, resetTime));
+            mod.ForTry(item => item.SaveWorldPrefix(useCloudSaving, resetTime, useTemps, canBeSkipped));
         }
 
-        [HarmonyPatch("SaveWorld", new Type[] { typeof(bool), typeof(bool)})]
+        [HarmonyPatch("_SaveWorld")]
         [HarmonyPostfix]
-        public static void SaveWorldPostfix(bool useCloudSaving, bool resetTime)
+        public static void SaveWorldPostfix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)
         {
             if (Main.netMode != 0 && Main.dedServ == false) return;
 
-            mod.ForTry(item => item.SaveWorldPostfix(useCloudSaving, resetTime));
+            mod.ForTry(item => item.SaveWorldPostfix(useCloudSaving, resetTime, useTemps, canBeSkipped));
         }
     }
 }

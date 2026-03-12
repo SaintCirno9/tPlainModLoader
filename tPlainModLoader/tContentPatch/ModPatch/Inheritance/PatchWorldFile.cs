@@ -10,10 +10,10 @@
         /// <summary>
         /// 保存世界前, 单人和服务端有效
         /// </summary>
-        public virtual void SaveWorldPrefix(bool useCloudSaving, bool resetTime) { }
+        public virtual void SaveWorldPrefix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped) { }
         /// <summary>
         /// 保存世界后, 单人和服务端有效
         /// </summary>
-        public virtual void SaveWorldPostfix(bool useCloudSaving, bool resetTime) { }
+        public virtual void SaveWorldPostfix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped) { }
     }
 }
