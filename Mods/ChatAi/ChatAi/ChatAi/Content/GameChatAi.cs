@@ -86,7 +86,7 @@ namespace ChatAi.Content
             
             if (text == null) return;
 
-            if (DisplayText.val) System.Console.WriteLine($"请求文本: [{text}]");
+            if (DisplayText.val) ContentPatch.PrintTry($"请求文本: [{text}]");
 
             request(text);
         }

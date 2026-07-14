@@ -36,7 +36,7 @@ namespace SundryTool.Content
         {
             if (uuid == null)
             {
-                Console.WriteLine("uuid is [null]");
+                ContentPatch.PrintTry("uuid is [null]");
                 return;
             }
 

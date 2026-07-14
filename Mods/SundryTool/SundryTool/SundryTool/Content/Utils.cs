@@ -76,7 +76,7 @@ namespace SundryTool.Content
             if (Main.player.IndexInRange(i) == false)
             {
                 msg = $"[{i}] no entity";
-                Console.WriteLine(msg);
+                tContentPatch.ContentPatch.PrintTry(msg);
                 Main.NewText(msg);
                 return;
             }
@@ -84,7 +84,7 @@ namespace SundryTool.Content
             T o = list[i];
             msg = $"[{getName(o)}]";
             if (isActive(o) == false) msg += " no active";
-            Console.WriteLine(msg);
+            tContentPatch.ContentPatch.PrintTry(msg);
             Main.NewText(msg);
         }
 

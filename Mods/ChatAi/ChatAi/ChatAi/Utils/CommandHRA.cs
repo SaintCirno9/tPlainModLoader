@@ -1,5 +1,4 @@
 ﻿using CommandHelp;
-using System;
 
 namespace ChatAi.Utils
 {
@@ -21,7 +20,7 @@ namespace ChatAi.Utils
                 if (vs[0] is CommandVariable cv)
                 {
                     if (cv.TextEquals) gsr.Reset();
-                    else Console.WriteLine($"[{gsr.val}]");
+                    else tContentPatch.ContentPatch.PrintTry($"[{gsr.val}]");
                 }
                 else
                 {

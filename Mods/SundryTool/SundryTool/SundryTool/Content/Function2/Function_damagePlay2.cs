@@ -34,7 +34,7 @@ namespace SundryTool.Content.Function2
             reason_proj.OnValUpdate += v =>
             {
                 string s = $"[{Lang.GetProjectileName(v).Value}]";
-                Console.WriteLine(s);
+                ContentPatch.PrintTry(s);
                 Main.NewText(s);
             };
             reason_npc.OnValUpdate += v => Utils.OutputNPCName(reason_npc.val);
