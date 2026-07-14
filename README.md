@@ -8,7 +8,7 @@
 在原版游戏的基础上添加了加载模组的功能，模组在此基础上可以对原版内容进行修改。
 ### 2. 需要注意的问题
 由于技术不足(太菜了)，所以对**tPlainModLoader**的安全性不做任何保证，因此如果坚持要使用该软件导致的**游戏崩溃**、**游戏损坏**等各种问题需要由使用者自行承担。<br/>
-并且如果有模组使用了`tContentPatch.Mod.AddPatch`对游戏进行修补，那么再次加载该模组会导致修补的部分出现问题，所以建议重新打开**tPlainModLoader**而不是重新加载模组。
+不建议使用重新加载模组，最好是重新打开**tPlainModLoader**，如果有模组使用了`tContentPatch.Mod.AddPatch`对游戏进行修补，那么再次加载该模组会导致修补的部分出现问题。
 
 ## 使用
 直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
