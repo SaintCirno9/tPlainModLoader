@@ -11,7 +11,7 @@
 不建议使用重新加载模组，最好是重新打开**tPlainModLoader**，如果有模组使用了`tContentPatch.Mod.AddPatch`对游戏进行修补，那么再次加载该模组会导致修补的部分出现问题。
 
 ## 使用
-直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8)。
+直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#id1)。
 ### 遇到问题或`tPlainModLoader.exe`启动失败？
 [看这里](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
 
