@@ -40,7 +40,7 @@ namespace ChatAi
 
             try
             {
-                //ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
                 string v = await Apis.Chat.InputAsync(text, type);
                 if (v == null) { tContentPatch.ContentPatch.PrintTry("返回文本为[null]"); return; }
