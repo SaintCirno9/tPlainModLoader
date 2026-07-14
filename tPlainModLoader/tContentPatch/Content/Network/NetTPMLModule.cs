@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using tContentPatch.ModLoad;
+﻿using System.IO;
 using Terraria;
 using Terraria.Net;
 

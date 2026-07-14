@@ -48,8 +48,6 @@ namespace tContentPatch.ModPatch
             if (_UpdatePrefix_CanUpdateGameplay_old == false && Main.CanUpdateGameplay == true)
             {
                 mod.ForTry(item => item.OnEnterWorld());
-
-                if (Main.netMode == 1) NetTPMLModule.SendToServer();
             }
             else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
             {
