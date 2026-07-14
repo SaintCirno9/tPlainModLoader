@@ -66,6 +66,7 @@ namespace tContentPatch.Content
         private static void DrawVersionNumber(Color menuColor, float upBump)
         {
             string text = $"tPlainModLoader v{ContentPatch.VersionTPlainModLoader}";
+            if (ContentPatch.NoPublic == false) text += " NoPublic";
 
             Vector2 pos = new Vector2(10, upBump);
 
