@@ -4,8 +4,6 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using tContentPatch;
-using Terraria;
-using Terraria.GameContent.UI.Chat;
 using Terraria.UI;
 using Terraria.UI.Chat;
 

@@ -9,10 +9,8 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
-using Terraria.GameContent;
 using Terraria.UI;
 using Terraria.UI.Chat;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace OptimizeAndTool.Content
 {
@@ -72,7 +70,7 @@ namespace OptimizeAndTool.Content
                     break;
                 }
 
-                int size = 21;
+                int size = 22;
                 Vector2 pos = new Vector2(88f, (float)(Main.screenHeight - 30 - 28 - i * size));
                 ++i;
 
