@@ -1,4 +1,5 @@
 ﻿using System;
+using static Terraria.ID.ArmorIDs;
 
 namespace OptimizeAndTool.Utils
 {
@@ -40,7 +41,16 @@ namespace OptimizeAndTool.Utils
                 if (v > max) return max;
                 return v;
             };
+        }
 
+        public static Func<float, float> GetFloatFunc(float min = float.MinValue, float max = float.MaxValue)
+        {
+            return v =>
+            {
+                if (v < min) return min;
+                if (v > max) return max;
+                return v;
+            };
         }
     }
 }

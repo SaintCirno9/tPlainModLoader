@@ -12,10 +12,10 @@ namespace OptimizeAndTool.Content
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> ptype = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> pwhoAmI = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> pvelocity = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> pwhoAmI = new GetSetReset<bool>(false, false);
+        public static GetSetReset<bool> pvelocity = new GetSetReset<bool>(false, false);
         public static GetSetReset<float> pvelocity_val = new GetSetReset<float>(5, 5);
-        public static GetSetReset<bool> pai = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> pai = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> plocalAI = new GetSetReset<bool>(false, false);
         private static Color[] info_Colors = { Color.Green, Color.BlueViolet, Color.Gold, Color.Pink };
 

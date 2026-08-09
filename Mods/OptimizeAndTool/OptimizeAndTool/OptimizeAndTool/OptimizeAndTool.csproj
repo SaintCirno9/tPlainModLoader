@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\tPlainModLoader\tPlainModLoader\bin\Debug\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="CommandHelp">
       <HintPath>..\..\..\..\tPlainModLoader\tPlainModLoader\bin\Debug\CommandHelp.dll</HintPath>
       <Private>False</Private>
@@ -74,12 +78,16 @@
   <ItemGroup>
     <Compile Include="Command.cs" />
     <Compile Include="Content\DisplayItemType.cs" />
+    <Compile Include="Content\PatchGameViewMatrixZoomLimit.cs" />
     <Compile Include="Content\ItemToolTipAdditional.cs" />
     <Compile Include="Content\CleanRepeatChat.cs" />
     <Compile Include="Content\CopyChat.cs" />
     <Compile Include="Content\DisplayProjectileInfo.cs" />
     <Compile Include="Content\Function.cs" />
-    <Compile Include="Content\Patch\RemadeChatMonitor.cs" />
+    <Compile Include="Content\Patch\PatchInit.cs" />
+    <Compile Include="Content\Patch\Patch_Lighting.cs" />
+    <Compile Include="Content\Patch\Patch_Main.cs" />
+    <Compile Include="Content\Patch\Patch_RemadeChatMonitor.cs" />
     <Compile Include="Content\ServerList\ServerInfo.cs" />
     <Compile Include="Content\ServerList\Setting.cs" />
     <Compile Include="Content\ServerList\UIButton.cs" />

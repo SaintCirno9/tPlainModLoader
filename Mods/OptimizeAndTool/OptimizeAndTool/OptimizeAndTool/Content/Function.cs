@@ -18,6 +18,7 @@ namespace OptimizeAndTool.Content
             cos.AddRange(ServerList.ServerList.GetCO());
             cos.AddRange(ItemToolTipAdditional.GetCO());
             cos.AddRange(DisplayProjectileInfo.GetCO());
+            cos.AddRange(PatchGameViewMatrixZoomLimit.GetCO());
 
             return cos;
         }
@@ -31,6 +32,8 @@ namespace OptimizeAndTool.Content
             uis.AddRange(ItemToolTipAdditional.GetUI());
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_2799", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "工具"));
             uis.AddRange(DisplayProjectileInfo.GetUI());
+            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_4766", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "缩放限制"));
+            uis.AddRange(PatchGameViewMatrixZoomLimit.GetUI());
 
             return uis;
         }
