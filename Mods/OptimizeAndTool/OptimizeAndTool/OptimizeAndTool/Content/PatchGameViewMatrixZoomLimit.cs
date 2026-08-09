@@ -23,7 +23,8 @@ namespace OptimizeAndTool.Content
         {
             List<CommandObject> cos = new List<CommandObject>
             {
-                CommandBuild.get3("patchZoom", Enable,
+                CommandBuild.get3("zoom", Enable,
+                new CommandHRA<float>("scale", Scale, new CommandFloat()),
                 CommandBuild.get3("light", Light)),
             };
 
