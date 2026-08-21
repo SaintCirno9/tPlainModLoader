@@ -45,6 +45,7 @@ namespace AccessoryBox.Common
         public void Save()
         {
             ItemListConfig.SaveData(armor);
+            Config.Instance?.Save();
         }
 
         public void SetEnable(bool val)

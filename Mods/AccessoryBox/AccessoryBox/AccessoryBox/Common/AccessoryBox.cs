@@ -4,6 +4,7 @@ using System.Reflection;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using Terraria.IO;
 
 namespace AccessoryBox.Common
 {
@@ -41,6 +42,11 @@ namespace AccessoryBox.Common
             armor.Add(item);
 
             return item;
+        }
+
+        public override void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave)
+        {
+            Save();
         }
 
         public override void UpdateEquipsPostfix(Player This, int playerI)

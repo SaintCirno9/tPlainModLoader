@@ -21,6 +21,7 @@ namespace AccessoryBox
             if (v == null)
             {
                 SetDefault();
+                NeedSave = true;
                 Save();
             }
             else
@@ -34,7 +35,6 @@ namespace AccessoryBox
         public override void SetDefault()
         {
             SetVal(true);
-            NeedSave = true;
         }
 
         public override UIElement GetUI()
