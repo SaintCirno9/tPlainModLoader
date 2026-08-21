@@ -13,7 +13,7 @@ namespace AccessoryBox
         private UIState state = null;
         private UserInterface ui = null;
         private BoxWindow window = null;
-        private static BoxConsole console = null;
+        private static IBoxConsole console = null;
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
@@ -58,7 +58,7 @@ namespace AccessoryBox
             else window.Open(state);//添加到state
         }
 
-        public static void SetConsole(BoxConsole console)
+        public static void SetConsole(IBoxConsole console)
         {
             ModifyInterfaceLayers.console = console;
         }

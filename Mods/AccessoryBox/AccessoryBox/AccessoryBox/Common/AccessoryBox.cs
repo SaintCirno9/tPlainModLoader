@@ -7,7 +7,7 @@ using Terraria.ID;
 
 namespace AccessoryBox.Common
 {
-    internal class AccessoryBox : PatchPlayer
+    internal partial class AccessoryBox : PatchPlayer
     {
         public bool Enable
         {
@@ -18,14 +18,7 @@ namespace AccessoryBox.Common
 
         public override void Initialize()
         {
-            ModifyInterfaceLayers.SetConsole(new BoxConsole(
-                AddItem,
-                item => armor.Remove(item),
-                () => armor.Clear(),
-                v => Enable = v,
-                () => Enable,
-                () => ItemListConfig.LoadData(),
-                () => ItemListConfig.SaveData(armor)));
+            ModifyInterfaceLayers.SetConsole(this);
         }
 
         public static void LoadItems(List<Item> items)
@@ -36,7 +29,7 @@ namespace AccessoryBox.Common
             
             foreach (Item i in items)
             {
-                if (AddItem(i) == false) return;
+                if (AddItem(i) == false) break;
             }
         }
 

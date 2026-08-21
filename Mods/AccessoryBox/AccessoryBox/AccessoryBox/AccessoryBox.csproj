@@ -68,9 +68,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\AccessoryBox_i.cs" />
     <Compile Include="Common\AccessoryBox.cs" />
-    <Compile Include="Common\BoxConsole.cs" />
-    <Compile Include="Common\UI\EditShopItemSlot.cs" />
+    <Compile Include="Common\IBoxConsole.cs" />
+    <Compile Include="Common\UI\BoxItem.cs" />
     <Compile Include="Common\UI\UIButtonImage.cs" />
     <Compile Include="Common\BoxWindow.cs" />
     <Compile Include="Common\UI\UISwitchButtonImage.cs" />
