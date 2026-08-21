@@ -27,14 +27,14 @@ namespace AccessoryBox.Common.UI
 
         public override void LeftClick(UIMouseEvent evt)
         {
-            SoundEngine.PlaySound(SoundID.MenuTick);
+            SoundEngine.PlaySound(SoundID.Grab);
 
             OnSetItem?.Invoke(item, Main.LocalPlayer.HeldItem);
         }
 
         public override void RightClick(UIMouseEvent evt)
         {
-            SoundEngine.PlaySound(SoundID.Grab);
+            SoundEngine.PlaySound(SoundID.MenuTick);
 
             OnDel?.Invoke(item);
         }
