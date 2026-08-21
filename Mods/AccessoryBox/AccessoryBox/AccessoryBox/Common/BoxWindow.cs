@@ -71,7 +71,7 @@ namespace AccessoryBox.Common
             sp.Append(load);
 
             UIButtonImage save = new UIButtonImage(height, "保存", "Images/UI/Cursor_9");
-            save.OnClick += () => console.Save();
+            save.OnClick += console.Save;
             sp.Append(save);
 
             UIButtonImage add = new UIButtonImage(height, "添加", "Images/UI/Cursor_4");
