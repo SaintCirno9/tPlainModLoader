@@ -27,7 +27,7 @@ namespace SuspiciousPlayer.Content.Event1
             spawnY = (int)((Event.EventPos.Y / 16) - height / 2);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 

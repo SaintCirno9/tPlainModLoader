@@ -15,7 +15,7 @@ namespace SundryTool.Content.Function1
         public static GetSetReset<bool> clearBuff = new GetSetReset<bool>();
         public static GetSetReset<bool> addBuff_Invisibility = new GetSetReset<bool>();
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             Player player = Main.LocalPlayer;
 

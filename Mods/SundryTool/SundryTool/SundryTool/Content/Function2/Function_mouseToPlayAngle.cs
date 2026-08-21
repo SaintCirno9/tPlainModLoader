@@ -21,7 +21,7 @@ namespace SundryTool.Content.Function2
             mtpa_play.OnValUpdate += v => Utils.OutputPlayerName(mtpa_play.val);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             Player This = Main.LocalPlayer;
 

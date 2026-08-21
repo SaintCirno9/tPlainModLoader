@@ -44,7 +44,7 @@ namespace OptimizeAndTool.Content
 
         private class PMain : PatchMain
         {
-            public override void DoUpdateInWorldPrefix(Stopwatch sw)
+            public override void DoUpdateInWorldPrefix()
             {
                 if (Enable.val == false) return;
 

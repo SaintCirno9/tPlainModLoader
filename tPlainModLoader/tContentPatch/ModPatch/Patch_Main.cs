@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using tContentPatch.Content.Network;
 using tContentPatch.Utils;
 using Terraria;
 using Terraria.GameInput;
@@ -117,16 +116,16 @@ namespace tContentPatch.ModPatch
 
         [HarmonyPatch("DoUpdateInWorld")]
         [HarmonyPrefix]
-        public static void DoUpdateInWorldPrefix(Stopwatch sw)
+        public static void DoUpdateInWorldPrefix()
         {
-            mod.ForTry(item => item.DoUpdateInWorldPrefix(sw));
+            mod.ForTry(item => item.DoUpdateInWorldPrefix());
         }
 
         [HarmonyPatch("DoUpdateInWorld")]
         [HarmonyPostfix]
-        public static void DoUpdateInWorldPostfix(Stopwatch sw)
+        public static void DoUpdateInWorldPostfix()
         {
-            mod.ForTry(item => item.DoUpdateInWorldPostfix(sw));
+            mod.ForTry(item => item.DoUpdateInWorldPostfix());
         }
 
         [HarmonyPatch("DrawMap")]
@@ -152,12 +151,12 @@ namespace tContentPatch.ModPatch
 
         [HarmonyPatch("MouseText_DrawItemTooltip_GetLinesInfo")]
         [HarmonyPostfix]
-        public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine,
+        public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo,
             ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors)
         {
             try
             {
-                foreach (PatchMain i in mod) i.MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref researchLine,
+                foreach (PatchMain i in mod) i.MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo,
                     ref oldKB, ref numLines, ref toolTipLine, ref lineColors);
             }
             catch (Exception ex)

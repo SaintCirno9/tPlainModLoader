@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using Microsoft.Xna.Framework;
+using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Items;
 
@@ -17,8 +18,9 @@ namespace tContentPatch
         public virtual void SetDefaultsPostfix(Item This, int Type, ItemVariant variant) { }
         /// <summary/>
         public virtual void NewItemPostfix(int __result, IEntitySource source,
-            int X, int Y, int Width, int Height, int Type, int Stack,
-            bool noBroadcast, int pfix, bool noGrabDelay)
+            Vector2 center, int type, int stack, int prefix,
+            NewItemOwnership ownership,
+            Vector2? velocity, Item.NewItemModifier modifier, bool noBroadcast)
         { }
     }
 }

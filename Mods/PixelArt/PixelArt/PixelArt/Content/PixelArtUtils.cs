@@ -82,7 +82,7 @@ namespace PixelArt.Content
                 {
                     mt.Color = j;
 
-                    Color mapColor = Terraria.Map.MapHelper.GetMapTileXnaColor(mt);
+                    Color mapColor = Terraria.Map.MapHelper.GetMapTileXnaColor(mt, 0, 0);//i,j参数暂时没影响
                     if (mapColor.A != byte.MaxValue) continue;
 
                     cw.Add(new ColorWall(mapColor, i.type, (ushort)i.createWall, j));

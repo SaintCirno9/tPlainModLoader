@@ -39,7 +39,7 @@ namespace SuspiciousPlayer.Content.VirtualPlayer
             vps.Clear();
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (Main.netMode != 0 && Main.netMode != 2) return;
 

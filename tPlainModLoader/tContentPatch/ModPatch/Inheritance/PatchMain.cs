@@ -38,9 +38,9 @@ namespace tContentPatch
         /// <summary/>
         public virtual void UpdateUIStatesPostfix(GameTime gameTime) { }
         /// <summary/>
-        public virtual void DoUpdateInWorldPrefix(Stopwatch sw) { }
+        public virtual void DoUpdateInWorldPrefix() { }
         /// <summary/>
-        public virtual void DoUpdateInWorldPostfix(Stopwatch sw) { }
+        public virtual void DoUpdateInWorldPostfix() { }
         /// <summary/>
         public virtual void DrawMapPostfix(GameTime gameTime) { }
         /// <summary/>
@@ -48,7 +48,7 @@ namespace tContentPatch
         /// <summary/>
         public virtual void DrawMenuPostfix(GameTime gameTime) { }
         /// <summary/>
-        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref int researchLine, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
+        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
         /// <summary/>
         public virtual void DoDrawPrefix(GameTime gameTime) { }
         /// <summary/>

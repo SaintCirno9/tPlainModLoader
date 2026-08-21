@@ -22,7 +22,7 @@ namespace SuspiciousPlayer.Content.Event1
                 ProjectileID.HallowBossDeathAurora, 0, 0);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 

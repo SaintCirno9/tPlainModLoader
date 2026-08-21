@@ -27,7 +27,7 @@ namespace SundryTool.Content.Function2
             nitp_play.OnValUpdate += v => Utils.OutputPlayerName(nitp_play.val);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (nitp.val == false) return;
 
@@ -39,8 +39,8 @@ namespace SundryTool.Content.Function2
             Player player = Main.player[nitp_play.val];
             if (player?.active == false) return;
 
-            int id = Item.NewItem(null, Main.player[nitp_play.val].Center, Vector2.Zero,
-                nitp_id.val, nitp_count.val, noGrabDelay: true);
+            int id = Item.NewItem(null, Main.player[nitp_play.val].Center,
+                nitp_id.val, nitp_count.val, velocity: Vector2.Zero);
 
             NetMessage.SendData(21, -1, -1, null, id, 1);
         }

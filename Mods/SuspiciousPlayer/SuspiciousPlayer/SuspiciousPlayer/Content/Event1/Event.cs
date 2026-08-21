@@ -107,7 +107,7 @@ namespace SuspiciousPlayer.Content.Event1
             Event.SetEventState(Event.EventState_None);
         }
 
-        public override void DoUpdateInWorldPostfix(Stopwatch sw)
+        public override void DoUpdateInWorldPostfix()
         {
             if (Event.EventState == Event.EventState_None) return;
 

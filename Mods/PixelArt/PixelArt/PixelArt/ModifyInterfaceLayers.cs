@@ -69,7 +69,7 @@ namespace PixelArt
             }
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             Content.PixelArt.Update(Main.LocalPlayer);
         }

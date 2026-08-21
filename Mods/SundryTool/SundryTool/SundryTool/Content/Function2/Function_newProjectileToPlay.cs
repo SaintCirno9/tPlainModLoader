@@ -26,7 +26,7 @@ namespace SundryTool.Content.Function2
             nptp_play.OnValUpdate += v => Utils.OutputPlayerName(nptp_play.val);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (nptp.val == false) return;
 

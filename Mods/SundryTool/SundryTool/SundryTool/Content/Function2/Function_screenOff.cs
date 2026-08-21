@@ -34,7 +34,7 @@ namespace SundryTool.Content.Function2
             Enable.val = false;
         }
 
-        public override void DoUpdateInWorldPostfix(Stopwatch sw)
+        public override void DoUpdateInWorldPostfix()
         {
             if (CheckEnable() == false)
             {

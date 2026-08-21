@@ -55,7 +55,7 @@ namespace SuspiciousPlayer.Content.Event1
             }
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 

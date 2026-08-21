@@ -55,7 +55,7 @@ namespace SuspiciousPlayer.Content.Event1
             }
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 
@@ -72,8 +72,9 @@ namespace SuspiciousPlayer.Content.Event1
                 Vector2 v = (-Vector2.UnitY).RotatedBy(Utils.getRand(-10, 10) / 10);
                 v *= 16;
 
-                Item.NewItem(null, ActionLunarTowerDead.pos, v,
-                    item.First().Item1, item.First().Item2);
+                Item.NewItem(null, ActionLunarTowerDead.pos,
+                    item.First().Item1, item.First().Item2,
+                    velocity: v);
 
                 item.RemoveAt(0);
 

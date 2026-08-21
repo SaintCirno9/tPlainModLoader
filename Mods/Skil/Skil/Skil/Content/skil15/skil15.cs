@@ -28,7 +28,7 @@ namespace Skil.Content.skil15
             for (int i = 0; i < IsGoHome.Length; i++) IsGoHome[i] = false;
         }
 
-        public override void DoUpdateInWorldPostfix(Stopwatch sw)
+        public override void DoUpdateInWorldPostfix()
         {
             Player player = Main.LocalPlayer;
             if (player?.active != true) return;

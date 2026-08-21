@@ -71,7 +71,7 @@ namespace WandsTool
             }
         }
 
-        public override void DoUpdateInWorldPostfix(Stopwatch sw)
+        public override void DoUpdateInWorldPostfix()
         {
             if (gameMain.Wand_isEnable)
             {

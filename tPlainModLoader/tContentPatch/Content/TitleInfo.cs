@@ -79,10 +79,10 @@ namespace tContentPatch.Content
             color.B = color.G;
             color.A = (byte)(color.A * 0.3f);
 
-            List<TextSnippet> snippets = ChatManager.ParseMessage(text, color);
-            ChatManager.ConvertNormalSnippets(snippets);
+            //List<TextSnippet> snippets = ChatManager.ParseMessage(text, color);
+            //ChatManager.ConvertNormalSnippets(snippets);
 
-            ChatManager.DrawColorCodedStringShadow(Main.spriteBatch, FontAssets.MouseText.Value, snippets,
+            ChatManager.DrawColorCodedStringShadow(Main.spriteBatch, FontAssets.MouseText.Value, text,
                 pos, colorShadow, 0f, Vector2.Zero, Vector2.One);
 
             ChatManager.DrawColorCodedString(Main.spriteBatch, FontAssets.MouseText.Value, text,

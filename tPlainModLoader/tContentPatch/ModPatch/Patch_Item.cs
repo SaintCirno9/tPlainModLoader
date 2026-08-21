@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
@@ -31,17 +32,21 @@ namespace tContentPatch.ModPatch
         [HarmonyPatch("NewItem", new Type[]
         {
             typeof(IEntitySource),
-            typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(int),
-            typeof(bool), typeof(int), typeof(bool)
+            typeof(Vector2), typeof(int), typeof(int), typeof(int),
+            typeof(NewItemOwnership),
+            typeof(Vector2?), typeof(Item.NewItemModifier), typeof(bool)
         })]
         [HarmonyPostfix]
         public static void NewItemPostfix(int __result,
             IEntitySource source,
-            int X, int Y, int Width, int Height, int Type, int Stack,
-            bool noBroadcast, int pfix, bool noGrabDelay)
+            Vector2 center, int type, int stack, int prefix,
+            NewItemOwnership ownership,
+            Vector2? velocity, Item.NewItemModifier modifier, bool noBroadcast)
         {
             mod.ForTry(item => item.NewItemPostfix(__result, source,
-                X, Y, Width, Height, Type, Stack, noBroadcast, pfix, noGrabDelay));
+                center, type, stack, prefix,
+                ownership,
+                velocity, modifier, noBroadcast));
         }
     }
 }

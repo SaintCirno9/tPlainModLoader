@@ -452,7 +452,7 @@ namespace WandsTool.Content
         private static bool HasItem(Item item)
         {
             if (item == null) return false;
-            if (item.active != true) return false;
+            //if (item.active != true) return false;//1.4.5.7等价于type != 0
             if (item.stack < 1) return false;
             if (item.type == ItemID.None) return false;
             return true;

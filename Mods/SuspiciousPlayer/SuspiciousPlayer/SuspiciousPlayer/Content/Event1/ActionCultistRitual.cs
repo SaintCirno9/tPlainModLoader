@@ -29,7 +29,7 @@ namespace SuspiciousPlayer.Content.Event1
             if (Main.netMode == 2) NetMessage.SendData(MessageID.SyncNPC, number: n.whoAmI);
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 

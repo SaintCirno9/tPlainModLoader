@@ -20,7 +20,7 @@ namespace SuspiciousPlayer.Content.Event1
             ReadyCount = 60 * 2;
         }
 
-        public override void DoUpdateInWorldPrefix(Stopwatch sw)
+        public override void DoUpdateInWorldPrefix()
         {
             if (state.norun) return;
 
