@@ -27,6 +27,20 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => item.UpdatePostfix(__instance, i));
         }
 
+        [HarmonyPatch("UpdateEquips")]
+        [HarmonyPrefix]
+        public static void UpdateEquipsPrefix(Player __instance, int i)
+        {
+            mod.ForTry(item => item.UpdateEquipsPrefix(__instance, i));
+        }
+
+        [HarmonyPatch("UpdateEquips")]
+        [HarmonyPostfix]
+        public static void UpdateEquipsPostfix(Player __instance, int i)
+        {
+            mod.ForTry(item => item.UpdateEquipsPostfix(__instance, i));
+        }
+
         [HarmonyPatch("UpdateArmorSets")]
         [HarmonyPostfix]
         public static void UpdateArmorSetsPostfix(Player __instance, int i)

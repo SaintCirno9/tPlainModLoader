@@ -19,6 +19,10 @@ namespace tContentPatch
         /// <see cref="Player.Update(int)"/>后调用
         /// </summary>
         public virtual void UpdatePostfix(Player This, int playerI) { }
+        /// <summary>
+        public virtual void UpdateEquipsPrefix(Player This, int playerI) { }
+        /// <summary>
+        public virtual void UpdateEquipsPostfix(Player This, int playerI) { }
         /// <summary/>
         public virtual void UpdateArmorSetsPostfix(Player This, int playerI) { }
         /// <summary>
