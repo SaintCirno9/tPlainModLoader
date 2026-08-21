@@ -35,7 +35,7 @@ namespace AccessoryBox
                 },
                 InterfaceScaleType.UI));
 
-            window = new BoxWindow(console, "饰品箱", 260, 160);
+            window = new BoxWindow(console, "饰品箱", 350, 200);
         }
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)

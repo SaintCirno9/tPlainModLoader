@@ -19,8 +19,8 @@ namespace AccessoryBox.Common.UI
         {
             this.item = item;
 
-            Width.Set(25, 0);
-            Height.Set(25, 0);
+            Width.Set(30, 0);
+            Height.Set(30, 0);
             SetPadding(6);
             BackgroundColor = BorderColor = new Color(43, 60, 120);
         }
@@ -44,11 +44,21 @@ namespace AccessoryBox.Common.UI
             this.item = item;
         }
 
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+        }
+
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             base.DrawSelf(spriteBatch);
 
             if (item == null) return;
+
+            if (IsMouseHovering && item != null && item.type > ItemID.None)
+            {
+                ItemSlot.MouseHover(new Item[] { item });
+            }
 
             CalculatedStyle rect = GetInnerDimensions();
             Vector2 center = new Vector2(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);

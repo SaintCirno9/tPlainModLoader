@@ -1,9 +1,12 @@
 ﻿using AccessoryBox.Common.UI;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using tContentPatch.Content.UI;
+using tContentPatch.Content.UI.ModSet;
 using Terraria;
+using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
 namespace AccessoryBox.Common
@@ -20,14 +23,22 @@ namespace AccessoryBox.Common
             UIElement btns = BuildBtns();
             Child.Append(btns);
 
+            UIPanel panel = new UIPanel();
+            panel.Width.Set(0, 1);
+            panel.Height.Set(-btns.Height.Pixels - 4, 1);
+            panel.VAlign = 1;
+            panel.SetPadding(6);
+            panel.BorderColor = panel.BackgroundColor;
+            Child.Append(panel);
+
             UIScrollViewer sv = new UIScrollViewer();
             sv.Width.Set(0, 1);
-            sv.Height.Set(-btns.Height.Pixels - 2, 1);
-            Child.Append(sv);
+            sv.Height.Set(0, 1);
+            panel.Append(sv);
 
             wp = new UIWrapPanel();
             wp.Width.Set(0, 1);
-            wp.ItemMargin = 2;
+            wp.ItemMargin = 4;
             sv.Append(wp);
 
             console.OnLoaded += UpdateData;
@@ -35,38 +46,50 @@ namespace AccessoryBox.Common
             console.OnAdded += AddItem;
             console.OnDeled += DelItem;
             console.OnSetItemed += SetItem;
+
+            UpdateData();
         }
 
         private UIElement BuildBtns()
         {
-            UIStackPanel btns = new UIStackPanel();
-            btns.Width.Set(0, 1);
-            btns.Height.Set(20, 0);
-            btns.Horizontal = true;
-            btns.ItemMargin = 2;
+            UIItemSwitch s = new UIItemSwitch();
+            s.OnUpdate += _ => s.SetVal(console.GetEnable());
+            s.OnValUpdate += v => console.SetEnable(v);
 
-            UISwitchButtonImage enable = new UISwitchButtonImage(20, "启用", "Images/Item_4346", "Images/Item_5391");
-            enable.GetVal += () => console.GetEnable();
-            enable.OnClick += () => console.SetEnable(!console.GetEnable());
-            btns.Append(enable);
+            int height = 20;
 
-            UIButtonImage load = new UIButtonImage(20, "加载", "Images/UI/Cursor_8");
+            UIStackPanel sp = new UIStackPanel();
+            sp.Height.Set(height, 0);
+            sp.VAlign = 0.5f;
+            sp.IsAutoUpdateSize = true;
+            sp.Horizontal = true;
+            sp.ItemMargin = 8;
+            s.Append(sp);
+
+            UIButtonImage load = new UIButtonImage(height, "加载", "Images/UI/Cursor_8");
             load.OnClick += console.Load;
-            btns.Append(load);
+            sp.Append(load);
 
-            UIButtonImage save = new UIButtonImage(20, "保存", "Images/UI/Cursor_9");
+            UIButtonImage save = new UIButtonImage(height, "保存", "Images/UI/Cursor_9");
             save.OnClick += console.Save;
-            btns.Append(save);
+            sp.Append(save);
 
-            UIButtonImage add = new UIButtonImage(20, "添加", "Images/UI/Cursor_4");
+            UIButtonImage add = new UIButtonImage(height, "添加", "Images/UI/Cursor_4");
             add.OnClick += () => console.AddItem(new Item());
-            btns.Append(add);
+            sp.Append(add);
 
-            UIButtonImage clear = new UIButtonImage(20, "清空", "Images/UI/Cursor_6");
+            UIButtonImage clear = new UIButtonImage(height, "清空", "Images/UI/Cursor_6");
             clear.OnClick += console.ClearItem;
-            btns.Append(clear);
+            sp.Append(clear);
 
-            return btns;
+            return s;
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+
+            wp.UpdateContainer_Height();
         }
 
         protected void UpdateData()

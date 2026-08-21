@@ -74,7 +74,6 @@
     <Compile Include="Common\UI\BoxItem.cs" />
     <Compile Include="Common\UI\UIButtonImage.cs" />
     <Compile Include="Common\BoxWindow.cs" />
-    <Compile Include="Common\UI\UISwitchButtonImage.cs" />
     <Compile Include="ItemListConfig.cs" />
     <Compile Include="ModifyInterfaceLayers.cs" />
     <Compile Include="ModLinkage\ModQuickButton.cs" />

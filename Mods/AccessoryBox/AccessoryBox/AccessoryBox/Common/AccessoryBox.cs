@@ -29,16 +29,18 @@ namespace AccessoryBox.Common
             
             foreach (Item i in items)
             {
-                if (AddItem(i) == false) break;
+                if (AddItem(i) == null) break;
             }
         }
 
-        private static bool AddItem(Item item)
+        private static Item AddItem(Item item)
         {
-            if (armor.Count > 1145) return false;
+            if (armor.Count > 1145) return null;
 
-            armor.Add(item.Clone());
-            return true;
+            item = item.Clone();
+            armor.Add(item);
+
+            return item;
         }
 
         public override void UpdateEquipsPostfix(Player This, int playerI)

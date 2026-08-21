@@ -66,7 +66,8 @@ namespace AccessoryBox.Common
 
         void IBoxConsole.AddItem(Item item)
         {
-            AddItem(item);
+            item = AddItem(item);
+            if (item == null) return;
 
             OnAdded?.Invoke(item);
         }
