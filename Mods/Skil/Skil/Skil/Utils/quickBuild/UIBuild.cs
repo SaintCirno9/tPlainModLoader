@@ -107,7 +107,7 @@ namespace Skil.Utils.quickBuild
         /// <param name="ico"></param>
         /// <param name="text"></param>
         /// <returns></returns>
-        public static UIElement get6<T>(GetSetReset<T> gsr, Func<string, T> parseTry, string mouseText = null, string ico = null, string text = null)
+        public static UIItemTextBoxBind<T> get6<T>(GetSetReset<T> gsr, Func<string, T> parseTry, string mouseText = null, string ico = null, string text = null)
         {
             Texture2D texture = ico == null ? null : Main.Assets.Request<Texture2D>(ico, ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
 

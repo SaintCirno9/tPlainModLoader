@@ -1,5 +1,6 @@
 ﻿using CommandHelp;
 using Microsoft.Xna.Framework;
+using Skil.Content.UI;
 using Skil.Utils;
 using Skil.Utils.quickBuild;
 using System.Collections.Generic;
@@ -34,6 +35,18 @@ namespace Skil.Content
         public static GetSetReset<bool> StaffFeatures_AllGems = new GetSetReset<bool>();//
         public static GetSetReset<bool> StaffFeatures_RepeatsGem = new GetSetReset<bool>();//红玉重复
         public static GetSetReset<bool> StaffFeatures_AllGems2 = new GetSetReset<bool>();//
+        private static string shootName = null;
+
+        static skil5()
+        {
+            ShootId.OnValUpdate += v =>
+            {
+                Projectile p = new Projectile();
+                p.SetDefaults(ShootId.val);
+
+                shootName = p.Name;
+            };
+        }
 
         public static List<CommandObject> GetCO()
         {
@@ -54,12 +67,15 @@ namespace Skil.Content
 
         public static List<UIElement> GetUI()
         {
+            UIItemTextBoxBind<int> type = UIBuild.get6(ShootId, int.Parse, "<int>", "Images/Buff_322", "技能5射弹id");
+            type.OnUpdate += _ => type.MouseText = $"{shootName}<int>";
+
             return new List<UIElement>()
             {
                 UIBuild.get1(Enable, Size, int.Parse, "范围<int>", "Images/Buff_322", "技能5"),
                 UIBuild.get6(Mode, int.Parse, "0: 宝石法杖, 1:光束, 2:日暮, 3:自定义<int>", "Images/Buff_322", "技能5模式"),
                 UIBuild.get6(ShootSpeed, float.Parse, "<float>", "Images/Buff_322", "技能5射弹速度"),
-                UIBuild.get6(ShootId, int.Parse, "<int>", "Images/Buff_322", "技能5射弹id"),
+                type,
                 UIBuild.get6(Ai0, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai0"),
                 UIBuild.get6(Ai1, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai1"),
                 UIBuild.get6(Ai2, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai2"),
