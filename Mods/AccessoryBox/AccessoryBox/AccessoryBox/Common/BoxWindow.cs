@@ -39,7 +39,7 @@ namespace AccessoryBox.Common
             wp = new UIWrapPanel();
             wp.Width.Set(0, 1);
             wp.ItemMargin = 4;
-            sv.Append(wp);
+            sv.SetChild(wp);
 
             console.OnLoaded += UpdateData;
             console.OnClearItemed += UpdateData;
