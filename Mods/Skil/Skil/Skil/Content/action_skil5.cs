@@ -23,6 +23,17 @@ namespace Skil.Content
         public static GetSetReset<float> Ai2 = new GetSetReset<float>();
         public static GetSetReset<int> Mode = new GetSetReset<int>();
         public static GetSetReset<bool> OriginalDamage = new GetSetReset<bool>();
+        public static GetSetReset<bool> StaffFeatures = new GetSetReset<bool>();//法杖样式
+        public static GetSetReset<bool> StaffFeatures_Homing = new GetSetReset<bool>();//紫晶追踪
+        public static GetSetReset<bool> StaffFeatures_FastThenSlow = new GetSetReset<bool>();//翡翠快变慢|贴地
+        public static GetSetReset<bool> StaffFeatures_CanBounce = new GetSetReset<bool>();//琥珀弹跳
+        public static GetSetReset<bool> StaffFeatures_AoeExplosion = new GetSetReset<bool>();//黄玉范围伤害
+        public static GetSetReset<bool> StaffFeatures_SwirlTwins = new GetSetReset<bool>();//蓝玉蛇皮
+        public static GetSetReset<bool> StaffFeatures_ArPenSpread = new GetSetReset<bool>();//红玉处理伤害
+        public static GetSetReset<bool> StaffFeatures_BiggerHitbox = new GetSetReset<bool>();//钻石变大
+        public static GetSetReset<bool> StaffFeatures_AllGems = new GetSetReset<bool>();//
+        public static GetSetReset<bool> StaffFeatures_RepeatsGem = new GetSetReset<bool>();//红玉重复
+        public static GetSetReset<bool> StaffFeatures_AllGems2 = new GetSetReset<bool>();//
 
         public static List<CommandObject> GetCO()
         {
@@ -36,7 +47,8 @@ namespace Skil.Content
                 .SkilCMDBuild("ai1", Ai1)
                 .SkilCMDBuild("ai2", Ai2)
                 .SkilCMDBuild("mode", Mode)
-                .SkilCMDBuild("originalDamage", OriginalDamage),
+                .SkilCMDBuild("originalDamage", OriginalDamage)
+                .SkilCMDBuild("StaffFeatures", StaffFeatures),
             };
         }
 
@@ -52,6 +64,17 @@ namespace Skil.Content
                 UIBuild.get6(Ai1, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai1"),
                 UIBuild.get6(Ai2, float.Parse, "<float>", "Images/Buff_322", "技能5射弹ai2"),
                 UIBuild.get2(OriginalDamage, "开启后召唤物射弹才有伤害", "Images/Buff_322", "技能5设置原伤害"),
+                UIBuild.get2(StaffFeatures, null, "Images/Item_739", "法杖样式"),
+                UIBuild.get2(StaffFeatures_Homing, null, "Images/Item_1282", "追踪"),
+                UIBuild.get2(StaffFeatures_FastThenSlow, null, "Images/Item_1285", "快变慢|贴地"),
+                UIBuild.get2(StaffFeatures_CanBounce, null, "Images/Item_4256", "弹跳"),
+                UIBuild.get2(StaffFeatures_AoeExplosion, null, "Images/Item_1283", "范围伤害"),
+                UIBuild.get2(StaffFeatures_SwirlTwins, null, "Images/Item_1284", "蛇皮"),
+                UIBuild.get2(StaffFeatures_ArPenSpread , null, "Images/Item_1286", "伤害//无效"),
+                UIBuild.get2(StaffFeatures_BiggerHitbox, null, "Images/Item_1287", "变大"),
+                UIBuild.get2(StaffFeatures_AllGems, null, "Images/Item_1282", "AllGems"),
+                UIBuild.get2(StaffFeatures_RepeatsGem, null, "Images/Item_1286", "重复//无效"),
+                UIBuild.get2(StaffFeatures_AllGems2, null, "Images/Item_1282", "AllGems2"),
             };
         }
 
@@ -110,7 +133,20 @@ namespace Skil.Content
             float ai0 = Ai0.val;
             float ai1 = Ai1.val;
             float ai2 = Ai2.val;
-            if (Mode.val == 2) ai1 = getRandFloat();
+            if (Mode.val == 2) ai1 = getRandFloat();//彩色暮光长枪
+            //法杖样式
+            if (StaffFeatures.val) ai0 = GetGemStaffFeatures(
+                StaffFeatures_Homing.val,
+                StaffFeatures_FastThenSlow.val,
+                StaffFeatures_CanBounce.val,
+                StaffFeatures_AoeExplosion.val,
+                StaffFeatures_SwirlTwins.val,
+                StaffFeatures_ArPenSpread.val,
+                StaffFeatures_BiggerHitbox.val,
+                StaffFeatures_AllGems.val,
+                StaffFeatures_RepeatsGem.val,
+                StaffFeatures_AllGems2.val
+                );
 
             Projectile.NewProjectile(null, position, velocity * ShootSpeed.val,
                 projs[getRand(0, projs.Length)], SkilListControl1.damage.val, 1, player.whoAmI,
@@ -119,6 +155,34 @@ namespace Skil.Content
                 {
                     if (OriginalDamage.val) p.originalDamage = p.damage;
                 });
+        }
+
+        private static float GetGemStaffFeatures(
+            bool Homing = false,
+            bool FastThenSlow = false,
+            bool CanBounce = false,
+            bool AoeExplosion = false,
+            bool SwirlTwins = false,
+            bool ArPenSpread = false,
+            bool BiggerHitbox = false,
+            bool AllGems = false,
+            bool RepeatsGem = false,
+            bool AllGems2 = false
+            )
+        {
+            Projectile.GemStaffFeatures gsf = default;
+            gsf.Homing = Homing;//归航
+            gsf.FastThenSlow = FastThenSlow;//快然后慢
+            gsf.CanBounce = CanBounce;//可以弹跳
+            gsf.AoeExplosion = AoeExplosion;//Aoe爆炸
+            gsf.SwirlTwins = SwirlTwins;//旋涡双胞胎
+            gsf.ArPenSpread = ArPenSpread;//Ar笔扩散
+            gsf.BiggerHitbox = BiggerHitbox;//更大的Hitbox
+            gsf.AllGems = AllGems;//
+            gsf.RepeatsGem = RepeatsGem;//重复宝石
+            gsf.AllGems2 = AllGems2;//
+
+            return gsf.Bits;
         }
     }
 }
