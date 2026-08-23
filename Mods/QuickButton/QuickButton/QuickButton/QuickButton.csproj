@@ -40,7 +40,7 @@
     <ProjectReference Include="..\..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
   </ItemGroup>
 
-  <!-- 构建后部署：产物及模组元数据发布到游戏目录下的 tPlainModLoader\Mods\QuickButton 文件夹 -->
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickButton 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
       <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))</ModSourceDir>
@@ -48,16 +48,14 @@
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />
     <Message Importance="High" Text="[DeployToGameDir] 部署模组 $(MSBuildProjectName) -> $(ModDeployDir)" />
-    <Exec Condition="!Exists('$(ModDeployDir)\$(TargetFileName)')"
-          Command="mklink /H &quot;$(ModDeployDir)\$(TargetFileName)&quot; &quot;$(TargetPath)&quot; 2>nul || mklink &quot;$(ModDeployDir)\$(TargetFileName)&quot; &quot;$(TargetPath)&quot; 2>nul || copy /y &quot;$(TargetPath)&quot; &quot;$(ModDeployDir)\$(TargetFileName)&quot;" />
-    <Exec Condition="!Exists('$(ModDeployDir)\$(TargetName).pdb') and Exists('$(TargetDir)$(TargetName).pdb')"
-          Command="mklink /H &quot;$(ModDeployDir)\$(TargetName).pdb&quot; &quot;$(TargetDir)$(TargetName).pdb&quot; 2>nul || mklink &quot;$(ModDeployDir)\$(TargetName).pdb&quot; &quot;$(TargetDir)$(TargetName).pdb&quot; 2>nul || copy /y &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(ModDeployDir)\$(TargetName).pdb&quot;" />
-    <Exec Condition="!Exists('$(ModDeployDir)\info.json') and Exists('$(ModSourceDir)\info.json')"
-          Command="mklink /H &quot;$(ModDeployDir)\info.json&quot; &quot;$(ModSourceDir)\info.json&quot; 2>nul || mklink &quot;$(ModDeployDir)\info.json&quot; &quot;$(ModSourceDir)\info.json&quot; 2>nul || copy /y &quot;$(ModSourceDir)\info.json&quot; &quot;$(ModDeployDir)\info.json&quot;" />
-    <Exec Condition="!Exists('$(ModDeployDir)\loadConfig.json') and Exists('$(ModSourceDir)\loadConfig.json')"
-          Command="mklink /H &quot;$(ModDeployDir)\loadConfig.json&quot; &quot;$(ModSourceDir)\loadConfig.json&quot; 2>nul || mklink &quot;$(ModDeployDir)\loadConfig.json&quot; &quot;$(ModSourceDir)\loadConfig.json&quot; 2>nul || copy /y &quot;$(ModSourceDir)\loadConfig.json&quot; &quot;$(ModDeployDir)\loadConfig.json&quot;" />
-    <Exec Condition="!Exists('$(ModDeployDir)\ico.png') and Exists('$(ModSourceDir)\ico.png')"
-          Command="mklink /H &quot;$(ModDeployDir)\ico.png&quot; &quot;$(ModSourceDir)\ico.png&quot; 2>nul || mklink &quot;$(ModDeployDir)\ico.png&quot; &quot;$(ModSourceDir)\ico.png&quot; 2>nul || copy /y &quot;$(ModSourceDir)\ico.png&quot; &quot;$(ModDeployDir)\ico.png&quot;" />
+    <ItemGroup>
+      <ModDeployFile Include="$(TargetPath)" />
+      <ModDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+      <ModDeployFile Include="$(ModSourceDir)\info.json" Condition="Exists('$(ModSourceDir)\info.json')" />
+      <ModDeployFile Include="$(ModSourceDir)\loadConfig.json" Condition="Exists('$(ModSourceDir)\loadConfig.json')" />
+      <ModDeployFile Include="$(ModSourceDir)\ico.png" Condition="Exists('$(ModSourceDir)\ico.png')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModDeployFile)" DestinationFolder="$(ModDeployDir)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>
