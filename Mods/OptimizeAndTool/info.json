@@ -1,5 +1,6 @@
-{"name":"优化和工具","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"添加了部分优化功能:
-清除重复聊天
-复制聊天栏文本UI
-快捷服务器列表UI
-显示物品更多信息"}
+{
+  "name": "优化和工具",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【游戏体验与性能优化组件】\n- 清除重复聊天信息（防止消息刷屏）；\n- 复制聊天栏文本功能；\n- 便捷多人服务器列表管理器（保存 IP/端口并快速直连）；\n- 详细物品信息悬浮窗（显示内部 ID、射弹 ID、伤害、击退、攻速等）；\n- 视距与光照计算优化。"
+}

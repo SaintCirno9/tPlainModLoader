@@ -1,1 +1,6 @@
-{"name":"快速设置","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"其它模组可以在里面添加些快捷功能"}
+{
+  "name": "快速设置",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【游戏内即时配置中心】\n- 在游戏内提供抽屉式模组设置菜单；\n- 供其它模组注册功能开关、滑块数值、按键绑定与调试选项；\n- 无需退回主菜单即可即时调整模组配置。"
+}

@@ -1,1 +1,6 @@
-{"name":"快速按钮","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"在游戏内添加一个快捷按钮, 其它模组可以在按钮内添加快捷功能"}
+{
+  "name": "快速按钮",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【可自定义屏幕悬浮快捷栏】\n- 在游戏界面提供可拖动停靠的悬浮工具栏；\n- 为其他模组（饰品箱、魔杖工具、创造物品栏等）提供快捷按钮注册与唤出接口；\n- 支持按钮折叠与排序管理。"
+}

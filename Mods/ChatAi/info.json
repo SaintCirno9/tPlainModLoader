@@ -1,1 +1,6 @@
-{"name":"聊天[c/eeee00:Ai]","author":"[c/00ffff:固态地面]","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"啦啦啦~"}
+{
+  "name": "聊天[c/eeee00:Ai]",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【游戏内 AI 聊天助手】\n- 将大语言模型（LLM）接入泰拉瑞亚游戏聊天系统；\n- 支持在聊天框输入指令唤醒 AI 解答攻略、即时对话；\n- 可在 [快速设置] 中自定义 API 地址、API Key、模型参数与提示词。"
+}

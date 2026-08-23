@@ -1,2 +1,6 @@
-{"name":"创造物品栏","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"可以直接拿东西的功能就是了
-是[c/cc6600:屎山]啊~原本打算优化下的, 但看到那坨代码直接放弃"}
+{
+  "name": "创造物品栏",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【创造模式全物品调取器】\n- 包含游戏内全部物品（武器、防具、饰品、方块、墙体、药水、材料等）；\n- 支持物品分类筛选、检索、提取数量设定与分页浏览；\n- 支持自定义快捷键唤出，并与 [快速按钮] 模组无缝联动。"
+}

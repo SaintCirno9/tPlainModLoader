@@ -1,1 +1,6 @@
-{"name":"足以改变泰拉大陆的魔杖","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"足以改变泰拉大陆的魔杖, [c/aaff00:泰之杖]!"}
+{
+  "name": "足以改变泰拉大陆的魔杖 (泰之杖)",
+  "author": "[c/aaff00:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【WorldEdit 级地形与建筑魔杖】\n- 几何形状绘制：直线、圆形/椭圆、实心/空心矩形；\n- 坡度与形态：整砖、半砖、4 方向斜坡智能切换；\n- 物块与背景墙快速铺设/批量替换；\n- 可选是否消耗背包物品，具备实时半透明边界预览；\n- 与 [快速按钮] 联动支持一键开启。"
+}

@@ -1,2 +1,6 @@
-{"name":"杂鱼~工具","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"一堆杂项功能
-杂鱼功能~杂鱼~"}
+{
+  "name": "杂项工具箱 (SundryTool)",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【全能型调试与功能辅助工具箱】\n- 玩家属性：无敌模式、无限呼吸/法力、移动速度与飞行时间倍率、穿墙、超级拾取；\n- 手持物品：攻击范围、自动连发、攻击速度、伤害倍率增强；\n- 世界控制：时间锁定与调节、天气控制、阻止邪恶/神圣地形蔓延；\n- 视觉透视：全图点亮透视、强光夜视、感染区域指示器、玩家位置雷达；\n- 调试工具：箱子全开/全清/全填满、射弹/物品生成与测试。"
+}

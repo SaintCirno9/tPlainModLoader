@@ -1,1 +1,6 @@
-{"name":"像素画生成","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader"}
+{
+  "name": "像素画生成",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【本地图片转泰拉像素画生成器】\n- 导入本地图片（PNG/JPG）自动识别色彩并转换为最接近的物块/背景墙；\n- 支持缩放、锚点定位与范围预览，可在世界内快速摆放像素艺术；\n- 与 [快速按钮] 和 [快速设置] 联动支持。"
+}

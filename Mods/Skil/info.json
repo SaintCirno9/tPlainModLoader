@@ -1,1 +1,6 @@
-{"name":"魔法和技能","author":"固态地面","jumpPath":"https://github.com/github-user-64/tPlainModLoader","description":"大部分技能用鼠标触发"}
+{
+  "name": "魔法和技能",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【玩家自定义魔法与技能系统】\n- 包含 15+ 种强大的主动技能与法阵机制；\n- 环绕旋转弹幕阵列、双子眼索敌射击与激光扫射；\n- 光女技能连招（太阳舞/空灵长枪）、电磁雷云与范围爆发；\n- 瞬移位移穿梭；\n- 可在 [快速设置] 中微调各项技能的冷却、弹幕数量与速度。"
+}

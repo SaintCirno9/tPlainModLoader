@@ -1,4 +1,6 @@
-{"name":"饰品箱","author":"[c/00ffff:固态地面]","jumpPath":"https://github.com/github-user-64/tPlainModLoader",
-"description":"拿着饰品点击格子复制饰品，什么都不拿则清除，右键删除格子。
-没有做数据同步，所以多人模式别人看你会很奇怪。
-其实啥都可以往里放~"}
+{
+  "name": "饰品箱",
+  "author": "[c/00ffff:固态地面]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【无限饰品/物品收纳箱】\n- 手持饰品/物品点击格子即可放入并复制饰品；\n- 空手点击已放格子清除对应物品；\n- 右键点击格子可删除该槽位；\n- 支持与 [快速按钮] 模组联动快捷唤出；\n- 纯客户端 UI，适合随时存放与切换配装。"
+}
