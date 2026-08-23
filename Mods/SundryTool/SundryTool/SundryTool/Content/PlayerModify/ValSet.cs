@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using SundryTool.Utils;
 using SundryTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -18,6 +18,8 @@ namespace SundryTool.Content.PlayerModify
         public static GetSetReset<int> maxMinions_val = new GetSetReset<int>();
         public static GetSetReset<bool> endurance = new GetSetReset<bool>();
         public static GetSetReset<float> endurance_val = new GetSetReset<float>();
+        public static GetSetReset<bool> grabRange = new GetSetReset<bool>();
+        public static GetSetReset<int> grabRange_val = new GetSetReset<int>(300, 300);
 
         public override void UpdateArmorSetsPostfix(Player This, int playerI)
         {
@@ -46,6 +48,11 @@ namespace SundryTool.Content.PlayerModify
             {
                 This.endurance = endurance_val.val;
             }
+
+            if (grabRange.val)
+            {
+                Player.defaultItemGrabRange = grabRange_val.val;
+            }
         }
 
         public static List<CommandObject> GetCO()
@@ -56,6 +63,7 @@ namespace SundryTool.Content.PlayerModify
                 CommandBuild.get1("armorPenetration", armorPenetration, armorPenetration_val, new CommandInt()),
                 CommandBuild.get1("maxMinions", maxMinions, maxMinions_val, new CommandInt()),
                 CommandBuild.get1("endurance", endurance, endurance_val, new CommandFloat()),
+                CommandBuild.get1("grabRange", grabRange, grabRange_val, new CommandInt()),
             };
 
             return cos;
@@ -69,6 +77,7 @@ namespace SundryTool.Content.PlayerModify
                 UIBuild.get1(armorPenetration, armorPenetration_val, int.Parse, "<float>", "Images/Buff_159", "穿甲"),
                 UIBuild.get1(maxMinions, maxMinions_val, int.Parse, "<int>", "Images/Buff_150", "召唤物上限"),
                 UIBuild.get1(endurance, endurance_val, float.Parse, "<float>", "Images/Buff_114", "减伤"),
+                UIBuild.get1(grabRange, grabRange_val, int.Parse, "掉落物自动吸附拾取范围(像素)<int>", "Images/Item_5010", "拾取范围"),
             };
 
             return uis;
