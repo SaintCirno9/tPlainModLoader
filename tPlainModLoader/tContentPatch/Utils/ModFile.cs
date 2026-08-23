@@ -78,7 +78,7 @@ namespace tContentPatch.Utils
         }
 
         /// <summary>
-        /// 在该模组的用户配置文件夹下读取文件 (若新路径不存在则平滑尝试从旧路径读取并迁移)
+        /// 在该模组的用户配置文件夹下读取文件
         /// </summary>
         /// <param name="file">文件相对位置</param>
         /// <param name="read"></param>
@@ -101,33 +101,9 @@ namespace tContentPatch.Utils
                 string modConfigDir = GetModConfigDirectory(mo);
                 string targetFile = Path.Combine(modConfigDir, file);
 
-                if (File.Exists(targetFile))
-                {
-                    return read(targetFile);
-                }
+                if (!File.Exists(targetFile)) return false;
 
-                // 若新路径不存在，尝试从旧版模组部署目录平滑迁移
-                if (!string.IsNullOrEmpty(mo.modPath))
-                {
-                    string legacyFile = Path.Combine(mo.modPath, file);
-                    if (File.Exists(legacyFile))
-                    {
-                        bool success = read(legacyFile);
-                        if (success)
-                        {
-                            try
-                            {
-                                string targetDir = Path.GetDirectoryName(targetFile);
-                                if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-                                File.Copy(legacyFile, targetFile, true);
-                            }
-                            catch { }
-                        }
-                        return success;
-                    }
-                }
-
-                return false;
+                return read(targetFile);
             }
             catch { return false; }
         }
