@@ -36,13 +36,13 @@ namespace ReduceMouseLag.ModLinkage
             {
                 if (ui_img.IsMouseHovering)
                 {
-                    Main.instance.MouseText($"鼠标延迟优化: {(MouseLagFixEngine.Enabled ? "已开启" : "已禁用")}");
+                    Main.instance.MouseText($"鼠标延迟优化: {(ModConfig.IsEnabled ? "已开启" : "已禁用")}");
                 }
             };
             ui_img.OnLeftClick += (e, s) =>
             {
                 SoundEngine.PlaySound(12);
-                MouseLagFixEngine.Enabled = !MouseLagFixEngine.Enabled;
+                ModConfig.ToggleEnabled(saveImmediate: true);
             };
 
             mi.Invoke(null, new object[] { "ReduceMouseLag.Toggle", ui_img });

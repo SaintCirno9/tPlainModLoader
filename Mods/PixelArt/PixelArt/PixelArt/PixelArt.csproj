@@ -29,10 +29,10 @@
       <HintPath>$(TerrariaDir)\Terraria.exe</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- ReLogic：原版 exe 仅引用未内嵌、游戏目录亦无此文件，按上游 wiki 约定改用 tModLoader 分发的 ReLogic.dll；
-         路径由 Directory.Build.props 的 TModLoaderDir 注入 -->
+    <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
-      <HintPath>$(TModLoaderDir)\Libraries\ReLogic\1.0.0\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

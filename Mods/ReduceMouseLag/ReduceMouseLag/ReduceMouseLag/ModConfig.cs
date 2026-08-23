@@ -11,6 +11,8 @@ namespace ReduceMouseLag
 {
     internal class ModConfig : ModSetting
     {
+        public static ModConfig Instance { get; private set; }
+
         public class Data
         {
             [JsonProperty("启用减少鼠标延迟")]
@@ -26,6 +28,11 @@ namespace ReduceMouseLag
         public override Type DataType => typeof(Data);
 
         private static Data data = null;
+
+        public ModConfig()
+        {
+            Instance = this;
+        }
 
         public override void Load(object v)
         {
@@ -58,6 +65,55 @@ namespace ReduceMouseLag
             MouseLagFixEngine.UseWin32Direct = data.UseWin32Direct;
         }
 
+        public static bool IsEnabled
+        {
+            get
+            {
+                if (data == null) data = new Data();
+                return data.Enabled;
+            }
+        }
+
+        public static void SetEnabled(bool value, bool saveImmediate = false)
+        {
+            if (data == null) data = new Data();
+            if (data.Enabled == value) return;
+            data.Enabled = value;
+            SyncToEngine();
+            if (Instance != null)
+            {
+                Instance.NeedSave = true;
+                if (saveImmediate)
+                {
+                    Instance.Save();
+                }
+            }
+        }
+
+        public static void SetUseWin32Direct(bool value, bool saveImmediate = false)
+        {
+            if (data == null) data = new Data();
+            if (data.UseWin32Direct == value) return;
+            data.UseWin32Direct = value;
+            SyncToEngine();
+            if (Instance != null)
+            {
+                Instance.NeedSave = true;
+                if (saveImmediate)
+                {
+                    Instance.Save();
+                }
+            }
+        }
+
+        public static bool ToggleEnabled(bool saveImmediate = true)
+        {
+            if (data == null) data = new Data();
+            bool newVal = !data.Enabled;
+            SetEnabled(newVal, saveImmediate);
+            return newVal;
+        }
+
         public override UIElement GetUI()
         {
             UIScrollViewer2 sv = new UIScrollViewer2();
@@ -87,10 +143,7 @@ namespace ReduceMouseLag
             };
             swEnable.OnValUpdate += v =>
             {
-                if (data == null) return;
-                if (data.Enabled == v) return;
-                data.Enabled = v;
-                SyncToEngine();
+                SetEnabled(v, saveImmediate: true);
             };
             list.Add(swEnable);
 
@@ -104,10 +157,7 @@ namespace ReduceMouseLag
             };
             swWin32.OnValUpdate += v =>
             {
-                if (data == null) return;
-                if (data.UseWin32Direct == v) return;
-                data.UseWin32Direct = v;
-                SyncToEngine();
+                SetUseWin32Direct(v, saveImmediate: true);
             };
             list.Add(swWin32);
 
