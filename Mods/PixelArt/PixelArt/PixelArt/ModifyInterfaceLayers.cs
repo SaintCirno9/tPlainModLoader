@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using PixelArt.Content;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,8 +21,6 @@ namespace PixelArt
             ui_state = new UIState();
             ui = new UserInterface();
             ui.SetState(ui_state);
-
-            window = new Window("像素画", 350, 320);
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
@@ -76,6 +74,11 @@ namespace PixelArt
 
         public static void OCWindow()
         {
+            if (window == null)
+            {
+                window = new Window("像素画", 350, 320);
+            }
+
             if (window.IsOpen) window.Close();
             else window.Open(ui_state);
         }
