@@ -19,7 +19,7 @@ namespace SundryTool.Content.PlayerModify
         public static GetSetReset<bool> endurance = new GetSetReset<bool>();
         public static GetSetReset<float> endurance_val = new GetSetReset<float>();
         public static GetSetReset<bool> grabRange = new GetSetReset<bool>();
-        public static GetSetReset<int> grabRange_val = new GetSetReset<int>(300, 300);
+        public static GetSetReset<int> grabRange_val = new GetSetReset<int>(20, 20, v => v < 0 ? 0 : v);
 
         public override void UpdateArmorSetsPostfix(Player This, int playerI)
         {
@@ -51,7 +51,7 @@ namespace SundryTool.Content.PlayerModify
 
             if (grabRange.val)
             {
-                Player.defaultItemGrabRange = grabRange_val.val;
+                Player.defaultItemGrabRange = grabRange_val.val * 16;
             }
         }
 
@@ -77,7 +77,7 @@ namespace SundryTool.Content.PlayerModify
                 UIBuild.get1(armorPenetration, armorPenetration_val, int.Parse, "<float>", "Images/Buff_159", "穿甲"),
                 UIBuild.get1(maxMinions, maxMinions_val, int.Parse, "<int>", "Images/Buff_150", "召唤物上限"),
                 UIBuild.get1(endurance, endurance_val, float.Parse, "<float>", "Images/Buff_114", "减伤"),
-                UIBuild.get1(grabRange, grabRange_val, int.Parse, "掉落物自动吸附拾取范围(像素)<int>", "Images/Item_5010", "拾取范围"),
+                UIBuild.get1(grabRange, grabRange_val, int.Parse, "掉落物自动吸附拾取范围(格)<int>", "Images/Item_5010", "拾取范围"),
             };
 
             return uis;
