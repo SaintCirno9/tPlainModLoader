@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using tContentPatch.Utils;
@@ -63,6 +63,48 @@ namespace tContentPatch.ModLoad
                     if (addProgress) ++progressV;
                 }
             }
+
+            // 从用户文档目录 (Documents/My Games/Terraria/tPlainModLoader/enabled.json) 读取启用状态
+            try
+            {
+                string enabledFilePath = Path.Combine(ContentPatch.UserSaveDirectory ?? string.Empty, InfoList.Files.EnabledJson);
+                List<string> enabledKeys = null;
+                if (File.Exists(enabledFilePath))
+                {
+                    try
+                    {
+                        enabledKeys = MyJson1.Get2<List<string>>(enabledFilePath);
+                    }
+                    catch { }
+                }
+
+                if (enabledKeys == null)
+                {
+                    // 首次运行或 enabled.json 不存在时，默认全量启用所有发现的模组并写入 enabled.json
+                    enabledKeys = new List<string>();
+                    foreach (ModObject mo in mos)
+                    {
+                        if (!string.IsNullOrEmpty(mo.config?.key))
+                        {
+                            enabledKeys.Add(mo.config.key);
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(ContentPatch.UserSaveDirectory))
+                    {
+                        MyJson1.Save(enabledKeys, enabledFilePath);
+                    }
+                }
+
+                HashSet<string> enabledSet = new HashSet<string>(enabledKeys);
+                foreach (ModObject mo in mos)
+                {
+                    if (mo.config != null)
+                    {
+                        mo.config.isEnable = enabledSet.Contains(mo.config.key);
+                    }
+                }
+            }
+            catch { }
 
             return mos;
         }

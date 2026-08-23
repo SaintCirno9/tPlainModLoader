@@ -1,4 +1,4 @@
-﻿namespace tContentPatch
+namespace tContentPatch
 {
     /// <summary/>
     public class InfoList
@@ -8,6 +8,10 @@
         {
             /// <summary/>
             public const string Mods = "Mods";
+            /// <summary>用户文档数据根目录名</summary>
+            public const string UserDataRoot = "tPlainModLoader";
+            /// <summary>模组配置与数据存储目录名</summary>
+            public const string Config = "Config";
         }
 
         /// <summary/>
@@ -15,6 +19,8 @@
         {
             /// <summary/>
             public const string Log = "tpmlLog.txt";
+            /// <summary>统一模组启用配置文件 (对齐 tML 规范)</summary>
+            public const string EnabledJson = "enabled.json";
             /// <summary/>
             public const string ModLoadConfig = "loadConfig.json";
             /// <summary/>

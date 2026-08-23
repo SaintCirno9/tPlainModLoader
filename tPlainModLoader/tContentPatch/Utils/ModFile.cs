@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,7 +11,38 @@ namespace tContentPatch.Utils
     public static class ModFile
     {
         /// <summary>
-        /// 在该模组的文件夹下保存文件, 目录不存在则创建
+        /// 获取模组专属用户配置目录 (Documents/My Games/Terraria/tPlainModLoader/Config/<ModKey>)
+        /// </summary>
+        private static string GetModConfigDirectory(ModObject mo)
+        {
+            string key = mo?.config?.key;
+            if (string.IsNullOrEmpty(key) && mo?.assembly != null)
+            {
+                key = mo.assembly.GetName().Name;
+            }
+            if (string.IsNullOrEmpty(key)) key = "UnknownMod";
+
+            string baseConfigDir = ContentPatch.ConfigDirectory;
+            if (string.IsNullOrEmpty(baseConfigDir))
+            {
+                string baseSavePath = Terraria.Main.SavePath;
+                if (string.IsNullOrEmpty(baseSavePath))
+                {
+                    baseSavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Terraria");
+                }
+                baseConfigDir = Path.Combine(baseSavePath, InfoList.Directorys.UserDataRoot, InfoList.Directorys.Config);
+            }
+
+            string modConfigDir = Path.Combine(baseConfigDir, key);
+            if (!Directory.Exists(modConfigDir))
+            {
+                Directory.CreateDirectory(modConfigDir);
+            }
+            return modConfigDir;
+        }
+
+        /// <summary>
+        /// 在该模组的用户配置文件夹下保存文件, 目录不存在则创建
         /// </summary>
         /// <param name="file">文件相对位置</param>
         /// <param name="save"></param>
@@ -31,17 +62,9 @@ namespace tContentPatch.Utils
                     if (mo == null) return false;
                 }
 
-                //
-
-                if (Directory.Exists(mo.modPath) == false) return false;
-
-                file = Path.Combine(mo.modPath, file);
-                string fileName = Path.GetFileName(file);
-                string path = Path.GetDirectoryName(file);
-
-                if (fileName == null) return false;
-                fileName = fileName.Trim();
-                if (fileName == string.Empty) return false;
+                string modConfigDir = GetModConfigDirectory(mo);
+                string targetFile = Path.Combine(modConfigDir, file);
+                string path = Path.GetDirectoryName(targetFile);
 
                 if (Directory.Exists(path) == false)
                 {
@@ -49,13 +72,13 @@ namespace tContentPatch.Utils
                     if (Directory.Exists(path) == false) return false;
                 }
 
-                return save(file);
+                return save(targetFile);
             }
             catch { return false; }
         }
 
         /// <summary>
-        /// 在该模组的文件夹下读取文件
+        /// 在该模组的用户配置文件夹下读取文件 (若新路径不存在则平滑尝试从旧路径读取并迁移)
         /// </summary>
         /// <param name="file">文件相对位置</param>
         /// <param name="read"></param>
@@ -75,13 +98,36 @@ namespace tContentPatch.Utils
                     if (mo == null) return false;
                 }
 
-                //
+                string modConfigDir = GetModConfigDirectory(mo);
+                string targetFile = Path.Combine(modConfigDir, file);
 
-                file = Path.Combine(mo.modPath, file);
+                if (File.Exists(targetFile))
+                {
+                    return read(targetFile);
+                }
 
-                if (File.Exists(file) == false) return false;
+                // 若新路径不存在，尝试从旧版模组部署目录平滑迁移
+                if (!string.IsNullOrEmpty(mo.modPath))
+                {
+                    string legacyFile = Path.Combine(mo.modPath, file);
+                    if (File.Exists(legacyFile))
+                    {
+                        bool success = read(legacyFile);
+                        if (success)
+                        {
+                            try
+                            {
+                                string targetDir = Path.GetDirectoryName(targetFile);
+                                if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+                                File.Copy(legacyFile, targetFile, true);
+                            }
+                            catch { }
+                        }
+                        return success;
+                    }
+                }
 
-                return read(file);
+                return false;
             }
             catch { return false; }
         }

@@ -21,13 +21,19 @@ namespace SundryTool
         public int grabRange_val = 20;
     }
 
+    public class SundryConfigData
+    {
+        public PlayerModifyData player = new PlayerModifyData();
+        public HeldItemModifyData heldItem = new HeldItemModifyData();
+    }
+
     internal class SettingUI_player : ModSetting
     {
         public static SettingUI_player Instance { get; private set; }
         public override string Name => "玩家属性";
         public override string Title => "杂项功能: 玩家属性";
-        public override string FilePath => "Setting_player.json";
-        public override Type DataType => typeof(PlayerModifyData);
+        public override string FilePath => "Config.json";
+        public override Type DataType => typeof(SundryConfigData);
 
         private bool bound = false;
 
@@ -38,18 +44,34 @@ namespace SundryTool
 
         public override void Load(object v)
         {
-            if (v is PlayerModifyData data)
+            if (v is SundryConfigData config)
             {
-                Content.PlayerModify.ValSet.damage.val = data.damage;
-                Content.PlayerModify.ValSet.damage_val.val = data.damage_val;
-                Content.PlayerModify.ValSet.armorPenetration.val = data.armorPenetration;
-                Content.PlayerModify.ValSet.armorPenetration_val.val = data.armorPenetration_val;
-                Content.PlayerModify.ValSet.maxMinions.val = data.maxMinions;
-                Content.PlayerModify.ValSet.maxMinions_val.val = data.maxMinions_val;
-                Content.PlayerModify.ValSet.endurance.val = data.endurance;
-                Content.PlayerModify.ValSet.endurance_val.val = data.endurance_val;
-                Content.PlayerModify.ValSet.grabRange.val = data.grabRange;
-                Content.PlayerModify.ValSet.grabRange_val.val = data.grabRange_val;
+                if (config.player != null)
+                {
+                    Content.PlayerModify.ValSet.damage.val = config.player.damage;
+                    Content.PlayerModify.ValSet.damage_val.val = config.player.damage_val;
+                    Content.PlayerModify.ValSet.armorPenetration.val = config.player.armorPenetration;
+                    Content.PlayerModify.ValSet.armorPenetration_val.val = config.player.armorPenetration_val;
+                    Content.PlayerModify.ValSet.maxMinions.val = config.player.maxMinions;
+                    Content.PlayerModify.ValSet.maxMinions_val.val = config.player.maxMinions_val;
+                    Content.PlayerModify.ValSet.endurance.val = config.player.endurance;
+                    Content.PlayerModify.ValSet.endurance_val.val = config.player.endurance_val;
+                    Content.PlayerModify.ValSet.grabRange.val = config.player.grabRange;
+                    Content.PlayerModify.ValSet.grabRange_val.val = config.player.grabRange_val;
+                }
+                if (config.heldItem != null)
+                {
+                    Content.HeldItemModify.ValSet.useTime.val = config.heldItem.useTime;
+                    Content.HeldItemModify.ValSet.useTime_val.val = config.heldItem.useTime_val;
+                    Content.HeldItemModify.ValSet.useAnimation.val = config.heldItem.useAnimation;
+                    Content.HeldItemModify.ValSet.useAnimation_val.val = config.heldItem.useAnimation_val;
+                    Content.HeldItemModify.ValSet.shootSpeed.val = config.heldItem.shootSpeed;
+                    Content.HeldItemModify.ValSet.shootSpeed_val.val = config.heldItem.shootSpeed_val;
+                    Content.HeldItemModify.ValSet.shoot.val = config.heldItem.shoot;
+                    Content.HeldItemModify.ValSet.shoot_val.val = config.heldItem.shoot_val;
+                    Content.HeldItemModify.ValSet.tileBoost.val = config.heldItem.tileBoost;
+                    Content.HeldItemModify.ValSet.tileBoost_val.val = config.heldItem.tileBoost_val;
+                }
             }
             BindUpdates();
         }
@@ -72,18 +94,34 @@ namespace SundryTool
 
         public override object GetSaveData()
         {
-            return new PlayerModifyData
+            return new SundryConfigData
             {
-                damage = Content.PlayerModify.ValSet.damage.val,
-                damage_val = Content.PlayerModify.ValSet.damage_val.val,
-                armorPenetration = Content.PlayerModify.ValSet.armorPenetration.val,
-                armorPenetration_val = Content.PlayerModify.ValSet.armorPenetration_val.val,
-                maxMinions = Content.PlayerModify.ValSet.maxMinions.val,
-                maxMinions_val = Content.PlayerModify.ValSet.maxMinions_val.val,
-                endurance = Content.PlayerModify.ValSet.endurance.val,
-                endurance_val = Content.PlayerModify.ValSet.endurance_val.val,
-                grabRange = Content.PlayerModify.ValSet.grabRange.val,
-                grabRange_val = Content.PlayerModify.ValSet.grabRange_val.val,
+                player = new PlayerModifyData
+                {
+                    damage = Content.PlayerModify.ValSet.damage.val,
+                    damage_val = Content.PlayerModify.ValSet.damage_val.val,
+                    armorPenetration = Content.PlayerModify.ValSet.armorPenetration.val,
+                    armorPenetration_val = Content.PlayerModify.ValSet.armorPenetration_val.val,
+                    maxMinions = Content.PlayerModify.ValSet.maxMinions.val,
+                    maxMinions_val = Content.PlayerModify.ValSet.maxMinions_val.val,
+                    endurance = Content.PlayerModify.ValSet.endurance.val,
+                    endurance_val = Content.PlayerModify.ValSet.endurance_val.val,
+                    grabRange = Content.PlayerModify.ValSet.grabRange.val,
+                    grabRange_val = Content.PlayerModify.ValSet.grabRange_val.val,
+                },
+                heldItem = new HeldItemModifyData
+                {
+                    useTime = Content.HeldItemModify.ValSet.useTime.val,
+                    useTime_val = Content.HeldItemModify.ValSet.useTime_val.val,
+                    useAnimation = Content.HeldItemModify.ValSet.useAnimation.val,
+                    useAnimation_val = Content.HeldItemModify.ValSet.useAnimation_val.val,
+                    shootSpeed = Content.HeldItemModify.ValSet.shootSpeed.val,
+                    shootSpeed_val = Content.HeldItemModify.ValSet.shootSpeed_val.val,
+                    shoot = Content.HeldItemModify.ValSet.shoot.val,
+                    shoot_val = Content.HeldItemModify.ValSet.shoot_val.val,
+                    tileBoost = Content.HeldItemModify.ValSet.tileBoost.val,
+                    tileBoost_val = Content.HeldItemModify.ValSet.tileBoost_val.val,
+                }
             };
         }
 
@@ -129,8 +167,8 @@ namespace SundryTool
         public static SettingUI_item Instance { get; private set; }
         public override string Name => "手持物品属性";
         public override string Title => "杂项功能: 手持物品属性";
-        public override string FilePath => "Setting_item.json";
-        public override Type DataType => typeof(HeldItemModifyData);
+        public override string FilePath => "Config.json";
+        public override Type DataType => typeof(SundryConfigData);
 
         private bool bound = false;
 
@@ -141,18 +179,34 @@ namespace SundryTool
 
         public override void Load(object v)
         {
-            if (v is HeldItemModifyData data)
+            if (v is SundryConfigData config)
             {
-                Content.HeldItemModify.ValSet.useTime.val = data.useTime;
-                Content.HeldItemModify.ValSet.useTime_val.val = data.useTime_val;
-                Content.HeldItemModify.ValSet.useAnimation.val = data.useAnimation;
-                Content.HeldItemModify.ValSet.useAnimation_val.val = data.useAnimation_val;
-                Content.HeldItemModify.ValSet.shootSpeed.val = data.shootSpeed;
-                Content.HeldItemModify.ValSet.shootSpeed_val.val = data.shootSpeed_val;
-                Content.HeldItemModify.ValSet.shoot.val = data.shoot;
-                Content.HeldItemModify.ValSet.shoot_val.val = data.shoot_val;
-                Content.HeldItemModify.ValSet.tileBoost.val = data.tileBoost;
-                Content.HeldItemModify.ValSet.tileBoost_val.val = data.tileBoost_val;
+                if (config.player != null)
+                {
+                    Content.PlayerModify.ValSet.damage.val = config.player.damage;
+                    Content.PlayerModify.ValSet.damage_val.val = config.player.damage_val;
+                    Content.PlayerModify.ValSet.armorPenetration.val = config.player.armorPenetration;
+                    Content.PlayerModify.ValSet.armorPenetration_val.val = config.player.armorPenetration_val;
+                    Content.PlayerModify.ValSet.maxMinions.val = config.player.maxMinions;
+                    Content.PlayerModify.ValSet.maxMinions_val.val = config.player.maxMinions_val;
+                    Content.PlayerModify.ValSet.endurance.val = config.player.endurance;
+                    Content.PlayerModify.ValSet.endurance_val.val = config.player.endurance_val;
+                    Content.PlayerModify.ValSet.grabRange.val = config.player.grabRange;
+                    Content.PlayerModify.ValSet.grabRange_val.val = config.player.grabRange_val;
+                }
+                if (config.heldItem != null)
+                {
+                    Content.HeldItemModify.ValSet.useTime.val = config.heldItem.useTime;
+                    Content.HeldItemModify.ValSet.useTime_val.val = config.heldItem.useTime_val;
+                    Content.HeldItemModify.ValSet.useAnimation.val = config.heldItem.useAnimation;
+                    Content.HeldItemModify.ValSet.useAnimation_val.val = config.heldItem.useAnimation_val;
+                    Content.HeldItemModify.ValSet.shootSpeed.val = config.heldItem.shootSpeed;
+                    Content.HeldItemModify.ValSet.shootSpeed_val.val = config.heldItem.shootSpeed_val;
+                    Content.HeldItemModify.ValSet.shoot.val = config.heldItem.shoot;
+                    Content.HeldItemModify.ValSet.shoot_val.val = config.heldItem.shoot_val;
+                    Content.HeldItemModify.ValSet.tileBoost.val = config.heldItem.tileBoost;
+                    Content.HeldItemModify.ValSet.tileBoost_val.val = config.heldItem.tileBoost_val;
+                }
             }
             BindUpdates();
         }
@@ -175,18 +229,34 @@ namespace SundryTool
 
         public override object GetSaveData()
         {
-            return new HeldItemModifyData
+            return new SundryConfigData
             {
-                useTime = Content.HeldItemModify.ValSet.useTime.val,
-                useTime_val = Content.HeldItemModify.ValSet.useTime_val.val,
-                useAnimation = Content.HeldItemModify.ValSet.useAnimation.val,
-                useAnimation_val = Content.HeldItemModify.ValSet.useAnimation_val.val,
-                shootSpeed = Content.HeldItemModify.ValSet.shootSpeed.val,
-                shootSpeed_val = Content.HeldItemModify.ValSet.shootSpeed_val.val,
-                shoot = Content.HeldItemModify.ValSet.shoot.val,
-                shoot_val = Content.HeldItemModify.ValSet.shoot_val.val,
-                tileBoost = Content.HeldItemModify.ValSet.tileBoost.val,
-                tileBoost_val = Content.HeldItemModify.ValSet.tileBoost_val.val,
+                player = new PlayerModifyData
+                {
+                    damage = Content.PlayerModify.ValSet.damage.val,
+                    damage_val = Content.PlayerModify.ValSet.damage_val.val,
+                    armorPenetration = Content.PlayerModify.ValSet.armorPenetration.val,
+                    armorPenetration_val = Content.PlayerModify.ValSet.armorPenetration_val.val,
+                    maxMinions = Content.PlayerModify.ValSet.maxMinions.val,
+                    maxMinions_val = Content.PlayerModify.ValSet.maxMinions_val.val,
+                    endurance = Content.PlayerModify.ValSet.endurance.val,
+                    endurance_val = Content.PlayerModify.ValSet.endurance_val.val,
+                    grabRange = Content.PlayerModify.ValSet.grabRange.val,
+                    grabRange_val = Content.PlayerModify.ValSet.grabRange_val.val,
+                },
+                heldItem = new HeldItemModifyData
+                {
+                    useTime = Content.HeldItemModify.ValSet.useTime.val,
+                    useTime_val = Content.HeldItemModify.ValSet.useTime_val.val,
+                    useAnimation = Content.HeldItemModify.ValSet.useAnimation.val,
+                    useAnimation_val = Content.HeldItemModify.ValSet.useAnimation_val.val,
+                    shootSpeed = Content.HeldItemModify.ValSet.shootSpeed.val,
+                    shootSpeed_val = Content.HeldItemModify.ValSet.shootSpeed_val.val,
+                    shoot = Content.HeldItemModify.ValSet.shoot.val,
+                    shoot_val = Content.HeldItemModify.ValSet.shoot_val.val,
+                    tileBoost = Content.HeldItemModify.ValSet.tileBoost.val,
+                    tileBoost_val = Content.HeldItemModify.ValSet.tileBoost_val.val,
+                }
             };
         }
 

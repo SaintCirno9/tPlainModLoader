@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -143,43 +143,49 @@ namespace tContentPatch.Content.Menus.ModManager
             OpenDirectory(ContentPatch.ModDirectory);
         }
 
-        public static void ModEnableReversal(ModObject mo, bool? E = null)
+        public static void SaveEnabledConfig()
         {
-            string filePath = Path.Combine(mo.modPath, InfoList.Files.ModLoadConfig);
-            ModConfig mc = null;
-
             try
             {
-                if (File.Exists(filePath) == false)
-                {
-                    if (Directory.Exists(mo.modPath) == false) return;
+                if (mosui == null) return;
+                string enabledFilePath = Path.Combine(ContentPatch.UserSaveDirectory ?? string.Empty, InfoList.Files.EnabledJson);
+                List<string> enabledKeys = mosui.Where(m => m.config != null && m.config.isEnable && !string.IsNullOrEmpty(m.config.key))
+                                                .Select(m => m.config.key)
+                                                .ToList();
+                Utils.MyJson1.Save(enabledKeys, enabledFilePath);
+            }
+            catch { }
+        }
 
-                    Utils.MyJson1.Save(mo.config, filePath);
-                }
-
-                mc = Utils.MyJson1.Get2<ModConfig>(filePath);
-
-                mc.isEnable = E ?? !mo.config.isEnable;
-                Utils.MyJson1.Save(mc, filePath);
-
-                //
-
-                mc = Utils.MyJson1.Get2<ModConfig>(filePath);
-                mo.config.isEnable = mc.isEnable;
+        public static void ModEnableReversal(ModObject mo, bool? E = null)
+        {
+            try
+            {
+                if (mo?.config == null) return;
+                mo.config.isEnable = E ?? !mo.config.isEnable;
+                SaveEnabledConfig();
             }
             catch { }
         }
 
         public static void ModEnableAll()
         {
-            if (mos == null) return;
-            foreach (ModObject i in mosui) ModEnableReversal(i, true);
+            if (mosui == null) return;
+            foreach (ModObject i in mosui)
+            {
+                if (i.config != null) i.config.isEnable = true;
+            }
+            SaveEnabledConfig();
         }
 
         public static void ModNoEnableAll()
         {
-            if (mos == null) return;
-            foreach (ModObject i in mosui) ModEnableReversal(i, false);
+            if (mosui == null) return;
+            foreach (ModObject i in mosui)
+            {
+                if (i.config != null) i.config.isEnable = false;
+            }
+            SaveEnabledConfig();
         }
 
         public static bool CheckModUpdate()

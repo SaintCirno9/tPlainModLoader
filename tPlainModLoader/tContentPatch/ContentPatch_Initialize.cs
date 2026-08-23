@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -131,7 +131,7 @@ namespace tContentPatch
 
         private void Initialize_ModDirectory()
         {
-            Log.Add($"{nameof(ContentPatch)}:初始化模组目录");
+            Log.Add($"{nameof(ContentPatch)}:初始化模组与用户数据目录");
 
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (Directory.Exists(path) == false) throw new Exception($"目录不存在[{path}]");
@@ -146,6 +146,28 @@ namespace tContentPatch
             if (Directory.Exists(ModDirectory) == false) throw new Exception($"目录不存在[{ModDirectory}]");
 
             Log.Add($"{nameof(ContentPatch)}:模组目录:{ModDirectory}");
+
+            // 初始化 Windows 文档用户数据目录 (Documents/My Games/Terraria/tPlainModLoader)
+            try
+            {
+                string baseSavePath = Main.SavePath;
+                if (string.IsNullOrEmpty(baseSavePath))
+                {
+                    baseSavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Terraria");
+                }
+                UserSaveDirectory = Path.Combine(baseSavePath, InfoList.Directorys.UserDataRoot);
+                if (!Directory.Exists(UserSaveDirectory)) Directory.CreateDirectory(UserSaveDirectory);
+
+                ConfigDirectory = Path.Combine(UserSaveDirectory, InfoList.Directorys.Config);
+                if (!Directory.Exists(ConfigDirectory)) Directory.CreateDirectory(ConfigDirectory);
+
+                Log.Add($"{nameof(ContentPatch)}:用户数据目录:{UserSaveDirectory}");
+                Log.Add($"{nameof(ContentPatch)}:模组配置目录:{ConfigDirectory}");
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"{nameof(ContentPatch)}:用户数据目录初始化异常:{ex.Message}");
+            }
         }
 
         private void Initialize_CMD()

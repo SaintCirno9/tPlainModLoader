@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using tContentPatch.ModLoad;
@@ -13,6 +13,10 @@ namespace tContentPatch
         public const string VersionTPlainModLoader = "1-beta13-t1.4.5.7";
         /// <summary/>
         public static string ModDirectory { get; private set; } = null;
+        /// <summary>用户文档数据根目录 (Documents/My Games/Terraria/tPlainModLoader)</summary>
+        public static string UserSaveDirectory { get; private set; } = null;
+        /// <summary>模组配置存储目录 (Documents/My Games/Terraria/tPlainModLoader/Config)</summary>
+        public static string ConfigDirectory { get; private set; } = null;
         /// <summary/>
         public static bool Initialized { get; private set; } = false;
         /// <summary/>
