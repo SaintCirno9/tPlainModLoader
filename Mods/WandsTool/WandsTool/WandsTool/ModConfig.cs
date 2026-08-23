@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using tContentPatch;
 using tContentPatch.Content.UI;
@@ -18,7 +18,7 @@ namespace WandsTool
 
         public override string Name => "设置";
         public override string Title => "魔杖工具: 设置";
-        public override string FilePath => "模组配置.txt";
+        public override string FilePath => "Config.json";
         public override Type DataType => typeof(Data);
         private static Data data = null;
 
@@ -39,6 +39,7 @@ namespace WandsTool
         {
             data = new Data();
             NeedSave = true;
+            Save();
         }
 
         public override object GetSaveData() => data;
@@ -62,6 +63,7 @@ namespace WandsTool
                 if (data.ConsumablesItem == v) return;
                 data.ConsumablesItem = v;
                 NeedSave = true;
+                Save();
             };
             sv.AddChild(s);
 
