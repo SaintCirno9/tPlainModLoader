@@ -6,6 +6,8 @@
     <RootNamespace>tPlainModLoader</RootNamespace>
     <AssemblyName>tPlainModLoader</AssemblyName>
     <TargetFramework>net472</TargetFramework>
+    <!-- 宿主进程须为 x86：GAC 中 XNA 4.0 与原版 Terraria 均为 32 位程序集，x64/AnyCPU 进程加载即 BadImageFormatException -->
+    <PlatformTarget>x86</PlatformTarget>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>ico_256.ico</ApplicationIcon>
@@ -27,5 +29,24 @@
   <ItemGroup>
     <Content Include="ico_256.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- 构建后部署：产物以符号链接发布到游戏目录下的 tPlainModLoader 文件夹（链接指向 bin，重建即自动更新）。
+       mklink 需开启 Windows 开发者模式或以管理员运行；幂等：已存在的条目跳过，悬空链接自动重建。
+       Mods 为真实目录（模组放置处，代码按 tContentPatch.dll 同级 Mods 解析），首次部署会顺带迁移已有的 launchConfig.json -->
+  <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
+    <PropertyGroup>
+      <GameDeployDir>$(TerrariaDir)\tPlainModLoader</GameDeployDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(GameDeployDir);$(GameDeployDir)\Mods" />
+    <ItemGroup>
+      <DeployFile Include="$(OutDir)*.exe;$(OutDir)*.dll;$(OutDir)*.exe.config" />
+    </ItemGroup>
+    <Message Importance="High" Text="[DeployToGameDir] 部署 %(DeployFile.Filename)%(DeployFile.Extension) -> $(GameDeployDir)" />
+    <Exec Condition="!Exists('$(GameDeployDir)\%(DeployFile.Filename)%(DeployFile.Extension)')"
+          Command="mklink &quot;$(GameDeployDir)\%(DeployFile.Filename)%(DeployFile.Extension)&quot; &quot;%(DeployFile.FullPath)&quot;" />
+    <Copy SourceFiles="$(OutDir)launchConfig.json"
+          DestinationFiles="$(GameDeployDir)\launchConfig.json"
+          Condition="!Exists('$(GameDeployDir)\launchConfig.json') and Exists('$(OutDir)launchConfig.json')" />
+  </Target>
 
 </Project>

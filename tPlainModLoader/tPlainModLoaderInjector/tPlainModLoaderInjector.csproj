@@ -6,6 +6,8 @@
     <RootNamespace>tPlainModLoaderInjector</RootNamespace>
     <AssemblyName>tPlainModLoaderInjector</AssemblyName>
     <TargetFramework>net472</TargetFramework>
+    <!-- 注入器自身会被注入 32 位的原版游戏进程，必须 x86 -->
+    <PlatformTarget>x86</PlatformTarget>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>ico2_256.ico</ApplicationIcon>
