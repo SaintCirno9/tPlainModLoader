@@ -77,6 +77,10 @@
     </ItemGroup>
     <Message Importance="High" Text="[DeployToGameDir] 复制部署 %(DeployFile.Filename)%(DeployFile.Extension) -> $(GameDeployDir)" />
     <Copy SourceFiles="@(DeployFile)" DestinationFolder="$(GameDeployDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ReLogicPath)"
+          DestinationFolder="$(GameDeployDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(ReLogicPath)')" />
     <Copy SourceFiles="$(OutDir)launchConfig.json"
           DestinationFiles="$(GameDeployDir)\launchConfig.json"
           Condition="!Exists('$(GameDeployDir)\launchConfig.json') and Exists('$(OutDir)launchConfig.json')" />
