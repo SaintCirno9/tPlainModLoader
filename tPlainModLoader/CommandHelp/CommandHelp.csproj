@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectGuid>{28032285-BA86-4A99-88C3-82A8483DC05C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>CommandHelp</RootNamespace>
+    <AssemblyName>CommandHelp</AssemblyName>
+    <TargetFramework>net472</TargetFramework>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
+    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
+  </PropertyGroup>
+
+</Project>
