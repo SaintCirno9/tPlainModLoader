@@ -1,1 +1,9 @@
-﻿{"key":"StaticTile.AccessoryBox","version":"1.0.1","dllPath":"AccessoryBox.dll","frontModKeys":["StaticTile.QuickButton"]}
+{
+  "key": "StaticTile.AccessoryBox",
+  "version": "1.0.1",
+  "isEnable": true,
+  "dllPath": "AccessoryBox.dll",
+  "frontModKeys": [
+    "StaticTile.QuickButton"
+  ]
+}

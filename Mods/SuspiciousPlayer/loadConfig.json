@@ -1,1 +1,6 @@
-﻿{"key":"StaticTile.SuspiciousPlayer","version":"1.0","dllPath":"SuspiciousPlayer.dll"}
+{
+  "key": "StaticTile.SuspiciousPlayer",
+  "version": "1.0",
+  "isEnable": true,
+  "dllPath": "SuspiciousPlayer.dll"
+}

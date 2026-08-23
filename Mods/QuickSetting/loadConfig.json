@@ -1,1 +1,6 @@
-﻿{"key":"StaticTile.QuickSetting","version":"1.0.1","dllPath":"QuickSetting.dll"}
+{
+  "key": "StaticTile.QuickSetting",
+  "version": "1.0.1",
+  "isEnable": true,
+  "dllPath": "QuickSetting.dll"
+}

@@ -1,1 +1,6 @@
-﻿{"key":"StaticTile.QuickButton","version":"1.0.1","dllPath":"QuickButton.dll"}
+{
+  "key": "StaticTile.QuickButton",
+  "version": "1.0.1",
+  "isEnable": true,
+  "dllPath": "QuickButton.dll"
+}

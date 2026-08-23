@@ -1,1 +1,6 @@
-﻿{"key":"StaticTile.PixelArt","version":"1.0.3","dllPath":"PixelArt.dll"}
+{
+  "key": "StaticTile.PixelArt",
+  "version": "1.0.3",
+  "isEnable": true,
+  "dllPath": "PixelArt.dll"
+}

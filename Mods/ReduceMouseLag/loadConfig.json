@@ -1,5 +1,6 @@
 {
   "key": "StaticTile.ReduceMouseLag",
   "version": "1.0.0",
+  "isEnable": true,
   "dllPath": "ReduceMouseLag.dll"
 }

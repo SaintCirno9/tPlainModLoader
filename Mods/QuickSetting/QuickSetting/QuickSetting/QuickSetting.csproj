@@ -52,10 +52,12 @@
       <ModDeployFile Include="$(TargetPath)" />
       <ModDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
       <ModDeployFile Include="$(ModSourceDir)\info.json" Condition="Exists('$(ModSourceDir)\info.json')" />
-      <ModDeployFile Include="$(ModSourceDir)\loadConfig.json" Condition="Exists('$(ModSourceDir)\loadConfig.json')" />
       <ModDeployFile Include="$(ModSourceDir)\ico.png" Condition="Exists('$(ModSourceDir)\ico.png')" />
     </ItemGroup>
     <Copy SourceFiles="@(ModDeployFile)" DestinationFolder="$(ModDeployDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ModSourceDir)\loadConfig.json"
+          DestinationFiles="$(ModDeployDir)\loadConfig.json"
+          Condition="!Exists('$(ModDeployDir)\loadConfig.json') and Exists('$(ModSourceDir)\loadConfig.json')" />
   </Target>
 
 </Project>
