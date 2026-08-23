@@ -1,0 +1,6 @@
+{
+  "name": "减少鼠标延迟 (ReduceMouseLag)",
+  "author": "[c/00ffff:SaintCirno9]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【高刷/低延迟鼠标输入优化】\n- 解除原版 60Hz Update 循环对鼠标采样的限制；\n- 在渲染与光标绘制前执行即时高频硬件级鼠标采样；\n- 支持 Win32 原生光标直接采样，消除光标粘滞、拖影与卡顿感；\n- 支持与 [快速设置] 和 [快速按钮] 联动配置。"
+}

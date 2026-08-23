@@ -39,12 +39,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WandsTool", "..\Mods\WandsT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchSapwn", "..\Mods\批量生成\批量生成\批量生成.csproj", "{E8E81B66-2513-464C-BB08-B6D6F900480B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReduceMouseLag", "..\Mods\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag.csproj", "{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{45AB3FB8-F6C8-46E2-8FAF-C07353AE018C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{45AB3FB8-F6C8-46E2-8FAF-C07353AE018C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45AB3FB8-F6C8-46E2-8FAF-C07353AE018C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -118,6 +124,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{3940870E-A084-46CD-B7ED-6260E58E78A6} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{0222CAFC-DB2C-4BA4-B527-3EB4197303E4} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{6C30CD98-F031-45E9-8A94-B31738D349AE} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
@@ -134,4 +141,6 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0461D13B-9EBE-463D-B23A-869FE0BAD7C6}
 	EndGlobalSection
-EndGlobal
+EndProject("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReduceMouseLag", "..\Mods\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag.csproj", "{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}"
+EndProject
+Global
