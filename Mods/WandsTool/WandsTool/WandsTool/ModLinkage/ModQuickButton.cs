@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using tContentPatch;
 using Terraria;
@@ -42,6 +42,10 @@ namespace WandsTool.ModLinkage
                 SoundEngine.PlaySound(12);
 
                 gameMain.Wand_isEnable = !gameMain.Wand_isEnable;
+                if (gameMain.Wand_isEnable)
+                {
+                    gameMain.AutoAdaptModeToHeldItem(Main.LocalPlayer);
+                }
             };
 
             mi.Invoke(null, new object[] { "WandsTool.SwitchOpenOrClose", ui_img });

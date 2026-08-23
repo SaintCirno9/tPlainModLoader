@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using tContentPatch;
@@ -10,52 +10,40 @@ namespace OptimizeAndTool.Content.Patch
 {
     internal class Patch_RemadeChatMonitor : Mod
     {
-        private static List<ChatMessageContainer> __messages = null;
         public static List<ChatMessageContainer> _messages
         {
             get
             {
-                if (__messages != null) return __messages;
-
-                __messages = ReflectionHelp(nameof(_messages)) as List<ChatMessageContainer>;
-
-                return __messages;
+                if (Terraria.Main.chatMonitor is RemadeChatMonitor monitor)
+                {
+                    return monitor._messages;
+                }
+                return null;
             }
         }
-        private static int __showCount = 0;
+
         public static int _showCount
         { 
             get
             {
-                int? v = ReflectionHelp(nameof(_showCount)) as int?;
-                if (v == null) return __showCount;
-                __showCount = v.Value;
-
-                return __showCount;
+                if (Terraria.Main.chatMonitor is RemadeChatMonitor monitor)
+                {
+                    return monitor._showCount;
+                }
+                return 0;
             }
         }
-        private static int __startChatLine = 0;
+
         public static int _startChatLine
         {
             get
             {
-                int? v = ReflectionHelp(nameof(_startChatLine)) as int?;
-                if (v == null) return __startChatLine;
-                __startChatLine = v.Value;
-
-                return __startChatLine;
+                if (Terraria.Main.chatMonitor is RemadeChatMonitor monitor)
+                {
+                    return monitor._startChatLine;
+                }
+                return 0;
             }
-        }
-
-        private static object ReflectionHelp(string name)
-        {
-            Type type = typeof(RemadeChatMonitor);
-            if (type == null) return null;
-
-            System.Reflection.FieldInfo fieldInfo = type.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (fieldInfo == null) return null;
-
-            return fieldInfo.GetValue(Terraria.Main.chatMonitor);
         }
 
         public override void AddPatch(IAddPatch addPatch)

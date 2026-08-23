@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework.Graphics;
 using SundryTool.Content.UI;
 using SundryTool.Utils;
@@ -118,22 +118,17 @@ namespace SundryTool.Content.Function2
 
         public static PlayerDeathReason ByProjectile(int playerIndex, int projectileType)
         {
-            Type type = typeof(PlayerDeathReason);
-            FieldInfo _sourcePlayerIndex = type.GetField("_sourcePlayerIndex", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo _sourceProjectileLocalIndex = type.GetField("_sourceProjectileLocalIndex", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo _sourceProjectileType = type.GetField("_sourceProjectileType", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo _sourceItemType = type.GetField("_sourceItemType", BindingFlags.NonPublic | BindingFlags.Instance);
-            FieldInfo _sourceItemPrefix = type.GetField("_sourceItemPrefix", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            PlayerDeathReason playerDeathReason = new PlayerDeathReason();
-            _sourcePlayerIndex.SetValue(playerDeathReason, playerIndex);
-            _sourceProjectileLocalIndex.SetValue(playerDeathReason, 0);
-            _sourceProjectileType.SetValue(playerDeathReason, projectileType);
+            PlayerDeathReason playerDeathReason = new PlayerDeathReason
+            {
+                _sourcePlayerIndex = playerIndex,
+                _sourceProjectileLocalIndex = 0,
+                _sourceProjectileType = projectileType
+            };
 
             if (playerIndex >= 0 && playerIndex <= 255)
             {
-                _sourceItemType.SetValue(playerDeathReason, Main.player[playerIndex].inventory[Main.player[playerIndex].selectedItem].type);
-                _sourceItemPrefix.SetValue(playerDeathReason, Main.player[playerIndex].inventory[Main.player[playerIndex].selectedItem].prefix);
+                playerDeathReason._sourceItemType = Main.player[playerIndex].inventory[Main.player[playerIndex].selectedItem].type;
+                playerDeathReason._sourceItemPrefix = Main.player[playerIndex].inventory[Main.player[playerIndex].selectedItem].prefix;
             }
 
             return playerDeathReason;

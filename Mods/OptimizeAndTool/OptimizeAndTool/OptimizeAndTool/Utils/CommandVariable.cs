@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using System.Collections.Generic;
 
 namespace OptimizeAndTool.Utils
@@ -40,5 +40,12 @@ namespace OptimizeAndTool.Utils
         {
             return this;
         }
+    }
+
+    public class CommandString : CommandValue<string>
+    {
+        public override string Text => "<string>";
+        protected override string ArgConvertThrow(string arg) => arg;
+        protected override string GetDefault() => default;
     }
 }

@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using System.Collections.Generic;
 using tContentPatch;
 
@@ -22,6 +22,11 @@ namespace SundryTool
             item.SubCommand.AddRange(Content.HeldItemModify.ValSet.GetCO());
             item.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(item.SubCommand));
             root.SubCommand.Add(item);
+
+            CommandObject qol = new CommandObject("qol");
+            qol.SubCommand.AddRange(Content.QoL.QoLValSet.GetCO());
+            qol.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(qol.SubCommand));
+            root.SubCommand.Add(qol);
 
             root.SubCommand.AddRange(Content.Function1.Function.GetCO());
             root.SubCommand.AddRange(Content.Function2.Function.GetCO());

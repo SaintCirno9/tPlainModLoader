@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +26,7 @@ namespace SundryTool.ModLinkage
             {
                 (a => ModQuickSetting.IsLinkage_PlayerModify_QuickSetting = a, "Images/Item_1746", "玩家属性: 添加到快捷设置"),
                 (a => ModQuickSetting.IsLinkage_HeldItemModify_QuickSetting = a, "Images/Item_3258", "手持物品属性: 添加到快捷设置"),
+                (a => ModQuickSetting.IsLinkage_QoL_QuickSetting = a, "Images/Item_5358", "便捷与生态增强: 添加到快捷设置"),
                 (a => ModQuickSetting.IsLinkage_Function1_QuickSetting = a, "Images/Item_1959", "其它功能1: 添加到快捷设置"),
                 (a => ModQuickSetting.IsLinkage_Function2_QuickSetting = a, "Images/Item_1959", "其它功能2: 添加到快捷设置"),
             };

@@ -12,6 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Net.Http" />
     <!-- XNA 4.0 仅存在于 GAC（随 XNA Redistributable 安装），无 NuGet 分发，此处使用 GAC 确定性物理路径 -->
     <Reference Include="Microsoft.Xna.Framework">

@@ -55,6 +55,10 @@ namespace WandsTool.KeyBind
 
             SoundEngine.PlaySound(12);
             gameMain.Wand_isEnable = !gameMain.Wand_isEnable;
+            if (gameMain.Wand_isEnable)
+            {
+                gameMain.AutoAdaptModeToHeldItem(Main.LocalPlayer);
+            }
         }
 
         public override UIElement GetUI()

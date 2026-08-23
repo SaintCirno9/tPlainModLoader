@@ -66,6 +66,7 @@ namespace WandsTool
             if (Main.gameMenu)
             {
                 gameMain.Wand_isEnable = false;
+                UI?.Close();
                 return;
             }
 
@@ -76,25 +77,40 @@ namespace WandsTool
             }
         }
 
+        private static int lastSelectedItem = -1;
+
         public override void DoUpdateInWorldPostfix()
         {
-            if (gameMain.Wand_isEnable)
+            Player player = Main.LocalPlayer;
+            if (gameMain.Wand_isEnable && player != null)
             {
-                if (Main.mouseRight && Main.mouseRightRelease)
+                // 监听快捷栏手持物品切换，实时自适应魔棒工作模式
+                if (player.selectedItem != lastSelectedItem)
                 {
-                    gameMain.UI_WandsPanel1_isOpen = !gameMain.UI_WandsPanel1_isOpen;
-
-                    if (gameMain.UI_WandsPanel1_isOpen && UI != null) UI.isReset = true;
+                    lastSelectedItem = player.selectedItem;
+                    gameMain.AutoAdaptModeToHeldItem(player);
                 }
 
+                bool wasSelecting = Wands.Selecting;
                 Wands.Update();
-
                 WandAction.Update();
-                
+
+                if (Main.mouseRight && Main.mouseRightRelease)
+                {
+                    if (!wasSelecting && !Wands.Selecting)
+                    {
+                        UI?.Toggle();
+                    }
+                    else
+                    {
+                        Main.mouseRightRelease = false;
+                    }
+                }
             }
             else
             {
-                gameMain.UI_WandsPanel1_isOpen = false;
+                lastSelectedItem = -1;
+                UI?.Close();
 
                 Wands.Reset();
             }

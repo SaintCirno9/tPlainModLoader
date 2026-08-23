@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
@@ -89,6 +89,45 @@ namespace WandsTool.Content
             return points;
         }
 
+        public static List<Point> GetShapes_CircularFilled(Vector2 startWord, Vector2 endWord)
+        {
+            if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
+            if (startWord == endWord) return new List<Point>() { GetWordPoint(startWord) };
+
+            List<Point> points = new List<Point>();
+            Point center = GetWordPoint(startWord);
+
+            float radiusX = Math.Abs(startWord.X - endWord.X) / 16f;
+            float radiusY = Math.Abs(startWord.Y - endWord.Y) / 16f;
+
+            int rx = (int)Math.Ceiling(radiusX);
+            int ry = (int)Math.Ceiling(radiusY);
+
+            if (rx <= 0 && ry <= 0)
+            {
+                points.Add(center);
+                return points;
+            }
+
+            float rxF = Math.Max(radiusX, 0.5f);
+            float ryF = Math.Max(radiusY, 0.5f);
+
+            for (int y = -ry; y <= ry; y++)
+            {
+                for (int x = -rx; x <= rx; x++)
+                {
+                    float normX = x / rxF;
+                    float normY = y / ryF;
+                    if (normX * normX + normY * normY <= 1.05f)
+                    {
+                        points.Add(new Point(center.X + x, center.Y + y));
+                    }
+                }
+            }
+
+            return points;
+        }
+
         public static List<Point> GetShapes_Rectangle(Vector2 startWord, Vector2 endWord)
         {
             if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
@@ -118,58 +157,64 @@ namespace WandsTool.Content
 
         protected static void DrawShapes(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
         {
-            if (startWord.HasNaNs() || endWord.HasNaNs()) return;
+            if (shapes == null || shapes.Count == 0 || startWord.HasNaNs() || endWord.HasNaNs()) return;
 
-            for (int i = 0; i < shapes?.Count; ++i)
+            HashSet<Point> shapeSet = new HashSet<Point>(shapes);
+
+            for (int i = 0; i < shapes.Count; ++i)
             {
-                if (shapes[i] == null) continue;
-
                 Vector2 positionWord = new Vector2(shapes[i].X * 16, shapes[i].Y * 16);
 
                 Rectangle? rect = new Rectangle?(new Rectangle(0, 0, 16, 16));
                 Main.spriteBatch.Draw(TextureAssets.MagicPixel.Value, positionWord - Main.screenPosition, rect, backgroundColor);
 
-                Point top = shapes[i];
-                Point bottom = shapes[i];
-                Point left = shapes[i];
-                Point right = shapes[i];
-                top.Y -= 1;
-                bottom.Y += 1;
-                left.X -= 1;
-                right.X += 1;
+                Point top = new Point(shapes[i].X, shapes[i].Y - 1);
+                Point bottom = new Point(shapes[i].X, shapes[i].Y + 1);
+                Point left = new Point(shapes[i].X - 1, shapes[i].Y);
+                Point right = new Point(shapes[i].X + 1, shapes[i].Y);
 
-                if (shapes.Contains(top) == false)
+                if (!shapeSet.Contains(top))
                 {
                     Terraria.Utils.DrawLine(Main.spriteBatch,
-                        new Vector2(positionWord.X, positionWord.Y), new Vector2(positionWord.X + 16, positionWord.Y),
+                        new Vector2(positionWord.X, positionWord.Y) - Main.screenPosition,
+                        new Vector2(positionWord.X + 16, positionWord.Y) - Main.screenPosition,
                         borderColor, borderColor, 2f);
                 }
-                if (shapes.Contains(bottom) == false)
+                if (!shapeSet.Contains(bottom))
                 {
                     Terraria.Utils.DrawLine(Main.spriteBatch,
-                        new Vector2(positionWord.X, positionWord.Y + 16), new Vector2(positionWord.X + 16, positionWord.Y + 16),
+                        new Vector2(positionWord.X, positionWord.Y + 16) - Main.screenPosition,
+                        new Vector2(positionWord.X + 16, positionWord.Y + 16) - Main.screenPosition,
                         borderColor, borderColor, 2f);
                 }
-                if (shapes.Contains(left) == false)
+                if (!shapeSet.Contains(left))
                 {
                     Terraria.Utils.DrawLine(Main.spriteBatch,
-                        new Vector2(positionWord.X, positionWord.Y), new Vector2(positionWord.X, positionWord.Y + 16),
+                        new Vector2(positionWord.X, positionWord.Y) - Main.screenPosition,
+                        new Vector2(positionWord.X, positionWord.Y + 16) - Main.screenPosition,
                         borderColor, borderColor, 2f);
                 }
-                if (shapes.Contains(right) == false)
+                if (!shapeSet.Contains(right))
                 {
                     Terraria.Utils.DrawLine(Main.spriteBatch,
-                        new Vector2(positionWord.X + 16, positionWord.Y), new Vector2(positionWord.X + 16, positionWord.Y + 16),
+                        new Vector2(positionWord.X + 16, positionWord.Y) - Main.screenPosition,
+                        new Vector2(positionWord.X + 16, positionWord.Y + 16) - Main.screenPosition,
                         borderColor, borderColor, 2f);
                 }
             }
         }
+
         public static void Draw_line(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
         {
             DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
         }
 
         public static void Draw_circular(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
+        {
+            DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
+        }
+
+        public static void Draw_circularFilled(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
         {
             DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
         }
@@ -193,10 +238,10 @@ namespace WandsTool.Content
             Rectangle? rect = new Rectangle?(new Rectangle(0, 0, (int)(p4Word.X - p1Word.X), (int)(p4Word.Y - p1Word.Y)));
             Main.spriteBatch.Draw(TextureAssets.MagicPixel.Value, p1Word - Main.screenPosition, rect, backgroundColor);
 
-            Terraria.Utils.DrawLine(Main.spriteBatch, p1Word, p2Word, borderColor, borderColor, 2f);
-            Terraria.Utils.DrawLine(Main.spriteBatch, p3Word, p4Word, borderColor, borderColor, 2f);
-            Terraria.Utils.DrawLine(Main.spriteBatch, p1Word, p3Word, borderColor, borderColor, 2f);
-            Terraria.Utils.DrawLine(Main.spriteBatch, p2Word, p4Word, borderColor, borderColor, 2f);
+            Terraria.Utils.DrawLine(Main.spriteBatch, p1Word - Main.screenPosition, p2Word - Main.screenPosition, borderColor, borderColor, 2f);
+            Terraria.Utils.DrawLine(Main.spriteBatch, p3Word - Main.screenPosition, p4Word - Main.screenPosition, borderColor, borderColor, 2f);
+            Terraria.Utils.DrawLine(Main.spriteBatch, p1Word - Main.screenPosition, p3Word - Main.screenPosition, borderColor, borderColor, 2f);
+            Terraria.Utils.DrawLine(Main.spriteBatch, p2Word - Main.screenPosition, p4Word - Main.screenPosition, borderColor, borderColor, 2f);
         }
     }
 }

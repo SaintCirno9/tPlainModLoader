@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,7 @@ namespace SundryTool.ModLinkage
     {
         public static bool IsLinkage_PlayerModify_QuickSetting = true;
         public static bool IsLinkage_HeldItemModify_QuickSetting = true;
+        public static bool IsLinkage_QoL_QuickSetting = true;
         public static bool IsLinkage_Function1_QuickSetting = true;
         public static bool IsLinkage_Function2_QuickSetting = true;
 
@@ -39,6 +40,11 @@ namespace SundryTool.ModLinkage
             if (IsLinkage_HeldItemModify_QuickSetting)
             {
                 AddItem(mi, "Images/Item_3258", "手持物品属性", Content.HeldItemModify.ValSet.GetUI());
+            }
+
+            if (IsLinkage_QoL_QuickSetting)
+            {
+                AddItem(mi, "Images/Item_5358", "便捷与生态增强", Content.QoL.QoLValSet.GetUI());
             }
 
             if (IsLinkage_Function1_QuickSetting)
