@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System.IO;
 using System.Reflection;
 
@@ -18,8 +18,12 @@ namespace WandsTool
         public static Texture2D Images_SlopeDownLeft = null;
         public static Texture2D Images_SlopeDownRight = null;
 
-        static Resources()
+        public static bool Loaded { get; private set; } = false;
+
+        public static void Load()
         {
+            if (Loaded || Terraria.Main.dedServ || Terraria.Main.graphics?.GraphicsDevice == null) return;
+
             Assembly assembly = Assembly.GetExecutingAssembly();
             setTexture2D(assembly, "WandsTool.Resources.Wand.png", ref Images_Wand);
             setTexture2D(assembly, "WandsTool.Resources.WandCreate.png", ref Images_WandCreate);
@@ -32,12 +36,18 @@ namespace WandsTool
             setTexture2D(assembly, "WandsTool.Resources.SlopeUpRight.png", ref Images_SlopeUpRight);
             setTexture2D(assembly, "WandsTool.Resources.SlopeDownLeft.png", ref Images_SlopeDownLeft);
             setTexture2D(assembly, "WandsTool.Resources.SlopeDownRight.png", ref Images_SlopeDownRight);
+            Loaded = true;
         }
 
         private static void setTexture2D(Assembly assembly, string s, ref Texture2D t2d)
         {
-            Stream stream = assembly.GetManifestResourceStream(s);
-            t2d = Texture2D.FromStream(Terraria.Main.graphics.GraphicsDevice, stream);
+            if (Terraria.Main.graphics?.GraphicsDevice == null) return;
+
+            using (Stream stream = assembly.GetManifestResourceStream(s))
+            {
+                if (stream == null) return;
+                t2d = Texture2D.FromStream(Terraria.Main.graphics.GraphicsDevice, stream);
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
@@ -14,13 +14,18 @@ namespace WandsTool
     /// </summary>
     public class feces : PatchMain
     {
-        private static wandsPanel ui = null;
-
-        static feces()
+        private static wandsPanel uiInstance = null;
+        private static wandsPanel UI
         {
-            if (Main.dedServ) return;
-
-            ui = new wandsPanel();
+            get
+            {
+                if (uiInstance == null && !Main.dedServ)
+                {
+                    Resources.Load();
+                    uiInstance = new wandsPanel();
+                }
+                return uiInstance;
+            }
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
@@ -47,7 +52,7 @@ namespace WandsTool
                     {
                         if (gameMain.UI_WandsPanel1_isOpen && gameMain.Wand_isEnable)
                         {
-                            ui.Draw(Main.spriteBatch, Main.gameTimeCache);
+                            UI?.Draw(Main.spriteBatch, Main.gameTimeCache);
                         }
 
                         return true;
@@ -66,8 +71,8 @@ namespace WandsTool
 
             if (gameMain.UI_WandsPanel1_isOpen && gameMain.Wand_isEnable)
             {
-                ui.Update(gameTime);
-                ui.update(gameTime);
+                UI?.Update(gameTime);
+                UI?.update(gameTime);
             }
         }
 
@@ -79,7 +84,7 @@ namespace WandsTool
                 {
                     gameMain.UI_WandsPanel1_isOpen = !gameMain.UI_WandsPanel1_isOpen;
 
-                    if (gameMain.UI_WandsPanel1_isOpen) ui.isReset = true;
+                    if (gameMain.UI_WandsPanel1_isOpen && UI != null) UI.isReset = true;
                 }
 
                 Wands.Update();

@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -22,11 +22,13 @@ namespace tContentPatch.Utils
                 assembly = method.ReflectedType.Assembly;
             }
 
-            Stream stream = assembly.GetManifestResourceStream(path);
+            if (Terraria.Main.graphics?.GraphicsDevice == null) return null;
 
-            if (stream == null) return null;
-
-            return Texture2D.FromStream(Terraria.Main.graphics.GraphicsDevice, stream);
+            using (Stream stream = assembly.GetManifestResourceStream(path))
+            {
+                if (stream == null) return null;
+                return Texture2D.FromStream(Terraria.Main.graphics.GraphicsDevice, stream);
+            }
         }
     }
 }
