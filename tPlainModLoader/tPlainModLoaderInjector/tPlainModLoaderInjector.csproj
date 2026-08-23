@@ -8,6 +8,8 @@
     <TargetFramework>net472</TargetFramework>
     <!-- 注入器自身会被注入 32 位的原版游戏进程，必须 x86 -->
     <PlatformTarget>x86</PlatformTarget>
+    <!-- 开启 4GB 虚拟内存感知 (LargeAddressAware) -->
+    <LargeAddressAware>true</LargeAddressAware>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>ico2_256.ico</ApplicationIcon>
@@ -22,8 +24,41 @@
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="ico2_256.ico" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+  <!-- 内联任务：自动为 32 位 exe 注入 LargeAddressAware (0x0020) 标志，确保获得 4GB 虚拟内存感知 -->
+  <UsingTask TaskName="SetLargeAddressAware" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          if (File.Exists(FilePath))
+          {
+              using (var stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite))
+              using (var reader = new BinaryReader(stream))
+              using (var writer = new BinaryWriter(stream))
+              {
+                  stream.Seek(0x3C, SeekOrigin.Begin);
+                  int peOffset = reader.ReadInt32();
+                  stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
+                  ushort chars = reader.ReadUInt16();
+                  if ((chars & 0x0020) == 0)
+                  {
+                      chars |= 0x0020;
+                      stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
+                      writer.Write(chars);
+                      Log.LogMessage(MessageImportance.High, "[LargeAddressAware] 4GB 虚拟内存感知已注入: " + FilePath);
+                  }
+              }
+          }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="EnableLargeAddressAware" AfterTargets="Build">
+    <SetLargeAddressAware FilePath="$(TargetPath)" />
+  </Target>
 
 </Project>
