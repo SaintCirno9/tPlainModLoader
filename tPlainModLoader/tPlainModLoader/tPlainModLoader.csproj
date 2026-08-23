@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
   </ItemGroup>
 

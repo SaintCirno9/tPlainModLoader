@@ -1,0 +1,25 @@
+<Project>
+  <!--
+    tPlainModLoader 本机环境配置模板(会被子模块下所有工程自动继承)。
+    首次构建前: 复制本文件为同目录下的 Directory.Build.props 并按本机情况修改。
+    Directory.Build.props 不入库; 各属性同时支持同名环境变量覆盖。
+  -->
+  <PropertyGroup>
+    <!-- 原版 Terraria 安装目录(用于编译引用 Terraria.exe 与部署调试), 按实际 Steam 安装位置修改 -->
+    <TerrariaDir Condition="'$(TerrariaDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Terraria</TerrariaDir>
+
+    <!-- 原版 ReLogic.dll 托管程序集路径 (默认使用子模块内 Libs\ReLogic.dll) -->
+    <ReLogicPath Condition="'$(ReLogicPath)' == ''">$(MSBuildThisFileDirectory)Libs\ReLogic.dll</ReLogicPath>
+
+    <!-- 构建加速优化 -->
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <EnableSourceLink>false</EnableSourceLink>
+  </PropertyGroup>
+
+  <!-- 全局引入 Krafs.Publicizer，自动将 Terraria 与 ReLogic 的 internal/private 成员公开给编译器，提供 100% 强类型智能提示与零反射访问 -->
+  <ItemGroup Condition="'$(TerrariaDir)' != ''">
+    <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="all" />
+    <Publicize Include="Terraria" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
+    <Publicize Include="ReLogic" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
+  </ItemGroup>
+</Project>

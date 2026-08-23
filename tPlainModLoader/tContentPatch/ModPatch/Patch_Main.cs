@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -18,9 +18,7 @@ namespace tContentPatch.ModPatch
 
         public Patch_Main() : base(mod) { }
 
-        #region
-        private static FieldInfo _gameInterfaceLayers_fi = null;
-        #endregion
+
 
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
@@ -69,12 +67,7 @@ namespace tContentPatch.ModPatch
         {
             try
             {
-                if (_gameInterfaceLayers_fi == null)
-                {
-                    _gameInterfaceLayers_fi = typeof(Main).GetField("_gameInterfaceLayers", BindingFlags.NonPublic | BindingFlags.Instance);
-                }
-
-                List<GameInterfaceLayer> gameInterfaceLayers = (List<GameInterfaceLayer>)_gameInterfaceLayers_fi.GetValue(Main.instance);
+                List<GameInterfaceLayer> gameInterfaceLayers = Main.instance._gameInterfaceLayers;
 
                 mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
             }

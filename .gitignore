@@ -3,3 +3,4 @@
 **/obj/
 /dll/
 /Mods/test1/
+Directory.Build.props

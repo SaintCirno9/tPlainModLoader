@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 using tContentPatch.Content.UI;
 using Terraria;
@@ -15,7 +16,13 @@ namespace QuickButton.QuickButton
         private List<(string, UIElement)> keyUi = null;
         private bool isOpen = false;
         private bool isMove = false;
+        private bool wasMove = false;
         private Vector2 moveOff = Vector2.Zero;
+
+        /// <summary>
+        /// 右键拖动结束后回调最终位置（边界钳制后）
+        /// </summary>
+        public Action<Vector2> OnMoved = null;
 
         public UIQuickButton()
         {
@@ -108,6 +115,16 @@ namespace QuickButton.QuickButton
             if (btn.IsMouseHovering) Main.instance.MouseText("右键拖动位置. 在设置界面排序快捷内容");
 
             if (IsMouseHovering) Main.LocalPlayer.mouseInterface = true;
+
+            // 拖动结束（钳制后）上报最终位置用于持久化
+            if (wasMove && !isMove) OnMoved?.Invoke(new Vector2(Left.Pixels, Top.Pixels));
+            wasMove = isMove;
+        }
+
+        public void SetPos(float x, float y)
+        {
+            Left.Pixels = x;
+            Top.Pixels = y;
         }
 
         public void SetPos(int pos)

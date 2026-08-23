@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using tContentPatch;
 using Terraria;
@@ -11,11 +13,17 @@ namespace QuickButton.QuickButton
         private static UIQuickButton ui_qb = null;
         private static List<string> keys = null;
 
+        /// <summary>
+        /// 按钮被右键拖动结束后回调最终位置
+        /// </summary>
+        public static Action<Vector2> OnMoved = null;
+
         public override void Load()
         {
             if (Main.dedServ) return;
 
             ui_qb = new UIQuickButton();
+            ui_qb.OnMoved += pos => OnMoved?.Invoke(pos);
             ModifyInterfaceLayers.ui_state.Append(ui_qb);
 
             keys = new List<string>();
@@ -53,6 +61,15 @@ namespace QuickButton.QuickButton
         {
             if (Main.dedServ) return;
             ui_qb.SetPos(pos);
+        }
+
+        /// <summary>
+        /// 应用持久化的自定义拖动位置
+        /// </summary>
+        public static void SetMovePos(float x, float y)
+        {
+            if (Main.dedServ) return;
+            ui_qb.SetPos(x, y);
         }
 
         public static List<string> GetContainsKey() => ui_qb.GetKeys();

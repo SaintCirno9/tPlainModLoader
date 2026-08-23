@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using tContentPatch;
 using tContentPatch.Content.UI;
 using tContentPatch.Content.UI.ModSet;
@@ -14,6 +15,11 @@ namespace QuickButton.QuickButton
         public class Data
         {
             public int btnPos = 0;
+            /// <summary>
+            /// 右键拖动后的自定义按钮位置（null 表示未自定义，使用预设位置）
+            /// </summary>
+            public float? btnMoveX = null;
+            public float? btnMoveY = null;
             public List<string> keyOrder = null;
         }
 
@@ -23,6 +29,7 @@ namespace QuickButton.QuickButton
         public override Type DataType => typeof(Data);
         private Data data = null;
         private Action<Data> updateUI = null;
+        private Action<Vector2> onMoved = null;
 
         public override void Load(object v)
         {
@@ -34,6 +41,19 @@ namespace QuickButton.QuickButton
             }
 
             QuickButton.SetPos(data.btnPos);
+            if (data.btnMoveX.HasValue && data.btnMoveY.HasValue) QuickButton.SetMovePos(data.btnMoveX.Value, data.btnMoveY.Value);
+
+            // 拖动结束后即时落盘，无需手动进入设置界面保存
+            QuickButton.OnMoved -= onMoved;
+            onMoved = pos =>
+            {
+                data.btnMoveX = pos.X;
+                data.btnMoveY = pos.Y;
+                NeedSave = true;
+                Save();
+            };
+            QuickButton.OnMoved += onMoved;
+
             QuickButton.Initialize_Key(data.keyOrder);
         }
 
@@ -52,6 +72,8 @@ namespace QuickButton.QuickButton
             btnPosDefault.OnLeftClick += (e, s) =>
             {
                 SoundEngine.PlaySound(12);
+                data.btnMoveX = data.btnMoveY = null; // 清除自定义位置，回到预设
+                NeedSave = true;
                 QuickButton.SetPos(data.btnPos);
             };
 
@@ -70,6 +92,7 @@ namespace QuickButton.QuickButton
             item_vs.OnValUpdate += v =>
             {
                 data.btnPos = (int)v;
+                data.btnMoveX = data.btnMoveY = null; // 切换预设时清除自定义位置，确保预设立即生效
                 NeedSave = true;
             };
             updateUI += d => item_vs.SetVal(d.btnPos);

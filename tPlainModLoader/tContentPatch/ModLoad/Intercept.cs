@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using tContentPatch.Utils;
 
 namespace tContentPatch.ModLoad
 {
@@ -23,8 +24,9 @@ namespace tContentPatch.ModLoad
             }
             catch (Exception ex)
             {
+                Log.Add($"[Intercept] 模组加载异常: {ex}");
                 OnLoadException?.Invoke(ex);
-                throw ex;
+                throw;
             }
             OnLoaded?.Invoke(mos);
             return mos;

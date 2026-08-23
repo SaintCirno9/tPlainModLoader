@@ -1,10 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
+using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace CreativeInventory.CreativeInventory
 {

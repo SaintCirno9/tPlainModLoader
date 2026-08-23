@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
@@ -130,8 +130,7 @@ namespace tContentPatch.ModLoad
             progressMax = 1;
             stateText = "初始化UI";
 
-            FieldInfo fi = typeof(Main).GetField("_needToSetupDrawInterfaceLayers", BindingFlags.NonPublic | BindingFlags.Instance);
-            fi.SetValue(Main.instance, true);
+            Main.instance._needToSetupDrawInterfaceLayers = true;
 
             progressV = 1;
         }

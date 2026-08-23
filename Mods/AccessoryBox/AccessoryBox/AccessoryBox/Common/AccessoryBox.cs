@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using tContentPatch;
@@ -61,15 +61,15 @@ namespace AccessoryBox.Common
             {
                 if (item.accessory)//饰品
                 {
-                    F(This, "GrantPrefixBenefits", item);
+                    This.GrantPrefixBenefits(item);
                 }
-                F(This, "GrantArmorBenefits", item);
+                This.GrantArmorBenefits(item);
             });
 
             //饰品
             ForA((item, m) =>
             {
-                F(This, "ApplyEquipFunctional", 3, armor[m]);
+                This.ApplyEquipFunctional(3, armor[m]);
             });
 
             //饰品
@@ -88,7 +88,7 @@ namespace AccessoryBox.Common
             //饰品时装栏
             ForA((item, num) =>
             {
-                F(This, "ApplyEquipVanity", 13, armor[num]);
+                This.ApplyEquipVanity(13, armor[num]);
             });
         }
 
@@ -99,12 +99,6 @@ namespace AccessoryBox.Common
                 if (armor[i].type <= ItemID.None) continue;
                 a(armor[i], i);
             }
-        }
-
-        private static object F(Player This, string name, params object[] args)
-        {
-            MethodInfo m = typeof(Player).GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic);
-            return m.Invoke(This, args);
         }
     }
 }

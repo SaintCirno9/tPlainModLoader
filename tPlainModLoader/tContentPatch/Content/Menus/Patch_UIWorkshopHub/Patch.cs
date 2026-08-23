@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -40,8 +40,7 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
                 LocalizedText lt = Language.GetText("UI.ResourcePacks");
                 if (lt.Value == Language.GetText("UI.Workshop").Value) return;
 
-                MethodInfo mi = typeof(LocalizedText).GetMethod("SetValue", BindingFlags.Instance | BindingFlags.NonPublic);
-                mi.Invoke(lt, new object[] { Language.GetText("UI.Workshop").Value });
+                lt.SetValue(Language.GetText("UI.Workshop").Value);
             }
         }
 
@@ -50,8 +49,7 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
         {
             internal static void Postfix(UIWorkshopHub __instance)
             {
-                FieldInfo fi = typeof(UIWorkshopHub).GetField("_descriptionText", BindingFlags.NonPublic | BindingFlags.Instance);
-                UIText _descriptionText = (UIText)fi.GetValue(__instance);
+                UIText _descriptionText = __instance._descriptionText;
 
                 Action ShowOptionDescription = () => _descriptionText.SetText("管理模组的启用, 设置和删除");
 
