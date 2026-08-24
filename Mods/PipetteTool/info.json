@@ -1,6 +1,0 @@
-{
-  "name": "吸管工具",
-  "author": "[c/00ffff:SaintCirno9]",
-  "jumpPath": "https://github.com/SaintCirno9/Cirno9TerrariaMods",
-  "description": "【吸管工具组件 (PipetteTool / Pick Block)】\n- 类似 Factorio 的吸管工具：按快捷键（默认 Q 键）自动拿出鼠标指向的物块/背景墙；\n- 快捷栏已有直接切换选中，在主背包/虚空袋中自动调换至手持槽；\n- 背包未持有时弹出醒目提示与提示音；\n- 接入 QuickSetting 抽屉设置菜单与游戏内按键自定义配置面板。"
-}

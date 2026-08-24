@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 
 namespace OptimizeAndTool.Utils.quickBuild
 {

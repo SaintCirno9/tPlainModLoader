@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Reflection;
 using tContentPatch.Utils;
 
@@ -33,6 +33,14 @@ namespace tContentPatch.ModLoad
         /// 模组信息
         /// </summary>
         public ModInfo info = null;
+        /// <summary>
+        /// 若为 .tmod 单文件模组，则携带此虚拟容器
+        /// </summary>
+        public Terraria.ModLoader.Container.TModFileContainer tmodContainer = null;
+        /// <summary>
+        /// tModLoader 模组实例
+        /// </summary>
+        public Terraria.ModLoader.Mod tmodInstance = null;
         /// <summary>
         /// 继承了<see cref="Mod"/>的类
         /// </summary>

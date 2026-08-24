@@ -3,6 +3,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using OptimizeAndTool.Content.BigBag;
+using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Creative;
+using OptimizeAndTool.Content.QoL.Pipette;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
@@ -16,8 +19,9 @@ namespace OptimizeAndTool
         public static UIState ui_menu_state { get; private set; } = null;
         private static UserInterface ui_menu = null;
 
-        // 游戏内窗口 UI（巨大背包）
+        // 游戏内窗口 UI 主状态（大背包、饰品箱、创造物品栏共用）
         public static UIState ui_game_state { get; private set; } = null;
+        public static UIState ui_state => ui_game_state;
         private static UserInterface ui_game = null;
         private static BigBagWindow bigBagWindow = null;
 
@@ -30,6 +34,12 @@ namespace OptimizeAndTool
             ui_game = new UserInterface();
             ui_game_state = new UIState();
             ui_game.SetState(ui_game_state);
+
+            // 注册原生按键绑定
+            BigBagKeybind.Initialize();
+            AccessoryBoxKeybind.Register();
+            CreativeInventoryKeybind.Initialize();
+            PipetteKeybind.Register();
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
@@ -48,12 +58,22 @@ namespace OptimizeAndTool
                     InterfaceScaleType.Game));
             }
 
-            // 巨大背包窗口绘制层，插在物品栏前
             int invIndex = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Inventory");
             if (invIndex != -1)
             {
+                // 玩家信息透视层
                 gameInterfaceLayers.Insert(invIndex, new LegacyGameInterfaceLayer(
-                    "StaticTile.OptimizeAndTool: BigBag Window",
+                    "StaticTile.SundryTool: InventoryPrefix",
+                    () =>
+                    {
+                        Content.Cheat.Function1.Function_displayPlay.Draw(Main.spriteBatch);
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
+
+                // 统一窗口 UI 绘制层（大背包、饰品箱、创造模式浏览器）
+                gameInterfaceLayers.Insert(invIndex + 1, new LegacyGameInterfaceLayer(
+                    "StaticTile.OptimizeAndTool: Windows Layer",
                     () =>
                     {
                         try
@@ -74,21 +94,34 @@ namespace OptimizeAndTool
             if (Main.gameMenu)
             {
                 if (bigBagWindow?.IsOpen == true) bigBagWindow.Close();
+                if (BoxWindow.IsOpen) BoxWindow.Instance.Close();
                 return;
             }
 
-            // 大背包开启时，若物品栏关闭（如按 ESC、E 键等），大背包同步一并关闭
+            // 大背包/饰品盒开启时，若物品栏关闭，同步关闭对应扩展窗口
             if (bigBagWindow?.IsOpen == true && !Main.playerInventory)
             {
                 bigBagWindow.Close();
             }
+            if (BoxWindow.IsOpen && !Main.playerInventory)
+            {
+                BoxWindow.Instance.Close();
+            }
 
             ui_game?.Update(gameTime);
 
-            // 通过 tpml 统一 ModKeybind 系统检测快捷键（原版 PlayerInput 自动在打字与聊天时静默）
-            if (Content.BigBag.BigBag.EnableBigBag.val && Content.BigBag.BigBagKeybind.ToggleKeybind?.JustPressed == true)
+            // 原生快捷键响应调度
+            if (Content.BigBag.BigBag.EnableBigBag.val && BigBagKeybind.ToggleKeybind?.JustPressed == true)
             {
                 SwitchBigBag(fromKeybind: true);
+            }
+
+            AccessoryBoxKeybind.Update();
+            PipetteKeybind.Update();
+
+            if (CreativeInventoryKeybind.ToggleKeybind?.JustPressed == true)
+            {
+                CreativeInventory.SwitchOpenOrClose();
             }
         }
 
@@ -99,20 +132,12 @@ namespace OptimizeAndTool
             Main.spriteBatch.End();
         }
 
-        /// <summary>
-        /// 巨大背包窗口是否打开
-        /// </summary>
         public static bool BigBagIsOpen => bigBagWindow?.IsOpen == true;
-
-        /// <summary>
-        /// 鼠标是否悬停在巨大背包窗口内
-        /// </summary>
         public static bool BigBagIsHovering => bigBagWindow?.IsOpen == true && bigBagWindow.ContainsPoint(Main.MouseScreen);
 
-        /// <summary>
-        /// 开关巨大背包窗口
-        /// </summary>
-        /// <param name="fromKeybind">是否由快捷键触发（快捷键关闭时同步关闭物品栏，鼠标关闭时保持物品栏不变）</param>
+        public static bool BoxIsOpen => BoxWindow.IsOpen;
+        public static bool BoxIsHovering => BoxWindow.IsOpenAndHovering;
+
         public static void SwitchBigBag(bool fromKeybind = false)
         {
             if (Content.BigBag.BigBag.EnableBigBag.val == false) return;

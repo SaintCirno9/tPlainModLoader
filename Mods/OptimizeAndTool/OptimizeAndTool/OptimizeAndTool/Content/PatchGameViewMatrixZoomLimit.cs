@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
@@ -66,22 +66,31 @@ namespace OptimizeAndTool.Content
         {
             CodeMatcher codeMatcher = new CodeMatcher(instructions);
 
-            codeMatcher.MatchStartForward(
-               new CodeMatch(OpCodes.Ldsfld, typeof(Main).GetField(nameof(Main.ForcedMinimumZoom))),
-               new CodeMatch(OpCodes.Ldsfld, typeof(Main).GetField(nameof(Main.GameZoomTarget))),
-               new CodeMatch(OpCodes.Ldc_R4, 1f),
-               new CodeMatch(OpCodes.Ldc_R4, 2f),
-               new CodeMatch(OpCodes.Call, typeof(MathHelper).GetMethod(nameof(MathHelper.Clamp))),
-               new CodeMatch(OpCodes.Mul)
-               )
-               .ThrowIfInvalid("找不到IL位置")
-               .Advance(4)
-               .RemoveInstructions(1)
-               .InsertAndAdvance(
-               new CodeInstruction(OpCodes.Call, typeof(PatchGameViewMatrixZoomLimit).GetMethod(nameof(PatchClamp)))
-               );
+            try
+            {
+                codeMatcher.MatchStartForward(
+                   new CodeMatch(OpCodes.Ldsfld, typeof(Main).GetField(nameof(Main.ForcedMinimumZoom))),
+                   new CodeMatch(OpCodes.Ldsfld, typeof(Main).GetField(nameof(Main.GameZoomTarget))),
+                   new CodeMatch(OpCodes.Ldc_R4, 1f),
+                   new CodeMatch(OpCodes.Ldc_R4, 2f),
+                   new CodeMatch(OpCodes.Call, typeof(MathHelper).GetMethod(nameof(MathHelper.Clamp))),
+                   new CodeMatch(OpCodes.Mul)
+                );
 
-            return codeMatcher.Instructions();
+                if (codeMatcher.IsValid)
+                {
+                    codeMatcher
+                       .Advance(4)
+                       .RemoveInstructions(1)
+                       .InsertAndAdvance(
+                           new CodeInstruction(OpCodes.Call, typeof(PatchGameViewMatrixZoomLimit).GetMethod(nameof(PatchClamp)))
+                       );
+                    return codeMatcher.Instructions();
+                }
+            }
+            catch { }
+
+            return instructions;
         }
 
         public static float ScaleClamp(float value)

@@ -61,33 +61,38 @@ namespace tContentPatch.ModLoad
             {
                 CheckLoadCancel();
 
-                string dllPath = mo.config.dllPath;
-                if (dllPath == null) continue;
-                string filePath = Path.Combine(mo.modPath, dllPath);
-
-                if (File.Exists(filePath) == false) throw new Exception($"dll文件缺失:[{filePath}]");
-                if (mo.config.dllPath == null) mo.config.dllPath = dllPath;
-
                 stateText = $"加载程序集:{mo.info?.name ?? mo.config.key}";
 
-                //Assembly.LoadFile加载的程序集如果是同一个文件的话, 在当前应用程序域里就不会有重复的程序集
-                //但在模组加载器为主项目的情况下, 重复加载模组会出现模组的state变量没变, 还是重新加载模组之前的值
-                //应该是Assembly.LoadFile加载的文件没变化时就直接返回已有的程序集
-                //而用模组为主项目的情况下没出现这情况, 因该是运行时模组文件重新生成, 所以Assembly.LoadFile就会重新加载
-                //所以使用Assembly.Load(File.ReadAllBytes())加载, 防止出现这情况
-                //注意, 使用Assembly.Load(File.ReadAllBytes())加载会导致加载的程序集获取不到Location
+                byte[] asmBytes = null;
 
-                // 优先从 PrepatcherStorage 获取已被 Prepatcher 修补过的程序集字节流
-                byte[] asmBytes;
-                if (!Prepatcher.PrepatcherStorage.TryGetPatchedBytes(filePath, out asmBytes))
+                if (mo.tmodContainer != null)
                 {
-                    asmBytes = File.ReadAllBytes(filePath);
+                    asmBytes = mo.tmodContainer.MainAssemblyBytes;
+                    if (asmBytes == null)
+                    {
+                        throw new Exception($"tmod 容器中未找到程序集:[{mo.tmodContainer.ModName}]");
+                    }
+                }
+                else
+                {
+                    string dllPath = mo.config.dllPath;
+                    if (dllPath == null) continue;
+                    string filePath = Path.Combine(mo.modPath, dllPath);
+
+                    if (File.Exists(filePath) == false) throw new Exception($"dll文件缺失:[{filePath}]");
+                    if (mo.config.dllPath == null) mo.config.dllPath = dllPath;
+
+                    // 优先从 PrepatcherStorage 获取已被 Prepatcher 修补过的程序集字节流
+                    if (!Prepatcher.PrepatcherStorage.TryGetPatchedBytes(filePath, out asmBytes))
+                    {
+                        asmBytes = File.ReadAllBytes(filePath);
+                    }
                 }
 
                 mo.assembly = Assembly.Load(asmBytes);
 
                 ++progressV;
-                ContentPatch.PrintTry($"已加载程序集:{filePath}");
+                ContentPatch.PrintTry($"已加载程序集:{mo.info?.name ?? mo.config.key}");
             }
         }
 

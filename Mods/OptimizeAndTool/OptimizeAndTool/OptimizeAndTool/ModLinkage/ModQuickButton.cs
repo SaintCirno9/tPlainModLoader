@@ -3,20 +3,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using OptimizeAndTool.Content.Creative;
+using OptimizeAndTool.Content.Storage.AccessoryBox;
 using tContentPatch;
 using tContentPatch.ModLoad;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ID;
 
 namespace OptimizeAndTool.ModLinkage
 {
     /// <summary>
-    /// QuickButton 悬浮工具栏接入：巨大背包快捷按钮
+    /// QuickButton 悬浮工具栏接入：注册巨大背包、随身饰品箱、创造物品栏等快捷按钮
     /// 作者: SaintCirno9
     /// </summary>
     public class ModQuickButton : Mod
     {
+        public static bool EnableBigBagBtn = true;
+        public static bool EnableAccessoryBoxBtn = true;
+        public static bool EnableCreativeInventoryBtn = true;
+
         public override void Loaded()
         {
             if (Main.dedServ) return;
@@ -33,25 +40,62 @@ namespace OptimizeAndTool.ModLinkage
             MethodInfo mi = type.GetMethod("Add", BindingFlags.Static | BindingFlags.Public);
             if (mi == null) return;
 
-            UIImage ui_img = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_4131", ReLogic.Content.AssetRequestMode.ImmediateLoad));
-            ui_img.Width.Pixels = 32;
-            ui_img.Height.Pixels = 32;
-            ui_img.ScaleToFit = true;
-            ui_img.OnUpdate += _ =>
+            // 1. 巨大背包按钮
+            if (EnableBigBagBtn)
             {
-                if (ui_img.IsMouseHovering)
+                UIImage ui_bag = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_4131", ReLogic.Content.AssetRequestMode.ImmediateLoad));
+                ui_bag.Width.Pixels = 32;
+                ui_bag.Height.Pixels = 32;
+                ui_bag.ScaleToFit = true;
+                ui_bag.OnUpdate += _ =>
                 {
-                    string k = Content.BigBag.BigBag.HotKey.val;
-                    Main.instance.MouseText(string.IsNullOrEmpty(k) ? "巨大背包" : $"巨大背包 ({k})");
-                }
-            };
-            ui_img.OnLeftClick += (e, s) =>
-            {
-                SoundEngine.PlaySound(12);
-                ModifyInterfaceLayers.SwitchBigBag();
-            };
+                    if (ui_bag.IsMouseHovering) Main.instance.MouseText("巨大背包");
+                };
+                ui_bag.OnLeftClick += (e, s) =>
+                {
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    ModifyInterfaceLayers.SwitchBigBag();
+                };
+                mi.Invoke(null, new object[] { "OptimizeAndTool.BigBag.Switch", ui_bag });
+            }
 
-            mi.Invoke(null, new object[] { "OptimizeAndTool.BigBag.Switch", ui_img });
+            // 2. 随身饰品箱按钮
+            if (EnableAccessoryBoxBtn)
+            {
+                UIImage ui_box = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_1862", ReLogic.Content.AssetRequestMode.ImmediateLoad));
+                ui_box.Width.Pixels = 32;
+                ui_box.Height.Pixels = 32;
+                ui_box.ScaleToFit = true;
+                ui_box.OnUpdate += _ =>
+                {
+                    if (ui_box.IsMouseHovering) Main.instance.MouseText("饰品箱");
+                };
+                ui_box.OnLeftClick += (e, s) =>
+                {
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    BoxWindow.Toggle();
+                };
+                mi.Invoke(null, new object[] { "OptimizeAndTool.AccessoryBox.Switch", ui_box });
+            }
+
+            // 3. 创造物品栏按钮
+            if (EnableCreativeInventoryBtn)
+            {
+                UIImage ui_creative = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_306", ReLogic.Content.AssetRequestMode.ImmediateLoad));
+                ui_creative.Width.Pixels = 32;
+                ui_creative.Height.Pixels = 32;
+                ui_creative.ScaleToFit = true;
+                ui_creative.OnUpdate += _ =>
+                {
+                    if (ui_creative.IsMouseHovering) Main.instance.MouseText("创造物品栏");
+                };
+                ui_creative.OnLeftClick += (e, s) =>
+                {
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    CreativeInventory.SwitchOpenOrClose();
+                };
+                mi.Invoke(null, new object[] { "OptimizeAndTool.CreativeInventory.Switch", ui_creative });
+            }
         }
     }
 }

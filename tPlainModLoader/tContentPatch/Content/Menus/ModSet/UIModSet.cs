@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using tContentPatch.Content.UI;
@@ -16,75 +17,102 @@ namespace tContentPatch.Content.Menus.ModSet
         private ModSetting ms_this = null;
         private int mssIndex = -1;
 
-        private UIStackPanel ui_sp = null;
+        private UIElement ui_container = null;
         private UITextPanel<string> ui_title = null;
         private UIPanel ui_panel = null;
         private UIElement ui_set = null;
+        private UIElement ui_btns1 = null;
+        private UIElement ui_btns2 = null;
         private UIButton1 btn_save = null;
         private UIButton1 btn_prev = null;
         private UIButton1 btn_next = null;
 
         public UIModSet()
         {
-            ui_sp = new UIStackPanel();
-            ui_sp.Width.Pixels = 600;
-            ui_sp.Height.Set(-100, 1);
-            ui_sp.HAlign = 0.5f;
-            ui_sp.VAlign = 0.5f;
-            ui_sp.ItemMargin = 4;
+            ui_container = new UIElement();
+            ui_container.Width.Pixels = 640;
+            ui_container.Height.Set(-30, 1f); // 上下各留 15px 安全边距，最大化展示区域
+            ui_container.HAlign = 0.5f;
+            ui_container.VAlign = 0.5f;
 
-            ui_title = new UITextPanel<string>(string.Empty, 0.8f, true);
+            // 1. 顶部标题
+            ui_title = new UITextPanel<string>(string.Empty, 0.85f, true);
             ui_title.HAlign = 0.5f;
+            ui_title.Top.Pixels = 0;
+            ui_title.Height.Pixels = 40;
             ui_title.BackgroundColor = new Color(73, 94, 171);
 
+            // 2. 中间内容面板
             ui_panel = new UIPanel();
-            ui_panel.Width.Precent = 1;
+            ui_panel.Width.Precent = 1f;
             ui_panel.HAlign = 0.5f;
-            ui_panel.BackgroundColor = Color.MidnightBlue * 0.8f;
+            ui_panel.Top.Pixels = 46;
+            ui_panel.Height.Set(-(46 + 36 + 10), 1f); // 默认单页高度填满
+            ui_panel.BackgroundColor = Color.MidnightBlue * 0.85f;
+            ui_panel.PaddingTop = 8;
+            ui_panel.PaddingBottom = 8;
+            ui_panel.PaddingLeft = 10;
+            ui_panel.PaddingRight = 10;
 
             ui_set = new UIElement();
-            ui_set.Width.Precent = 1;
-            ui_set.Height.Precent = 1;
+            ui_set.Width.Precent = 1f;
+            ui_set.Height.Precent = 1f;
+            ui_panel.Append(ui_set);
 
-            UIElement ui_btns1 = new UIElement();
-            ui_btns1.Width.Precent = 1;
-            UIElement ui_btns2 = new UIElement();
-            ui_btns2.Width.Precent = 1;
+            // 3. 翻页栏 (多页时展示在底部操作栏上方)
+            ui_btns1 = new UIElement();
+            ui_btns1.Width.Precent = 1f;
+            ui_btns1.Height.Pixels = 34;
+            ui_btns1.VAlign = 1f;
+            ui_btns1.Top.Pixels = -42;
 
-            btn_prev = new UIButton1("<");
+            btn_prev = new UIButton1("<", 0.9f);
             btn_prev.Width.Set(-4, 0.5f);
+            btn_prev.Height.Precent = 1f;
             btn_prev.OnLeftClick += (e, s) => SetItem(mssIndex - 1);
 
-            btn_next = new UIButton1(">");
+            btn_next = new UIButton1(">", 0.9f);
             btn_next.Width.Set(-4, 0.5f);
-            btn_next.HAlign = 1;
+            btn_next.Height.Precent = 1f;
+            btn_next.HAlign = 1f;
             btn_next.OnLeftClick += (e, s) => SetItem(mssIndex + 1);
 
-            UIButton1 btn_back = new UIButton1("返回");
+            ui_btns1.Append(btn_prev);
+            ui_btns1.Append(btn_next);
+
+            // 4. 底部操作栏 (返回 / 保存 / 恢复默认)
+            ui_btns2 = new UIElement();
+            ui_btns2.Width.Precent = 1f;
+            ui_btns2.Height.Pixels = 36;
+            ui_btns2.VAlign = 1f;
+            ui_btns2.Top.Pixels = 0; // 紧贴容器最底边
+
+            UIButton1 btn_back = new UIButton1("返回", 0.9f);
             btn_back.Width.Set(-4, 1 / 3f);
+            btn_back.Height.Precent = 1f;
             btn_back.OnLeftClick += (e, s) => Back(backUI);
 
-            btn_save = new UIButton1("保存");
+            btn_save = new UIButton1("保存", 0.9f);
             btn_save.Width.Set(-4, 1 / 3f);
+            btn_save.Height.Precent = 1f;
             btn_save.HAlign = 0.5f;
             btn_save.OnLeftClick += (e, s) => ModSet.SaveData(mss);
 
-            UIButton1 btn2_setDeft = new UIButton1("恢复默认");
+            UIButton1 btn2_setDeft = new UIButton1("恢复默认", 0.9f);
             btn2_setDeft.Width.Set(-4, 1 / 3f);
+            btn2_setDeft.Height.Precent = 1f;
             btn2_setDeft.HAlign = 1f;
             btn2_setDeft.OnLeftClick += (e, s) => ms_this?.SetDefault();
 
-            Append(ui_sp);
-            ui_sp.Append(ui_title);
-            ui_sp.Append(ui_panel);
-            ui_sp.Append(ui_btns1);
-            ui_sp.Append(ui_btns2);
-            ui_panel.Append(ui_set);
-            ui_btns1.Append(btn_prev);
-            ui_btns1.Append(btn_next);
             ui_btns2.Append(btn_back);
             ui_btns2.Append(btn_save);
             ui_btns2.Append(btn2_setDeft);
+
+            Append(ui_container);
+            ui_container.Append(ui_title);
+            ui_container.Append(ui_panel);
+            ui_container.Append(ui_btns1);
+            ui_container.Append(ui_btns2);
         }
 
         public void InitializeSetList(UIState backUI, List<ModSetting> mss, ModSetting open = null)
@@ -119,10 +147,7 @@ namespace tContentPatch.Content.Menus.ModSet
             else index = -1;
 
             mssIndex = index;
-
             ms_this = mssIndex == -1 ? null : mss[mssIndex];
-
-            //
 
             ui_title.SetText(ms_this?.Title ?? string.Empty);
             ui_set.RemoveAllChildren();
@@ -139,14 +164,16 @@ namespace tContentPatch.Content.Menus.ModSet
                 else IngameFancyUI.Close();
             }
             else
-            if (Main.gameMenu)
             {
-                Main.menuMode = 888;
-                Main.MenuUI.SetState(backUI);
-            }
-            else
-            {
-                Main.InGameUI.SetState(backUI);
+                if (Main.gameMenu)
+                {
+                    Main.menuMode = 888;
+                    Main.MenuUI.SetState(backUI);
+                }
+                else
+                {
+                    Main.InGameUI.SetState(backUI);
+                }
             }
         }
 
@@ -154,28 +181,25 @@ namespace tContentPatch.Content.Menus.ModSet
         {
             base.Update(gameTime);
 
-            //有需要保存的就显示保存按钮
+            // 有需要保存的就显示保存按钮
             bool needSave = mss?.FirstOrDefault(i => i.NeedSave) != null;
             btn_save.isDraw = btn_save.isEnable = needSave;
 
-            //
+            // 动态控制多页翻页栏
+            bool hasMultiPages = mss != null && mss.Count > 1;
+            btn_prev.isDraw = btn_prev.isEnable = hasMultiPages && mssIndex > 0;
+            btn_next.isDraw = btn_next.isEnable = hasMultiPages && mssIndex < mss.Count - 1;
 
-            float height = ui_sp.GetInnerDimensions().Height;
-            foreach (UIElement i in ui_sp.Children)
+            if (hasMultiPages)
             {
-                if (i == ui_panel) continue;
-                height -= i.GetOuterDimensions().Height + ui_sp.ItemMargin;
-                i.UpdateContainer_Height();
+                ui_btns1.Height.Pixels = 34;
+                ui_panel.Height.Set(-(46 + 36 + 34 + 16), 1f);
             }
-
-            ui_panel.Height.Pixels = height;
-
-            //
-
-            btn_prev.isEnable = mss != null && mssIndex > 0;
-            btn_next.isEnable = mss != null && mssIndex < mss.Count - 1;
-
-            //
+            else
+            {
+                ui_btns1.Height.Pixels = 0;
+                ui_panel.Height.Set(-(46 + 36 + 10), 1f);
+            }
 
             if (PlayerInput.Triggers.JustPressed.Inventory) Back(backUI);
         }

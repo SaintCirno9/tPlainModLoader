@@ -1,0 +1,84 @@
+using CommandHelp;
+using System;
+using System.Collections.Generic;
+using tContentPatch;
+using Terraria;
+
+namespace OptimizeAndTool.Content.Cheat
+{
+    internal class ClientUUIDSetting : ModSetting
+    {
+        public override string FilePath => "clientUUID.txt";
+        public override bool HasUI => false;
+        public override Type DataType => typeof(string);
+        public static ClientUUIDSetting instance = null;
+
+        public override void Load(object v)
+        {
+            if (ContentPatch.NoPublic) return;
+
+            instance = this;
+
+            if (v is string uuid)
+            {
+                SetClientUUID(uuid);
+            }
+            else
+            {
+                NeedSave = true;
+                Save();
+            }
+        }
+
+        public override object GetSaveData() => Main.clientUUID;
+
+        public static void SetClientUUID(string uuid)
+        {
+            if (uuid == null)
+            {
+                ContentPatch.PrintTry("uuid is [null]");
+                return;
+            }
+
+            Main.clientUUID = uuid;
+            PrintClientUUID();
+        }
+
+        public static void UpdateClientUUID()
+        {
+            SetClientUUID(instance?.Read() as string);
+        }
+
+        public static void PrintClientUUID()
+        {
+            string s = $"[{Main.clientUUID}]";
+
+            ContentPatch.PrintTry(s);
+
+            if (Main.netMode != 0 && Main.netMode != 1) return;
+            Main.NewText(s);
+        }
+
+        public static List<CommandObject> GetCO()
+        {
+            List<CommandObject> cos = new List<CommandObject>();
+
+            if (ContentPatch.NoPublic) return cos;
+
+            CommandObject uuid = new CommandObject("uuid");
+            CommandMethod update = new CommandMethod("update");
+            CommandMethod get = new CommandMethod("get");
+
+            uuid.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(uuid.SubCommand));
+            uuid.SubCommand.Add(update);
+            uuid.SubCommand.Add(get);
+
+            update.Runing += _ => UpdateClientUUID();
+
+            get.Runing += _ => PrintClientUUID();
+
+            cos.Add(uuid);
+            return cos;
+        }
+    }
+}

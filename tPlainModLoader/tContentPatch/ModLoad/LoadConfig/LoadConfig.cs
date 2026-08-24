@@ -25,9 +25,10 @@ namespace tContentPatch.ModLoad
             if (Directory.Exists(modsRootPath) == false) return new List<ModObject>();
 
             DirectoryInfo[] dis = new DirectoryInfo(modsRootPath).GetDirectories();
+            FileInfo[] tmodFiles = new DirectoryInfo(modsRootPath).GetFiles("*.tmod");
 
             progressV = 0;
-            progressMax = dis.Length;
+            progressMax = dis.Length + tmodFiles.Length;
             stateText = "加载模组配置";
 
             List<ModObject> mos = new List<ModObject>();
@@ -56,6 +57,55 @@ namespace tContentPatch.ModLoad
                 }
                 catch
                 {
+                    addProgress = false;
+                }
+                finally
+                {
+                    if (addProgress) ++progressV;
+                }
+            }
+
+            // 扫描并解析 .tmod 单文件模组
+            foreach (FileInfo tmodFile in tmodFiles)
+            {
+                CheckLoadCancel();
+                bool addProgress = true;
+
+                try
+                {
+                    if (tmodFile == null) continue;
+                    stateText = $"解析 .tmod 模组:{tmodFile.Name}";
+
+                    var container = Terraria.ModLoader.Container.TModContainerReader.Read(tmodFile.FullName);
+                    if (container != null)
+                    {
+                        var config = new ModConfig
+                        {
+                            key = container.ModName,
+                            dllPath = $"{container.ModName}.dll",
+                            isEnable = true
+                        };
+
+                        var info = new ModInfo
+                        {
+                            name = container.ModName,
+                            author = "tModLoader 模组",
+                            description = $"[v{container.ModVersion}] 通过 tModLoader Shim 兼容层直接载入\nTML 版本: {container.TmlVersion}"
+                        };
+
+                        var mo = new ModObject(config)
+                        {
+                            modPath = Path.GetDirectoryName(tmodFile.FullName),
+                            tmodContainer = container,
+                            info = info
+                        };
+
+                        mos.Add(mo);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Add($"解析 .tmod [{tmodFile.Name}] 失败: {ex}");
                     addProgress = false;
                 }
                 finally

@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using Terraria;
 
@@ -11,7 +11,14 @@ namespace OptimizeAndTool.Content.Patch
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> TranspilerDoDraw(IEnumerable<CodeInstruction> instructions)
         {
-            return PatchGameViewMatrixZoomLimit.TranspilerDoDraw(instructions);
+            try
+            {
+                return PatchGameViewMatrixZoomLimit.TranspilerDoDraw(instructions);
+            }
+            catch
+            {
+                return instructions;
+            }
         }
     }
 }

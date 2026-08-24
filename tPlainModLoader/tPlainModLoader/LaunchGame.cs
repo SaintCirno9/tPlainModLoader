@@ -38,7 +38,7 @@ namespace tPlainModLoader
 
                 if (Directory.Exists(dir) == false) throw new Exception($"目录不存在[{dir}]");
 
-                string[] fileNames = { "Terraria.exe", "Terraria_v1.4.5.7.exe", "Terraria_v1.4.5.exe" };
+                string[] fileNames = { "Terraria.exe", "Terraria_v1.4.5.8.exe", "Terraria_v1.4.5.7.exe", "Terraria_v1.4.5.exe" };
                 foreach (string i in fileNames)
                 {
                     string s = Path.Combine(dir, i);
@@ -59,14 +59,8 @@ namespace tPlainModLoader
 
         private static void Initialize_AssemblyResolveEvent()
         {
-            // 处理服务端/客户端名称及公有化后程序集重定向
-            AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
-            {
-                string reqName = new AssemblyName(e.Name).Name;
-                if (reqName == "Terraria" || reqName == "TerrariaServer")
-                    return GameAssembly;
-                return null;
-            };
+            // 处理服务端/客户端名称、tModLoader 与 FNA/System 重定向
+            AppDomain.CurrentDomain.AssemblyResolve += Terraria.ModLoader.Engine.TModShimEngine.ResolveAssembly;
 
             // 从工作目录找匹配的dll
             AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>

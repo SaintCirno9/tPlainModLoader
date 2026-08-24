@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Content.UI;
 using System;
 using System.Collections.Generic;
@@ -63,7 +63,45 @@ namespace OptimizeAndTool.Utils.quickBuild
                 sv.AddChild(ui);
             }
 
+            // 底部安全垫高，防止滑到最底端时被底框遮挡
+            UIElement bottomSpacer = new UIElement();
+            bottomSpacer.Width.Precent = 1f;
+            bottomSpacer.Height.Pixels = 28f;
+            sv.AddChild(bottomSpacer);
+
             return sv;
+        }
+
+        public static UIElement get4(string btnTxt, Action click, string mouseText = null, string ico = null, string text = null)
+        {
+            Texture2D texture = ico == null ? null : Main.Assets.Request<Texture2D>(ico, ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
+
+            UIItemButton ui = new UIItemButton(btnTxt, texture, text);
+            ui.MouseText = mouseText;
+            ui.OnClick = click;
+
+            return ui;
+        }
+
+        /// <summary>
+        /// 文本框, 按钮, 绑定值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="gsr"></param>
+        /// <param name="parseTry"></param>
+        /// <param name="btnText"></param>
+        /// <param name="click"></param>
+        /// <param name="mouseText"></param>
+        /// <returns></returns>
+        public static UIElement get5<T>(GetSetReset<T> gsr, Func<string, T> parseTry, string btnText, Action click, string mouseText = null, string ico = null, string text = null)
+        {
+            Texture2D texture = ico == null ? null : Main.Assets.Request<Texture2D>(ico, ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
+
+            UIItemTextBoxAButtonBind<T> ui = new UIItemTextBoxAButtonBind<T>(gsr, parseTry, btnText, texture, text);
+            ui.MouseText = mouseText;
+            ui.OnClick = click;
+
+            return ui;
         }
     }
 }

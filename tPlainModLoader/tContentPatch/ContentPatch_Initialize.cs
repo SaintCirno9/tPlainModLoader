@@ -32,6 +32,14 @@ namespace tContentPatch
             Initialized = false;
             Log.Add($"{nameof(ContentPatch)}:服务端:{Main.dedServ}");
 
+            AppDomain.CurrentDomain.AssemblyResolve += Terraria.ModLoader.Engine.TModShimEngine.ResolveAssembly;
+
+            Terraria.ModLoader.Engine.TModShimEngine.LogCallback = msg =>
+            {
+                Console.WriteLine(msg);
+                Log.Add(msg);
+            };
+
             Initialize_CommandMsg();
             Initialize_ModDirectory();
             Initialize_AddPatch();

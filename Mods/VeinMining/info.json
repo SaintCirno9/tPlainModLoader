@@ -1,6 +1,0 @@
-{
-  "name": "简单连锁挖矿",
-  "author": "[c/00ffff:SaintCirno9]",
-  "jumpPath": "https://github.com/SaintCirno9/Cirno9TerrariaMods",
-  "description": "【简单连锁挖矿组件】\n- 挖掘矿石时自动连锁挖掘相邻相连的同类矿石（支持铜铁银金铂金、魔矿猩红、陨石、狱石、钴钯金秘银山铜精金钛金、叶绿矿、夜明矿、沙漠化石与地下宝石等）；\n- 采用高效 BFS 广度优先搜索算法，支持自定义最大连锁数量上限（防止掉帧）；\n- 接入 QuickSetting 抽屉设置菜单与 QuickButton 悬浮工具栏快捷开关；\n- 支持配置是否连锁破坏泥土/石头杂块等普通方块。"
-}

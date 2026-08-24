@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using tContentPatch.Patch;
@@ -53,6 +53,8 @@ namespace tContentPatch.ModLoad
             finally
             {
                 stateText = "清理";
+
+                Terraria.ModLoader.Engine.TModShimEngine.UnloadAll();
 
                 Content.Network.ModNetworkPacket.Clear();
 

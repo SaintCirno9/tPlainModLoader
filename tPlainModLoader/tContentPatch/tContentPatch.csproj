@@ -44,6 +44,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommandHelp\CommandHelp.csproj" />
+    <ProjectReference Include="..\Terraria.ModLoader.Shim\Terraria.ModLoader.Shim.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -36,6 +36,13 @@ namespace tContentPatch.ModLoad
                     stateText = $"创建模组实例:{mo.info?.name ?? mo.config.key}";
 
                     CheckLoadCancel();
+
+                    if (mo.tmodContainer != null)
+                    {
+                        mo.tmodInstance = Terraria.ModLoader.Engine.TModShimEngine.LoadTModContainer(mo.tmodContainer);
+                        continue;
+                    }
+
                     mo.inheritance_mod = Utils.CreateInstance<Mod>(mo.assembly);
 
                     CheckLoadCancel();

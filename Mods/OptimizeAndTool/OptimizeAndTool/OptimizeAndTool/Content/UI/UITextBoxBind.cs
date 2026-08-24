@@ -1,4 +1,4 @@
-﻿using OptimizeAndTool.Utils;
+using OptimizeAndTool.Utils;
 using System;
 using tContentPatch.Content.UI;
 
