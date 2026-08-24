@@ -188,10 +188,50 @@ namespace tPlainModLoader.Prepatcher
                 }
             }
 
+            // 3. 织入核心窗口早期黑化补丁（彻底杜绝启动白屏闪烁）
+            InjectGameWindowDarkener(terrariaAssembly);
+
             sw.Stop();
             string finishMsg = $"[Prepatcher] 预修补完成 (注入字段: {injectedFieldCount}, 重写访问器: {patchedMethodCount}, 早期补丁: {executedEarlyPatchCount}, 耗时: {sw.ElapsedMilliseconds}ms)";
             Console.WriteLine(finishMsg);
             Log.Add(finishMsg);
+        }
+
+        private static void InjectGameWindowDarkener(AssemblyDefinition terrariaAssembly)
+        {
+            try
+            {
+                TypeDefinition mainType = terrariaAssembly.MainModule.Types.FirstOrDefault(t => t.FullName == "Terraria.Main");
+                if (mainType == null) return;
+
+                MethodDefinition ctor = mainType.Methods.FirstOrDefault(m => m.IsConstructor && !m.IsStatic && m.Parameters.Count == 0);
+                if (ctor == null || ctor.Body == null) return;
+
+                Type darkenerType = typeof(GameWindowDarkener);
+                MethodInfo applyMethod = darkenerType.GetMethod("ApplyFromGame", BindingFlags.Static | BindingFlags.Public);
+                if (applyMethod == null) return;
+
+                MethodReference applyMethodRef = terrariaAssembly.MainModule.ImportReference(applyMethod);
+
+                var il = ctor.Body.GetILProcessor();
+                var retInstructions = ctor.Body.Instructions.Where(i => i.OpCode == OpCodes.Ret).ToList();
+                foreach (var ret in retInstructions)
+                {
+                    var ldarg = il.Create(OpCodes.Ldarg_0);
+                    var call = il.Create(OpCodes.Call, applyMethodRef);
+                    il.InsertBefore(ret, ldarg);
+                    il.InsertBefore(ret, call);
+                }
+
+                Console.WriteLine("[Prepatcher] 成功向 Terraria.Main..ctor 织入 GameWindowDarkener 早期黑化拦截");
+                Log.Add("[Prepatcher] 成功向 Terraria.Main..ctor 织入 GameWindowDarkener 早期黑化拦截");
+            }
+            catch (Exception ex)
+            {
+                string err = $"[Prepatcher] 织入 GameWindowDarkener 失败: {ex.Message}";
+                Console.WriteLine(err);
+                Log.Add(err);
+            }
         }
 
         private static bool ProcessFieldAccessor(

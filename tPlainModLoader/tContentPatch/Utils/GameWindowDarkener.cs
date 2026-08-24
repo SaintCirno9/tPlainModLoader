@@ -1,12 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows.Forms;
-using HarmonyLib;
-using Terraria;
 
 namespace tContentPatch.Utils
 {
@@ -22,8 +18,19 @@ namespace tContentPatch.Utils
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
         private const int WM_ERASEBKGND = 0x0014;
 
-        [DllImport("user32.dll", EntryPoint = "SetClassLong")]
-        private static extern IntPtr SetClassLongPtr32(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+        [DllImport("user32.dll", EntryPoint = "SetClassLong", CharSet = CharSet.Auto)]
+        private static extern int SetClassLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll", EntryPoint = "SetClassLongPtr", CharSet = CharSet.Auto)]
+        private static extern IntPtr SetClassLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        private static IntPtr SetClassLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
+        {
+            if (IntPtr.Size == 8)
+                return SetClassLongPtr64(hWnd, nIndex, dwNewLong);
+            else
+                return new IntPtr(SetClassLong32(hWnd, nIndex, dwNewLong.ToInt32()));
+        }
 
         [DllImport("gdi32.dll")]
         private static extern IntPtr GetStockObject(int fnObject);
@@ -31,46 +38,45 @@ namespace tContentPatch.Utils
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_FRAMECHANGED = 0x0020;
+
         private static volatile bool _applied = false;
+        private static IntPtr _lastHwnd = IntPtr.Zero;
         private static FormSubclassWindow _subclass = null;
         private static readonly object _lock = new object();
 
         /// <summary>
-        /// 启动毫秒级窗口看门狗线程：在窗口被创建与显示的第一时间注入黑化，彻底杜绝哪怕 1 帧的白屏！
+        /// 提供给 Prepatcher Cecil 预织入调用的早期窗口黑化直连入口（在 Main 构造函数结束前在 UI 主线程直接执行）
         /// </summary>
-        public static void StartWatchdog()
+        public static void ApplyFromGame(object game)
         {
-            Thread thread = new Thread(() =>
+            try
             {
-                for (int i = 0; i < 400 && !_applied; i++) // 轮询最多 4 秒
+                if (game != null)
                 {
-                    try
+                    PropertyInfo windowProp = game.GetType().GetProperty("Window", BindingFlags.Public | BindingFlags.Instance);
+                    object windowObj = windowProp?.GetValue(game, null);
+                    if (windowObj != null)
                     {
-                        if (Main.instance != null && Main.instance.Window != null && Main.instance.Window.Handle != IntPtr.Zero)
+                        PropertyInfo handleProp = windowObj.GetType().GetProperty("Handle", BindingFlags.Public | BindingFlags.Instance);
+                        object handleVal = handleProp?.GetValue(windowObj, null);
+                        if (handleVal is IntPtr hWnd && hWnd != IntPtr.Zero)
                         {
-                            Apply(Main.instance.Window.Handle);
-                            break;
-                        }
-
-                        Process currentProcess = Process.GetCurrentProcess();
-                        if (currentProcess.MainWindowHandle != IntPtr.Zero)
-                        {
-                            Apply(currentProcess.MainWindowHandle);
-                            break;
+                            Apply(hWnd);
                         }
                     }
-                    catch
-                    {
-                    }
-
-                    Thread.Sleep(10);
                 }
-            })
+            }
+            catch (Exception ex)
             {
-                IsBackground = true,
-                Name = "GameWindowDarkenerWatchdog"
-            };
-            thread.Start();
+                Log.Add($"[GameWindowDarkener] ApplyFromGame 异常: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -79,41 +85,58 @@ namespace tContentPatch.Utils
         public static void Apply(IntPtr hWnd)
         {
             if (hWnd == IntPtr.Zero) return;
+            if (_applied && _lastHwnd == hWnd) return;
 
             lock (_lock)
             {
+                if (_applied && _lastHwnd == hWnd) return;
+
                 try
                 {
                     // 1. 替换 Win32 窗口类背景画刷为系统纯黑画刷 (BLACK_BRUSH = 4)
                     IntPtr blackBrush = GetStockObject(BLACK_BRUSH);
-                    SetClassLongPtr32(hWnd, GCLP_HBRBACKGROUND, blackBrush);
+                    SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, blackBrush);
 
                     // 2. 启用 Windows 10 / 11 现代深色模式沉浸式标题栏
                     int darkMode = 1;
                     DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
                     DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, ref darkMode, sizeof(int));
 
+                    // 强制刷新 DWM 窗口框架属性
+                    SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
                     // 3. 将底层 WinForms Form 的背景色直接置为黑色并拦截擦除
-                    if (Control.FromHandle(hWnd) is Form form)
+                    try
                     {
-                        form.BackColor = Color.Black;
-                        form.ForeColor = Color.White;
-
-                        // 开启双缓冲与用户绘制，防止重绘时闪白
-                        MethodInfo setStyleMethod = typeof(Control).GetMethod("SetStyle", BindingFlags.Instance | BindingFlags.NonPublic);
-                        if (setStyleMethod != null)
+                        if (Control.FromHandle(hWnd) is Form form)
                         {
-                            setStyleMethod.Invoke(form, new object[] { ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true });
-                        }
+                            form.BackColor = Color.Black;
+                            form.ForeColor = Color.White;
 
-                        if (_subclass == null)
-                        {
-                            _subclass = new FormSubclassWindow();
-                            _subclass.AssignHandle(hWnd);
+                            // 开启双缓冲与用户绘制，防止重绘时闪白
+                            MethodInfo setStyleMethod = typeof(Control).GetMethod("SetStyle", BindingFlags.Instance | BindingFlags.NonPublic);
+                            if (setStyleMethod != null)
+                            {
+                                setStyleMethod.Invoke(form, new object[] { ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true });
+                            }
+
+                            if (_subclass == null || _subclass.Handle != hWnd)
+                            {
+                                if (_subclass != null)
+                                {
+                                    try { _subclass.ReleaseHandle(); } catch { }
+                                }
+                                _subclass = new FormSubclassWindow();
+                                _subclass.AssignHandle(hWnd);
+                            }
                         }
+                    }
+                    catch
+                    {
                     }
 
                     _applied = true;
+                    _lastHwnd = hWnd;
                     Log.Add("[GameWindowDarkener] 已成功对主窗口应用纯黑背景与防白屏闪烁配置");
                 }
                 catch (Exception ex)
@@ -138,61 +161,6 @@ namespace tContentPatch.Utils
                 }
 
                 base.WndProc(ref m);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 在游戏关键生命周期中自动加固窗口黑化（构造、客户端初始化与分辨率变更）
-    /// </summary>
-    [HarmonyPatch]
-    internal static class Patch_GameWindowDarkener
-    {
-        [HarmonyPatch(typeof(Main), MethodType.Constructor)]
-        [HarmonyPostfix]
-        private static void MainConstructorPostfix()
-        {
-            try
-            {
-                if (Main.instance?.Window?.Handle != null && Main.instance.Window.Handle != IntPtr.Zero)
-                {
-                    GameWindowDarkener.Apply(Main.instance.Window.Handle);
-                }
-            }
-            catch
-            {
-            }
-        }
-
-        [HarmonyPatch(typeof(Main), "ClientInitialize")]
-        [HarmonyPostfix]
-        private static void ClientInitializePostfix()
-        {
-            try
-            {
-                if (Main.instance?.Window?.Handle != null && Main.instance.Window.Handle != IntPtr.Zero)
-                {
-                    GameWindowDarkener.Apply(Main.instance.Window.Handle);
-                }
-            }
-            catch
-            {
-            }
-        }
-
-        [HarmonyPatch(typeof(Main), "UpdateDisplaySettings")]
-        [HarmonyPostfix]
-        private static void UpdateDisplaySettingsPostfix()
-        {
-            try
-            {
-                if (Main.instance?.Window?.Handle != null && Main.instance.Window.Handle != IntPtr.Zero)
-                {
-                    GameWindowDarkener.Apply(Main.instance.Window.Handle);
-                }
-            }
-            catch
-            {
             }
         }
     }
