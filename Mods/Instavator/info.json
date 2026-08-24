@@ -1,0 +1,6 @@
+{
+  "name": "地狱直通车 (Instavator)",
+  "author": "Fargo's Mod / TPML Port",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【地狱直通车快捷采掘与建筑模组】\n- 地狱直通车 (Instavator)：7 格宽度垂直贯通至地狱底层，铺设黑曜石砖护壁、火把照明与中心绳索；\n- 半程直通车 (Half Instavator)：5 格宽度垂直挖掘至岩石层半程深度；\n- 双轨黑曜石直通车 (Double Obsidian Instavator)：双通道黑曜石直通车，配备双侧护壁与双轨绳索；\n- 手持高亮选区预览，支持双轨存档安全隔离。"
+}

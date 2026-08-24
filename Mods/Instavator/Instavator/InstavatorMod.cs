@@ -1,0 +1,125 @@
+using System;
+using Microsoft.Xna.Framework;
+using Terraria;
+using Terraria.ModLoader;
+using Terraria.ModLoader.Engine;
+using Instavator.Content.Logic;
+
+namespace Instavator
+{
+    /// <summary>
+    /// tPlainModLoader 原生 Mod 加载器入口
+    /// </summary>
+    public class InstavatorTPMLEntry : tContentPatch.Mod
+    {
+        public static InstavatorMod ModInstance { get; private set; }
+
+        public override void Load()
+        {
+            try
+            {
+                Console.WriteLine("[Instavator] ===== 开始载入 Instavator Mod =====");
+                TModShimEngine.Log("[Instavator] ===== 开始载入 Instavator Mod =====");
+
+                // 1. 初始化 TModHookDispatcher（挂钩 SetDefaults, ItemCheck, Tooltips 等）
+                TModHookDispatcher.Initialize();
+
+                // 2. 实例化并注册 Mod 内容
+                ModInstance = new InstavatorMod();
+                ModContent.RegisterMod(ModInstance);
+                ModInstance.Load();
+
+                Console.WriteLine("[Instavator] ===== 模组物品注册完成 =====");
+                TModShimEngine.Log("[Instavator] ===== 模组物品注册完成 =====");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Instavator] 载入异常: {ex}");
+                TModShimEngine.Log($"[Instavator] 载入异常: {ex}");
+            }
+        }
+
+        public override void Loaded()
+        {
+            try
+            {
+                // 在所有内容加载完成后触发配方构建与注入
+                ModInstance?.PostSetupContent();
+                Console.WriteLine($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
+                TModShimEngine.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Instavator] 配方注入异常: {ex}");
+                TModShimEngine.Log($"[Instavator] 配方注入异常: {ex}");
+            }
+        }
+
+        public override void Unload()
+        {
+            Console.WriteLine("[Instavator] Instavator 模组已卸载");
+        }
+    }
+
+    /// <summary>
+    /// 玩家进入世界通知与材质状态保障
+    /// </summary>
+    public class InstavatorPlayerNotice : tContentPatch.PatchPlayer
+    {
+        private bool _announced = false;
+
+        public override void UpdatePrefix(Player This, int playerI)
+        {
+            if (!_announced && This.whoAmI == Main.myPlayer && !Main.gameMenu)
+            {
+                _announced = true;
+                Main.NewText($"[Instavator] 地狱直通车已就绪！3 款直通车配方已载入 (配方总数: {Recipe.numRecipes})", 255, 180, 80);
+                
+                // 保证材质在世界加载后完全绑定
+                ItemLoader.ReloadTextures();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 主循环前置贴图就绪保障
+    /// </summary>
+    public class InstavatorPatchMain : tContentPatch.PatchMain
+    {
+        private static bool _texturesReady = false;
+
+        public override void UpdatePrefix(Microsoft.Xna.Framework.GameTime gameTime)
+        {
+            InstavatorShaftBuilder.Update();
+
+            if (!_texturesReady)
+            {
+                if (Main.instance?.GraphicsDevice != null || Main.spriteBatch?.GraphicsDevice != null)
+                {
+                    _texturesReady = true;
+                    ItemLoader.ReloadTextures();
+                }
+            }
+        }
+    }
+    /// <summary>
+    /// tModLoader 风格 Mod 内容定义
+    /// </summary>
+    public class InstavatorMod : Terraria.ModLoader.Mod
+    {
+        public override void Load()
+        {
+            // 自动注册并实例化所有物品与系统
+            AddContent(new Content.Items.Instavator());
+            AddContent(new Content.Items.HalfInstavator());
+            AddContent(new Content.Items.DoubleObsidianInstavator());
+            AddContent(new Content.Systems.InstaVisualSystem());
+        }
+
+        public override void PostSetupContent()
+        {
+            // 触发所有已注册 ModItem 的 AddRecipes()
+            ItemLoader.AddRecipes();
+        }
+    }
+}
