@@ -19,7 +19,7 @@ namespace Instavator
             try
             {
                 Console.WriteLine("[Instavator] ===== 开始载入 Instavator Mod =====");
-                TModShimEngine.Log("[Instavator] ===== 开始载入 Instavator Mod =====");
+                Terraria.ModLoader.ModLoader.Log("[Instavator] ===== 开始载入 Instavator Mod =====");
 
                 // 1. 初始化 TModHookDispatcher（挂钩 SetDefaults, ItemCheck, Tooltips 等）
                 TModHookDispatcher.Initialize();
@@ -30,12 +30,12 @@ namespace Instavator
                 ModInstance.Load();
 
                 Console.WriteLine("[Instavator] ===== 模组物品注册完成 =====");
-                TModShimEngine.Log("[Instavator] ===== 模组物品注册完成 =====");
+                Terraria.ModLoader.ModLoader.Log("[Instavator] ===== 模组物品注册完成 =====");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Instavator] 载入异常: {ex}");
-                TModShimEngine.Log($"[Instavator] 载入异常: {ex}");
+                Terraria.ModLoader.ModLoader.Log($"[Instavator] 载入异常: {ex}");
             }
         }
 
@@ -46,12 +46,12 @@ namespace Instavator
                 // 在所有内容加载完成后触发配方构建与注入
                 ModInstance?.PostSetupContent();
                 Console.WriteLine($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
-                TModShimEngine.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
+                Terraria.ModLoader.ModLoader.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Instavator] 配方注入异常: {ex}");
-                TModShimEngine.Log($"[Instavator] 配方注入异常: {ex}");
+                Terraria.ModLoader.ModLoader.Log($"[Instavator] 配方注入异常: {ex}");
             }
         }
 

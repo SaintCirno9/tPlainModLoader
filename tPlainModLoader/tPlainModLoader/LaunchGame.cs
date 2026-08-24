@@ -59,9 +59,6 @@ namespace tPlainModLoader
 
         private static void Initialize_AssemblyResolveEvent()
         {
-            // 处理服务端/客户端名称、tModLoader 与 FNA/System 重定向
-            AppDomain.CurrentDomain.AssemblyResolve += Terraria.ModLoader.Engine.TModShimEngine.ResolveAssembly;
-
             // 从工作目录找匹配的dll
             AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
             {

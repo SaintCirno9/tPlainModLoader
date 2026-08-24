@@ -19,6 +19,7 @@ namespace Instavator.Content.Logic
         public static bool IsBuildRunning => _activeJob != null;
         public static bool IsInputLocked => UseGate.IsLocked;
         public static int PendingCellCount => _activeJob == null ? 0 : _activeJob.Plan.CellCount - _activeJob.NextCell;
+        public static InstavatorBuildSummary LastBuildSummary { get; private set; }
 
         public static bool CanUse(Player player)
         {
@@ -114,7 +115,7 @@ namespace Instavator.Content.Logic
             }
 
             Player player = Main.LocalPlayer;
-            UseGate.Update(player == null || !player.controlUseItem);
+            UseGate.Update(player != null && player.controlUseItem);
 
             if (_activeJob == null)
             {
@@ -128,17 +129,24 @@ namespace Instavator.Content.Logic
                 {
                     if (_activeJob.NextCell >= _activeJob.Plan.CellCount)
                     {
+                        FinishJob(_activeJob);
                         _activeJob = null;
                         break;
                     }
 
                     InstavatorBuildCell cell = _activeJob.Plan.GetCell(_activeJob.NextCell++);
+                    _activeJob.ProcessedCells++;
                     ProcessCell(_activeJob, cell);
                 }
 
-                if (_activeJob != null && _activeJob.NextCell >= _activeJob.Plan.CellCount)
+                if (_activeJob != null)
                 {
-                    _activeJob = null;
+                    _activeJob.FramesElapsed++;
+                    if (_activeJob.NextCell >= _activeJob.Plan.CellCount)
+                    {
+                        FinishJob(_activeJob);
+                        _activeJob = null;
+                    }
                 }
             }
             catch (Exception ex)
@@ -146,6 +154,36 @@ namespace Instavator.Content.Logic
                 Console.WriteLine($"[Instavator] 分帧建造异常，已停止当前任务: {ex}");
                 _activeJob = null;
             }
+        }
+
+        private static void FinishJob(BuildJob job)
+        {
+            if (job == null) return;
+            job.Stopwatch.Stop();
+            LastBuildSummary = new InstavatorBuildSummary
+            {
+                Variant = job.Variant.ToString(),
+                StartX = job.Plan.StartX,
+                StartY = job.Plan.StartY,
+                TargetY = job.Plan.EndY,
+                MinOffset = job.Plan.MinOffset,
+                MaxOffset = job.Plan.MaxOffset,
+                Width = job.Plan.MaxOffset - job.Plan.MinOffset + 1,
+                TotalDepth = Math.Abs(job.Plan.EndY - job.Plan.StartY),
+                TotalCells = job.Plan.CellCount,
+                ProcessedCells = job.ProcessedCells,
+                DurationMs = job.Stopwatch.ElapsedMilliseconds,
+                DurationFrames = job.FramesElapsed,
+                ClearedTiles = job.ClearedTiles,
+                ClearedWalls = job.ClearedWalls,
+                PlacedRopes = job.PlacedRopes,
+                PlacedTorches = job.PlacedTorches,
+                PlacedBricks = job.PlacedBricks,
+                DrainedLiquids = job.DrainedLiquids,
+                BypassedProtectedTiles = job.BypassedProtectedTiles,
+                CompletedAt = DateTime.Now
+            };
+            Console.WriteLine($"[Instavator] 建造完成: 类型={job.Variant}, 深度={LastBuildSummary.TotalDepth}, 耗时={LastBuildSummary.DurationMs}ms ({LastBuildSummary.DurationFrames} 帧), 清理方块={job.ClearedTiles}, 铺设绳索={job.PlacedRopes}, 火把={job.PlacedTorches}, 护壁={job.PlacedBricks}");
         }
 
         private static bool TryStartBuild(Player player, Vector2 mouseWorld, InstavatorVariant variant, int endY, int minOffset, int maxOffset)
@@ -165,6 +203,7 @@ namespace Instavator.Content.Logic
             }
 
             _activeJob = new BuildJob(plan, variant, player.whoAmI);
+            _activeJob.Stopwatch.Start();
             SoundEngine.PlaySound(SoundID.Item14, mouseWorld);
             return true;
         }
@@ -174,7 +213,11 @@ namespace Instavator.Content.Logic
             int x = cell.X;
             int y = cell.Y;
             if (x < 10 || x >= Main.maxTilesX - 10 || y < 10 || y >= Main.maxTilesY - 10) return;
-            if (!OkayToDestroyTile(x, y)) return;
+            if (!OkayToDestroyTile(x, y))
+            {
+                job.BypassedProtectedTiles++;
+                return;
+            }
 
             Tile tile = Main.tile[x, y];
             int desiredTile = GetDesiredTile(job.Variant, cell.Offset, y);
@@ -183,6 +226,9 @@ namespace Instavator.Content.Logic
             // 已经是目标方块时不清除，重复运行只补缺失的墙或设施，避免绳索被反复重建。
             if (!alreadyHasDesiredTile && (tile.active() || tile.wall > 0 || tile.liquid > 0))
             {
+                if (tile.active()) job.ClearedTiles++;
+                if (tile.wall > 0) job.ClearedWalls++;
+                if (tile.liquid > 0) job.DrainedLiquids++;
                 ClearTileAndWall(x, y);
                 tile = Main.tile[x, y];
             }
@@ -198,6 +244,9 @@ namespace Instavator.Content.Logic
             {
                 WorldGen.PlaceTile(x, y, desiredTile, false, false, job.PlayerWhoAmI, 0);
                 changed = changed || (tile.active() && tile.type == desiredTile);
+                if (desiredTile == TileID.Rope) job.PlacedRopes++;
+                else if (desiredTile == TileID.Torches) job.PlacedTorches++;
+                else if (desiredTile == TileID.ObsidianBrick) job.PlacedBricks++;
             }
 
             if (changed && Main.netMode == 2)
@@ -235,13 +284,51 @@ namespace Instavator.Content.Logic
                 Plan = plan;
                 Variant = variant;
                 PlayerWhoAmI = playerWhoAmI;
+                Stopwatch = new System.Diagnostics.Stopwatch();
             }
 
             public InstavatorBuildPlan Plan { get; }
             public InstavatorVariant Variant { get; }
             public int PlayerWhoAmI { get; }
             public int NextCell { get; set; }
+            public int ProcessedCells { get; set; }
+            public int FramesElapsed { get; set; }
+            public int ClearedTiles { get; set; }
+            public int ClearedWalls { get; set; }
+            public int PlacedRopes { get; set; }
+            public int PlacedTorches { get; set; }
+            public int PlacedBricks { get; set; }
+            public int DrainedLiquids { get; set; }
+            public int BypassedProtectedTiles { get; set; }
+            public System.Diagnostics.Stopwatch Stopwatch { get; }
         }
+    }
+
+    /// <summary>
+    /// 直通车建造执行快照汇总
+    /// </summary>
+    public class InstavatorBuildSummary
+    {
+        public string Variant { get; set; }
+        public int StartX { get; set; }
+        public int StartY { get; set; }
+        public int TargetY { get; set; }
+        public int MinOffset { get; set; }
+        public int MaxOffset { get; set; }
+        public int Width { get; set; }
+        public int TotalDepth { get; set; }
+        public int TotalCells { get; set; }
+        public int ProcessedCells { get; set; }
+        public long DurationMs { get; set; }
+        public int DurationFrames { get; set; }
+        public int ClearedTiles { get; set; }
+        public int ClearedWalls { get; set; }
+        public int PlacedRopes { get; set; }
+        public int PlacedTorches { get; set; }
+        public int PlacedBricks { get; set; }
+        public int DrainedLiquids { get; set; }
+        public int BypassedProtectedTiles { get; set; }
+        public DateTime CompletedAt { get; set; }
     }
 
     public enum InstavatorVariant

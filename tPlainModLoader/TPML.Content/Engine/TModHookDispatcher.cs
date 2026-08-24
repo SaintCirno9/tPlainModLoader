@@ -26,7 +26,7 @@ namespace Terraria.ModLoader.Engine
 
         private static bool _firstInvDrawLogged = false;
 
-        public static void Initialize(string harmonyId = "Terraria.ModLoader.Shim.Dispatcher")
+        public static void Initialize(string harmonyId = "TPML.Content.Dispatcher")
         {
             if (_initialized) return;
             _harmony = new Harmony(harmonyId);
@@ -55,7 +55,7 @@ namespace Terraria.ModLoader.Engine
                 }
             }
 
-            TModShimEngine.Log($"[TModHookDispatcher] 注册内容: ModPlayers={ActiveModPlayers.Count}, ModSystems={ActiveModSystems.Count}, GlobalItems={ActiveGlobalItems.Count}");
+            ModLoader.Log($"[TModHookDispatcher] 注册内容: ModPlayers={ActiveModPlayers.Count}, ModSystems={ActiveModSystems.Count}, GlobalItems={ActiveGlobalItems.Count}");
             if (changed)
             {
                 if (_patchesApplied && _harmony != null)
@@ -166,7 +166,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var postfix = typeof(TModHookDispatcher).GetMethod(nameof(Main_MouseText_DrawItemTooltip_GetLinesInfo_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Main.MouseText_DrawItemTooltip_GetLinesInfo (Tooltip 支持)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Main.MouseText_DrawItemTooltip_GetLinesInfo (Tooltip 支持)");
             }
         }
 
@@ -212,7 +212,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var prefix = typeof(TModHookDispatcher).GetMethod(nameof(Player_ItemCheck_Shoot_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck_Shoot (物品射击与动作拦截)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck_Shoot (物品射击与动作拦截)");
             }
         }
 
@@ -243,7 +243,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var postfix = typeof(TModHookDispatcher).GetMethod(nameof(Player_ItemCheck_StartActualUse_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck_StartActualUse (物品使用逻辑)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck_StartActualUse (物品使用逻辑)");
             }
         }
 
@@ -262,7 +262,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var prefix = typeof(TModHookDispatcher).GetMethod(nameof(Player_ItemCheck_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck (CanUseItem 检查)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Player.ItemCheck (CanUseItem 检查)");
             }
         }
 
@@ -291,7 +291,7 @@ namespace Terraria.ModLoader.Engine
             var prefix = typeof(TModHookDispatcher).GetMethod(nameof(Player_Update_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
             var postfix = typeof(TModHookDispatcher).GetMethod(nameof(Player_Update_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
             _harmony.Patch(target, prefix: new HarmonyMethod(prefix), postfix: new HarmonyMethod(postfix));
-            TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Player.Update");
+            ModLoader.Log("[TModHookDispatcher] 已挂钩 Player.Update");
         }
 
         private static void Player_Update_Prefix(Player __instance, int i)
@@ -329,7 +329,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var prefix = typeof(TModHookDispatcher).GetMethod(nameof(Player_GetItem_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Player.GetItem (OnPickup)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Player.GetItem (OnPickup)");
             }
         }
 
@@ -351,7 +351,7 @@ namespace Terraria.ModLoader.Engine
                 }
                 catch (Exception ex)
                 {
-                    TModShimEngine.Log($"[TModHookDispatcher] OnPickup 异常: {ex.Message}");
+                    ModLoader.Log($"[TModHookDispatcher] OnPickup 异常: {ex.Message}");
                 }
             }
             return true;
@@ -362,7 +362,7 @@ namespace Terraria.ModLoader.Engine
             var target = typeof(PlayerInput).GetMethod(nameof(PlayerInput.UpdateInput), BindingFlags.Static | BindingFlags.Public);
             var postfix = typeof(TModHookDispatcher).GetMethod(nameof(PlayerInput_UpdateInput_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
             _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-            TModShimEngine.Log("[TModHookDispatcher] 已挂钩 PlayerInput.UpdateInput");
+            ModLoader.Log("[TModHookDispatcher] 已挂钩 PlayerInput.UpdateInput");
         }
 
         private static void PlayerInput_UpdateInput_Postfix()
@@ -382,7 +382,7 @@ namespace Terraria.ModLoader.Engine
             {
                 var postfix = typeof(TModHookDispatcher).GetMethod(nameof(Main_UpdateUIStates_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Main.UpdateUIStates");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Main.UpdateUIStates");
             }
         }
 
@@ -400,7 +400,7 @@ namespace Terraria.ModLoader.Engine
                 }
                 catch (Exception ex)
                 {
-                    TModShimEngine.Log($"[TModHookDispatcher] UpdateUI 异常: {ex.Message}");
+                    ModLoader.Log($"[TModHookDispatcher] UpdateUI 异常: {ex.Message}");
                 }
             }
         }
@@ -412,11 +412,11 @@ namespace Terraria.ModLoader.Engine
             {
                 var postfix = typeof(TModHookDispatcher).GetMethod(nameof(Main_SetupDrawInterfaceLayers_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
                 _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-                TModShimEngine.Log("[TModHookDispatcher] 已挂钩 Main.SetupDrawInterfaceLayers (原生图层管道接入)");
+                ModLoader.Log("[TModHookDispatcher] 已挂钩 Main.SetupDrawInterfaceLayers (原生图层管道接入)");
             }
             else
             {
-                TModShimEngine.Log("[TModHookDispatcher] 未找到 Main.SetupDrawInterfaceLayers 方法！");
+                ModLoader.Log("[TModHookDispatcher] 未找到 Main.SetupDrawInterfaceLayers 方法！");
             }
         }
 
@@ -433,7 +433,7 @@ namespace Terraria.ModLoader.Engine
                 }
                 catch (Exception ex)
                 {
-                    TModShimEngine.Log($"[TModHookDispatcher] 执行 ModifyInterfaceLayers 异常: {ex.Message}");
+                    ModLoader.Log($"[TModHookDispatcher] 执行 ModifyInterfaceLayers 异常: {ex.Message}");
                 }
             }
 
@@ -449,10 +449,10 @@ namespace Terraria.ModLoader.Engine
 
             if (Main.playerInventory && !_firstInvDrawLogged)
             {
-                TModShimEngine.Log($"[TModHookDispatcher] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}:");
+                ModLoader.Log($"[TModHookDispatcher] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}:");
                 foreach (var l in gameInterfaceLayers)
                 {
-                    TModShimEngine.Log($"  - 图层: [{l.Name}]");
+                    ModLoader.Log($"  - 图层: [{l.Name}]");
                 }
                 _firstInvDrawLogged = true;
             }
@@ -493,7 +493,7 @@ namespace Terraria.ModLoader.Engine
                 var realEx = ex.InnerException ?? ex;
                 if (_errorThrottle++ % 60 == 0)
                 {
-                    TModShimEngine.Log($"[SafeLayer] 绘制模组图层 [{_inner.Name}] 捕获异常: {realEx.GetType().FullName}: {realEx.Message}\n{realEx.StackTrace}");
+                    ModLoader.Log($"[SafeLayer] 绘制模组图层 [{_inner.Name}] 捕获异常: {realEx.GetType().FullName}: {realEx.Message}\n{realEx.StackTrace}");
                 }
                 return true;
             }

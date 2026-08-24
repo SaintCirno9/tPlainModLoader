@@ -43,6 +43,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
     <ProjectReference Include="..\..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
   </ItemGroup>
 
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\OptimizeAndTool 文件夹 -->

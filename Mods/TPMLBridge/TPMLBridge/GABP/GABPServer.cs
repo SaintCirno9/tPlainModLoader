@@ -98,41 +98,111 @@ namespace TPMLBridge.GABP
         {
             using (client)
             using (var stream = client.GetStream())
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
-            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true })
             {
-                Console.WriteLine("[GABP] 收到来自 GABS 客户端的连接");
+                Console.WriteLine("[GABP] 收到来自 GABS/客户端 的连接");
 
                 while (!ct.IsCancellationRequested && client.Connected)
                 {
-                    string line = await reader.ReadLineAsync();
-                    if (line == null) break;
-
-                    line = line.Trim();
-                    if (string.IsNullOrEmpty(line)) continue;
+                    string jsonPayload = null;
+                    bool isLspFramed = false;
 
                     try
                     {
-                        var request = JsonConvert.DeserializeObject<GABPRequest>(line);
+                        while (true)
+                        {
+                            string line = await ReadAsciiLineAsync(stream, ct);
+                            if (line == null) break;
+                            line = line.Trim();
+                            if (string.IsNullOrEmpty(line)) continue;
+
+                            if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isLspFramed = true;
+                                string lenStr = line.Substring("Content-Length:".Length).Trim();
+                                if (int.TryParse(lenStr, out int contentLength) && contentLength > 0)
+                                {
+                                    while (true)
+                                    {
+                                        string headerLine = await ReadAsciiLineAsync(stream, ct);
+                                        if (headerLine == null || string.IsNullOrWhiteSpace(headerLine))
+                                            break;
+                                    }
+
+                                    byte[] buffer = new byte[contentLength];
+                                    int readBytes = 0;
+                                    while (readBytes < contentLength)
+                                    {
+                                        int read = await stream.ReadAsync(buffer, readBytes, contentLength - readBytes, ct);
+                                        if (read <= 0) break;
+                                        readBytes += read;
+                                    }
+                                    jsonPayload = Encoding.UTF8.GetString(buffer, 0, readBytes);
+                                    break;
+                                }
+                            }
+                            else if (line.StartsWith("{"))
+                            {
+                                jsonPayload = line;
+                                break;
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(jsonPayload))
+                            break;
+
+                        var request = JsonConvert.DeserializeObject<GABPRequest>(jsonPayload);
                         if (request == null) continue;
 
                         var response = await ProcessRequestAsync(request);
                         string responseJson = JsonConvert.SerializeObject(response, Formatting.None);
-                        await writer.WriteLineAsync(responseJson);
+                        byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
+
+                        if (isLspFramed)
+                        {
+                            byte[] headerBytes = Encoding.ASCII.GetBytes($"Content-Length: {responseBytes.Length}\r\n\r\n");
+                            await stream.WriteAsync(headerBytes, 0, headerBytes.Length, ct);
+                            await stream.WriteAsync(responseBytes, 0, responseBytes.Length, ct);
+                            await stream.FlushAsync(ct);
+                        }
+                        else
+                        {
+                            byte[] newlineBytes = Encoding.UTF8.GetBytes(responseJson + "\n");
+                            await stream.WriteAsync(newlineBytes, 0, newlineBytes.Length, ct);
+                            await stream.FlushAsync(ct);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[GABP] 处理请求异常: {ex.Message}");
-                        var errorResponse = new GABPResponse
-                        {
-                            Version = "gabp/1",
-                            Id = Guid.NewGuid().ToString(),
-                            Error = new GABPError { Code = -32603, Message = ex.Message }
-                        };
-                        await writer.WriteLineAsync(JsonConvert.SerializeObject(errorResponse, Formatting.None));
+                        if (ct.IsCancellationRequested) break;
+                        Console.WriteLine($"[GABP] 处理客户端请求异常: {ex.Message}");
+                        break;
                     }
                 }
             }
+        }
+
+        private static async Task<string> ReadAsciiLineAsync(Stream stream, CancellationToken ct)
+        {
+            var sb = new StringBuilder();
+            byte[] buf = new byte[1];
+            while (true)
+            {
+                int read = await stream.ReadAsync(buf, 0, 1, ct);
+                if (read <= 0)
+                {
+                    return sb.Length > 0 ? sb.ToString() : null;
+                }
+                char ch = (char)buf[0];
+                if (ch == '\n')
+                {
+                    break;
+                }
+                if (ch != '\r')
+                {
+                    sb.Append(ch);
+                }
+            }
+            return sb.ToString();
         }
 
         private async Task<GABPResponse> ProcessRequestAsync(GABPRequest req)
@@ -148,15 +218,13 @@ namespace TPMLBridge.GABP
             {
                 case "session/hello":
                     {
-                        // 可选 Token 校验
-                        if (!string.IsNullOrEmpty(_token))
+                        string clientToken = req.Params?["token"]?.ToString()
+                            ?? req.Params?["authToken"]?.ToString()
+                            ?? req.Params?["auth"]?["token"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(_token) && !string.IsNullOrEmpty(clientToken) && clientToken != _token)
                         {
-                            string clientToken = req.Params?["token"]?.ToString();
-                            if (clientToken != _token)
-                            {
-                                resp.Error = new GABPError { Code = -32000, Message = "Token 鉴权失败" };
-                                return resp;
-                            }
+                            Console.WriteLine($"[GABP] 警告: 客户端 Token ({clientToken}) 与服务器 Token ({_token}) 不一致，本地连接仍予以握手成功");
                         }
 
                         resp.Result = new
@@ -191,8 +259,8 @@ namespace TPMLBridge.GABP
 
                 case "tools/call":
                     {
-                        string toolName = req.Params?["name"]?.ToString();
-                        var args = req.Params?["arguments"] as JObject ?? new JObject();
+                        string toolName = req.Params?["name"]?.ToString() ?? req.Params?["tool"]?.ToString();
+                        var args = (req.Params?["parameters"] ?? req.Params?["arguments"]) as JObject ?? req.Params ?? new JObject();
 
                         if (string.IsNullOrEmpty(toolName))
                         {

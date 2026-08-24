@@ -34,14 +34,6 @@ namespace tContentPatch.ModLoad
         /// </summary>
         public ModInfo info = null;
         /// <summary>
-        /// 若为 .tmod 单文件模组，则携带此虚拟容器
-        /// </summary>
-        public Terraria.ModLoader.Container.TModFileContainer tmodContainer = null;
-        /// <summary>
-        /// tModLoader 模组实例
-        /// </summary>
-        public Terraria.ModLoader.Mod tmodInstance = null;
-        /// <summary>
         /// 继承了<see cref="Mod"/>的类
         /// </summary>
         public List<Mod> inheritance_mod = null;

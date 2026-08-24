@@ -63,30 +63,18 @@ namespace tContentPatch.ModLoad
 
                 stateText = $"加载程序集:{mo.info?.name ?? mo.config.key}";
 
-                byte[] asmBytes = null;
+                string dllPath = mo.config.dllPath;
+                if (dllPath == null) continue;
+                string filePath = Path.Combine(mo.modPath, dllPath);
 
-                if (mo.tmodContainer != null)
+                if (File.Exists(filePath) == false) throw new Exception($"dll文件缺失:[{filePath}]");
+                if (mo.config.dllPath == null) mo.config.dllPath = dllPath;
+
+                byte[] asmBytes;
+                // 优先从 PrepatcherStorage 获取已被 Prepatcher 修补过的程序集字节流
+                if (!Prepatcher.PrepatcherStorage.TryGetPatchedBytes(filePath, out asmBytes))
                 {
-                    asmBytes = mo.tmodContainer.MainAssemblyBytes;
-                    if (asmBytes == null)
-                    {
-                        throw new Exception($"tmod 容器中未找到程序集:[{mo.tmodContainer.ModName}]");
-                    }
-                }
-                else
-                {
-                    string dllPath = mo.config.dllPath;
-                    if (dllPath == null) continue;
-                    string filePath = Path.Combine(mo.modPath, dllPath);
-
-                    if (File.Exists(filePath) == false) throw new Exception($"dll文件缺失:[{filePath}]");
-                    if (mo.config.dllPath == null) mo.config.dllPath = dllPath;
-
-                    // 优先从 PrepatcherStorage 获取已被 Prepatcher 修补过的程序集字节流
-                    if (!Prepatcher.PrepatcherStorage.TryGetPatchedBytes(filePath, out asmBytes))
-                    {
-                        asmBytes = File.ReadAllBytes(filePath);
-                    }
+                    asmBytes = File.ReadAllBytes(filePath);
                 }
 
                 mo.assembly = Assembly.Load(asmBytes);

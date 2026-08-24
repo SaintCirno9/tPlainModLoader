@@ -54,7 +54,9 @@ namespace tContentPatch.ModLoad
             {
                 stateText = "清理";
 
-                Terraria.ModLoader.Engine.TModShimEngine.UnloadAll();
+                Terraria.ModLoader.Engine.TModHookDispatcher.Clear();
+                Terraria.ModLoader.ItemLoader.Clear();
+                Terraria.ModLoader.ModContent.Clear();
 
                 Content.Network.ModNetworkPacket.Clear();
 

@@ -20,7 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
-    <ProjectReference Include="..\Terraria.ModLoader.Shim\Terraria.ModLoader.Shim.csproj" />
+    <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />
   </ItemGroup>
 
   <ItemGroup>

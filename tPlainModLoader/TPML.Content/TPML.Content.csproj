@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}</ProjectGuid>
+    <ProjectGuid>{6F6E4D2C-1B0A-49D8-8D7C-6E5F4A3B2C1D}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>tContentPatch</RootNamespace>
-    <AssemblyName>tContentPatch</AssemblyName>
+    <RootNamespace>Terraria.ModLoader</RootNamespace>
+    <AssemblyName>TPML.Content</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\tContentPatch.xml</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\TPML.Content.xml</DocumentationFile>
     <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
     <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
@@ -15,11 +16,9 @@
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- XNA 4.0 仅存在于 GAC（随 XNA Redistributable 安装），无 NuGet 分发，此处使用 GAC 确定性物理路径 -->
     <Reference Include="Microsoft.Xna.Framework">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
@@ -29,28 +28,15 @@
     <Reference Include="Microsoft.Xna.Framework.Graphics">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Graphics\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Graphics.dll</HintPath>
     </Reference>
-    <!-- 原版 Terraria exe：路径由 monorepo 根 Directory.Build.props 的 TerrariaDir 注入；Private=false 避免复制游戏文件到输出目录 -->
     <Reference Include="Terraria">
       <HintPath>$(TerrariaDir)\Terraria.exe</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
-      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\Libs\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Drawing" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CommandHelp\CommandHelp.csproj" />
-    <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\*.png" />
   </ItemGroup>
 
 </Project>
