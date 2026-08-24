@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using SundryTool.Utils;
 using SundryTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -21,12 +21,90 @@ namespace SundryTool.Content.HeldItemModify
         public static GetSetReset<bool> tileBoost = new GetSetReset<bool>();
         public static GetSetReset<int> tileBoost_val = new GetSetReset<int>();
 
+        private static Item _lastModifiedItem = null;
+        private static bool _lastUseTime = false;
+        private static bool _lastUseAnimation = false;
+        private static bool _lastShootSpeed = false;
+        private static bool _lastShoot = false;
+        private static bool _lastTileBoost = false;
+
+        public override void Initialize()
+        {
+            _lastModifiedItem = null;
+            _lastUseTime = false;
+            _lastUseAnimation = false;
+            _lastShootSpeed = false;
+            _lastShoot = false;
+            _lastTileBoost = false;
+        }
+
+        public override void SavePlayerPrefix(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
+        {
+            if (_lastModifiedItem != null)
+            {
+                ResetItemProperties(_lastModifiedItem);
+                _lastModifiedItem = null;
+            }
+        }
+
+        public static void ResetItemProperties(Item item)
+        {
+            if (item == null || item.type <= Terraria.ID.ItemID.None) return;
+            int prefix = item.prefix;
+            int stack = item.stack;
+            bool favorited = item.favorited;
+
+            item.SetDefaults(item.type);
+            item.stack = stack;
+            item.favorited = favorited;
+            if (prefix > 0)
+            {
+                item.Prefix(prefix);
+            }
+        }
+
         public override void UpdatePrefix(Player This, int playerI)
         {
             if (This != Main.LocalPlayer) return;
 
             Item item = This.HeldItem;
-            if (item == null) return;
+            bool anyActive = useTime.val || useAnimation.val || shootSpeed.val || shoot.val || tileBoost.val;
+
+            // 若之前修改过物品，但在切换手持物品或全部关闭时还原原物品
+            if (_lastModifiedItem != null && (!anyActive || _lastModifiedItem != item))
+            {
+                ResetItemProperties(_lastModifiedItem);
+                _lastModifiedItem = null;
+            }
+
+            if (!anyActive || item == null || item.type <= Terraria.ID.ItemID.None)
+            {
+                _lastUseTime = false;
+                _lastUseAnimation = false;
+                _lastShootSpeed = false;
+                _lastShoot = false;
+                _lastTileBoost = false;
+                return;
+            }
+
+            // 若某个开关单独从开启变为关闭，先还原一次物品以恢复被关闭属性的原生值
+            bool switchTurnedOff = (_lastUseTime && !useTime.val) ||
+                                   (_lastUseAnimation && !useAnimation.val) ||
+                                   (_lastShootSpeed && !shootSpeed.val) ||
+                                   (_lastShoot && !shoot.val) ||
+                                   (_lastTileBoost && !tileBoost.val);
+
+            if (switchTurnedOff)
+            {
+                ResetItemProperties(item);
+            }
+
+            _lastModifiedItem = item;
+            _lastUseTime = useTime.val;
+            _lastUseAnimation = useAnimation.val;
+            _lastShootSpeed = shootSpeed.val;
+            _lastShoot = shoot.val;
+            _lastTileBoost = tileBoost.val;
 
             if (useTime.val)
             {

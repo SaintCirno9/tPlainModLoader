@@ -53,6 +53,10 @@ namespace SundryTool.Content.PlayerModify
             {
                 Player.defaultItemGrabRange = grabRange_val.val * 16;
             }
+            else
+            {
+                Player.defaultItemGrabRange = 42;
+            }
         }
 
         public static List<CommandObject> GetCO()

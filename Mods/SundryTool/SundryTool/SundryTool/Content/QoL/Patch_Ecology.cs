@@ -156,12 +156,23 @@ namespace SundryTool.Content.QoL
             return true;
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(WorldGen), nameof(WorldGen.ShakeTree))]
+        public static void WorldGen_ShakeTree_Prefix(out int __state)
+        {
+            // 记录执行前的摇树计数
+            __state = WorldGen.numTreeShakes;
+        }
+
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(WorldGen), "ShakeTree")]
-        public static void WorldGen_ShakeTree_Postfix(int i, int j)
+        [HarmonyPatch(typeof(WorldGen), nameof(WorldGen.ShakeTree))]
+        public static void WorldGen_ShakeTree_Postfix(int i, int j, int __state)
         {
             if (!QoLValSet.treeShakeGuaranteeFruit.val) return;
             if (Main.netMode == 1) return; // 仅服务端或单人负责掉落生成
+
+            // 只有当原版 ShakeTree 真正成功执行了有效摇树（计数自增，且未被跳过）时才保证掉落水果
+            if (WorldGen.numTreeShakes <= __state) return;
 
             int fruitItem = GetTreeFruitItem(i, j);
             if (fruitItem > 0)
@@ -175,12 +186,12 @@ namespace SundryTool.Content.QoL
         {
             // 向下探测树根物块
             int groundY = y;
-            while (groundY < Main.maxTilesY - 10 && Main.tile[x, groundY] != null && Main.tile[x, groundY].type == TileID.Trees)
+            while (groundY < Main.maxTilesY - 10 && Main.tile[x, groundY] != null && Main.tile[x, groundY].active() && TileID.Sets.IsShakeable[Main.tile[x, groundY].type])
             {
                 groundY++;
             }
             Tile baseTile = Main.tile[x, groundY];
-            if (baseTile == null) return ItemID.Apple;
+            if (baseTile == null || !baseTile.active()) return ItemID.Apple;
 
             int soilType = baseTile.type;
             if (soilType == TileID.SnowBlock || soilType == TileID.IceBlock)
