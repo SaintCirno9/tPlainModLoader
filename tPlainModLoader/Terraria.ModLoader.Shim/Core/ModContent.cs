@@ -39,6 +39,11 @@ namespace Terraria.ModLoader
             _instances[content.GetType()] = content;
         }
 
+        public static void RegisterItemType(Type type, int id)
+        {
+            if (type != null) _itemTypes[type] = id;
+        }
+
         public static void Clear()
         {
             _instances.Clear();

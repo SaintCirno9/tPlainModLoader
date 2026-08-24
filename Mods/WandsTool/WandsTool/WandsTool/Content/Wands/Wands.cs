@@ -12,10 +12,8 @@ namespace WandsTool.Content
         {
             line,
             circular,
-            circularFilled,
             rectangle,
         }
-
         private static Vector2 position1;
         private static Vector2 position2;
         private static bool selecting = false;
@@ -292,7 +290,6 @@ namespace WandsTool.Content
             {
                 case Shapes.line: shapes = WandUtils.GetShapes_line(position1, position2); break;
                 case Shapes.circular: shapes = WandUtils.GetShapes_Circular(position1, position2); break;
-                case Shapes.circularFilled: shapes = WandUtils.GetShapes_CircularFilled(position1, position2); break;
                 case Shapes.rectangle: shapes = WandUtils.GetShapes_Rectangle(position1, position2); break;
                 default: break;
             }
@@ -379,9 +376,8 @@ namespace WandsTool.Content
             else
             {
                 borderColor = new Color(250, 40, 80);
-                modeName = (shapes_s == Shapes.circularFilled) ? "星爆破坏" : "区域破坏";
+                modeName = "区域破坏";
             }
-
             Color backgroundColor = borderColor * 0.35f;
 
             int w = (int)Math.Abs(Math.Floor(position1.X / 16) - Math.Floor(position2.X / 16)) + 1;
@@ -393,7 +389,6 @@ namespace WandsTool.Content
             {
                 case Shapes.line: WandUtils.Draw_line(shapes, position1, position2, borderColor, backgroundColor); break;
                 case Shapes.circular: WandUtils.Draw_circular(shapes, position1, position2, borderColor, backgroundColor); break;
-                case Shapes.circularFilled: WandUtils.Draw_circularFilled(shapes, position1, position2, borderColor, backgroundColor); break;
                 case Shapes.rectangle: WandUtils.Draw_rectangle(shapes, position1, position2, borderColor, backgroundColor); break;
                 default: break;
             }
@@ -532,24 +527,15 @@ namespace WandsTool.Content
                 string target = (gameMain.Wand_Tile && gameMain.Wand_Wall) ? "物块+墙" :
                                 gameMain.Wand_Wall ? "背景墙" : "物块";
 
-                if (gameMain.Wand_Shapes == Shapes.circularFilled)
-                {
-                    text = $"星爆破坏 ({target})";
-                    textColor = new Color(255, 80, 120);
-                }
-                else
-                {
-                    text = (target == "物块") ? "破坏" : $"破坏 ({target})";
-                    textColor = new Color(255, 70, 90);
-                }
+                text = (target == "物块") ? "破坏" : $"破坏 ({target})";
+                textColor = new Color(255, 70, 90);
             }
 
-            // 附加非常规几何形状标注（矩形为默认不标注，其余显示 [线]/[圆]/[实心圆]）
+            // 附加非常规几何形状标注（矩形为默认不标注，其余显示 [线]/[圆]）
             if (gameMain.Wand_StructureMode == gameMain.StructureMode.None)
             {
                 if (gameMain.Wand_Shapes == Shapes.line) text += " [线]";
                 else if (gameMain.Wand_Shapes == Shapes.circular) text += " [圆]";
-                else if (gameMain.Wand_Shapes == Shapes.circularFilled && gameMain.Wand_isPlace) text += " [实心圆]";
             }
 
             // 按照原版光标物品图标规范进行绘制

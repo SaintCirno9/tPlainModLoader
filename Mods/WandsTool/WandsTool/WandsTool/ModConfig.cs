@@ -27,6 +27,12 @@ namespace WandsTool
 
             [JsonProperty("单次批量处理速率")]
             public int BatchSize = 64;
+
+            [JsonProperty("蓝图自动合成原材料")]
+            public bool AutoCraftMaterials = true;
+
+            [JsonProperty("自动合成需对应工作台")]
+            public bool AutoCraftRequireStation = false;
         }
 
         public override string Name => "设置";
@@ -65,6 +71,8 @@ namespace WandsTool
             gameMain.Wand_CollectDrops = data.CollectDrops;
             gameMain.Wand_InfiniteLiquid = data.InfiniteLiquid;
             if (data.BatchSize > 0) gameMain.Wand_BatchSize = data.BatchSize;
+            gameMain.Wand_StructureAutoCraft = data.AutoCraftMaterials;
+            gameMain.Wand_StructureAutoCraftRequireStation = data.AutoCraftRequireStation;
         }
 
         public override object GetSaveData() => data;
@@ -150,6 +158,44 @@ namespace WandsTool
             };
             sv.AddChild(s4);
 
+            // 5. 蓝图自动合成原材料
+            UIItemSwitch s5 = new UIItemSwitch(null, "蓝图自动合成原材料");
+            s5.OnUpdate += _ =>
+            {
+                if (data == null) return;
+                s5.SetVal(data.AutoCraftMaterials);
+                if (s5.IsMouseHovering) Main.instance.MouseText("蓝图缺少物块/墙壁/家具时，自动消耗背包内的原材料(如木材/石块/沙子)合成并完成放置");
+            };
+            s5.OnValUpdate += v =>
+            {
+                if (data == null) return;
+                if (data.AutoCraftMaterials == v) return;
+                data.AutoCraftMaterials = v;
+                gameMain.Wand_StructureAutoCraft = v;
+                NeedSave = true;
+                Save();
+            };
+            sv.AddChild(s5);
+
+            // 6. 自动合成需对应工作台
+            UIItemSwitch s6 = new UIItemSwitch(null, "自动合成需工作台");
+            s6.OnUpdate += _ =>
+            {
+                if (data == null) return;
+                s6.SetVal(data.AutoCraftRequireStation);
+                if (s6.IsMouseHovering) Main.instance.MouseText("自动合成原材料时，是否严格要求玩家身旁有对应的制作站(如工作台/熔炉/铁砧，默认关: 随身代工)");
+            };
+            s6.OnValUpdate += v =>
+            {
+                if (data == null) return;
+                if (data.AutoCraftRequireStation == v) return;
+                data.AutoCraftRequireStation = v;
+                gameMain.Wand_StructureAutoCraftRequireStation = v;
+                NeedSave = true;
+                Save();
+            };
+            sv.AddChild(s6);
+
             return sv;
         }
 
@@ -157,6 +203,18 @@ namespace WandsTool
         {
             if (data == null) data = new Data();
             return data.ConsumablesItem;
+        }
+
+        public static bool IsAutoCraftMaterials()
+        {
+            if (data == null) data = new Data();
+            return data.AutoCraftMaterials;
+        }
+
+        public static bool IsAutoCraftRequireStation()
+        {
+            if (data == null) data = new Data();
+            return data.AutoCraftRequireStation;
         }
     }
 }

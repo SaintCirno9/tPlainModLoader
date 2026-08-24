@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Terraria;
 using Terraria.GameContent;
@@ -208,36 +209,69 @@ namespace WandsTool.Content.Structure
             // 5. 绘制光标悬浮物料清单与快捷操作提示
             DrawMaterialTooltip(data);
         }
+        private static int _lastInvHash = -1;
+        private static StructureData _lastData = null;
+        private static bool _lastAutoCraft = false;
+        private static bool _lastReqStation = false;
+        private static bool _lastOverwrite = true;
+        private static Point _lastMouseTile = Point.Zero;
+        private static StructureCraftingEngine.CraftingPlan _cachedPlan = null;
 
         private static void DrawMaterialTooltip(StructureData data)
         {
-            if (gameMain.CutSourceRect.HasValue)
+            try
             {
-                StringBuilder sbCut = new StringBuilder();
-                sbCut.AppendLine($"[✂️ 建筑剪切搬家] {data.Name} ({data.Width}×{data.Height})");
-                sbCut.AppendLine($"快捷键: [H] 水平镜像 | [V] 垂直翻转");
-                sbCut.AppendLine($"状态: 搬家中 (原建筑完好未受损)");
-                sbCut.AppendLine($"材料消耗: 零消耗 (原建筑整栋物理转移)");
-                sbCut.AppendLine($"-------------------");
-                sbCut.AppendLine($"[左键] 确认放置完成搬家");
-                sbCut.AppendLine($"[右键] 取消 (原建筑完全不变)");
-                Main.instance.MouseText(sbCut.ToString().TrimEnd());
-                return;
-            }
+                if (gameMain.CutSourceRect.HasValue)
+                {
+                    StringBuilder sbCut = new StringBuilder();
+                    sbCut.AppendLine($"[✂️ 建筑剪切搬家] {data.Name} ({data.Width}×{data.Height})");
+                    sbCut.AppendLine($"快捷键: [H] 水平镜像 | [V] 垂直翻转");
+                    sbCut.AppendLine($"状态: 搬家中 (原建筑完好未受损)");
+                    sbCut.AppendLine($"材料消耗: 零消耗 (原建筑整栋物理转移)");
+                    sbCut.AppendLine($"-------------------");
+                    sbCut.AppendLine($"[左键] 确认放置完成搬家");
+                    sbCut.AppendLine($"[右键] 取消 (原建筑完全不变)");
+                    Main.instance.MouseText(sbCut.ToString().TrimEnd());
+                    return;
+                }
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"[蓝图放置] {data.Name} ({data.Width}×{data.Height})");
-            sb.AppendLine($"快捷键: [H] 水平镜像 | [V] 垂直翻转");
-            sb.AppendLine($"材料消耗: {(gameMain.Wand_StructureConsumeMaterials ? "开启 (需备齐材料)" : "关闭 (免消耗自由摆放)")}");
-            sb.AppendLine($"操作: [左键] 确认放置 | [右键] 取消放置");
-            sb.AppendLine($"-------------------");
+                Point mouseTile = Main.MouseWorld.ToTileCoordinates();
+                bool overwrite = gameMain.Wand_StructureOverwrite;
 
-            Dictionary<int, int> req = data.GetRequiredItems();
-            Player player = Main.LocalPlayer;
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"[蓝图放置] {data.Name} ({data.Width}×{data.Height})");
+                sb.AppendLine($"快捷键: [H] 水平镜像 | [V] 垂直翻转");
+                bool consume = gameMain.Wand_StructureConsumeMaterials && ModConfig.IsConsumablesItem();
+                bool autoCraft = gameMain.Wand_StructureAutoCraft && ModConfig.IsAutoCraftMaterials();
+                bool reqStation = gameMain.Wand_StructureAutoCraftRequireStation && ModConfig.IsAutoCraftRequireStation();
 
-            int lineCount = 0;
-            foreach (var kvp in req)
-            {
+                string consumeText = !consume ? "关闭 (免消耗自由摆放)" : (autoCraft ? "开启 (缺料自动消耗原料制造)" : "开启 (需备齐成品材料)");
+                sb.AppendLine($"材料消耗: {consumeText} [覆盖:{(overwrite ? "开" : "关")}]");
+                sb.AppendLine($"操作: [左键] 确认放置 | [右键] 取消放置");
+                sb.AppendLine($"-------------------");
+
+                Dictionary<int, int> req = data.GetRequiredItems(mouseTile, overwrite);
+                Player player = Main.LocalPlayer;
+
+                StructureCraftingEngine.CraftingPlan plan = null;
+                if (consume)
+                {
+                    int invHash = StructureCraftingEngine.GetInventoryHash(player);
+                    if (_cachedPlan == null || _lastInvHash != invHash || _lastData != data || _lastAutoCraft != autoCraft || _lastReqStation != reqStation || _lastOverwrite != overwrite || _lastMouseTile != mouseTile)
+                    {
+                        _cachedPlan = StructureCraftingEngine.BuildPlan(data, player, autoCraft, reqStation, mouseTile, overwrite);
+                        _lastInvHash = invHash;
+                        _lastData = data;
+                        _lastAutoCraft = autoCraft;
+                        _lastReqStation = reqStation;
+                        _lastOverwrite = overwrite;
+                        _lastMouseTile = mouseTile;
+                    }
+                    plan = _cachedPlan;
+                }
+                int lineCount = 0;
+                foreach (var kvp in req)
+                {
                 if (lineCount++ >= 6) // 最多展示前 6 种关键物料
                 {
                     sb.AppendLine($"... 及其余 {req.Count - 6} 种材料");
@@ -247,13 +281,43 @@ namespace WandsTool.Content.Structure
                 int itemId = kvp.Key;
                 int count = kvp.Value;
                 int owned = StructurePlacement.CountItemInInventory(player, itemId);
-
                 string itemName = Lang.GetItemNameValue(itemId);
-                string status = (!gameMain.Wand_StructureConsumeMaterials || !ModConfig.IsConsumablesItem() || owned >= count) ? "✔" : "✘";
-                sb.AppendLine($"{itemName}: {count} (拥有: {owned}) {status}");
+
+                if (!consume || owned >= count)
+                {
+                    sb.AppendLine($"{itemName}: {count} (拥有: {owned}) ✔");
+                }
+                else if (plan != null && plan.IsPossible && plan.CraftedCounts.ContainsKey(itemId))
+                {
+                    int craftNum = plan.CraftedCounts[itemId];
+                    sb.AppendLine($"{itemName}: {count} (拥有: {owned} [自动合成: +{craftNum}]) ✔");
+                }
+                else
+                {
+                    sb.AppendLine($"{itemName}: {count} (拥有: {owned}) ✘");
+                }
             }
 
-            Main.instance.MouseText(sb.ToString().TrimEnd());
+            if (plan != null && plan.HasCrafting && plan.IsPossible)
+            {
+                sb.AppendLine($"-------------------");
+                string craftList = string.Join("，", plan.CraftedCounts.Take(3).Select(kv => $"{kv.Value}×{Lang.GetItemNameValue(kv.Key)}"));
+                if (plan.CraftedCounts.Count > 3) craftList += $" 等{plan.CraftedCounts.Count}种";
+                sb.AppendLine($"🛠️ 自动代工制造: {craftList}");
+            }
+            else if (plan != null && !plan.IsPossible && plan.MissingMessages.Count > 0)
+            {
+                sb.AppendLine($"-------------------");
+                string missingList = string.Join("，", plan.MissingMessages.Take(2));
+                sb.AppendLine($"⚠️ 材料不足: {missingList}");
+            }
+
+                Main.instance.MouseText(sb.ToString().TrimEnd());
+            }
+            catch
+            {
+                // 静默容错，避免任何异常冒泡到 XNA Draw 线程
+            }
         }
     }
 }

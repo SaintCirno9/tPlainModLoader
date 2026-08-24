@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Reflection;
 using tContentPatch;
 using tContentPatch.Patch;
 
@@ -12,7 +13,7 @@ namespace OptimizeAndTool.Content.Patch
         public override void AddPatch(IAddPatch addPatch)//添加修补
         {
             harmony = new Harmony(patchId);
-            harmony.PatchAll();//修补全部
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
 
         public override void Unload()

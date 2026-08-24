@@ -214,12 +214,15 @@ namespace OptimizeAndTool.Content.Creative
 
             itemsID.for_ItemsAll((i) =>
             {
-                if (i >= ItemID.Count) return;
                 Item item = new Item();
                 item.SetDefaults(i);
-                if (item.type < 1 || item.type >= ItemID.Count) return;
-
-                //根据搜索文本筛选
+                if (item.type < 1 && i >= ItemID.Count)
+                {
+                    item.type = i;
+                    Terraria.ModLoader.ItemLoader.SetDefaults(item);
+                }
+                if (item.type < 1) return;
+                // 根据搜索文本筛选
                 if (Search_Text != null && Search_Text.Length > 0)
                 {
                     if (!searchItem(item.Name, Search_Text)) return;

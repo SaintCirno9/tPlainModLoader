@@ -1,7 +1,7 @@
+using System;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
-
 namespace OptimizeAndTool.Content.Creative
 {
     public class itemsSort_initialize : PatchMain
@@ -71,16 +71,22 @@ namespace OptimizeAndTool.Content.Creative
             int exception_id = 0;
             int exception_sort = 0;
 
-            for (int i = 1; i < ItemID.Count; ++i)
+            int maxId = Math.Max((int)ItemID.Count, Terraria.ModLoader.ItemLoader.NextItemID);
+
+            for (int i = 1; i < maxId; ++i)
             {
-                if (ItemID.Sets.Deprecated[i]) continue;//������
+                if (i < ItemID.Count && ItemID.Sets.Deprecated[i]) continue;
                 item.SetDefaults(i);
-                if (item.type < 1 || item.type >= ItemID.Count)
+                if (item.type < 1 && i >= ItemID.Count)
+                {
+                    item.type = i;
+                    Terraria.ModLoader.ItemLoader.SetDefaults(item);
+                }
+                if (item.type < 1)
                 {
                     ++exception_id;
                     continue;
                 }
-
                 try
                 {
                     load_id_sort(item);

@@ -115,12 +115,10 @@ namespace WandsTool.Content
         protected wandsPanel_btn1 btn2_wire_yellow = null;
         protected wandsPanel_btn1 btn2_wire_actuator = null;
 
-        // 子菜单 3：几何形状（线、圆圈、实心圆/法爆、矩形）
+        // 子菜单 3：几何形状（直线、空心圆、矩形框选）
         protected wandsPanel_btn1 btn3_line = null;
         protected wandsPanel_btn1 btn3_circular = null;
-        protected wandsPanel_btn1 btn3_circularFilled = null;
         protected wandsPanel_btn1 btn3_rectangle = null;
-
         // 子菜单 4：方向/坡度
         protected wandsPanel_btn1 btn4_Solid = null;
         protected wandsPanel_btn1 btn4_HalfBlock = null;
@@ -168,7 +166,7 @@ namespace WandsTool.Content
             // 主按钮初始化
             btn1 = new wandsPanel_btn1("Images/Item_1", "放置 / 破坏切换");
             btn2 = new wandsPanel_btn1("Images/Item_2", "操作目标: 方块/墙壁/替换/收集/电线");
-            btn3 = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "几何形状: 直线/圆/法爆/矩形");
+            btn3 = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "几何形状: 直线 / 空心圆 / 矩形框选");
             btn4 = new wandsPanel_btn1(Resources.Images_SlopeSolid, "方块坡度与朝向");
             btn5 = new wandsPanel_btn1("Images/Item_3031", "液体魔杖: 吸收/清空/铺设液体");
             btn6 = new wandsPanel_btn1("Images/Item_3611", "建筑蓝图与结构系统: 复制/剪切/删除/粘贴/保存");
@@ -186,9 +184,7 @@ namespace WandsTool.Content
 
             btn3_line = new wandsPanel_btn1(Resources.Images_ShapesLine, "直线");
             btn3_circular = new wandsPanel_btn1(Resources.Images_ShapesCircular, "空心圆/圆周");
-            btn3_circularFilled = new wandsPanel_btn1("Images/Item_3473", "实心圆/星爆法爆区域");
             btn3_rectangle = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "矩形大范围框选");
-
             btn4_Solid = new wandsPanel_btn1(Resources.Images_SlopeSolid, "实体方块");
             btn4_HalfBlock = new wandsPanel_btn1(Resources.Images_SlopeHalfBlock, "半砖");
             btn4_SlopeUpLeft = new wandsPanel_btn1(Resources.Images_SlopeUpLeft, "左上斜坡");
@@ -248,9 +244,7 @@ namespace WandsTool.Content
             // 子按钮 3 事件
             btn3_line.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.line;
             btn3_circular.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.circular;
-            btn3_circularFilled.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.circularFilled;
             btn3_rectangle.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.rectangle;
-
             // 子按钮 4 事件
             btn4_Solid.OnLeftClick += (e, s) => gameMain.Wand_BlockType = WandAction.BlockType.Solid;
             btn4_HalfBlock.OnLeftClick += (e, s) => gameMain.Wand_BlockType = WandAction.BlockType.HalfBlock;
@@ -363,9 +357,7 @@ namespace WandsTool.Content
 
             btns_3.Append(btn3_line);
             btns_3.Append(btn3_circular);
-            btns_3.Append(btn3_circularFilled);
             btns_3.Append(btn3_rectangle);
-
             btns_4.Append(btn4_Solid);
             btns_4.Append(btn4_HalfBlock);
             btns_4.Append(btn4_SlopeUpLeft);
@@ -434,13 +426,12 @@ namespace WandsTool.Content
 
             // 主按钮图标与状态更新
             btn1.SetIco(gameMain.Wand_isPlace ? "Images/Item_129" : "Images/Item_1");
-            btn1.SetTooltip($"当前模式: {(gameMain.Wand_isPlace ? "放置" : "破坏/星爆")} (点击切换)");
+            btn1.SetTooltip($"当前模式: {(gameMain.Wand_isPlace ? "放置" : "破坏")} (点击切换)");
 
             switch (gameMain.Wand_Shapes)
             {
                 case Wands.Shapes.line: btn3.SetIco(Resources.Images_ShapesLine); break;
                 case Wands.Shapes.circular: btn3.SetIco(Resources.Images_ShapesCircular); break;
-                case Wands.Shapes.circularFilled: btn3.SetIco("Images/Item_3473"); break;
                 case Wands.Shapes.rectangle: btn3.SetIco(Resources.Images_ShapesRectangle); break;
                 default: break;
             }
@@ -482,9 +473,7 @@ namespace WandsTool.Content
 
             btn3_line.isBack = gameMain.Wand_Shapes == Wands.Shapes.line;
             btn3_circular.isBack = gameMain.Wand_Shapes == Wands.Shapes.circular;
-            btn3_circularFilled.isBack = gameMain.Wand_Shapes == Wands.Shapes.circularFilled;
             btn3_rectangle.isBack = gameMain.Wand_Shapes == Wands.Shapes.rectangle;
-
             btn4_Solid.isBack = gameMain.Wand_BlockType == WandAction.BlockType.Solid;
             btn4_HalfBlock.isBack = gameMain.Wand_BlockType == WandAction.BlockType.HalfBlock;
             btn4_SlopeUpLeft.isBack = gameMain.Wand_BlockType == WandAction.BlockType.SlopeUpLeft;
@@ -541,11 +530,9 @@ namespace WandsTool.Content
             layoutCircle.Invoke(9, 7, btn2_wire_yellow, 96f);
             layoutCircle.Invoke(9, 8, btn2_wire_actuator, 96f);
 
-            layoutCircle.Invoke(4, 0, btn3_line, 96f);
-            layoutCircle.Invoke(4, 1, btn3_circular, 96f);
-            layoutCircle.Invoke(4, 2, btn3_circularFilled, 96f);
-            layoutCircle.Invoke(4, 3, btn3_rectangle, 96f);
-
+            layoutCircle.Invoke(3, 0, btn3_line, 96f);
+            layoutCircle.Invoke(3, 1, btn3_circular, 96f);
+            layoutCircle.Invoke(3, 2, btn3_rectangle, 96f);
             layoutCircle.Invoke(6, 0, btn4_Solid, 96f);
             layoutCircle.Invoke(6, 1, btn4_HalfBlock, 96f);
             layoutCircle.Invoke(6, 2, btn4_SlopeUpLeft, 96f);

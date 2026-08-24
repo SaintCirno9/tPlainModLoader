@@ -80,6 +80,8 @@ namespace WandsTool.Content
         public static StructureMode LastActiveStructureMode = StructureMode.Copy; // 上一个激活的蓝图工具模式（取消放置时精准回退，默认 Copy）
         public static bool Wand_StructureOverwrite = true; // 蓝图放置时是否覆盖已有物块
         public static bool Wand_StructureConsumeMaterials = true; // 蓝图放置是否消耗材料（默认开启）
+        public static bool Wand_StructureAutoCraft = true; // 缺材料时是否自动消耗背包原材料制造（默认开启）
+        public static bool Wand_StructureAutoCraftRequireStation = false; // 自动制造时是否严格要求附近有对应工作台（默认关闭，随身便携加工）
         public static Microsoft.Xna.Framework.Rectangle? CutSourceRect = null; // 剪切平移的原建筑区域（确认放置时才执行原子转移，取消则不修改世界）
         public static Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode Wand_ToolMode = 0;
         public static Wands.Shapes Wand_Shapes = Wands.Shapes.rectangle; // 几何形状（默认为矩形）

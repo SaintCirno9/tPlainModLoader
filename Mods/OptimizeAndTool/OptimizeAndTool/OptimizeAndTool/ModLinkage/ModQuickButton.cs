@@ -23,7 +23,7 @@ namespace OptimizeAndTool.ModLinkage
         public static bool EnableBigBagBtn = true;
         public static bool EnableAccessoryBoxBtn = true;
         public static bool EnableCreativeInventoryBtn = true;
-
+        public static bool EnableTownNPCHomeBtn = true;
         public override void Loaded()
         {
             if (Main.dedServ) return;
@@ -95,6 +95,24 @@ namespace OptimizeAndTool.ModLinkage
                     CreativeInventory.SwitchOpenOrClose();
                 };
                 mi.Invoke(null, new object[] { "OptimizeAndTool.CreativeInventory.Switch", ui_creative });
+            }
+
+            // 4. 城镇 NPC 全员回家按钮
+            if (EnableTownNPCHomeBtn)
+            {
+                UIImage ui_npcHome = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_2350", ReLogic.Content.AssetRequestMode.ImmediateLoad));
+                ui_npcHome.Width.Pixels = 32;
+                ui_npcHome.Height.Pixels = 32;
+                ui_npcHome.ScaleToFit = true;
+                ui_npcHome.OnUpdate += _ =>
+                {
+                    if (ui_npcHome.IsMouseHovering) Main.instance.MouseText("城镇 NPC 全员回家（召回回房）");
+                };
+                ui_npcHome.OnLeftClick += (e, s) =>
+                {
+                    OptimizeAndTool.Content.QoL.TownNPCOptimization.TeleportAllTownNPCsHome();
+                };
+                mi.Invoke(null, new object[] { "OptimizeAndTool.TownNPC.Home", ui_npcHome });
             }
         }
     }

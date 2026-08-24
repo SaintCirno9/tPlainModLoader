@@ -88,46 +88,6 @@ namespace WandsTool.Content
 
             return points;
         }
-
-        public static List<Point> GetShapes_CircularFilled(Vector2 startWord, Vector2 endWord)
-        {
-            if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
-            if (startWord == endWord) return new List<Point>() { GetWordPoint(startWord) };
-
-            List<Point> points = new List<Point>();
-            Point center = GetWordPoint(startWord);
-
-            float radiusX = Math.Abs(startWord.X - endWord.X) / 16f;
-            float radiusY = Math.Abs(startWord.Y - endWord.Y) / 16f;
-
-            int rx = (int)Math.Ceiling(radiusX);
-            int ry = (int)Math.Ceiling(radiusY);
-
-            if (rx <= 0 && ry <= 0)
-            {
-                points.Add(center);
-                return points;
-            }
-
-            float rxF = Math.Max(radiusX, 0.5f);
-            float ryF = Math.Max(radiusY, 0.5f);
-
-            for (int y = -ry; y <= ry; y++)
-            {
-                for (int x = -rx; x <= rx; x++)
-                {
-                    float normX = x / rxF;
-                    float normY = y / ryF;
-                    if (normX * normX + normY * normY <= 1.05f)
-                    {
-                        points.Add(new Point(center.X + x, center.Y + y));
-                    }
-                }
-            }
-
-            return points;
-        }
-
         public static List<Point> GetShapes_Rectangle(Vector2 startWord, Vector2 endWord)
         {
             if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
@@ -210,11 +170,6 @@ namespace WandsTool.Content
         }
 
         public static void Draw_circular(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
-        {
-            DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
-        }
-
-        public static void Draw_circularFilled(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
         {
             DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
         }

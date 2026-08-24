@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
@@ -210,9 +211,42 @@ namespace WandsTool.Content.Structure
         private static readonly Dictionary<int, int> WallItemCache = new Dictionary<int, int>();
 
         /// <summary>
-        /// 统计当前蓝图所需的所有物品清单及总数需求
+        /// 检查当前世界图格与蓝图切片是否已具有相同的内容（相同物块类型或相同家具样式）
         /// </summary>
-        public Dictionary<int, int> GetRequiredItems()
+        public static bool IsTileIdentical(Tile worldTile, TileSnapshot snap)
+        {
+            if (worldTile == null) return false;
+            if (!snap.HasTile)
+            {
+                return !worldTile.active();
+            }
+
+            if (!worldTile.active()) return false;
+            if (worldTile.type != snap.TileType) return false;
+
+            // 如果是家具或带 Style 的物块（如椅子、床、桌子、箱子、门、火把等）
+            if (Main.tileFrameImportant[snap.TileType])
+            {
+                // 平台
+                if (snap.TileType == TileID.Platforms)
+                {
+                    return (worldTile.frameY / 18) == (snap.TileFrameY / 18);
+                }
+
+                // 家具：比对 Style
+                int worldStyle = GetTileStyle(worldTile.type, worldTile.frameX, worldTile.frameY);
+                int snapStyle = GetTileStyle(snap.TileType, snap.TileFrameX, snap.TileFrameY);
+                return worldStyle == snapStyle;
+            }
+
+            // 普通实体方块（泥土、石头、木方块、砖块等）：只要 type 一致即可
+            return true;
+        }
+
+        /// <summary>
+        /// 统计当前蓝图所需的所有物品清单及总数需求（支持差量智能比对：世界已有相同物块/墙壁/家具/电线直接免除，零重复扣料！）
+        /// </summary>
+        public Dictionary<int, int> GetRequiredItems(Point? originWorldTile = null, bool overwrite = true)
         {
             Dictionary<int, int> requirements = new Dictionary<int, int>();
 
@@ -223,58 +257,171 @@ namespace WandsTool.Content.Structure
                 else requirements[itemId] = count;
             };
 
+            bool[,] tileCounted = new bool[Width, Height];
+            int startX = originWorldTile.HasValue ? (originWorldTile.Value.X - OriginX) : 0;
+            int startY = originWorldTile.HasValue ? (originWorldTile.Value.Y - OriginY) : 0;
+
             for (int x = 0; x < Width; x++)
             {
                 for (int y = 0; y < Height; y++)
                 {
                     TileSnapshot snap = Tiles[x, y];
+                    int wx = startX + x;
+                    int wy = startY + y;
+                    bool inWorldBounds = originWorldTile.HasValue && wx >= 0 && wx < Main.maxTilesX && wy >= 0 && wy < Main.maxTilesY;
+                    Tile worldTile = inWorldBounds ? Main.tile[wx, wy] : null;
 
-                    // 1. 统计背景墙
+                    // 1. 统计背景墙（若世界该处已有完全相同的墙壁，零消耗免除）
                     if (snap.HasWall)
                     {
-                        int wallItem = GetWallItemId(snap.WallType);
-                        if (wallItem > 0) addItem(wallItem, 1);
+                        bool wallAlreadySame = worldTile != null && worldTile.wall == snap.WallType;
+                        if (!wallAlreadySame)
+                        {
+                            if (overwrite || worldTile == null || worldTile.wall == 0)
+                            {
+                                int wallItem = GetWallItemId(snap.WallType);
+                                if (wallItem > 0) addItem(wallItem, 1);
+                            }
+                        }
                     }
 
-                    // 2. 统计方块与家具（多格物块仅在主原点处统计一次）
-                    if (snap.HasTile)
+                    // 2. 统计方块与家具（差量比对：若世界已有完全相同的物块/家具，直接免除材料消耗！）
+                    if (snap.HasTile && !tileCounted[x, y])
                     {
-                        TileObjectData data = TileObjectData.GetTileData(snap.TileType, 0);
-                        if (data != null && (data.Width > 1 || data.Height > 1))
+                        bool isSame = inWorldBounds && IsTileIdentical(worldTile, snap);
+                        if (isSame)
                         {
-                            // 判断是否为多格物块的锚点/左上角
-                            int subX = snap.TileFrameX % data.CoordinateFullWidth;
-                            int subY = snap.TileFrameY % data.CoordinateFullHeight;
-                            if (subX == 0 && subY == 0)
+                            // 世界上已有相同物块/家具，整块标记为已处理，无需任何材料！
+                            TileObjectData data = TileObjectData.GetTileData(snap.TileType, 0);
+                            if (data != null && (data.Width > 1 || data.Height > 1))
                             {
-                                int tileItem = GetTileItemId(snap.TileType, snap.TileFrameX, snap.TileFrameY);
-                                if (tileItem > 0) addItem(tileItem, 1);
+                                int objW = Math.Max(1, data.Width);
+                                int objH = Math.Max(1, data.Height);
+                                for (int dx = 0; dx < objW && x + dx < Width; dx++)
+                                {
+                                    for (int dy = 0; dy < objH && y + dy < Height; dy++)
+                                    {
+                                        tileCounted[x + dx, y + dy] = true;
+                                    }
+                                }
                             }
+                            else
+                            {
+                                tileCounted[x, y] = true;
+                            }
+                            continue;
+                        }
+
+                        // 非覆盖模式下若世界该处已被其他物块占据，跳过
+                        if (!overwrite && worldTile != null && worldTile.active())
+                        {
+                            tileCounted[x, y] = true;
+                            continue;
+                        }
+
+                        TileObjectData data2 = TileObjectData.GetTileData(snap.TileType, 0);
+                        if (data2 != null && (data2.Width > 1 || data2.Height > 1))
+                        {
+                            int objW = Math.Max(1, data2.Width);
+                            int objH = Math.Max(1, data2.Height);
+                            for (int dx = 0; dx < objW && x + dx < Width; dx++)
+                            {
+                                for (int dy = 0; dy < objH && y + dy < Height; dy++)
+                                {
+                                    tileCounted[x + dx, y + dy] = true;
+                                }
+                            }
+
+                            int tileItem = GetTileItemId(snap.TileType, snap.TileFrameX, snap.TileFrameY);
+                            if (tileItem > 0) addItem(tileItem, 1);
                         }
                         else
                         {
+                            tileCounted[x, y] = true;
                             int tileItem = GetTileItemId(snap.TileType, snap.TileFrameX, snap.TileFrameY);
                             if (tileItem > 0) addItem(tileItem, 1);
                         }
                     }
 
-                    // 3. 统计电线
-                    int wireCount = (snap.RedWire ? 1 : 0) + (snap.GreenWire ? 1 : 0) + (snap.BlueWire ? 1 : 0) + (snap.YellowWire ? 1 : 0);
-                    if (wireCount > 0) addItem(ItemID.Wire, wireCount);
+                    // 3. 统计电线（已有则免除）
+                    if (snap.RedWire && (worldTile == null || !worldTile.wire())) addItem(ItemID.Wire, 1);
+                    if (snap.GreenWire && (worldTile == null || !worldTile.wire3())) addItem(ItemID.Wire, 1);
+                    if (snap.BlueWire && (worldTile == null || !worldTile.wire2())) addItem(ItemID.Wire, 1);
+                    if (snap.YellowWire && (worldTile == null || !worldTile.wire4())) addItem(ItemID.Wire, 1);
 
-                    // 4. 统计促动器
-                    if (snap.Actuator) addItem(ItemID.Actuator, 1);
+                    // 4. 统计促动器（已有则免除）
+                    if (snap.Actuator && (worldTile == null || !worldTile.actuator())) addItem(ItemID.Actuator, 1);
                 }
             }
 
             return requirements;
         }
 
+        /// <summary>
+        /// 根据图格类型与切片帧坐标，精确解析家具/物块的样式（Style）
+        /// </summary>
+        public static int GetTileStyle(int tileType, int frameX, int frameY)
+        {
+            if (tileType == TileID.Platforms)
+            {
+                return frameY / 18;
+            }
+
+            TileObjectData data = TileObjectData.GetTileData(tileType, 0);
+            if (data == null) return 0;
+
+            int fullWidth = data.CoordinateFullWidth > 0 ? data.CoordinateFullWidth : 18;
+            int fullHeight = data.CoordinateFullHeight > 0 ? data.CoordinateFullHeight : 18;
+
+            int col = frameX / fullWidth;
+            int row = frameY / fullHeight;
+
+            int wrapLimit = data.StyleWrapLimit > 0 ? data.StyleWrapLimit : 1;
+            int rawStyle = (!data.StyleHorizontal) ? (col * wrapLimit + row) : (row * wrapLimit + col);
+            int multiplier = data.StyleMultiplier > 0 ? data.StyleMultiplier : 1;
+
+            return rawStyle / multiplier;
+        }
+
+        /// <summary>
+        /// 根据图格类型与切片帧坐标，精确解析对应的放置物品 ID（支持不同木质/金属风格的家具精准匹配）
+        /// </summary>
         public static int GetTileItemId(int tileType, int frameX = 0, int frameY = 0)
         {
-            int key = (tileType << 16) | ((frameX / 18) & 0xFF);
+            int style = GetTileStyle(tileType, frameX, frameY);
+            int key = (tileType << 16) | (style & 0xFFFF);
             if (TileItemCache.TryGetValue(key, out int cached)) return cached;
 
+            // 1. 优先精确匹配：createTile == tileType 且 placeStyle == style
+            if (ContentSamples.ItemsByType != null)
+            {
+                foreach (var kvp in ContentSamples.ItemsByType)
+                {
+                    Item it = kvp.Value;
+                    if (it != null && it.createTile == tileType && it.placeStyle == style)
+                    {
+                        TileItemCache[key] = it.type;
+                        return it.type;
+                    }
+                }
+            }
+
+            for (int i = 1; i < ItemID.Count; i++)
+            {
+                Item item = ContentSamples.ItemsByType != null && ContentSamples.ItemsByType.TryGetValue(i, out var it) ? it : null;
+                if (item == null)
+                {
+                    item = new Item();
+                    item.SetDefaults(i);
+                }
+                if (item.createTile == tileType && item.placeStyle == style)
+                {
+                    TileItemCache[key] = item.type;
+                    return item.type;
+                }
+            }
+
+            // 2. 降级宽容匹配：匹配任意 createTile == tileType 的物品
             if (ContentSamples.ItemsByType != null)
             {
                 foreach (var kvp in ContentSamples.ItemsByType)

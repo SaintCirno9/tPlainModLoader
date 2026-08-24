@@ -33,6 +33,8 @@ namespace OptimizeAndTool.Content.BigBag
         /// <summary>容量变化后通知窗口重建格子</summary>
         public static event Action OnCapacityChanged;
 
+        /// <summary>外部通知大背包数据发生变化并刷新 UI</summary>
+        public static void NotifySlotsChanged() => OnCapacityChanged?.Invoke();
         public static List<CommandObject> GetCO()
         {
             return new List<CommandObject>
@@ -426,6 +428,80 @@ namespace OptimizeAndTool.Content.BigBag
             }
 
             return transferred;
+        }
+        /// <summary>
+        /// 在大背包中查找指定物品类型的首个有效槽位索引，未找到返回 -1
+        /// </summary>
+        public static int FindItem(int type)
+        {
+            if (Slots == null || type <= 0) return -1;
+            for (int i = 0; i < Slots.Length; i++)
+            {
+                Item it = Slots[i];
+                if (it != null && !it.IsAir && it.type == type && it.stack > 0)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 将物品存入大背包（优先存入指定首选槽位，次选同类堆叠，再选空格）
+        /// </summary>
+        public static bool DepositItem(Item item, int preferredSlot = -1)
+        {
+            if (item == null || item.IsAir || item.stack <= 0) return true;
+            Item[] slots = Slots;
+            if (slots == null) return false;
+
+            // 1. 若首选槽位为空，直接放入
+            if (preferredSlot >= 0 && preferredSlot < slots.Length)
+            {
+                if (slots[preferredSlot] == null || slots[preferredSlot].IsAir)
+                {
+                    slots[preferredSlot] = item.Clone();
+                    item.TurnToAir();
+                    BigBagStorage.SaveNow();
+                    NotifySlotsChanged();
+                    return true;
+                }
+            }
+
+            // 2. 尝试向已有同类堆叠
+            for (int i = 0; i < slots.Length; i++)
+            {
+                Item target = slots[i];
+                if (target != null && !target.IsAir && target.type == item.type && target.stack < target.maxStack && Item.CanStack(target, item))
+                {
+                    int take = Math.Min(item.stack, target.maxStack - target.stack);
+                    target.stack += take;
+                    item.stack -= take;
+                    if (item.stack <= 0)
+                    {
+                        item.TurnToAir();
+                        BigBagStorage.SaveNow();
+                        NotifySlotsChanged();
+                        return true;
+                    }
+                }
+            }
+
+            // 3. 放入空格
+            for (int i = 0; i < slots.Length; i++)
+            {
+                Item target = slots[i];
+                if (target == null || target.IsAir)
+                {
+                    slots[i] = item.Clone();
+                    item.TurnToAir();
+                    BigBagStorage.SaveNow();
+                    NotifySlotsChanged();
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
