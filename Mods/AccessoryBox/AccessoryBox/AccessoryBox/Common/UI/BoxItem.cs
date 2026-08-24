@@ -6,56 +6,144 @@ using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
+using Terraria.UI.Chat;
 
 namespace AccessoryBox.Common.UI
 {
+    /// <summary>
+    /// 饰品箱物品格：标准容器交互
+    /// 左键拿放换/堆叠，Shift+左键快速退回背包，右键半取/单放，完整悬停 Tooltip 与堆叠数字渲染
+    /// 作者: SaintCirno9
+    /// </summary>
     internal class BoxItem : UIPanel
     {
-        public Action<Item, Item> OnSetItem = null;
-        public Action<Item> OnDel = null;
-        public Item item { get; protected set; } = null;
+        private readonly Item[] inv;
+        private readonly int slot;
 
-        public BoxItem(Item item)
+        public BoxItem(Item[] inv, int slot)
         {
-            this.item = item;
+            this.inv = inv;
+            this.slot = slot;
 
-            Width.Set(30, 0);
-            Height.Set(30, 0);
-            SetPadding(6);
+            Width.Set(44, 0);
+            Height.Set(44, 0);
+            SetPadding(4);
             BackgroundColor = BorderColor = new Color(43, 60, 120);
         }
 
         public override void LeftClick(UIMouseEvent evt)
         {
-            SoundEngine.PlaySound(SoundID.Grab);
+            Item item = inv[slot];
+            Item mouse = Main.mouseItem;
 
-            OnSetItem?.Invoke(item, Main.LocalPlayer.HeldItem);
+            // Shift+左键: 快速转移回背包，放不下的留在格内
+            if (ItemSlot.ShiftInUse)
+            {
+                if (item == null || item.IsAir) return;
+
+                SoundEngine.PlaySound(SoundID.Grab);
+                Item rest = Main.LocalPlayer.GetItem(item, GetItemSettings.QuickTransferFromSlot);
+                inv[slot] = rest ?? new Item();
+                AccessoryBoxStorage.SaveNow();
+                return;
+            }
+
+            if (mouse.IsAir)
+            {
+                if (item == null || item.IsAir) return;
+
+                // 拿起整堆
+                Main.mouseItem = item;
+                inv[slot] = new Item();
+            }
+            else if (item == null || item.IsAir)
+            {
+                // 放下鼠标物品
+                inv[slot] = mouse;
+                Main.mouseItem = new Item();
+            }
+            else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
+            {
+                // 同类堆叠合并
+                int move = Math.Min(item.maxStack - item.stack, mouse.stack);
+                item.stack += move;
+                mouse.stack -= move;
+                if (mouse.stack <= 0) Main.mouseItem = new Item();
+            }
+            else
+            {
+                // 交换
+                Main.mouseItem = item;
+                inv[slot] = mouse;
+            }
+
+            SoundEngine.PlaySound(SoundID.Grab);
+            AccessoryBoxStorage.SaveNow();
         }
 
         public override void RightClick(UIMouseEvent evt)
         {
-            SoundEngine.PlaySound(SoundID.MenuTick);
+            Item item = inv[slot];
+            Item mouse = Main.mouseItem;
 
-            OnDel?.Invoke(item);
-        }
+            if (mouse.IsAir)
+            {
+                if (item == null || item.IsAir) return;
 
-        public void SetItem(Item item)
-        {
-            this.item = item;
+                // 取一半（向上取整）
+                int take = (item.stack + 1) / 2;
+                Item half = item.Clone();
+                half.stack = take;
+                item.stack -= take;
+                if (item.stack <= 0) inv[slot] = new Item();
+                Main.mouseItem = half;
+            }
+            else
+            {
+                // 放一个（空格放置或同类追加）
+                if (item == null || item.IsAir)
+                {
+                    Item one = mouse.Clone();
+                    one.stack = 1;
+                    inv[slot] = one;
+                    mouse.stack--;
+                }
+                else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
+                {
+                    item.stack++;
+                    mouse.stack--;
+                }
+                else return;
+
+                if (mouse.stack <= 0) Main.mouseItem = new Item();
+            }
+
+            SoundEngine.PlaySound(SoundID.Grab);
+            AccessoryBoxStorage.SaveNow();
         }
 
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+
+            if (!IsMouseHovering) return;
+
+            Main.LocalPlayer.mouseInterface = true;
+            Item item = inv[slot];
+            if (item != null && item.type > ItemID.None)
+            {
+                ItemSlot.MouseHover(new Item[] { item });
+            }
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             base.DrawSelf(spriteBatch);
 
-            if (item == null) return;
+            Item item = inv[slot];
+            if (item == null || item.IsAir) return;
 
-            if (IsMouseHovering && item != null && item.type > ItemID.None)
+            if (IsMouseHovering && item.type > ItemID.None)
             {
                 ItemSlot.MouseHover(new Item[] { item });
             }
@@ -63,8 +151,16 @@ namespace AccessoryBox.Common.UI
             CalculatedStyle rect = GetInnerDimensions();
             Vector2 center = new Vector2(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
 
-            ItemSlot.DrawItemIcon(item, ItemSlot.Context.CreativeInfinite, spriteBatch,
-                center, 1, rect.Width, Color.White);
+            ItemSlot.DrawItemIcon(item, ItemSlot.Context.CreativeInfinite, spriteBatch, center, 1f, rect.Width, Color.White);
+
+            if (item.stack > 1)
+            {
+                ChatManager.DrawColorCodedStringWithShadow(spriteBatch,
+                    Terraria.GameContent.FontAssets.ItemStack.Value, item.stack.ToString(),
+                    new Vector2(rect.X + 4f, rect.Y + rect.Height - 2f),
+                    Color.White, 0f, new Vector2(0f, Terraria.GameContent.FontAssets.ItemStack.Value.LineSpacing),
+                    new Vector2(0.8f), -1f, 0.8f);
+            }
         }
     }
 }

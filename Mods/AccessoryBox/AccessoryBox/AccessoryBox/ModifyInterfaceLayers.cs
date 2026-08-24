@@ -1,66 +1,109 @@
-﻿using AccessoryBox.Common;
+using AccessoryBox.Common;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
+using Terraria.Audio;
+using Terraria.ID;
 using Terraria.UI;
 
 namespace AccessoryBox
 {
-    internal class ModifyInterfaceLayers : PatchMain
+    public class ModifyInterfaceLayers : PatchMain
     {
-        public static ModifyInterfaceLayers Instance { get; protected set; }
-        private UIState state = null;
-        private UserInterface ui = null;
-        private BoxWindow window = null;
-        private static IBoxConsole console = null;
+        public static ModifyInterfaceLayers Instance { get; private set; }
+
+        public static UIState ui_game_state { get; private set; } = null;
+        private static UserInterface ui_game = null;
+        private static BoxWindow boxWindow = null;
+
+        static ModifyInterfaceLayers()
+        {
+            ui_game = new UserInterface();
+            ui_game_state = new UIState();
+            ui_game.SetState(ui_game_state);
+        }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
             Instance = this;
 
-            int index = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Inventory");
-            if (index == -1) return;
-
-            state = new UIState();
-            ui = new UserInterface();
-
-            //在物品栏前插入
-            gameInterfaceLayers.Insert(index, new LegacyGameInterfaceLayer(
-                "StaticTile.AccessoryBox: Inventory Prefix",
-                () =>
-                {
-                    ui.Draw(Main.spriteBatch, Main.gameTimeCache);//绘制ui
-                    return true;
-                },
-                InterfaceScaleType.UI));
-
-            window = new BoxWindow(console, "饰品箱", 350, 200);
+            int invIndex = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Inventory");
+            if (invIndex != -1)
+            {
+                gameInterfaceLayers.Insert(invIndex, new LegacyGameInterfaceLayer(
+                    "StaticTile.AccessoryBox: Box Window",
+                    () =>
+                    {
+                        try
+                        {
+                            ui_game?.Draw(Main.spriteBatch, Main.gameTimeCache);
+                        }
+                        catch { }
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
+            }
         }
 
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
-            if (ui == null) return;
-
-            if (Main.gameMenu)//在游戏外
+            if (Main.gameMenu)
             {
-                ui.SetState(null);//禁用ui
+                if (boxWindow?.IsOpen == true) boxWindow.Close();
                 return;
             }
 
-            ui.SetState(state);//启用ui
-            ui.Update(gameTime);//更新ui
+            // 饰品箱开启时，若物品栏关闭（如按 ESC、E 键等），饰品箱同步一并关闭
+            if (boxWindow?.IsOpen == true && !Main.playerInventory)
+            {
+                boxWindow.Close();
+            }
+
+            ui_game?.Update(gameTime);
+
+            // 通过 tpml 统一 ModKeybind 系统检测快捷键
+            if (Common.AccessoryBox.EnableMod && AccessoryBoxKeybind.ToggleKeybind?.JustPressed == true)
+            {
+                SwitchBox(fromKeybind: true);
+            }
         }
 
-        public void SwitchWindow()
+        /// <summary>
+        /// 饰品箱窗口是否打开
+        /// </summary>
+        public static bool BoxIsOpen => boxWindow?.IsOpen == true;
+
+        /// <summary>
+        /// 鼠标是否悬停在饰品箱窗口内
+        /// </summary>
+        public static bool BoxIsHovering => boxWindow?.IsOpen == true && boxWindow.ContainsPoint(Main.MouseScreen);
+
+        /// <summary>
+        /// 开关饰品箱窗口
+        /// </summary>
+        /// <param name="fromKeybind">是否由快捷键触发（快捷键关闭时同步关闭物品栏）</param>
+        public static void SwitchBox(bool fromKeybind = false)
         {
-            if (window.IsOpen) window.Close();//从state删除
-            else window.Open(state);//添加到state
+            if (Common.AccessoryBox.EnableMod == false) return;
+
+            if (boxWindow == null) boxWindow = new BoxWindow();
+
+            if (boxWindow.IsOpen)
+            {
+                boxWindow.Close();
+                if (fromKeybind && Main.playerInventory)
+                {
+                    Main.playerInventory = false;
+                    SoundEngine.PlaySound(SoundID.MenuClose);
+                }
+            }
+            else
+            {
+                boxWindow.Open(ui_game_state);
+            }
         }
 
-        public static void SetConsole(IBoxConsole console)
-        {
-            ModifyInterfaceLayers.console = console;
-        }
+        public void SwitchWindow() => SwitchBox(false);
     }
 }

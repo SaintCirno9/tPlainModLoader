@@ -1,5 +1,6 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using tContentPatch;
@@ -7,6 +8,7 @@ using tContentPatch.ModLoad;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ID;
 
 namespace AccessoryBox.ModLinkage
 {
@@ -16,7 +18,7 @@ namespace AccessoryBox.ModLinkage
         {
             if (Main.dedServ) return;
 
-            System.Collections.Generic.List<ModObject> mos = ContentPatch.GetModObjects();
+            List<ModObject> mos = ContentPatch.GetModObjects();
             if (mos == null) return;
 
             ModObject mo = mos.FirstOrDefault(i => i.assembly?.GetName().Name == "QuickButton");
@@ -38,8 +40,8 @@ namespace AccessoryBox.ModLinkage
             };
             ui_img.OnLeftClick += (e, s) =>
             {
-                SoundEngine.PlaySound(12);
-                ModifyInterfaceLayers.Instance?.SwitchWindow();
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                ModifyInterfaceLayers.SwitchBox();
             };
 
             mi.Invoke(null, new object[] { "AccessoryBox.SwitchOpenOrClose", ui_img });
