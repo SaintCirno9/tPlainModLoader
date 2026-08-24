@@ -22,8 +22,32 @@ namespace OptimizeAndTool.Content.BigBag
         private UIList uiList = null;
         private UIScrollbar scrollbar = null;
 
+        private float lastLeft = -1;
+        private float lastTop = -1;
+        private float lastWidth = -1;
+        private float lastHeight = -1;
+        private bool wasDraggingOrResizing = false;
+
         public BigBagWindow() : base("巨大背包", 460, 360)
         {
+            // 恢复持久化保存的窗口大小与位置
+            if (SettingUI_player.BigBagWidth.HasValue && SettingUI_player.BigBagHeight.HasValue)
+            {
+                Width.Pixels = Math.Max(MinWidth.Pixels, SettingUI_player.BigBagWidth.Value);
+                Height.Pixels = Math.Max(MinHeight.Pixels, SettingUI_player.BigBagHeight.Value);
+            }
+
+            if (SettingUI_player.BigBagPosX.HasValue && SettingUI_player.BigBagPosY.HasValue)
+            {
+                Left.Pixels = SettingUI_player.BigBagPosX.Value;
+                Top.Pixels = SettingUI_player.BigBagPosY.Value;
+            }
+
+            lastLeft = Left.Pixels;
+            lastTop = Top.Pixels;
+            lastWidth = Width.Pixels;
+            lastHeight = Height.Pixels;
+
             UIElement btns = BuildBtns();
             Child.Append(btns);
 
@@ -54,9 +78,41 @@ namespace OptimizeAndTool.Content.BigBag
             uiList.Add(wp);
 
             BigBag.OnCapacityChanged += Rebuild;
-            OnClose += BigBagStorage.SaveNow;
+            OnClose += () =>
+            {
+                SaveWindowLayout();
+                BigBagStorage.SaveNow();
+            };
+            OnOpen += () =>
+            {
+                if (!Main.playerInventory)
+                {
+                    Main.playerInventory = true;
+                    SoundEngine.PlaySound(SoundID.MenuOpen);
+                }
+            };
 
             Rebuild();
+        }
+
+        private void SaveWindowLayout()
+        {
+            if (Math.Abs(Left.Pixels - lastLeft) > 0.5f ||
+                Math.Abs(Top.Pixels - lastTop) > 0.5f ||
+                Math.Abs(Width.Pixels - lastWidth) > 0.5f ||
+                Math.Abs(Height.Pixels - lastHeight) > 0.5f)
+            {
+                lastLeft = Left.Pixels;
+                lastTop = Top.Pixels;
+                lastWidth = Width.Pixels;
+                lastHeight = Height.Pixels;
+
+                SettingUI_player.BigBagPosX = Left.Pixels;
+                SettingUI_player.BigBagPosY = Top.Pixels;
+                SettingUI_player.BigBagWidth = Width.Pixels;
+                SettingUI_player.BigBagHeight = Height.Pixels;
+                SettingUI_player.SaveSetting();
+            }
         }
 
         private UIElement BuildBtns()
@@ -137,6 +193,14 @@ namespace OptimizeAndTool.Content.BigBag
             base.Update(gameTime);
 
             wp.UpdateContainer_Height();
+
+            // 监听拖动或调整大小结束，即时落盘保存最新布局
+            bool isMouseLeft = Main.mouseLeft;
+            if (wasDraggingOrResizing && !isMouseLeft)
+            {
+                SaveWindowLayout();
+            }
+            wasDraggingOrResizing = isMouseLeft && ContainsPoint(Main.MouseScreen);
 
             // 鼠标悬停在窗口范围内时，拦截快捷栏滚轮并驱动背包滚动条
             if (ContainsPoint(Main.MouseScreen))

@@ -125,10 +125,14 @@ namespace OptimizeAndTool.Content.BigBag
         {
             base.Update(gameTime);
 
-            if (IsMouseHovering == false) return;
+            if (!IsMouseHovering) return;
 
             Main.LocalPlayer.mouseInterface = true;
-            if (inv[slot].type > ItemID.None) ItemSlot.MouseHover(new Item[] { inv[slot] });
+            Item item = inv[slot];
+            if (item != null && item.type > ItemID.None)
+            {
+                ItemSlot.MouseHover(new Item[] { item });
+            }
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
@@ -141,6 +145,10 @@ namespace OptimizeAndTool.Content.BigBag
             if (IsMouseHovering && item.type > ItemID.None)
             {
                 ItemSlot.MouseHover(new Item[] { item });
+                if (ItemSlot.ShiftInUse && !item.favorited)
+                {
+                    Main.cursorOverride = 8;
+                }
             }
 
             CalculatedStyle rect = GetInnerDimensions();

@@ -1,11 +1,13 @@
 using CommandHelp;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
+using BigBagMod = OptimizeAndTool.Content.BigBag.BigBag;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.UI;
 
@@ -15,6 +17,7 @@ namespace OptimizeAndTool.Content.QoL
     /// 无尽药水续杯、随身增益站与怪物旗帜补丁
     /// 当背包或便携收纳中药水堆叠达到阈值（默认 30）时常驻提供对应增益；
     /// 携带篝火、心灯、巴斯特雕像、磨刀石、水晶球等增益站或怪物旗帜时常驻赋予增益；
+    /// 通过挂载 SceneMetrics.Scan 从根本上解决旗帜与场景光环 Buff 闪烁问题；
     /// 支持在绘制 Buff 栏时隐藏无尽 Buff 图标。
     /// 作者: SaintCirno9
     /// </summary>
@@ -59,8 +62,143 @@ namespace OptimizeAndTool.Content.QoL
             };
         }
 
+        // 静态映射表：ItemId -> BannerId（O(1) 极速查找，100% 精准对齐原版 BannerSystem）
+        private static readonly Dictionary<int, int> itemToBanner = new Dictionary<int, int>(300);
+
+        static InfinitePotionAndBuff()
+        {
+            InitBannerMapping();
+        }
+
+        private static void InitBannerMapping()
+        {
+            itemToBanner.Clear();
+            for (int bannerId = 1; bannerId < BannerSystem.MaxBannerTypes; bannerId++)
+            {
+                int itemId = BannerSystem.BannerToItem(bannerId);
+                if (itemId > 0 && ItemID.Sets.BannerStrength.IndexInRange(itemId) && ItemID.Sets.BannerStrength[itemId].Enabled)
+                {
+                    itemToBanner[itemId] = bannerId;
+                }
+            }
+        }
+
         /// <summary>
-        /// 每帧在玩家更新增益时扫描背包与便携收纳并赋予增益（高性能无 GC 分配）
+        /// 将物品精准转换为旗帜 ID（100% 精确对齐原版 BannerSystem）
+        /// </summary>
+        public static int ItemToBanner(Item item)
+        {
+            if (item == null || item.IsAir || item.stack <= 0) return -1;
+
+            if (itemToBanner.TryGetValue(item.type, out int bannerId))
+            {
+                return bannerId;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// 在场景指标扫描完毕后注入随身旗帜与场景光环，彻底根除 Buff 闪烁问题
+        /// </summary>
+        [HarmonyPatch(typeof(SceneMetrics), nameof(SceneMetrics.Scan))]
+        [HarmonyPostfix]
+        public static void SceneMetricsScanPostfix(SceneMetrics __instance)
+        {
+            if (__instance == null || Main.netMode == 2) return;
+
+            Player player = Main.LocalPlayer;
+            if (player == null || !player.active) return;
+
+            if (!EnableMonsterBanners.val && !EnableBuffStations.val) return;
+
+            ScanSceneContainerItems(__instance, player.inventory);
+            if (player.bank?.item != null) ScanSceneContainerItems(__instance, player.bank.item);
+            if (player.bank2?.item != null) ScanSceneContainerItems(__instance, player.bank2.item);
+            if (player.bank3?.item != null) ScanSceneContainerItems(__instance, player.bank3.item);
+            if (player.bank4?.item != null) ScanSceneContainerItems(__instance, player.bank4.item);
+
+            if (BigBagMod.EnableBigBag.val && BigBagMod.Slots != null)
+            {
+                ScanSceneContainerItems(__instance, BigBagMod.Slots);
+            }
+        }
+
+        private static void ScanSceneContainerItems(SceneMetrics metrics, Item[] items)
+        {
+            if (items == null) return;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                Item item = items[i];
+                if (item == null || item.IsAir || item.stack <= 0) continue;
+
+                // 1. 随身旗帜注入
+                if (EnableMonsterBanners.val)
+                {
+                    int bannerId = ItemToBanner(item);
+                    if (bannerId >= 0 && metrics.NPCBannerBuff != null && bannerId < metrics.NPCBannerBuff.Length)
+                    {
+                        metrics.NPCBannerBuff[bannerId] = true;
+                        metrics.hasBanner = true;
+                    }
+                }
+
+                // 2. 随身场景增益站注入（原生驱动，无闪烁）
+                if (EnableBuffStations.val)
+                {
+                    // 篝火 / 壁炉
+                    if (item.type == ItemID.Campfire || item.type == ItemID.Fireplace ||
+                        item.createTile == TileID.Campfire || item.createTile == TileID.Fireplace)
+                    {
+                        metrics.HasCampfire = true;
+                    }
+                    // 心形灯笼 (Tile 42, Style 9)
+                    else if (item.type == ItemID.HeartLantern || (item.createTile == TileID.HangingLanterns && item.placeStyle == 9))
+                    {
+                        metrics.HasHeartLantern = true;
+                    }
+                    // 星星瓶 (Tile 42, Style 7)
+                    else if (item.type == ItemID.StarinaBottle || (item.createTile == TileID.HangingLanterns && item.placeStyle == 7))
+                    {
+                        metrics.HasStarInBottle = true;
+                    }
+                    // 巴斯特雕像
+                    else if (item.type == ItemID.CatBast || item.createTile == TileID.CatBast)
+                    {
+                        metrics.HasCatBast = true;
+                    }
+                    // 向日葵
+                    else if (item.type == ItemID.Sunflower || item.createTile == TileID.Sunflower)
+                    {
+                        metrics.HasSunflower = true;
+                    }
+                    // 水蜡烛
+                    else if (item.type == ItemID.WaterCandle || item.createTile == TileID.WaterCandle)
+                    {
+                        metrics.ZoneWaterCandle = true;
+                    }
+                    // 和平蜡烛
+                    else if (item.type == ItemID.PeaceCandle || item.createTile == TileID.PeaceCandle)
+                    {
+                        metrics.ZonePeaceCandle = true;
+                    }
+                    // 暗影蜡烛
+                    else if (item.type == ItemID.ShadowCandle || item.createTile == TileID.ShadowCandle)
+                    {
+                        metrics.ZoneShadowCandle = true;
+                    }
+                    // 花园侏儒
+                    else if (item.type == ItemID.GardenGnome || item.createTile == TileID.GardenGnome)
+                    {
+                        metrics.HasGardenGnome = true;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 每帧在玩家更新增益时扫描背包并赋予交互类增益与无尽药水
         /// </summary>
         [HarmonyPatch(typeof(Player), nameof(Player.UpdateBuffs))]
         [HarmonyPrefix]
@@ -75,11 +213,16 @@ namespace OptimizeAndTool.Content.QoL
             foodCounts[2] = 0;
             foodCounts[3] = 0;
 
-            ScanContainerItems(__instance, __instance.inventory);
-            if (__instance.bank?.item != null) ScanContainerItems(__instance, __instance.bank.item);
-            if (__instance.bank2?.item != null) ScanContainerItems(__instance, __instance.bank2.item);
-            if (__instance.bank3?.item != null) ScanContainerItems(__instance, __instance.bank3.item);
-            if (__instance.bank4?.item != null) ScanContainerItems(__instance, __instance.bank4.item);
+            ScanPlayerBuffItems(__instance, __instance.inventory);
+            if (__instance.bank?.item != null) ScanPlayerBuffItems(__instance, __instance.bank.item);
+            if (__instance.bank2?.item != null) ScanPlayerBuffItems(__instance, __instance.bank2.item);
+            if (__instance.bank3?.item != null) ScanPlayerBuffItems(__instance, __instance.bank3.item);
+            if (__instance.bank4?.item != null) ScanPlayerBuffItems(__instance, __instance.bank4.item);
+
+            if (BigBagMod.EnableBigBag.val && BigBagMod.Slots != null)
+            {
+                ScanPlayerBuffItems(__instance, BigBagMod.Slots);
+            }
 
             // 应用达标药水增益
             int threshold = PotionThreshold.val;
@@ -113,9 +256,29 @@ namespace OptimizeAndTool.Content.QoL
                     }
                 }
             }
+
+            // 随身旗帜在生效时双重保障并加入 ActiveInfiniteBuffs
+            if (EnableMonsterBanners.val && (Main.SceneMetrics != null && Main.SceneMetrics.hasBanner))
+            {
+                __instance.AddBuff(BuffID.MonsterBanner, 2, false);
+                ActiveInfiniteBuffs.Add(BuffID.MonsterBanner);
+            }
+
+            // 场景增益站记录入 ActiveInfiniteBuffs，以便隐藏图标生效
+            if (EnableBuffStations.val && Main.SceneMetrics != null)
+            {
+                if (Main.SceneMetrics.HasCampfire) ActiveInfiniteBuffs.Add(BuffID.Campfire);
+                if (Main.SceneMetrics.HasHeartLantern) ActiveInfiniteBuffs.Add(BuffID.HeartLamp);
+                if (Main.SceneMetrics.HasStarInBottle) ActiveInfiniteBuffs.Add(BuffID.StarInBottle);
+                if (Main.SceneMetrics.HasCatBast) ActiveInfiniteBuffs.Add(BuffID.CatBast);
+                if (Main.SceneMetrics.HasSunflower) ActiveInfiniteBuffs.Add(BuffID.Sunflower);
+                if (Main.SceneMetrics.ZoneWaterCandle) ActiveInfiniteBuffs.Add(BuffID.WaterCandle);
+                if (Main.SceneMetrics.ZonePeaceCandle) ActiveInfiniteBuffs.Add(BuffID.PeaceCandle);
+                if (Main.SceneMetrics.ZoneShadowCandle) ActiveInfiniteBuffs.Add(BuffID.ShadowCandle);
+            }
         }
 
-        private static void ScanContainerItems(Player player, Item[] items)
+        private static void ScanPlayerBuffItems(Player player, Item[] items)
         {
             if (items == null) return;
 
@@ -125,9 +288,9 @@ namespace OptimizeAndTool.Content.QoL
                 if (item == null || item.IsAir || item.stack <= 0) continue;
 
                 // 1. 无尽药水扫描
-                if (EnableInfinitePotions.val && item.buffType > 0 && item.buffTime > 0 && item.consumable)
+                if (EnableInfinitePotions.val && item.buffType > 0 && item.consumable)
                 {
-                    if (!Main.debuff[item.buffType] && !Main.lightPet[item.buffType] && !Main.vanityPet[item.buffType])
+                    if (!Main.debuff[item.buffType] && !Main.lightPet[item.buffType] && !Main.vanityPet[item.buffType] && !Main.buffNoTimeDisplay[item.buffType])
                     {
                         // 食物跨槽累计
                         if (item.buffType == BuffID.WellFed)
@@ -152,114 +315,51 @@ namespace OptimizeAndTool.Content.QoL
                     }
                 }
 
-                // 2. 随身增益站扫描
+                // 2. 交互类增益家具扫描（磨刀石、水晶球、弹药箱、施法桌、蛋糕块、战争桌等）
                 if (EnableBuffStations.val)
                 {
-                    ApplyStationBuffs(player, item);
-                }
-
-                // 3. 随身怪物旗帜扫描
-                if (EnableMonsterBanners.val && item.createTile == TileID.Banners && item.placeStyle >= 0)
-                {
-                    if (Main.SceneMetrics?.NPCBannerBuff != null && item.placeStyle < Main.SceneMetrics.NPCBannerBuff.Length)
-                    {
-                        Main.SceneMetrics.NPCBannerBuff[item.placeStyle] = true;
-                        Main.SceneMetrics.hasBanner = true;
-                    }
+                    ApplyInteractiveStationBuffs(player, item);
                 }
             }
         }
 
-        private static void ApplyStationBuffs(Player player, Item item)
+        private static void ApplyInteractiveStationBuffs(Player player, Item item)
         {
-            // 篝火 (Tile 215)
-            if (item.createTile == TileID.Campfire || item.type == ItemID.Campfire)
-            {
-                player.AddBuff(BuffID.Campfire, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.Campfire);
-            }
-            // 心形灯笼 (Tile 42 / Item 1263)
-            else if (item.type == ItemID.HeartLantern || (item.createTile == TileID.HangingLanterns && item.placeStyle == 1))
-            {
-                player.AddBuff(BuffID.HeartLamp, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.HeartLamp);
-            }
-            // 星星瓶 (Tile 42 / Item 159)
-            else if (item.type == ItemID.StarinaBottle)
-            {
-                player.AddBuff(BuffID.StarInBottle, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.StarInBottle);
-            }
-            // 巴斯特雕像 (Tile 506 / Item 4274)
-            else if (item.type == ItemID.CatBast || item.createTile == TileID.CatBast)
-            {
-                player.AddBuff(BuffID.CatBast, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.CatBast);
-            }
-            // 磨刀石 (Tile 377 / Item 3198)
-            else if (item.type == ItemID.SharpeningStation || item.createTile == TileID.SharpeningStation)
+            // 磨刀石 (Tile 377) -> 锋利 (Buff 159)
+            if (item.type == ItemID.SharpeningStation || item.createTile == TileID.SharpeningStation)
             {
                 player.AddBuff(BuffID.Sharpened, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.Sharpened);
             }
-            // 水晶球 (Tile 125 / Item 487)
+            // 水晶球 (Tile 125) -> 灵视 (Buff 29)
             else if (item.type == ItemID.CrystalBall || item.createTile == TileID.CrystalBall)
             {
                 player.AddBuff(BuffID.Clairvoyance, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.Clairvoyance);
             }
-            // 弹药箱 (Tile 237 / Item 2177)
+            // 弹药箱 (Tile 287) -> 弹药箱 (Buff 93)
             else if (item.type == ItemID.AmmoBox || item.createTile == TileID.AmmoBox)
             {
                 player.AddBuff(BuffID.AmmoBox, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.AmmoBox);
             }
-            // 施法桌 (Tile 349 / Item 2997)
+            // 施法桌 (Tile 354) -> 著魔 (Buff 150)
             else if (item.type == ItemID.BewitchingTable || item.createTile == TileID.BewitchingTable)
             {
                 player.AddBuff(BuffID.Bewitched, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.Bewitched);
             }
-            // 蛋糕块 (Tile 491 / Item 4076)
+            // 蛋糕块 (Tile 621) -> 糖果冲刺 (Buff 192)
             else if (item.type == ItemID.SliceOfCake || item.createTile == TileID.SliceOfCake)
             {
                 player.AddBuff(BuffID.SugarRush, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.SugarRush);
             }
-            // 战争桌旗帜 (Tile 464 / Item 3817)
-            else if (item.type == ItemID.WarTableBanner || item.type == ItemID.WarTable || item.createTile == TileID.WarTable)
+            // 战争桌 / 战争桌旗帜 (Tile 464) -> 战争桌 (Buff 348)
+            else if (item.type == ItemID.WarTableBanner || item.type == ItemID.WarTable || item.createTile == TileID.WarTable || item.createTile == TileID.WarTableBanner)
             {
                 player.AddBuff(BuffID.WarTable, 2, false);
                 ActiveInfiniteBuffs.Add(BuffID.WarTable);
-            }
-            // 和平蜡烛 (Tile 409 / Item 3116)
-            else if (item.type == ItemID.PeaceCandle || item.createTile == TileID.PeaceCandle)
-            {
-                player.AddBuff(BuffID.PeaceCandle, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.PeaceCandle);
-            }
-            // 水蜡烛 (Tile 49 / Item 149)
-            else if (item.type == ItemID.WaterCandle || item.createTile == TileID.WaterCandle)
-            {
-                player.AddBuff(BuffID.WaterCandle, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.WaterCandle);
-            }
-            // 暗影蜡烛 (Tile 653 / Item 5343)
-            else if (item.type == ItemID.ShadowCandle || item.createTile == TileID.ShadowCandle)
-            {
-                player.AddBuff(BuffID.ShadowCandle, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.ShadowCandle);
-            }
-            // 向日葵 (Tile 27 / Item 63)
-            else if (item.type == ItemID.Sunflower || item.createTile == TileID.Sunflower)
-            {
-                player.AddBuff(BuffID.Sunflower, 2, false);
-                ActiveInfiniteBuffs.Add(BuffID.Sunflower);
-            }
-            // 花园侏儒 (Tile 567 / Item 4389)
-            else if (item.type == ItemID.GardenGnome || item.createTile == TileID.GardenGnome)
-            {
-                player.HasGardenGnomeNearby = true;
             }
         }
 
@@ -285,3 +385,4 @@ namespace OptimizeAndTool.Content.QoL
         }
     }
 }
+

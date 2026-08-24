@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using OptimizeAndTool.Content.BigBag;
 using tContentPatch;
 using Terraria;
+using Terraria.Audio;
+using Terraria.ID;
 using Terraria.UI;
 
 namespace OptimizeAndTool
@@ -18,7 +20,6 @@ namespace OptimizeAndTool
         public static UIState ui_game_state { get; private set; } = null;
         private static UserInterface ui_game = null;
         private static BigBagWindow bigBagWindow = null;
-        private static bool oldBKey = false;
 
         static ModifyInterfaceLayers()
         {
@@ -76,22 +77,19 @@ namespace OptimizeAndTool
                 return;
             }
 
+            // 大背包开启时，若物品栏关闭（如按 ESC、E 键等），大背包同步一并关闭
+            if (bigBagWindow?.IsOpen == true && !Main.playerInventory)
+            {
+                bigBagWindow.Close();
+            }
+
             ui_game?.Update(gameTime);
 
-            // 自定义快捷键开关巨大背包（聊天输入/编辑告示牌时忽略）
-            Keys targetKey = Keys.X;
-            string keyStr = Content.BigBag.BigBag.HotKey.val;
-            if (!string.IsNullOrEmpty(keyStr) && System.Enum.TryParse(keyStr, true, out Keys parsedKey))
+            // 通过 tpml 统一 ModKeybind 系统检测快捷键（原版 PlayerInput 自动在打字与聊天时静默）
+            if (Content.BigBag.BigBag.EnableBigBag.val && Content.BigBag.BigBagKeybind.ToggleKeybind?.JustPressed == true)
             {
-                targetKey = parsedKey;
+                SwitchBigBag(fromKeybind: true);
             }
-
-            bool hotKeyDown = targetKey != Keys.None && Main.keyState.IsKeyDown(targetKey);
-            if (hotKeyDown && !oldBKey && !Main.drawingPlayerChat && !Main.editSign)
-            {
-                SwitchBigBag();
-            }
-            oldBKey = hotKeyDown;
         }
 
         public override void DrawMenuPrefix(GameTime gameTime)
@@ -114,14 +112,26 @@ namespace OptimizeAndTool
         /// <summary>
         /// 开关巨大背包窗口
         /// </summary>
-        public static void SwitchBigBag()
+        /// <param name="fromKeybind">是否由快捷键触发（快捷键关闭时同步关闭物品栏，鼠标关闭时保持物品栏不变）</param>
+        public static void SwitchBigBag(bool fromKeybind = false)
         {
             if (Content.BigBag.BigBag.EnableBigBag.val == false) return;
 
             if (bigBagWindow == null) bigBagWindow = new BigBagWindow();
 
-            if (bigBagWindow.IsOpen) bigBagWindow.Close();
-            else bigBagWindow.Open(ui_game_state);
+            if (bigBagWindow.IsOpen)
+            {
+                bigBagWindow.Close();
+                if (fromKeybind && Main.playerInventory)
+                {
+                    Main.playerInventory = false;
+                    SoundEngine.PlaySound(SoundID.MenuClose);
+                }
+            }
+            else
+            {
+                bigBagWindow.Open(ui_game_state);
+            }
         }
     }
 }

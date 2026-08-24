@@ -39,6 +39,10 @@ namespace OptimizeAndTool
             public bool BigBag = true;
             public bool BigBagCraft = true;
             public int BigBagCapacity = 100;
+            public float? BigBagPosX = null;
+            public float? BigBagPosY = null;
+            public float? BigBagWidth = null;
+            public float? BigBagHeight = null;
         }
 
         public override string Name => "设置";
@@ -46,8 +50,25 @@ namespace OptimizeAndTool
         public override string FilePath => "setting.json";
         public override Type DataType => typeof(Data);
 
+        private static SettingUI_player instance = null;
+
+        public static float? BigBagPosX { get; set; } = null;
+        public static float? BigBagPosY { get; set; } = null;
+        public static float? BigBagWidth { get; set; } = null;
+        public static float? BigBagHeight { get; set; } = null;
+
+        public static void SaveSetting()
+        {
+            if (instance != null)
+            {
+                instance.NeedSave = true;
+                instance.Save();
+            }
+        }
+
         public override void Load(object v)
         {
+            instance = this;
             if (v is Data data)
             {
                 CleanRepeatChat.Enable.val = data.CleanRepeatChat;
@@ -75,6 +96,10 @@ namespace OptimizeAndTool
                 Content.BigBag.BigBag.EnableBigBag.val = data.BigBag;
                 Content.BigBag.BigBag.EnableBigBagCraft.val = data.BigBagCraft;
                 Content.BigBag.BigBag.Capacity.val = data.BigBagCapacity;
+                BigBagPosX = data.BigBagPosX;
+                BigBagPosY = data.BigBagPosY;
+                BigBagWidth = data.BigBagWidth;
+                BigBagHeight = data.BigBagHeight;
             }
 
             CleanRepeatChat.Enable.OnValUpdate += _ => NeedSave = true;
@@ -167,6 +192,10 @@ namespace OptimizeAndTool
                 BigBag = Content.BigBag.BigBag.EnableBigBag.val,
                 BigBagCraft = Content.BigBag.BigBag.EnableBigBagCraft.val,
                 BigBagCapacity = Content.BigBag.BigBag.Capacity.val,
+                BigBagPosX = BigBagPosX,
+                BigBagPosY = BigBagPosY,
+                BigBagWidth = BigBagWidth,
+                BigBagHeight = BigBagHeight,
             };
         }
     }

@@ -49,8 +49,7 @@ namespace OptimizeAndTool.Content.BigBag
         {
             return new List<UIElement>
             {
-                UIBuild.get2(EnableBigBag, "随身巨大额外背包，快捷键或悬浮工具栏按钮打开", "Images/Item_4131", "巨大背包"),
-                UIBuild.get1(EnableBigBag, HotKey, s => s?.Trim().ToUpper() ?? "X", "打开巨大背包的快捷键（如 X、B、Z、O、F 等，留空禁用）", "Images/UI/Cursor_0", "背包快捷键"),
+                UIBuild.get2(EnableBigBag, "随身巨大额外背包（已接入统一快捷键系统，可在【设置->控件】中自定义按键）", "Images/Item_4131", "巨大背包"),
                 UIBuild.get1(EnableBigBag, Capacity, int.Parse, "背包容量格数（40~500，缩容时溢出物品自动回收背包）", "Images/Item_87", "背包容量"),
                 UIBuild.get2(EnableBigBagCraft, "巨大背包中的材料参与制作判定与消耗扣除", "Images/Item_346", "背包材料制作"),
                 UIBuild.get2(AutoStackOnPickup, "拾取物品时若巨大背包已有同类物品则自动堆入", "Images/Item_5010", "拾取自动堆叠")
@@ -60,6 +59,7 @@ namespace OptimizeAndTool.Content.BigBag
         static BigBag()
         {
             Capacity.OnValUpdate += v => SetCapacity(v);
+            BigBagKeybind.Initialize();
             EnsureCapacitySafety();
         }
 
@@ -356,6 +356,76 @@ namespace OptimizeAndTool.Content.BigBag
             }
 
             return newItem.stack <= 0;
+        }
+
+        /// <summary>
+        /// 尝试将玩家背包中的物品转移至大背包（Shift+左键快捷存入）
+        /// </summary>
+        /// <param name="inv">物品来源数组</param>
+        /// <param name="slot">槽位索引</param>
+        /// <param name="justCheck">仅校验是否有转移空间（不实际改变数据）</param>
+        /// <returns>若发生转移或有空间可转移返回 true</returns>
+        public static bool TryPlacingInBigBag(Item[] inv, int slot, bool justCheck)
+        {
+            if (inv == null || slot < 0 || slot >= inv.Length) return false;
+            Item item = inv[slot];
+            if (item == null || item.IsAir || item.favorited) return false;
+
+            Item[] slots = Slots;
+            bool transferred = false;
+
+            // 1. 如果物品可堆叠，优先向已有同类槽位合并
+            if (item.maxStack > 1)
+            {
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item target = slots[i];
+                    if (target != null && !target.IsAir && target.type == item.type && target.stack < target.maxStack && Item.CanStack(target, item))
+                    {
+                        int canTake = Math.Min(item.stack, target.maxStack - target.stack);
+                        if (justCheck)
+                        {
+                            if (canTake > 0) return true;
+                        }
+                        else
+                        {
+                            target.stack += canTake;
+                            item.stack -= canTake;
+                            transferred = true;
+                            if (item.stack <= 0)
+                            {
+                                inv[slot] = new Item();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. 如果还有剩余，放入空格子
+            if (item.stack > 0)
+            {
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item target = slots[i];
+                    if (target == null || target.IsAir)
+                    {
+                        if (justCheck) return true;
+
+                        slots[i] = item.Clone();
+                        inv[slot] = new Item();
+                        transferred = true;
+                        break;
+                    }
+                }
+            }
+
+            if (transferred && !justCheck)
+            {
+                BigBagStorage.SaveNow();
+            }
+
+            return transferred;
         }
 
         /// <summary>
