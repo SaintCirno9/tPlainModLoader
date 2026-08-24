@@ -25,7 +25,8 @@ namespace tContentPatch.ModLoad
             if (Directory.Exists(modsRootPath) == false) return new List<ModObject>();
 
             DirectoryInfo[] dis = new DirectoryInfo(modsRootPath).GetDirectories();
-            FileInfo[] tmodFiles = new DirectoryInfo(modsRootPath).GetFiles("*.tmod");
+            // FileInfo[] tmodFiles = new DirectoryInfo(modsRootPath).GetFiles("*.tmod"); // 方案 B 试验性加载已封存归档
+            FileInfo[] tmodFiles = new FileInfo[0];
 
             progressV = 0;
             progressMax = dis.Length + tmodFiles.Length;

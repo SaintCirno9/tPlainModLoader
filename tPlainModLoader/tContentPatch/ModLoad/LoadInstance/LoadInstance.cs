@@ -37,11 +37,13 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
 
+                    /*
                     if (mo.tmodContainer != null)
                     {
                         mo.tmodInstance = Terraria.ModLoader.Engine.TModShimEngine.LoadTModContainer(mo.tmodContainer);
                         continue;
                     }
+                    */
 
                     mo.inheritance_mod = Utils.CreateInstance<Mod>(mo.assembly);
 
