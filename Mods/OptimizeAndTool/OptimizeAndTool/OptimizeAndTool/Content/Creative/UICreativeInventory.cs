@@ -1,6 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
@@ -10,16 +12,17 @@ using UITextBox = tContentPatch.Content.UI.UITextBox;
 namespace OptimizeAndTool.Content.Creative
 {
     /// <summary>
-    /// 失手了, 是屎啊是陈年老屎啊
+    /// 创造模式物品浏览器 UI 窗口
+    /// 作者: SaintCirno9
     /// </summary>
-    internal class UICreativeInventory : UIWindow
+    public class UICreativeInventory : UIWindow
     {
         protected UIStackPanel panel_rows = null;
         protected UIPanel panel_items = null;//物品列表
         protected UIScrollViewer panel_items_sv = null;
         protected UIWrapPanel panel_items_wp = null;//物品列表项的容器
         //
-        protected Terraria.UI.UIState panel_row1 = null;//搜索框
+        protected UIPanel panel_row1 = null;//搜索框行
         protected UITextBox panel_row1_tb = null;
         //
         protected UIPanel panel_row2 = null;//筛选
@@ -33,12 +36,18 @@ namespace OptimizeAndTool.Content.Creative
         protected string Search_Text_new = null;
         protected int Search_Text_cd = 0;
 
+        public UITextBox SearchTextBox => panel_row1_tb;
+        public int MatchedCount => panel_items_wp?.Children?.Count() ?? 0;
 
         public UICreativeInventory(string title, int width, int height) : base(title, width, height)
         {
             panel_rows = new UIStackPanel();
-            panel_row1 = new Terraria.UI.UIState();
-            panel_row1_tb = new UITextBox("搜索物品");
+            panel_row1 = new UIPanel();
+            panel_row1.SetPadding(0);
+            panel_row1.BackgroundColor = Color.Transparent;
+            panel_row1.BorderColor = Color.Transparent;
+
+            panel_row1_tb = new UITextBox("搜索物品名称或 ID");
             panel_row2 = new UIPanel();
             panel_row2_sp = new UIStackPanel();
             panel_row2_sp_row1 = new UIStackPanel();
@@ -48,16 +57,15 @@ namespace OptimizeAndTool.Content.Creative
             panel_items_wp = new UIWrapPanel();
 
             //
-
             panel_row1.Height.Set(30, 0);
 
-            panel_row1_tb.Width.Set(150, 0);
+            panel_row1_tb.Width.Set(200, 0);
             panel_row1_tb.Height.Set(30, 0);
             panel_row1_tb.Left.Set(-panel_row1_tb.Width.Pixels, 1);
-            panel_row1_tb.Text_MaxLength = 8;
+            panel_row1_tb.Text_MaxLength = 50;
             panel_row1_tb.OnTextChanged += (e) =>
             {
-                Search_Text_cd = (int)((1 / 16f) * 250);
+                Search_Text_cd = 3;
                 Search_Text_new = e;
             };
 
@@ -81,7 +89,6 @@ namespace OptimizeAndTool.Content.Creative
             panel_items.OverflowHidden = true;
 
             //
-
             Child.Append(panel_rows);
             Child.Append(panel_items);
             panel_items.Append(panel_items_sv);
@@ -93,36 +100,7 @@ namespace OptimizeAndTool.Content.Creative
             panel_row2.Append(panel_row2_sp);
             panel_row2_sp.Append(panel_row2_sp_row1);
             panel_row2_sp.Append(panel_row2_sp_row2);
-            #region 分类1级的单选框
-            Action<string, string, int, int, int> action_rb = (string path, string text, int id1, int id2, int index) =>
-            {
-                UIRadioButton rb = new UIRadioButton(
-                    Main.Assets.Request<Texture2D>($"Images/{path}", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value,
-                    (int)panel_row2_sp_row1.Height.Pixels - 2, (int)panel_row2_sp_row1.Height.Pixels - 2);
-                rb.VAlign = 0.5f;
-                rb.MouseHoveringText = text;
-                rb.OnChecked += () =>
-                {
-                    update_item(id1, id2);
-                    switchItemSort1(index);
-                };
 
-                panel_row2_sp_row1.Append(rb);
-            };
-
-            action_rb.Invoke("Item_2712", "全部", -1, -1, 0);
-            action_rb.Invoke("Item_4", "武器", itemsSort.ID_Weapon, -1, 1);
-            action_rb.Invoke("Item_1", "工具", itemsSort.ID_Tool, -1, 2);
-            action_rb.Invoke("Item_324", "装备", itemsSort.ID_ToolKit, -1, 3);
-            action_rb.Invoke("Item_82", "盔甲", itemsSort.ID_Armor, -1, 4);
-            action_rb.Invoke("Item_1302", "弹药", itemsSort.ID_Ammo, -1, 5);
-            action_rb.Invoke("Item_54", "饰品", itemsSort.ID_Accessorie, -1, 6);
-            action_rb.Invoke("Item_2", "方块", itemsSort.ID_Tile, -1, 7);
-            action_rb.Invoke("Item_296", "药水", itemsSort.ID_Buff, -1, 8);
-            action_rb.Invoke("Item_557", "boss召唤物", itemsSort.ID_BossSpawn, -1, 9);
-            action_rb.Invoke("Item_5", "消耗品", itemsSort.ID_Consumable, -1, 10);
-            action_rb.Invoke("Item_9", "其他", itemsSort.ID_Other, -1, 11);
-            #endregion
             #region 每个分类2级的单选框
             panel_row2_sp_row2_rbs = new UIRadioButton[12][];
             int rbs_size = (int)panel_row2_sp_row2.Height.Pixels - 2;
@@ -171,6 +149,44 @@ namespace OptimizeAndTool.Content.Creative
                 action_rb2.Invoke("Item_130", "墙", itemsSort.ID_Tile, itemsSort.ID_Tile_wall),
             };
             #endregion
+
+            #region 分类1级的单选框
+            UIRadioButton firstRb = null;
+            Action<string, string, int, int, int> action_rb = (string path, string text, int id1, int id2, int index) =>
+            {
+                UIRadioButton rb = new UIRadioButton(
+                    Main.Assets.Request<Texture2D>($"Images/{path}", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value,
+                    (int)panel_row2_sp_row1.Height.Pixels - 2, (int)panel_row2_sp_row1.Height.Pixels - 2);
+                rb.VAlign = 0.5f;
+                rb.MouseHoveringText = text;
+                rb.OnChecked += () =>
+                {
+                    update_item(id1, id2);
+                    switchItemSort1(index);
+                };
+
+                if (index == 0) firstRb = rb;
+                panel_row2_sp_row1.Append(rb);
+            };
+
+            action_rb.Invoke("Item_2712", "全部", -1, -1, 0);
+            action_rb.Invoke("Item_4", "武器", itemsSort.ID_Weapon, -1, 1);
+            action_rb.Invoke("Item_1", "工具", itemsSort.ID_Tool, -1, 2);
+            action_rb.Invoke("Item_324", "装备", itemsSort.ID_ToolKit, -1, 3);
+            action_rb.Invoke("Item_82", "盔甲", itemsSort.ID_Armor, -1, 4);
+            action_rb.Invoke("Item_1302", "弹药", itemsSort.ID_Ammo, -1, 5);
+            action_rb.Invoke("Item_54", "饰品", itemsSort.ID_Accessorie, -1, 6);
+            action_rb.Invoke("Item_2", "方块", itemsSort.ID_Tile, -1, 7);
+            action_rb.Invoke("Item_296", "药水", itemsSort.ID_Buff, -1, 8);
+            action_rb.Invoke("Item_557", "boss召唤物", itemsSort.ID_BossSpawn, -1, 9);
+            action_rb.Invoke("Item_5", "消耗品", itemsSort.ID_Consumable, -1, 10);
+            action_rb.Invoke("Item_9", "其他", itemsSort.ID_Other, -1, 11);
+
+            if (firstRb != null) firstRb.IsChecked = true;
+            #endregion
+
+            // 初始化默认加载全量物品
+            update_item(-1, -1);
         }
 
         public override void Update(GameTime time)
@@ -178,6 +194,7 @@ namespace OptimizeAndTool.Content.Creative
             base.Update(time);
 
             panel_rows.Width_Stretch();
+            panel_row1.Width_Stretch();
             panel_row2.Width_Stretch();
             panel_row2_sp.Width_Stretch();
             panel_row2_sp_row1.Width_Stretch();
@@ -206,11 +223,33 @@ namespace OptimizeAndTool.Content.Creative
             }
         }
 
+        public void ApplySearchImmediate(string query)
+        {
+            Search_Text_new = query;
+            Search_Text = query;
+            Search_Text_cd = 0;
+            if (panel_row1_tb != null)
+            {
+                panel_row1_tb.Text = query ?? string.Empty;
+            }
+            update_itemUI();
+        }
+
         public void update_itemUI()
         {
             panel_items_wp.RemoveAllChildren();
 
-            if (itemsID == null) return;
+            if (itemsID == null)
+            {
+                if (itemsSort.Loaded)
+                {
+                    itemsID = itemsSort.ID;
+                }
+                else
+                {
+                    return;
+                }
+            }
 
             itemsID.for_ItemsAll((i) =>
             {
@@ -222,10 +261,11 @@ namespace OptimizeAndTool.Content.Creative
                     Terraria.ModLoader.ItemLoader.SetDefaults(item);
                 }
                 if (item.type < 1) return;
+
                 // 根据搜索文本筛选
-                if (Search_Text != null && Search_Text.Length > 0)
+                if (!string.IsNullOrWhiteSpace(Search_Text))
                 {
-                    if (!searchItem(item.Name, Search_Text)) return;
+                    if (!searchItem(item, Search_Text)) return;
                 }
 
                 UIItemGrid it = new UIItemGrid(item, Terraria.UI.ItemSlot.Context.CreativeInfinite);
@@ -252,7 +292,10 @@ namespace OptimizeAndTool.Content.Creative
                 itemsID = itemsSort.ItemsSort_Gets(id1, id2);
             }
 
-            if (itemsID != old) update_itemUI();
+            if (itemsID != old || panel_items_wp.Children.Count() == 0)
+            {
+                update_itemUI();
+            }
         }
 
         public void switchItemSort1(int index)
@@ -274,26 +317,28 @@ namespace OptimizeAndTool.Content.Creative
             for (int i = 0; i < rbs?.Length; ++i) panel_row2_sp_row2.Append(rbs[i]);
         }
 
-        public bool searchItem(string name, string s)//name中有包含s的文本
+        public bool searchItem(Item item, string s)
         {
-            if (name == null || name.Length < 1) return false;
-            if (s == null || s.Length < 1) return false;
+            if (item == null || string.IsNullOrWhiteSpace(s)) return true;
+            s = s.Trim();
 
-            for (int i = 0; i < name.Length; ++i)
+            // 支持纯数字按 ItemID 检索
+            if (int.TryParse(s, out int queryId) && item.type == queryId)
             {
-                bool isEquals = true;
-                if (name.Length - i < s.Length) return false;
+                return true;
+            }
 
-                for (int i2 = 0; i2 < s.Length; ++i2)
-                {
-                    if (name[i + i2] != s[i2])
-                    {
-                        isEquals = false;
-                        break;
-                    }
-                }
+            // 英文内部名 / DisplayName 模糊匹配
+            if (!string.IsNullOrEmpty(item.Name) && item.Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
 
-                if (isEquals) return true;
+            // 本地化名称匹配
+            string localizedName = Lang.GetItemNameValue(item.type);
+            if (!string.IsNullOrEmpty(localizedName) && localizedName.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
             }
 
             return false;

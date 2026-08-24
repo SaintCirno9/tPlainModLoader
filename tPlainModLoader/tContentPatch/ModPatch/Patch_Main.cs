@@ -77,19 +77,21 @@ namespace tContentPatch.ModPatch
             }
         }
 
+        private static int _preUpdateScrollWheelForUI = 0;
+
         [HarmonyPatch("UpdateUIStates")]
         [HarmonyPrefix]
         public static void UpdateUIStatesPrefix(GameTime gameTime)
         {
-            int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
+            _preUpdateScrollWheelForUI = PlayerInput.ScrollWheelDeltaForUI;
 
             mod.ForTry(item =>
             {
-                PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
                 item.UpdateUIStatesPrefix(gameTime);
             });
 
-            PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+            PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
         }
 
         [HarmonyPatch("UpdateUIStates")]
@@ -97,14 +99,19 @@ namespace tContentPatch.ModPatch
         public static void UpdateUIStatesPostfix(GameTime gameTime)
         {
             int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
+            if (scrollWheel == 0 && _preUpdateScrollWheelForUI != 0)
+            {
+                scrollWheel = _preUpdateScrollWheelForUI;
+            }
 
             mod.ForTry(item =>
             {
-                PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                if (PlayerInput.ScrollWheelDeltaForUI == 0 && scrollWheel != 0)
+                {
+                    PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                }
                 item.UpdateUIStatesPostfix(gameTime);
             });
-
-            PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
         }
 
         [HarmonyPatch("DoUpdateInWorld")]

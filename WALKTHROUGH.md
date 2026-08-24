@@ -53,3 +53,17 @@
   ```
   - **结果**：18+ 个工程全量构建通过，**0 个警告，0 个错误**，所有产物及元数据已自动打包部署至游戏目录。
 - **无冗余代码检查**：全仓库不再存在任何 `ListenInput` 监听器或直接按键轮询，所有模组按键均统一由原版 `PlayerInput` 驱动。
+
+---
+
+## 2026-08-25: 鼠标滚轮修复、创造物品浏览器搜索重构与自动化测试存档双模态保护
+
+1. **鼠标滚轮修复**：
+   - 修复 `Patch_HotbarScroll.cs` 误将悬停在快捷栏或 HUD 上的滚轮事件与数字键拦截的问题，限制为仅在活动模组窗口内悬停才屏蔽快捷栏滚轮；
+   - 优化 `Patch_Main.cs` 前置捕获并安全分发 UI 滚轮事件至模组 `UserInterface`。
+2. **创造模式物品浏览器搜索重构**：
+   - 重构 `UITextBox.cs`：获得 Focus 时锁定 `PlayerInput.WritingText` 与 `Main.CurrentInputTextTakerOverride`，挂载 IME 锚点，支持 Enter/Esc 提交，搜索字符上限放宽至 50；
+   - 优化 `UICreativeInventory.cs`：将搜索行容器转为 `UIPanel` 并接入自适应拉伸；修正单选框初始化时序（解决构造 `NullReferenceException` 导致窗口无法打开问题）；支持大小写不敏感模糊匹配与数字 ItemID 检索。
+3. **TPMLBridge 扩展与双模态存档保护**：
+   - 默认日常游玩模式（`WorldSaveProtectionEnabled = false`）：100% 原版正常游玩与写盘保存；
+   - 自动化测试模式（`tpml/load_world` / GABP 会话）：动态激活保护，拦截 `WorldFile.SaveWorld`，退出测试（`tpml/leave_world`）后自动复位。

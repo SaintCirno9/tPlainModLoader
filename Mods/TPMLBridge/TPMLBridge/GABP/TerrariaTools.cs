@@ -83,7 +83,7 @@ namespace TPMLBridge.GABP
                 new GABPToolDescriptor
                 {
                     Name = "tpml/leave_world",
-                    Description = "保存当前角色与世界并退出到主菜单。",
+                    Description = "安全退出当前世界至主菜单（默认启用存档保护，严格禁止写盘保存以保护玩家正在游玩的真实世界）。",
                     Tags = new List<string> { "lifecycle" },
                     InputSchema = new
                     {
@@ -279,6 +279,90 @@ namespace TPMLBridge.GABP
                             variant = new { type = "string", description = "矿道规格（可选，'Full' / 'Half' / 'DoubleObsidian' / 'Auto'，默认 'Auto'）" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/test_creative_inventory",
+                    Description = "诊断创造模式物品浏览器 UI 状态（是否打开、搜索关键词、当前匹配物品数、输入框 Focus 状态与尺寸）。",
+                    Tags = new List<string> { "read-only", "ui", "diagnostic" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/toggle_creative_inventory",
+                    Description = "打开或关闭创造模式物品浏览器 UI 窗口。",
+                    Tags = new List<string> { "write", "ui" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            open = new { type = "boolean", description = "true 为打开，false 为关闭；不传则切换开/关状态" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/set_creative_search",
+                    Description = "向创造模式物品浏览器输入搜索关键词，并立即执行过滤返回匹配结果摘要。",
+                    Tags = new List<string> { "write", "ui" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        required = new[] { "query" },
+                        properties = new
+                        {
+                            query = new { type = "string", description = "要搜索的物品名称（中文/英文）或纯数字 ItemID" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/focus_creative_search",
+                    Description = "切换或设置创造模式搜索框的键盘输入焦点 (Focus)。",
+                    Tags = new List<string> { "write", "ui" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            focus = new { type = "boolean", description = "是否获得输入焦点（默认 true）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/simulate_scroll_wheel",
+                    Description = "模拟鼠标滚轮滚动（设置 ScrollWheelDelta / ScrollWheelDeltaForUI），测试快捷栏切换与 UI 滚动条。",
+                    Tags = new List<string> { "write", "input" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        required = new[] { "delta" },
+                        properties = new
+                        {
+                            delta = new { type = "integer", description = "滚轮滚动量（如 120 为向上滚 1 格，-120 为向下滚 1 格）" },
+                            forUI = new { type = "boolean", description = "是否同时提供给 UI 状态机（默认 true）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/set_save_protection",
+                    Description = "查看或设置自动化测试世界存档只读保护状态（默认开启，严格禁止保存以保护玩家真实存档）。",
+                    Tags = new List<string> { "lifecycle", "safety" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            enabled = new { type = "boolean", description = "true 为开启保护（拦截所有保存），false 为关闭保护" }
+                        }
+                    }
                 }
             };
         }
@@ -308,12 +392,23 @@ namespace TPMLBridge.GABP
                     {
                         string pName = args?["playerName"]?.ToString();
                         string wName = args?["worldName"]?.ToString();
-                        return await MainThreadQueue.EnqueueAsync(() => LoadWorld(pName, wName));
+                        bool protectSave = args?["protectSave"]?.Value<bool?>() ?? true;
+                        return await MainThreadQueue.EnqueueAsync(() => LoadWorld(pName, wName, protectSave));
                     }
 
                 case "tpml/leave_world":
                 case "tpml_leave_world":
-                    return await MainThreadQueue.EnqueueAsync(() => LeaveWorld());
+                    {
+                        bool save = args?["save"]?.Value<bool?>() ?? false;
+                        return await MainThreadQueue.EnqueueAsync(() => LeaveWorld(save));
+                    }
+
+                case "tpml/set_save_protection":
+                case "tpml_set_save_protection":
+                    {
+                        bool? enabled = args?["enabled"]?.Value<bool?>();
+                        return await MainThreadQueue.EnqueueAsync(() => SetSaveProtection(enabled));
+                    }
 
                 case "tpml/get_inventory":
                 case "tpml_get_inventory":
@@ -419,6 +514,39 @@ namespace TPMLBridge.GABP
                         return await MainThreadQueue.EnqueueAsync(() => InspectShaft(centerX, startY, targetY, variant));
                     }
 
+                case "tpml/test_creative_inventory":
+                case "tpml_test_creative_inventory":
+                    return await MainThreadQueue.EnqueueAsync(() => TestCreativeInventory());
+
+                case "tpml/toggle_creative_inventory":
+                case "tpml_toggle_creative_inventory":
+                    {
+                        bool? open = args?["open"]?.Value<bool?>();
+                        return await MainThreadQueue.EnqueueAsync(() => ToggleCreativeInventory(open));
+                    }
+
+                case "tpml/set_creative_search":
+                case "tpml_set_creative_search":
+                    {
+                        string query = args?["query"]?.ToString();
+                        return await MainThreadQueue.EnqueueAsync(() => SetCreativeSearch(query));
+                    }
+
+                case "tpml/focus_creative_search":
+                case "tpml_focus_creative_search":
+                    {
+                        bool focus = args?["focus"]?.Value<bool?>() ?? true;
+                        return await MainThreadQueue.EnqueueAsync(() => FocusCreativeSearch(focus));
+                    }
+
+                case "tpml/simulate_scroll_wheel":
+                case "tpml_simulate_scroll_wheel":
+                    {
+                        int delta = args?["delta"]?.Value<int>() ?? 0;
+                        bool forUI = args?["forUI"]?.Value<bool?>() ?? true;
+                        return await MainThreadQueue.EnqueueAsync(() => SimulateScrollWheel(delta, forUI));
+                    }
+
                 default:
                     throw new KeyNotFoundException($"未知的工具名称: {name}");
             }
@@ -459,7 +587,6 @@ namespace TPMLBridge.GABP
                     heldItemId = p.HeldItem?.type ?? 0,
                     lastVisualizedItemId = p.HeldItem?.type ?? 0,
                     zoneDungeon = p.ZoneDungeon,
-                    zoneJungle = p.ZoneJungle,
                     zoneUnderworldHeight = p.ZoneUnderworldHeight
                 };
 
@@ -513,8 +640,13 @@ namespace TPMLBridge.GABP
             return new { count = worlds.Count, worlds };
         }
 
-        private static object LoadWorld(string playerName, string worldName)
+        private static object LoadWorld(string playerName, string worldName, bool protectSave = true)
         {
+            if (protectSave)
+            {
+                TPMLBridgeMod.WorldSaveProtectionEnabled = true;
+            }
+
             Main.LoadPlayers();
             PlayerFileData player = null;
             if (!string.IsNullOrEmpty(playerName))
@@ -562,17 +694,56 @@ namespace TPMLBridge.GABP
             };
         }
 
-        private static object LeaveWorld()
+        private static object LeaveWorld(bool save = false)
         {
             if (Main.gameMenu)
             {
-                return new { success = true, message = "当前已在主菜单中" };
+                TPMLBridgeMod.WorldSaveProtectionEnabled = false;
+                return new { success = true, inWorld = false, message = "当前已在主菜单中" };
             }
 
-            WorldFile.SaveWorld();
+            if (save && !TPMLBridgeMod.WorldSaveProtectionEnabled)
+            {
+                WorldFile.SaveWorld();
+            }
+
+            // 彻底断开并返回主菜单，严禁将自动化测试产生的数据写盘污染玩家游玩存档
+            Netplay.Disconnect = true;
+            Main.netMode = 0;
             Main.menuMode = 0;
             Main.gameMenu = true;
-            return new { success = true, message = "已保存并退出世界" };
+
+            // 退出自动化测试后复位保护标志，确保玩家后续正常游玩时能够正常保存
+            bool wasProtected = TPMLBridgeMod.WorldSaveProtectionEnabled;
+            TPMLBridgeMod.WorldSaveProtectionEnabled = false;
+
+            return new
+            {
+                success = true,
+                inWorld = false,
+                saved = false,
+                worldSaveProtection = wasProtected,
+                message = wasProtected
+                    ? "已安全退出世界（自动化测试存档保护模式已生效，未保存世界文件，且已恢复正常游玩模式）"
+                    : "已安全退出世界"
+            };
+        }
+
+        private static object SetSaveProtection(bool? enabled)
+        {
+            if (enabled.HasValue)
+            {
+                TPMLBridgeMod.WorldSaveProtectionEnabled = enabled.Value;
+            }
+
+            return new
+            {
+                success = true,
+                worldSaveProtectionEnabled = TPMLBridgeMod.WorldSaveProtectionEnabled,
+                message = TPMLBridgeMod.WorldSaveProtectionEnabled
+                    ? "自动化测试世界存档保护已开启（所有 WorldFile.SaveWorld 写盘调用均被强行拦截）"
+                    : "自动化测试世界存档保护已关闭（允许正常写盘保存）"
+            };
         }
 
         private static object GetInventory()
@@ -1405,6 +1576,222 @@ namespace TPMLBridge.GABP
                 toItemId = p.inventory[toSlot]?.type ?? 0,
                 toItemName = p.inventory[toSlot]?.Name ?? string.Empty,
                 message = $"已交换槽位 {fromSlot} 与 {toSlot}"
+            };
+        }
+
+        private static Type GetCreativeInventoryType()
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    var type = asm.GetType("OptimizeAndTool.Content.Creative.CreativeInventory");
+                    if (type != null) return type;
+
+                    foreach (var t in asm.GetTypes())
+                    {
+                        if (t.FullName == "OptimizeAndTool.Content.Creative.CreativeInventory" || t.Name == "CreativeInventory")
+                        {
+                            return t;
+                        }
+                    }
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private static object TestCreativeInventory()
+        {
+            Type type = GetCreativeInventoryType();
+            if (type == null)
+            {
+                return new { isAvailable = false, message = "未检测到 OptimizeAndTool 模组程序集" };
+            }
+
+            var isOpenProp = type.GetProperty("IsOpen", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var isHoveringProp = type.GetProperty("IsHovering", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var uiProp = type.GetProperty("UI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            bool isOpen = (bool)(isOpenProp?.GetValue(null) ?? false);
+            bool isHovering = (bool)(isHoveringProp?.GetValue(null) ?? false);
+            string searchText = null;
+            int matchedCount = 0;
+            bool textBoxFocus = false;
+            string textBoxText = null;
+
+            var uiObj = uiProp?.GetValue(null);
+            if (uiObj != null)
+            {
+                var uiType = uiObj.GetType();
+                var searchField = uiType.GetField("Search_Text", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                searchText = searchField?.GetValue(uiObj)?.ToString();
+
+                var matchedProp = uiType.GetProperty("MatchedCount", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                matchedCount = (int)(matchedProp?.GetValue(uiObj) ?? 0);
+
+                var searchTextBoxProp = uiType.GetProperty("SearchTextBox", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var tbObj = searchTextBoxProp?.GetValue(uiObj);
+                if (tbObj != null)
+                {
+                    var tbType = tbObj.GetType();
+                    var focusProp = tbType.GetProperty("Focus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var textProp = tbType.GetProperty("Text", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    textBoxFocus = (bool)(focusProp?.GetValue(tbObj) ?? false);
+                    textBoxText = textProp?.GetValue(tbObj)?.ToString();
+                }
+            }
+
+            return new
+            {
+                isAvailable = true,
+                isOpen,
+                isHovering,
+                searchText,
+                textBoxText,
+                textBoxFocus,
+                writingText = Terraria.GameInput.PlayerInput.WritingText,
+                currentInputTaker = Main.CurrentInputTextTakerOverride != null ? Main.CurrentInputTextTakerOverride.GetType().Name : null,
+                matchedCount
+            };
+        }
+
+        private static object ToggleCreativeInventory(bool? open)
+        {
+            Type type = GetCreativeInventoryType();
+            if (type == null)
+            {
+                return new { success = false, message = "未找到 OptimizeAndTool 模组程序集" };
+            }
+
+            var switchMethod = type.GetMethod("SwitchOpenOrClose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var isOpenProp = type.GetProperty("IsOpen", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            bool curOpen = (bool)(isOpenProp?.GetValue(null) ?? false);
+
+            if (!open.HasValue || open.Value != curOpen)
+            {
+                switchMethod?.Invoke(null, null);
+            }
+
+            bool finalOpen = (bool)(isOpenProp?.GetValue(null) ?? false);
+            return new
+            {
+                success = true,
+                isOpen = finalOpen,
+                message = finalOpen ? "创造模式物品浏览器已打开" : "创造模式物品浏览器已关闭"
+            };
+        }
+
+        private static object SetCreativeSearch(string query)
+        {
+            Type type = GetCreativeInventoryType();
+            if (type == null)
+            {
+                return new { success = false, message = "未找到创造模式物品浏览器" };
+            }
+
+            var isOpenProp = type.GetProperty("IsOpen", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            bool curOpen = (bool)(isOpenProp?.GetValue(null) ?? false);
+            if (!curOpen)
+            {
+                var switchMethod = type.GetMethod("SwitchOpenOrClose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                switchMethod?.Invoke(null, null);
+            }
+
+            var uiProp = type.GetProperty("UI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var uiObj = uiProp?.GetValue(null);
+            if (uiObj != null)
+            {
+                var uiType = uiObj.GetType();
+                var applyMethod = uiType.GetMethod("ApplySearchImmediate", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                applyMethod?.Invoke(uiObj, new object[] { query });
+
+                var matchedProp = uiType.GetProperty("MatchedCount", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                int matchedCount = (int)(matchedProp?.GetValue(uiObj) ?? 0);
+
+                return new
+                {
+                    success = true,
+                    query,
+                    matchedCount,
+                    message = $"已搜索 [{query}]，共匹配 {matchedCount} 个物品"
+                };
+            }
+
+            return new { success = false, message = "创造模式物品浏览器 UI 实例为空" };
+        }
+
+        private static object FocusCreativeSearch(bool focus)
+        {
+            Type type = GetCreativeInventoryType();
+            if (type == null)
+            {
+                return new { success = false, message = "未找到创造模式物品浏览器" };
+            }
+
+            var isOpenProp = type.GetProperty("IsOpen", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            bool curOpen = (bool)(isOpenProp?.GetValue(null) ?? false);
+            if (!curOpen && focus)
+            {
+                var switchMethod = type.GetMethod("SwitchOpenOrClose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                switchMethod?.Invoke(null, null);
+            }
+
+            var uiProp = type.GetProperty("UI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var uiObj = uiProp?.GetValue(null);
+            if (uiObj != null)
+            {
+                var uiType = uiObj.GetType();
+                var searchTextBoxProp = uiType.GetProperty("SearchTextBox", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var tbObj = searchTextBoxProp?.GetValue(uiObj);
+                if (tbObj != null)
+                {
+                    var tbType = tbObj.GetType();
+                    var focusProp = tbType.GetProperty("Focus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    focusProp?.SetValue(tbObj, focus);
+
+                    return new
+                    {
+                        success = true,
+                        focus,
+                        writingText = Terraria.GameInput.PlayerInput.WritingText,
+                        currentInputTaker = Main.CurrentInputTextTakerOverride != null ? Main.CurrentInputTextTakerOverride.GetType().Name : null,
+                        message = focus ? "已激活搜索框输入焦点" : "已释放搜索框焦点"
+                    };
+                }
+            }
+
+            return new { success = false, message = "未找到创造模式物品浏览器搜索框" };
+        }
+
+        private static object SimulateScrollWheel(int delta, bool forUI)
+        {
+            int oldSelected = Main.LocalPlayer?.selectedItem ?? -1;
+
+            Terraria.GameInput.PlayerInput.ScrollWheelDelta = delta;
+            if (forUI)
+            {
+                Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = delta;
+            }
+
+            if (!Main.gameMenu && Main.LocalPlayer != null)
+            {
+                Main.LocalPlayer.HandleHotbarControls();
+            }
+
+            int newSelected = Main.LocalPlayer?.selectedItem ?? -1;
+
+            return new
+            {
+                success = true,
+                delta,
+                forUI,
+                oldSelectedItem = oldSelected,
+                newSelectedItem = newSelected,
+                slotChanged = oldSelected != newSelected,
+                scrollWheelDelta = Terraria.GameInput.PlayerInput.ScrollWheelDelta,
+                scrollWheelDeltaForUI = Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI,
+                message = $"已模拟滚轮滚动 {delta} (快捷栏槽位: {oldSelected} -> {newSelected})"
             };
         }
     }

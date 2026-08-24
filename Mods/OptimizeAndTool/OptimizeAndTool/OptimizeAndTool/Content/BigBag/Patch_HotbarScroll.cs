@@ -1,30 +1,27 @@
 using HarmonyLib;
+using OptimizeAndTool.Content.Creative;
 using Terraria;
+using Terraria.GameInput;
 
 namespace OptimizeAndTool.Content.BigBag
 {
     /// <summary>
-    /// 当玩家光标在 UI 界面或大背包窗口上时，阻止鼠标滚轮误切换快捷栏物品
+    /// 当玩家光标在自定义悬浮窗口（大背包/饰品箱/物品浏览器）上时，阻止滚轮误切快捷栏
     /// 作者: SaintCirno9
     /// </summary>
     [HarmonyPatch(typeof(Player), "HandleHotbarControls")]
     public class Patch_HotbarScroll
     {
         [HarmonyPrefix]
-        public static bool Prefix(Player __instance)
+        public static void Prefix(Player __instance)
         {
-            // 当鼠标在 UI 交互界面上、或者巨大背包打开且鼠标悬停在窗口内时，跳过快捷栏滚轮处理
-            if (__instance.mouseInterface)
+            // 当大背包、饰品箱或物品浏览器打开且鼠标悬停在窗口内时，清空当前帧快捷栏滚轮增量
+            if ((ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering) ||
+                (ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering) ||
+                (CreativeInventory.IsOpen && CreativeInventory.IsHovering))
             {
-                return false;
+                PlayerInput.ScrollWheelDelta = 0;
             }
-
-            if (ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering)
-            {
-                return false;
-            }
-
-            return true;
         }
     }
 }
