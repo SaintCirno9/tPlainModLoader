@@ -80,6 +80,7 @@ namespace tContentPatch.Content.UI
             string ui_text_text = null;
             if (Focus)
             {
+                Terraria.GameInput.PlayerInput.WritingText = true;
                 ui_text_text = Text;
                 if (time1 * 16 > 1000) ui_text_text += "|";
 

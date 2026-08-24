@@ -171,6 +171,25 @@ namespace tPlainModLoader
                 }
             }
 
+            sw.Stop();
+            string msg = $"[Publicizer] 公有化完成 (类型: {typeCount}, 方法: {methodCount}, 字段: {fieldCount}, 耗时: {sw.ElapsedMilliseconds}ms)";
+            Console.WriteLine(msg);
+            Log.Add(msg);
+
+            // 执行 Prepatcher 预修补引擎（自由字段注入与早期 Cecil 预补丁）
+            try
+            {
+                string gameDir = Path.GetDirectoryName(filePath);
+                string hostDir = AppDomain.CurrentDomain.BaseDirectory;
+                Prepatcher.PrepatcherEngine.Process(assemblyDef, gameDir, hostDir);
+            }
+            catch (Exception ex)
+            {
+                string errMsg = $"[Prepatcher] 执行预修补异常: {ex}";
+                Console.WriteLine(errMsg);
+                Log.Add(errMsg);
+            }
+
             byte[] assemblyBytes;
             using (MemoryStream ms = new MemoryStream())
             {
@@ -179,11 +198,6 @@ namespace tPlainModLoader
             }
 
             assemblyDef.Dispose();
-
-            sw.Stop();
-            string msg = $"[Publicizer] 公有化完成 (类型: {typeCount}, 方法: {methodCount}, 字段: {fieldCount}, 耗时: {sw.ElapsedMilliseconds}ms)";
-            Console.WriteLine(msg);
-            Log.Add(msg);
 
             return Assembly.Load(assemblyBytes);
         }

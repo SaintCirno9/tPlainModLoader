@@ -1,57 +1,56 @@
-<div align="center" style="padding-top: 25px;display: flex;flex-direction: column;align-items: center">
-<h3>:D</h3>
+# tPlainModLoader (TPML)
+
+<div align="center">
+
+**面向原版 Terraria 的轻量级模组加载与扩容框架**
+
+[![Platform](https://img.shields.io/badge/Platform-Windows%20(x86)-blue.svg)]()
+[![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple.svg)]()
+[![Terraria](https://img.shields.io/badge/Terraria-1.4.4%2B%20%7C%201.4.5%2B-green.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
+
 </div>
 
-## 介绍
-关于**tPlainModLoader**
-### 1. 功能
-在原版游戏的基础上添加了加载模组的功能，模组在此基础上可以对原版内容进行修改。
-### 2. 需要注意的问题
-由于技术不足(太菜了)，所以对**tPlainModLoader**的安全性不做任何保证，因此如果坚持要使用该软件导致的**游戏崩溃**、**游戏损坏**等各种问题需要由使用者自行承担。<br/>
-不建议使用重新加载模组，最好是重新打开**tPlainModLoader**，如果有模组使用了`tContentPatch.Mod.AddPatch`对游戏进行修补，那么再次加载该模组会导致修补的部分出现问题。
+---
 
-## 使用
-直接运行`tPlainModLoader.exe`即可，不过需要设置启动游戏的位置，[详细信息](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#id1)。
-### 遇到问题或`tPlainModLoader.exe`启动失败？
-[看这里](https://github.com/github-user-64/tPlainModLoader/wiki/%E4%BD%BF%E7%94%A8#%E5%90%AF%E5%8A%A8%E5%A4%B1%E8%B4%A5)
+## 📌 项目概述
 
-## 模组
-📌部分模组在[tPMods](https://github.com/github-user-64/tPMods)
-> 目前[Mods](Mods)中的模组在游戏里的UI可能会无法被鼠标点击，还不知道为什么，重新打开基本能解决问题。
+`tPlainModLoader` (TPML) 是一个面向官方原版 Terraria (`Terraria.exe`) 的模组加载与补丁框架。
 
-> 最近在试的时候发现最切出游戏窗口再切回来时，原本不能点击的UI又可以用了，而且在全屏状态下UI不能点击的问题好像必定出现，不知道是不是游戏窗口没刷新大小的原因。啊啊啊~未来再修吧:L
+### 核心特性
+- **直接运行于原版游戏**：基于原版客户端直接启动，保持对原生存档格式（`.plr` / `.wld`）的完整兼容；
+- **公有化预处理 (Publicizer)**：启动阶段通过 Mono.Cecil 对游戏程序集进行成员公开化，支持开发者在编译期和运行期以强类型直连访问原版内部成员；
+- **Prepatcher 预修补机制**：支持通过 `[PrepatcherField]` 向原生类动态注入实例字段并改写访问器 IL，同时支持 `IPrepatcher` 早期 Cecil 预补丁；
+- **原生级统一按键框架 (KeybindLoader)**：模组快捷键自动注入原版控件设置界面与输入配置；
+- **4GB 虚拟内存感知 (LargeAddressAware)**：构建流自动注入 LAA 标志，扩展 32 位寻址上限。
 
-> 我靠，录视频的时候又发现一些功能在全屏模式下会出问题，比如点亮全图在客户端点亮的时候会不知道为啥点不亮，这全屏模式是什么鬼东西！都别给我用全屏，不想改了~呜呜呜:(
+---
 
-### 1. 安装
-安装模组只需将模组放在自动生成的`Mods`文件夹中。
+## 📖 完整使用与开发文档
 
-### 2. 制作
-关于示例模组的制作还在新建文件夹中...(骗你的，连文件夹都没有:b
+关于启动器配置、模组安装、开发起步以及 API 接入的完整说明，请参阅独立的文档手册：
 
-[Wiki](https://github.com/github-user-64/tPlainModLoader/wiki/%E5%88%9B%E5%BB%BA%E6%A8%A1%E7%BB%84)那简单加了个创建方法
+👉 **[使用与开发手册 (USAGE.md)](USAGE.md)**
 
-在**tPlainModLoader**中制作模组和在**tModLoader**中完全不同，**tPlainModLoader**基本上只是添加了加载模组的功能，需要制作模组的话会更艰难且没人家灵活。
+该文档包含：
+1. **玩家指南**：运行环境要求、`launchConfig.json` 路径配置、模组安装与 `enabled.json` 状态管理；
+2. **开发者指南**：模组项目结构、`Mod` 生命周期、`[PrepatcherField]` 字段注入范例、`KeybindLoader` 快捷键接入与 Harmony 补丁编写规范；
+3. **构建与部署**：MSBuild 自动化构建与自动部署命令。
 
-不过你可以使用`tContentPatch.Mod.AddPatch`对游戏的任何地方进行修补，不过再次加载模组时可能会导致程序使用已卸载的模组中的方法来修补，所以使用该方法的模组需要重新加载时最好是关闭软件重新打开。
+---
 
-## 引用
-### 项目引用
-**Harmony**<https://github.com/pardeike/Harmony/>
+## 📦 附带模组生态
 
-**Newtonsoft.Json**<https://github.com/JamesNK/Newtonsoft.Json/>
+TPML 仓库内包含 14 个官方扩展模组与实用工具（如 `ReduceMouseLag`、`PipetteTool`、`VeinMining`、`WandsTool`、`CreativeInventory`、`QuickSetting`、`QuickButton` 等）。
 
-**CommandHelp**<https://github.com/github-user-64/CommandHelp/>
+👉 各模组的详细功能介绍与操作指南请参阅：**[附带模组总览手册 (Mods/README.md)](Mods/README.md)**
 
-**FastWin32**<https://github.com/liang9539/FastWin32/>
-### 外观
-**tModLoader**<https://github.com/tModLoader/tModLoader/>
-### 模组引用
-[WandsTool](Mods/WandsTool)使用**更好的体验**中部分图片资源<https://github.com/ForOne-Club/ImproveGame/>
-### 该项目地址
-<https://github.com/github-user-64/tPlainModLoader/>
+---
 
-## ✨特别感谢
-[Azmi21](https://space.bilibili.com/289591350)提供测试
+## 📄 致谢与依赖
 
-[一百颗小西柚](https://space.bilibili.com/1387360586)提供大量bug
+- **Harmony**：[Lib.Harmony](https://github.com/pardeike/Harmony/)
+- **Mono.Cecil**：[jbevain/cecil](https://github.com/jbevain/cecil)
+- **Newtonsoft.Json**：[JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)
+- **Prepatcher 架构参考**：[Zetrith/Prepatcher](https://github.com/Zetrith/Prepatcher)
+- **Author**：`SaintCirno9`

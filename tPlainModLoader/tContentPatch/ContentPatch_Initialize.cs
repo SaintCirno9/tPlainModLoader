@@ -68,6 +68,7 @@ namespace tContentPatch
             //加载完成时
             LoaderControl.OnModLoad_Ok += () =>
             {
+                Input.KeybindLoader.SyncWithPlayerInput();
                 Log.SaveTry();
 
                 if (Main.netMode != 0 && Main.netMode != 1) return;

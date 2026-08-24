@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -111,6 +111,7 @@ namespace tContentPatch.ModLoad
 
                 loadedMod = null;
                 modLoader.Unload();
+                Input.KeybindLoader.Unload();
 
                 Log.Add($"{nameof(LoaderControl)}:卸载模组完成");
                 ContentPatch.PrintTry("卸载完成");

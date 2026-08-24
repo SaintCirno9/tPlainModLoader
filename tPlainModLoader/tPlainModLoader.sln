@@ -39,7 +39,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WandsTool", "..\Mods\WandsT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchSapwn", "..\Mods\批量生成\批量生成\批量生成.csproj", "{E8E81B66-2513-464C-BB08-B6D6F900480B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReduceMouseLag", "..\Mods\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag.csproj", "{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReduceMouseLag", "..\Mods\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag.csproj", "{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VeinMining", "..\Mods\VeinMining\VeinMining.csproj", "{437CA602-0947-4936-ACF4-65CF0F1D8A29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipetteTool", "..\Mods\PipetteTool\PipetteTool.csproj", "{8B342A91-4567-4632-B8E1-D1E9952E3C01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -119,6 +123,14 @@ Global
 		{E8E81B66-2513-464C-BB08-B6D6F900480B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8E81B66-2513-464C-BB08-B6D6F900480B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8E81B66-2513-464C-BB08-B6D6F900480B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{437CA602-0947-4936-ACF4-65CF0F1D8A29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{437CA602-0947-4936-ACF4-65CF0F1D8A29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{437CA602-0947-4936-ACF4-65CF0F1D8A29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{437CA602-0947-4936-ACF4-65CF0F1D8A29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B342A91-4567-4632-B8E1-D1E9952E3C01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B342A91-4567-4632-B8E1-D1E9952E3C01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B342A91-4567-4632-B8E1-D1E9952E3C01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B342A91-4567-4632-B8E1-D1E9952E3C01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -137,10 +149,10 @@ Global
 		{1E23795A-8758-45DE-B962-B799C09CC923} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{9EDB6614-8022-472D-956C-64C4EAA482BA} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{E8E81B66-2513-464C-BB08-B6D6F900480B} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
+		{437CA602-0947-4936-ACF4-65CF0F1D8A29} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
+		{8B342A91-4567-4632-B8E1-D1E9952E3C01} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0461D13B-9EBE-463D-B23A-869FE0BAD7C6}
 	EndGlobalSection
-EndProject("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReduceMouseLag", "..\Mods\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag\ReduceMouseLag.csproj", "{D87E14A2-9382-4BF1-B9A3-5F09CB8D76A1}"
-EndProject
-Global
+EndGlobal

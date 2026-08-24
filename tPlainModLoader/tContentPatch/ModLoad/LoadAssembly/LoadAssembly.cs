@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -77,8 +77,14 @@ namespace tContentPatch.ModLoad
                 //所以使用Assembly.Load(File.ReadAllBytes())加载, 防止出现这情况
                 //注意, 使用Assembly.Load(File.ReadAllBytes())加载会导致加载的程序集获取不到Location
 
-                //mo.assembly = Assembly.LoadFile(filePath);
-                mo.assembly = Assembly.Load(File.ReadAllBytes(filePath));
+                // 优先从 PrepatcherStorage 获取已被 Prepatcher 修补过的程序集字节流
+                byte[] asmBytes;
+                if (!Prepatcher.PrepatcherStorage.TryGetPatchedBytes(filePath, out asmBytes))
+                {
+                    asmBytes = File.ReadAllBytes(filePath);
+                }
+
+                mo.assembly = Assembly.Load(asmBytes);
 
                 ++progressV;
                 ContentPatch.PrintTry($"已加载程序集:{filePath}");
