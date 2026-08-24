@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+using CreativeInventory.KeyBind;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
@@ -18,6 +19,11 @@ namespace CreativeInventory
             ui.SetState(ui_state);
         }
 
+        public override void Initialize()
+        {
+            CreativeInventoryKeybind.Initialize();
+        }
+
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
             if (ui == null) return;
@@ -30,11 +36,19 @@ namespace CreativeInventory
             {
                 ui.SetState(ui_state);
                 ui.Update(gameTime);
+
+                // 监听统一 ModKeybind 快捷键输入
+                if (CreativeInventoryKeybind.ToggleKeybind?.JustPressed == true)
+                {
+                    CreativeInventory.CreativeInventory.SwitchOpenOrClose();
+                }
             }
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
+            CreativeInventoryKeybind.Initialize();
+
             int index = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Inventory");
             if (index != -1)
             {
