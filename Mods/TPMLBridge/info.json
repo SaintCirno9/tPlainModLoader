@@ -1,0 +1,6 @@
+{
+  "name": "TPML 代理桥接器",
+  "author": "[c/00ffff:SaintCirno9]",
+  "jumpPath": "https://github.com/github-user-64/tPlainModLoader",
+  "description": "【GABP 自动化控制与调试桥接器】\n- 实现 Game Agent Bridge Protocol (GABP v1.1)；\n- 对接 GABS MCP 服务器，提供秒级一键进图与状态查询；\n- 支持远程背包检查、控制台指令与游戏状态直读。"
+}
