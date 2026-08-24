@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
+using QuickSetting.KeyBind;
 using System;
 using System.Collections.Generic;
 using tContentPatch;
@@ -13,10 +14,11 @@ namespace QuickSetting.QuickSetting
         public static Action<string, string> OnSwitchItem = null;
         private static UIQuickSetting ui_qs = null;
         private static List<string> keyOrder = null;
-        private static string key = null;
 
         public override void Load()
         {
+            QuickSettingKeybind.Initialize();
+
             if (Main.dedServ) return;
 
             ui_qs = new UIQuickSetting("设置", 350, 600);
@@ -46,20 +48,6 @@ namespace QuickSetting.QuickSetting
         public static void SetKeyOrder(List<string> keyOrder)
         {
             QuickSetting.keyOrder = keyOrder;
-        }
-
-        public static void SetBind(string key)
-        {
-            ListenInput.DelListenInput(QuickSetting.key, foo);
-
-            QuickSetting.key = key;
-
-            ListenInput.AddListenInput(QuickSetting.key, foo);
-        }
-
-        private static void foo(bool isOne)
-        {
-            if (isOne) SwitchOpenOrClose();
         }
     }
 }

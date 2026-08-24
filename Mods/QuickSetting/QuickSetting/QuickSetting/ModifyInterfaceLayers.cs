@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
+using QuickSetting.KeyBind;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
@@ -18,6 +19,11 @@ namespace QuickSetting
             ui.SetState(ui_state);
         }
 
+        public override void Initialize()
+        {
+            QuickSettingKeybind.Initialize();
+        }
+
         public override void UpdateUIStatesPostfix(GameTime gameTime)
         {
             if (ui == null) return;
@@ -30,11 +36,19 @@ namespace QuickSetting
             {
                 ui.SetState(ui_state);
                 ui.Update(gameTime);
+
+                // 监听统一 ModKeybind 快捷键输入
+                if (QuickSettingKeybind.ToggleKeybind?.JustPressed == true)
+                {
+                    QuickSetting.QuickSetting.SwitchOpenOrClose();
+                }
             }
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
+            QuickSettingKeybind.Initialize();
+
             int index = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Inventory");
             if (index != -1)
             {
