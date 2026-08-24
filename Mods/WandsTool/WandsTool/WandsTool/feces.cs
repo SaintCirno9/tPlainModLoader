@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
+using Terraria.Audio;
 using Terraria.UI;
 using WandsTool.Content;
+using WandsTool.KeyBind;
 
 namespace WandsTool
 {
@@ -28,8 +30,15 @@ namespace WandsTool
             }
         }
 
+        public override void Initialize()
+        {
+            WandsKeybind.Initialize();
+        }
+
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
+            WandsKeybind.Initialize();
+
             int index = gameInterfaceLayers.FindIndex(i => i.Name == "Vanilla: Laser Ruler");
             if (index != -1)
             {
@@ -50,6 +59,11 @@ namespace WandsTool
                     "StaticTile.WandsTool: Laser Ruler Postfix UI",
                     () =>
                     {
+                        if (gameMain.Wand_isEnable)
+                        {
+                            Wands.DrawCursorModeTooltip(Main.spriteBatch);
+                        }
+
                         if (gameMain.UI_WandsPanel1_isOpen && gameMain.Wand_isEnable)
                         {
                             UI?.Draw(Main.spriteBatch, Main.gameTimeCache);
@@ -78,11 +92,31 @@ namespace WandsTool
         }
 
         private static int lastSelectedItem = -1;
+        private static bool lastPlayerInventory = false;
 
         public override void DoUpdateInWorldPostfix()
         {
             Player player = Main.LocalPlayer;
-            if (gameMain.Wand_isEnable && player != null)
+            if (player == null || Main.gameMenu) return;
+
+            // 监听统一 ModKeybind 开关魔杖模式（自动全局静默聊天/打字等）
+            if (WandsKeybind.ToggleWand?.JustPressed == true)
+            {
+                SoundEngine.PlaySound(12);
+                gameMain.ToggleWand();
+            }
+
+            // 监听背包开启/关闭状态切换（QoL：开启或关闭背包时自动退出魔杖模式）
+            if (Main.playerInventory != lastPlayerInventory)
+            {
+                lastPlayerInventory = Main.playerInventory;
+                if (gameMain.Wand_isEnable)
+                {
+                    gameMain.SetWandEnabled(false);
+                }
+            }
+
+            if (gameMain.Wand_isEnable)
             {
                 // 监听快捷栏手持物品切换，实时自适应魔棒工作模式
                 if (player.selectedItem != lastSelectedItem)
@@ -113,6 +147,9 @@ namespace WandsTool
                 UI?.Close();
 
                 Wands.Reset();
+                WandAction.Clear();
+                gameMain.CutSourceRect = null;
+                gameMain.Wand_StructureMode = gameMain.StructureMode.None;
             }
         }
     }

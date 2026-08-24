@@ -22,7 +22,7 @@ namespace WandsTool
                 if (v == null || v.Length < 1) return;
                 if (v[0] is bool e)
                 {
-                    Content.gameMain.Wand_isEnable = e;
+                    Content.gameMain.SetWandEnabled(e);
                 }
             };
             root.SubCommand.Add(enable);

@@ -84,6 +84,17 @@ namespace WandsTool.Content
 
         public static int Count { get; protected set; } = 0;
 
+        public static void Clear()
+        {
+            tilePlace?.Clear();
+            tileKill?.Clear();
+            liquidQueue?.Clear();
+            wirePlace?.Clear();
+            wireKill?.Clear();
+            wireLinePlaceAndKill?.Clear();
+            Count = 0;
+        }
+
         public static void Update(int updateCount = -1)
         {
             if (gameMain.Wand_UpdateCount < 1) gameMain.Wand_UpdateCount = 1;
@@ -769,17 +780,17 @@ namespace WandsTool.Content
             return t.x >= 0 && t.x < Main.tile.GetLength(0) && t.y >= 0 && t.y < Main.tile.GetLength(1);
         }
 
-        private static Item FirstItem_Tile(Player player)
+        public static Item FirstItem_Tile(Player player)
         {
             return FirstItem_TileOrWall(player, true);
         }
 
-        private static Item FirstItem_Wall(Player player)
+        public static Item FirstItem_Wall(Player player)
         {
             return FirstItem_TileOrWall(player, false);
         }
 
-        private static Item FirstItem_TileOrWall(Player player, bool isTile)
+        public static Item FirstItem_TileOrWall(Player player, bool isTile)
         {
             if (player == null) return null;
 

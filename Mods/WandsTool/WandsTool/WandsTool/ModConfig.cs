@@ -19,7 +19,7 @@ namespace WandsTool
             [JsonProperty("方块替换模式")]
             public bool BlockReplace = false;
 
-            [JsonProperty("破坏掉落物自动吸附")]
+            [JsonProperty("破坏产生掉落物")]
             public bool CollectDrops = true;
 
             [JsonProperty("无限液体模式")]
@@ -112,13 +112,13 @@ namespace WandsTool
             };
             sv.AddChild(s2);
 
-            // 3. 破坏掉落物自动吸附
-            UIItemSwitch s3 = new UIItemSwitch(null, "破坏掉落物自动吸附");
+            // 3. 破坏产生掉落物
+            UIItemSwitch s3 = new UIItemSwitch(null, "破坏产生掉落物");
             s3.OnUpdate += _ =>
             {
                 if (data == null) return;
                 s3.SetVal(data.CollectDrops);
-                if (s3.IsMouseHovering) Main.instance.MouseText("星爆/区域破坏方块与墙壁时，自动将掉落物吸附至玩家背包");
+                if (s3.IsMouseHovering) Main.instance.MouseText("破坏方块、墙壁与删除结构时产生掉落物并自动吸附进背包 (关: 直接销毁无掉落)");
             };
             s3.OnValUpdate += v =>
             {

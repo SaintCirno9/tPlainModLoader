@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.ID;
 
 namespace WandsTool.Content
 {
@@ -30,11 +31,69 @@ namespace WandsTool.Content
 
         public static void Update()
         {
+            // 蓝图放置模式快捷键检测（已接入统一 ModKeybind 系统，支持原版设置改键并自动静默输入）
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste && Structure.StructureStorage.Clipboard != null)
+            {
+                if (WandsTool.KeyBind.WandsKeybind.FlipHorizontal?.JustPressed == true)
+                {
+                    Structure.StructureStorage.Clipboard = Structure.StructureStorage.Clipboard.FlipHorizontal();
+                    CombatText.NewText(Main.LocalPlayer.getRect(), Color.Cyan, "水平翻转", true, false);
+                }
+                if (WandsTool.KeyBind.WandsKeybind.FlipVertical?.JustPressed == true)
+                {
+                    Structure.StructureStorage.Clipboard = Structure.StructureStorage.Clipboard.FlipVertical();
+                    CombatText.NewText(Main.LocalPlayer.getRect(), Color.Cyan, "垂直翻转", true, false);
+                }
+            }
+
             Update_Select();
         }
 
         private static void Update_Select()
         {
+            if (Main.LocalPlayer == null || Main.LocalPlayer.dead || Main.gameMenu)
+            {
+                Reset();
+                return;
+            }
+
+            // 1. 蓝图粘贴模式处理
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste)
+            {
+                if (Main.mouseRight && Main.mouseRightRelease)
+                {
+                    bool wasCut = gameMain.CutSourceRect.HasValue;
+                    gameMain.CutSourceRect = null;
+
+                    gameMain.StructureMode fallbackMode = gameMain.LastActiveStructureMode;
+                    if (fallbackMode == gameMain.StructureMode.None || fallbackMode == gameMain.StructureMode.Paste)
+                    {
+                        fallbackMode = gameMain.StructureMode.Copy;
+                    }
+                    gameMain.Wand_StructureMode = fallbackMode;
+                    Main.mouseRightRelease = false;
+
+                    string modeText = (fallbackMode == gameMain.StructureMode.Cut) ? "剪切模式" :
+                                      (fallbackMode == gameMain.StructureMode.Copy) ? "复制模式" : "蓝图模式";
+                    CombatText.NewText(Main.LocalPlayer.getRect(), Color.Orange, wasCut ? $"已取消剪切 (回到{modeText})" : $"已退出放置 (回到{modeText})", true, false);
+                    return;
+                }
+
+                if (Main.mouseLeft && Main.mouseLeftRelease)
+                {
+                    if (Main.LocalPlayer.mouseInterface || Main.playerInventory || Main.editChest || Main.editSign || Main.ingameOptionsWindow || Main.drawingPlayerChat) return;
+
+                    if (Structure.StructureStorage.Clipboard != null)
+                    {
+                        Structure.StructurePlacement.Place(Structure.StructureStorage.Clipboard, Main.MouseWorld.ToTileCoordinates(), Main.LocalPlayer, gameMain.Wand_StructureOverwrite);
+                    }
+                    Main.mouseLeftRelease = false;
+                    return;
+                }
+                return;
+            }
+
+            // 2. 常规或复制模式右键取消选区
             if (Main.mouseRight == true && selecting == true)
             {
                 selecting = false;
@@ -44,23 +103,13 @@ namespace WandsTool.Content
                 Terraria.Player player = Main.LocalPlayer;
                 if (player == null) return;
 
-                string cancelMsg = "取消操作";
-                if (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None)
-                {
-                    cancelMsg = "取消液体操作";
-                }
-                else
-                {
-                    cancelMsg = $"取消{(gameMain.Wand_isPlace ? "放置" : "破坏")}";
-                }
+                string cancelMsg = (gameMain.Wand_StructureMode == gameMain.StructureMode.Copy) ? "取消复制" :
+                    (gameMain.Wand_StructureMode == gameMain.StructureMode.Cut) ? "取消剪切" :
+                    (gameMain.Wand_StructureMode == gameMain.StructureMode.Delete) ? "取消删除" :
+                    (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None) ? "取消液体操作" :
+                    $"取消{(gameMain.Wand_isPlace ? "放置" : "破坏")}";
 
                 CombatText.NewText(player.getRect(), Color.Red, cancelMsg, true, false);
-                return;
-            }
-
-            if (Main.LocalPlayer == null || Main.LocalPlayer.dead || Main.gameMenu)
-            {
-                Reset();
                 return;
             }
 
@@ -78,6 +127,99 @@ namespace WandsTool.Content
 
             if (Main.mouseLeft == false)
             {
+                // 3. 结构删除模式（同时清除物块与背景墙）
+                if (gameMain.Wand_StructureMode == gameMain.StructureMode.Delete)
+                {
+                    Point p1 = position1.ToTileCoordinates();
+                    Point p2 = position2.ToTileCoordinates();
+                    int minX = Math.Min(p1.X, p2.X);
+                    int minY = Math.Min(p1.Y, p2.Y);
+                    int w = Math.Abs(p1.X - p2.X) + 1;
+                    int h = Math.Abs(p1.Y - p2.Y) + 1;
+
+                    bool noItem = !gameMain.Wand_CollectDrops;
+                    for (int x = minX; x < minX + w; x++)
+                    {
+                        for (int y = minY; y < minY + h; y++)
+                        {
+                            if (x < 0 || x >= Main.tile.GetLength(0) || y < 0 || y >= Main.tile.GetLength(1)) continue;
+                            Tile tile = Main.tile[x, y];
+                            if (tile != null)
+                            {
+                                if (tile.active()) WorldGen.KillTile(x, y, false, false, noItem);
+                                if (tile.wall > 0) WorldGen.KillWall(x, y, false);
+                            }
+                        }
+                    }
+
+                    if (Main.netMode == 1)
+                    {
+                        NetMessage.SendTileSquare(Main.LocalPlayer.whoAmI, minX, minY, w, h);
+                    }
+
+                    if (gameMain.Wand_CollectDrops && Main.LocalPlayer != null)
+                    {
+                        Rectangle worldRect = new Rectangle(minX * 16 - 32, minY * 16 - 32, w * 16 + 64, h * 16 + 64);
+                        for (int i = 0; i < 400; i++)
+                        {
+                            var it = Main.item[i];
+                            if (it != null && it.active && it.stack > 0)
+                            {
+                                if (worldRect.Contains((int)it.Center.X, (int)it.Center.Y))
+                                {
+                                    it.position = Main.LocalPlayer.Center - new Vector2(it.width / 2f, it.height / 2f);
+                                    it.velocity = Vector2.Zero;
+                                    it.beingGrabbed = true;
+                                }
+                            }
+                        }
+                    }
+
+                    Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
+                    CombatText.NewText(Main.LocalPlayer.getRect(), Color.Crimson, $"已清除 {w}×{h}", true, false);
+                    selecting = false;
+                    return;
+                }
+
+                // 4. 结构复制 / 剪切模式完成划选
+                if (gameMain.Wand_StructureMode == gameMain.StructureMode.Copy || gameMain.Wand_StructureMode == gameMain.StructureMode.Cut)
+                {
+                    bool isCut = gameMain.Wand_StructureMode == gameMain.StructureMode.Cut;
+                    gameMain.LastActiveStructureMode = gameMain.Wand_StructureMode;
+                    Point p1 = position1.ToTileCoordinates();
+                    Point p2 = position2.ToTileCoordinates();
+                    int minX = Math.Min(p1.X, p2.X);
+                    int minY = Math.Min(p1.Y, p2.Y);
+                    int w = Math.Abs(p1.X - p2.X) + 1;
+                    int h = Math.Abs(p1.Y - p2.Y) + 1;
+                    Rectangle rect = new Rectangle(minX, minY, w, h);
+
+                    Structure.StructureData data = Structure.StructureCapture.Capture(rect, $"{(isCut ? "剪切结构" : "建筑结构")}_{w}x{h}");
+                    if (data != null)
+                    {
+                        Structure.StructureStorage.Clipboard = data;
+
+                        if (isCut)
+                        {
+                            // 延迟原子性剪切：先不清除原建筑，记录原区域！
+                            gameMain.CutSourceRect = rect;
+                            Terraria.Audio.SoundEngine.PlaySound(SoundID.Item14, Main.LocalPlayer.position);
+                            gameMain.Wand_StructureMode = gameMain.StructureMode.Paste; // 自动切入放置模式
+                            Main.NewText($"[魔杖] 已剪切 {w}×{h} 结构", 255, 200, 100);
+                            CombatText.NewText(Main.LocalPlayer.getRect(), Color.Gold, "剪切就绪", true, false);
+                        }
+                        else
+                        {
+                            gameMain.CutSourceRect = null;
+                            Terraria.Audio.SoundEngine.PlaySound(SoundID.Item4, Main.LocalPlayer.position);
+                            gameMain.Wand_StructureMode = gameMain.StructureMode.Paste; // 自动切入放置模式
+                            CombatText.NewText(Main.LocalPlayer.getRect(), Color.LimeGreen, $"已复制 {w}×{h}", true, false);
+                        }
+                    }
+                    selecting = false;
+                    return;
+                }
+
                 Update_Shapes();
                 selecting = false;
 
@@ -158,6 +300,11 @@ namespace WandsTool.Content
 
         public static void Draw()
         {
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste)
+            {
+                Structure.StructurePreview.Draw(Main.spriteBatch);
+            }
+
             if (selecting == false) return;
 
             if (Main.GameUpdateCount % 5 == 0 || shapes == null) Update_Shapes();
@@ -167,7 +314,22 @@ namespace WandsTool.Content
             Color borderColor;
             string modeName;
 
-            if (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None)
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Copy)
+            {
+                borderColor = new Color(255, 215, 0);
+                modeName = "结构复制";
+            }
+            else if (gameMain.Wand_StructureMode == gameMain.StructureMode.Cut)
+            {
+                borderColor = new Color(255, 120, 50);
+                modeName = "结构剪切";
+            }
+            else if (gameMain.Wand_StructureMode == gameMain.StructureMode.Delete)
+            {
+                borderColor = new Color(255, 50, 60);
+                modeName = "结构删除";
+            }
+            else if (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None)
             {
                 switch (gameMain.Wand_LiquidMode)
                 {
@@ -235,6 +397,196 @@ namespace WandsTool.Content
                 case Shapes.rectangle: WandUtils.Draw_rectangle(shapes, position1, position2, borderColor, backgroundColor); break;
                 default: break;
             }
+        }
+
+        /// <summary>
+        /// 在鼠标光标右下方绘制当前魔杖工作模式与物品图标（100% 对齐原版 ItemSlot.DrawItemIcon 渲染规范）
+        /// </summary>
+        public static void DrawCursorModeTooltip(Microsoft.Xna.Framework.Graphics.SpriteBatch sb)
+        {
+            if (!gameMain.Wand_isEnable || Main.gameMenu || Main.mapFullscreen) return;
+
+            Player player = Main.LocalPlayer;
+            if (player == null) return;
+
+            Item heldItem = player.HeldItem;
+            int iconItemId = (heldItem != null && !heldItem.IsAir) ? heldItem.type : 0;
+
+            string text;
+            Color textColor;
+
+            // 1. 蓝图模式
+            if (gameMain.Wand_StructureMode != gameMain.StructureMode.None)
+            {
+                iconItemId = 3611; // 蓝图/建筑设计图标
+
+                switch (gameMain.Wand_StructureMode)
+                {
+                    case gameMain.StructureMode.Copy:
+                        text = "蓝图复制";
+                        textColor = Color.Gold;
+                        break;
+                    case gameMain.StructureMode.Cut:
+                        text = "蓝图剪切";
+                        textColor = new Color(255, 140, 50);
+                        break;
+                    case gameMain.StructureMode.Delete:
+                        text = "结构删除";
+                        textColor = new Color(255, 60, 70);
+                        break;
+                    case gameMain.StructureMode.Paste:
+                        string structName = Structure.StructureStorage.Clipboard?.Name;
+                        if (!string.IsNullOrEmpty(structName) && structName.Length > 10) structName = structName.Substring(0, 10) + "...";
+                        text = string.IsNullOrEmpty(structName) ? "蓝图放置" : $"蓝图: {structName}";
+                        textColor = Color.Cyan;
+                        break;
+                    default:
+                        text = "蓝图模式";
+                        textColor = Color.Cyan;
+                        break;
+                }
+            }
+            // 2. 液体魔杖模式
+            else if (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None)
+            {
+                switch (gameMain.Wand_LiquidMode)
+                {
+                    case gameMain.LiquidMode.Water:
+                        if (iconItemId <= 0) iconItemId = gameMain.Wand_InfiniteLiquid ? ItemID.BottomlessBucket : ItemID.WaterBucket;
+                        text = gameMain.Wand_InfiniteLiquid ? "无限水" : "铺设水";
+                        textColor = new Color(50, 180, 255);
+                        break;
+                    case gameMain.LiquidMode.Lava:
+                        if (iconItemId <= 0) iconItemId = gameMain.Wand_InfiniteLiquid ? ItemID.BottomlessLavaBucket : ItemID.LavaBucket;
+                        text = gameMain.Wand_InfiniteLiquid ? "无限岩浆" : "铺设岩浆";
+                        textColor = new Color(255, 100, 30);
+                        break;
+                    case gameMain.LiquidMode.Honey:
+                        if (iconItemId <= 0) iconItemId = gameMain.Wand_InfiniteLiquid ? ItemID.BottomlessHoneyBucket : ItemID.HoneyBucket;
+                        text = gameMain.Wand_InfiniteLiquid ? "无限蜂蜜" : "铺设蜂蜜";
+                        textColor = new Color(255, 195, 0);
+                        break;
+                    case gameMain.LiquidMode.Shimmer:
+                        if (iconItemId <= 0) iconItemId = ItemID.BottomlessShimmerBucket;
+                        text = gameMain.Wand_InfiniteLiquid ? "无限微光" : "铺设微光";
+                        textColor = new Color(230, 130, 255);
+                        break;
+                    case gameMain.LiquidMode.Absorb:
+                        if (iconItemId <= 0) iconItemId = ItemID.SuperAbsorbantSponge;
+                        text = "吸收液体";
+                        textColor = new Color(0, 235, 205);
+                        break;
+                    case gameMain.LiquidMode.Clear:
+                        if (iconItemId <= 0) iconItemId = ItemID.EmptyBucket;
+                        text = "清空液体";
+                        textColor = new Color(220, 220, 220);
+                        break;
+                    default:
+                        text = "液体模式";
+                        textColor = Color.White;
+                        break;
+                }
+            }
+            // 3. 电线与制动器
+            else if (gameMain.Wand_ToolMode != 0)
+            {
+                bool isCut = !gameMain.Wand_isPlace;
+                string toolName = "";
+                if (gameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red)) toolName += "红";
+                if (gameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green)) toolName += "绿";
+                if (gameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue)) toolName += "蓝";
+                if (gameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow)) toolName += "黄";
+                if (gameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator)) toolName += "促动器";
+
+                text = isCut ? $"拆除[{toolName}]" : $"铺设[{toolName}]";
+                textColor = isCut ? new Color(255, 100, 100) : new Color(100, 220, 255);
+            }
+            // 4. 常规方块与墙壁魔杖
+            else if (gameMain.Wand_isPlace)
+            {
+                Item placeItem = null;
+                if (gameMain.Wand_Tile) placeItem = WandAction.FirstItem_Tile(player);
+                if (placeItem == null && gameMain.Wand_Wall) placeItem = WandAction.FirstItem_Wall(player);
+
+                if (placeItem != null)
+                {
+                    iconItemId = placeItem.type;
+                }
+
+                string target = (gameMain.Wand_Tile && gameMain.Wand_Wall) ? "物块+墙" :
+                                gameMain.Wand_Wall ? "背景墙" : "物块";
+
+                if (gameMain.Wand_BlockReplace)
+                {
+                    text = (placeItem != null) ? $"替换 ({target})" : "替换 [缺材料]";
+                    textColor = (placeItem != null) ? new Color(255, 175, 20) : new Color(255, 100, 100);
+                }
+                else
+                {
+                    text = (placeItem != null) ? $"放置 ({target})" : "放置 [缺材料]";
+                    textColor = (placeItem != null) ? new Color(60, 255, 100) : new Color(255, 100, 100);
+                }
+            }
+            else
+            {
+                string target = (gameMain.Wand_Tile && gameMain.Wand_Wall) ? "物块+墙" :
+                                gameMain.Wand_Wall ? "背景墙" : "物块";
+
+                if (gameMain.Wand_Shapes == Shapes.circularFilled)
+                {
+                    text = $"星爆破坏 ({target})";
+                    textColor = new Color(255, 80, 120);
+                }
+                else
+                {
+                    text = (target == "物块") ? "破坏" : $"破坏 ({target})";
+                    textColor = new Color(255, 70, 90);
+                }
+            }
+
+            // 附加非常规几何形状标注（矩形为默认不标注，其余显示 [线]/[圆]/[实心圆]）
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.None)
+            {
+                if (gameMain.Wand_Shapes == Shapes.line) text += " [线]";
+                else if (gameMain.Wand_Shapes == Shapes.circular) text += " [圆]";
+                else if (gameMain.Wand_Shapes == Shapes.circularFilled && gameMain.Wand_isPlace) text += " [实心圆]";
+            }
+
+            // 按照原版光标物品图标规范进行绘制
+            float cursorScale = Main.cursorScale;
+            float iconPush = 10f;
+            Vector2 textPos;
+
+            if (iconItemId > 0 && iconItemId < Terraria.GameContent.TextureAssets.Item.Length)
+            {
+                try
+                {
+                    Main.instance.LoadItem(iconItemId);
+                    Item drawItem = (ContentSamples.ItemsByType != null && ContentSamples.ItemsByType.TryGetValue(iconItemId, out var sample)) ? sample : null;
+                    if (drawItem == null)
+                    {
+                        drawItem = new Item();
+                        drawItem.SetDefaults(iconItemId);
+                    }
+
+                    Color currentColor = (heldItem != null && heldItem.type == iconItemId) ? heldItem.GetAlpha(Color.White) : Color.White;
+                    Terraria.UI.ItemSlot.GetItemLight(ref currentColor, iconItemId);
+
+                    Vector2 itemSize = Item.GetDrawHitbox(iconItemId, null).Size();
+                    Vector2 vector = itemSize * cursorScale * 0.5f;
+                    Vector2 center = new Vector2(Main.mouseX + iconPush, Main.mouseY + iconPush) + vector;
+
+                    Terraria.UI.ItemSlot.DrawItemIcon(drawItem, 21, sb, center, cursorScale, 32f, currentColor);
+
+                    textPos = new Vector2(center.X + vector.X + 6f, center.Y);
+                    Terraria.Utils.DrawBorderString(sb, text, textPos, textColor, 0.82f, anchorx: 0f, anchory: 0.5f);
+                    return;
+                }
+                catch { }
+            }
+
+            textPos = new Vector2(Main.mouseX + 20, Main.mouseY + 20);
+            Terraria.Utils.DrawBorderString(sb, text, textPos, textColor, 0.82f);
         }
     }
 }

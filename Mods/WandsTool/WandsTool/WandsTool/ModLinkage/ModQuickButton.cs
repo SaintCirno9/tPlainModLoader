@@ -40,12 +40,7 @@ namespace WandsTool.ModLinkage
             ui_img.OnLeftClick += (e, s) =>
             {
                 SoundEngine.PlaySound(12);
-
-                gameMain.Wand_isEnable = !gameMain.Wand_isEnable;
-                if (gameMain.Wand_isEnable)
-                {
-                    gameMain.AutoAdaptModeToHeldItem(Main.LocalPlayer);
-                }
+                gameMain.ToggleWand();
             };
 
             mi.Invoke(null, new object[] { "WandsTool.SwitchOpenOrClose", ui_img });

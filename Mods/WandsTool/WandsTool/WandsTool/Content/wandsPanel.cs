@@ -94,13 +94,15 @@ namespace WandsTool.Content
         protected UIState btns_3 = null;
         protected UIState btns_4 = null;
         protected UIState btns_5 = null;
+        protected UIState btns_6 = null;
 
-        // 主环 5 个按钮
+        // 主环 6 个按钮
         protected wandsPanel_btn1 btn1 = null; // 破坏/放置
         protected wandsPanel_btn1 btn2 = null; // 操作目标分类
         protected wandsPanel_btn1 btn3 = null; // 几何形状
         protected wandsPanel_btn1 btn4 = null; // 方块方向/坡度
         protected wandsPanel_btn1 btn5 = null; // 液体魔杖
+        protected wandsPanel_btn1 btn6 = null; // 蓝图与结构魔杖
 
         // 子菜单 2：操作目标（方块、墙壁、替换、收集、电线）
         protected wandsPanel_btn1 btn2_tile = null;
@@ -137,6 +139,20 @@ namespace WandsTool.Content
         protected wandsPanel_btn1 btn5_shimmer = null;
         protected wandsPanel_btn1 btn5_infinite = null;
 
+        // 子菜单 6：蓝图与结构系统
+        protected wandsPanel_btn1 btn6_off = null;
+        protected wandsPanel_btn1 btn6_copy = null;
+        protected wandsPanel_btn1 btn6_cut = null;
+        protected wandsPanel_btn1 btn6_delete = null;
+        protected wandsPanel_btn1 btn6_paste = null;
+        protected wandsPanel_btn1 btn6_flip_h = null;
+        protected wandsPanel_btn1 btn6_flip_v = null;
+        protected wandsPanel_btn1 btn6_overwrite = null;
+        protected wandsPanel_btn1 btn6_consume = null;
+        protected wandsPanel_btn1 btn6_manager = null;
+
+        public static Structure.UI.UIBlueprintManager BlueprintManager = new Structure.UI.UIBlueprintManager();
+
         public bool isReset = true;
 
         public wandsPanel()
@@ -147,6 +163,7 @@ namespace WandsTool.Content
             btns_3 = new UIState();
             btns_4 = new UIState();
             btns_5 = new UIState();
+            btns_6 = new UIState();
 
             // 主按钮初始化
             btn1 = new wandsPanel_btn1("Images/Item_1", "放置 / 破坏切换");
@@ -154,12 +171,13 @@ namespace WandsTool.Content
             btn3 = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "几何形状: 直线/圆/法爆/矩形");
             btn4 = new wandsPanel_btn1(Resources.Images_SlopeSolid, "方块坡度与朝向");
             btn5 = new wandsPanel_btn1("Images/Item_3031", "液体魔杖: 吸收/清空/铺设液体");
+            btn6 = new wandsPanel_btn1("Images/Item_3611", "建筑蓝图与结构系统: 复制/剪切/删除/粘贴/保存");
 
             // 子按钮初始化
             btn2_tile = new wandsPanel_btn1("Images/Item_2", "方块操作开关");
             btn2_wall = new wandsPanel_btn1("Images/Item_30", "背景墙操作开关");
             btn2_replace = new wandsPanel_btn1("Images/Item_4082", "方块/墙壁替换模式开关");
-            btn2_collect = new wandsPanel_btn1("Images/Item_5010", "破坏掉落物自动吸附收集开关");
+            btn2_collect = new wandsPanel_btn1("Images/Item_5010", "破坏产生掉落物开关 (开: 产生并吸入背包 / 关: 彻底销毁无掉落)");
             btn2_wire_red = new wandsPanel_btn1("Images/UI/Wires_2", "红线");
             btn2_wire_green = new wandsPanel_btn1("Images/UI/Wires_3", "绿线");
             btn2_wire_blue = new wandsPanel_btn1("Images/UI/Wires_4", "蓝线");
@@ -187,12 +205,25 @@ namespace WandsTool.Content
             btn5_shimmer = new wandsPanel_btn1("Images/Item_5303", "铺设微光");
             btn5_infinite = new wandsPanel_btn1("Images/Item_3031", "无限液体放置模式开关 (免消耗背包桶)");
 
+            // 蓝图子按钮
+            btn6_off = new wandsPanel_btn1("Images/Item_1", "退出蓝图模式 (恢复常规魔杖)");
+            btn6_copy = new wandsPanel_btn1("Images/Item_5098", "结构框选复制 (划选区域自动存入剪贴板)");
+            btn6_cut = new wandsPanel_btn1("Images/UI/Wires_1", "结构框选剪切 (划选区域抓取至剪贴板，一键搬家)");
+            btn6_delete = new wandsPanel_btn1("Images/Item_166", "结构区域删除 (划选同时破坏物块与背景墙)");
+            btn6_paste = new wandsPanel_btn1("Images/Item_3611", "蓝图放置模式 (投射虚影与一键摆放)");
+            btn6_flip_h = new wandsPanel_btn1("Images/Item_3612", "水平镜像翻转 [快捷键: H]");
+            btn6_flip_v = new wandsPanel_btn1("Images/Item_3625", "垂直翻转 [快捷键: V]");
+            btn6_overwrite = new wandsPanel_btn1("Images/Item_4082", "覆盖已有物块开关 (开: 覆盖原有物块 / 关: 仅在空白处放置)");
+            btn6_consume = new wandsPanel_btn1("Images/Item_5010", "材料消耗模式开关 (开: 放置需消耗对应材料 / 关: 免消耗自由摆放)");
+            btn6_manager = new wandsPanel_btn1("Images/Item_3611", "📖 蓝图管理器 (在游戏内浏览、载入、保存与管理本地蓝图)");
+
             // 主按钮点击事件
             btn1.OnLeftClick += (e, s) => onClick(0);
             btn2.OnLeftClick += (e, s) => onClick(1);
             btn3.OnLeftClick += (e, s) => onClick(2);
             btn4.OnLeftClick += (e, s) => onClick(3);
             btn5.OnLeftClick += (e, s) => onClick(4);
+            btn6.OnLeftClick += (e, s) => onClick(5);
 
             // 子按钮 2 事件
             Action<Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode> btn2_wire_action = (v) =>
@@ -203,7 +234,11 @@ namespace WandsTool.Content
             btn2_tile.OnLeftClick += (e, s) => gameMain.Wand_Tile = !gameMain.Wand_Tile;
             btn2_wall.OnLeftClick += (e, s) => gameMain.Wand_Wall = !gameMain.Wand_Wall;
             btn2_replace.OnLeftClick += (e, s) => gameMain.Wand_BlockReplace = !gameMain.Wand_BlockReplace;
-            btn2_collect.OnLeftClick += (e, s) => gameMain.Wand_CollectDrops = !gameMain.Wand_CollectDrops;
+            btn2_collect.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_CollectDrops = !gameMain.Wand_CollectDrops;
+                Main.NewText($"[魔杖] 产生掉落物: {(gameMain.Wand_CollectDrops ? "开" : "关")}", 255, 255, 150);
+            };
             btn2_wire_red.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red);
             btn2_wire_green.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green);
             btn2_wire_blue.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue);
@@ -234,6 +269,78 @@ namespace WandsTool.Content
             btn5_shimmer.OnLeftClick += (e, s) => gameMain.Wand_LiquidMode = gameMain.LiquidMode.Shimmer;
             btn5_infinite.OnLeftClick += (e, s) => gameMain.Wand_InfiniteLiquid = !gameMain.Wand_InfiniteLiquid;
 
+            // 子按钮 6 事件
+            btn6_off.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureMode = gameMain.StructureMode.None;
+                Main.NewText("[魔杖] 已退出蓝图模式 (恢复常规魔杖)", 100, 220, 255);
+            };
+            btn6_copy.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureMode = gameMain.StructureMode.Copy;
+                gameMain.LastActiveStructureMode = gameMain.StructureMode.Copy;
+                Main.NewText("[魔杖] 进入结构复制模式", 255, 240, 100);
+            };
+            btn6_cut.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureMode = gameMain.StructureMode.Cut;
+                gameMain.LastActiveStructureMode = gameMain.StructureMode.Cut;
+                Main.NewText("[魔杖] 进入结构剪切模式", 255, 180, 80);
+            };
+            btn6_delete.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureMode = gameMain.StructureMode.Delete;
+                gameMain.LastActiveStructureMode = gameMain.StructureMode.Delete;
+                Main.NewText("[魔杖] 进入结构删除模式", 255, 100, 100);
+            };
+            btn6_paste.OnLeftClick += (e, s) =>
+            {
+                if (Structure.StructureStorage.Clipboard == null)
+                {
+                    Main.NewText("[魔杖] 剪贴板为空，请先复制或载入蓝图", 255, 100, 100);
+                    return;
+                }
+                gameMain.Wand_StructureMode = gameMain.StructureMode.Paste;
+                Main.NewText($"[魔杖] 进入放置模式: {Structure.StructureStorage.Clipboard.Name}", 100, 255, 150);
+            };
+            btn6_flip_h.OnLeftClick += (e, s) =>
+            {
+                if (Structure.StructureStorage.Clipboard != null)
+                {
+                    Structure.StructureStorage.Clipboard = Structure.StructureStorage.Clipboard.FlipHorizontal();
+                    Main.NewText("[魔杖] 蓝图已水平镜像翻转", 100, 255, 255);
+                }
+            };
+            btn6_flip_v.OnLeftClick += (e, s) =>
+            {
+                if (Structure.StructureStorage.Clipboard != null)
+                {
+                    Structure.StructureStorage.Clipboard = Structure.StructureStorage.Clipboard.FlipVertical();
+                    Main.NewText("[魔杖] 蓝图已垂直翻转", 100, 255, 255);
+                }
+            };
+            btn6_overwrite.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureOverwrite = !gameMain.Wand_StructureOverwrite;
+                Main.NewText($"[魔杖] 蓝图覆盖: {(gameMain.Wand_StructureOverwrite ? "开" : "关")}", 255, 255, 150);
+            };
+            btn6_consume.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureConsumeMaterials = !gameMain.Wand_StructureConsumeMaterials;
+                Main.NewText($"[魔杖] 材料消耗: {(gameMain.Wand_StructureConsumeMaterials ? "开" : "关")}", 255, 255, 150);
+            };
+            btn6_manager.OnLeftClick += (e, s) =>
+            {
+                if (BlueprintManager.IsOpen)
+                {
+                    BlueprintManager.Close();
+                }
+                else
+                {
+                    BlueprintManager.Open(container);
+                }
+            };
+
             // 装配 UI
             SetState(container);
             container.Append(btns);
@@ -242,6 +349,7 @@ namespace WandsTool.Content
             container.Append(btn3);
             container.Append(btn4);
             container.Append(btn5);
+            container.Append(btn6);
 
             btns_2.Append(btn2_tile);
             btns_2.Append(btn2_wall);
@@ -273,6 +381,17 @@ namespace WandsTool.Content
             btns_5.Append(btn5_honey);
             btns_5.Append(btn5_shimmer);
             btns_5.Append(btn5_infinite);
+
+            btns_6.Append(btn6_off);
+            btns_6.Append(btn6_copy);
+            btns_6.Append(btn6_cut);
+            btns_6.Append(btn6_delete);
+            btns_6.Append(btn6_paste);
+            btns_6.Append(btn6_flip_h);
+            btns_6.Append(btn6_flip_v);
+            btns_6.Append(btn6_overwrite);
+            btns_6.Append(btn6_consume);
+            btns_6.Append(btn6_manager);
         }
 
         public void Open()
@@ -289,6 +408,7 @@ namespace WandsTool.Content
         {
             gameMain.UI_WandsPanel1_isOpen = false;
             btns.RemoveAllChildren();
+            BlueprintManager?.Close();
         }
 
         public void Toggle()
@@ -380,6 +500,16 @@ namespace WandsTool.Content
             btn5_honey.isBack = gameMain.Wand_LiquidMode == gameMain.LiquidMode.Honey;
             btn5_shimmer.isBack = gameMain.Wand_LiquidMode == gameMain.LiquidMode.Shimmer;
             btn5_infinite.isBack = gameMain.Wand_InfiniteLiquid;
+
+            btn6.SetTooltip($"建筑蓝图模式: {gameMain.Wand_StructureMode} [覆盖:{(gameMain.Wand_StructureOverwrite ? "开" : "关")}] [材料消耗:{(gameMain.Wand_StructureConsumeMaterials ? "开" : "关")}]");
+            btn6_off.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.None;
+            btn6_copy.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Copy;
+            btn6_cut.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Cut;
+            btn6_delete.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Delete;
+            btn6_paste.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Paste;
+            btn6_overwrite.isBack = gameMain.Wand_StructureOverwrite;
+            btn6_consume.isBack = gameMain.Wand_StructureConsumeMaterials;
+            btn6_manager.isBack = BlueprintManager.IsOpen;
         }
 
         public void Reset()
@@ -392,12 +522,13 @@ namespace WandsTool.Content
                 ui.Top.Set(p.Y - ui.Height.Pixels / 2, 0);
             };
 
-            // 主轮盘 5 个按钮均匀环绕鼠标 (半径 48px)
-            layoutCircle.Invoke(5, 0, btn1, 48f); // 正上方: 放置/破坏
-            layoutCircle.Invoke(5, 1, btn2, 48f); // 右上方: 操作目标
-            layoutCircle.Invoke(5, 2, btn3, 48f); // 右下方: 形状
-            layoutCircle.Invoke(5, 3, btn4, 48f); // 左下方: 坡度
-            layoutCircle.Invoke(5, 4, btn5, 48f); // 左上方: 液体
+            // 主轮盘 6 个按钮均匀环绕鼠标 (半径 48px)
+            layoutCircle.Invoke(6, 0, btn1, 48f); // 正上方: 放置/破坏
+            layoutCircle.Invoke(6, 1, btn2, 48f); // 右上方: 操作目标
+            layoutCircle.Invoke(6, 2, btn3, 48f); // 右下方: 形状
+            layoutCircle.Invoke(6, 3, btn4, 48f); // 正下方: 坡度
+            layoutCircle.Invoke(6, 4, btn5, 48f); // 左下方: 液体
+            layoutCircle.Invoke(6, 5, btn6, 48f); // 左上方: 蓝图与结构
 
             // 子菜单环绕 (半径 96px)
             layoutCircle.Invoke(9, 0, btn2_tile, 96f);
@@ -430,6 +561,17 @@ namespace WandsTool.Content
             layoutCircle.Invoke(8, 5, btn5_honey, 96f);
             layoutCircle.Invoke(8, 6, btn5_shimmer, 96f);
             layoutCircle.Invoke(8, 7, btn5_infinite, 96f);
+
+            layoutCircle.Invoke(10, 0, btn6_off, 96f);
+            layoutCircle.Invoke(10, 1, btn6_copy, 96f);
+            layoutCircle.Invoke(10, 2, btn6_cut, 96f);
+            layoutCircle.Invoke(10, 3, btn6_delete, 96f);
+            layoutCircle.Invoke(10, 4, btn6_paste, 96f);
+            layoutCircle.Invoke(10, 5, btn6_flip_h, 96f);
+            layoutCircle.Invoke(10, 6, btn6_flip_v, 96f);
+            layoutCircle.Invoke(10, 7, btn6_overwrite, 96f);
+            layoutCircle.Invoke(10, 8, btn6_consume, 96f);
+            layoutCircle.Invoke(10, 9, btn6_manager, 96f);
         }
 
         private void onClick(int index)
@@ -443,6 +585,15 @@ namespace WandsTool.Content
                 case 2: btns.Append(btns_3); break;
                 case 3: btns.Append(btns_4); break;
                 case 4: btns.Append(btns_5); break;
+                case 5:
+                    btns.Append(btns_6);
+                    if (gameMain.Wand_StructureMode == gameMain.StructureMode.None)
+                    {
+                        gameMain.Wand_StructureMode = gameMain.StructureMode.Copy;
+                        gameMain.LastActiveStructureMode = gameMain.StructureMode.Copy;
+                        Main.NewText("[魔杖] 蓝图模式已开启 (默认: 结构复制)", 255, 240, 100);
+                    }
+                    break;
                 default: break;
             }
         }
