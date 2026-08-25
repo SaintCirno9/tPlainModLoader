@@ -18,12 +18,12 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
     /// </summary>
     public class ItemContainerSlot : UIPanel
     {
-        private readonly ItemContainerStorage storage;
+        private readonly IItemContainer container;
         private readonly int slotIndex;
 
-        public ItemContainerSlot(ItemContainerStorage storage, int slotIndex)
+        public ItemContainerSlot(IItemContainer container, int slotIndex)
         {
-            this.storage = storage;
+            this.container = container;
             this.slotIndex = slotIndex;
 
             Width.Set(44, 0);
@@ -34,8 +34,8 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public override void LeftClick(UIMouseEvent evt)
         {
-            if (storage?.Slots == null || slotIndex < 0 || slotIndex >= storage.Slots.Length) return;
-            Item item = storage.Slots[slotIndex];
+            if (container?.Slots == null || slotIndex < 0 || slotIndex >= container.Slots.Length) return;
+            Item item = container.Slots[slotIndex];
             Item mouse = Main.mouseItem;
 
             // Shift+左键: 快速提取回个人背包
@@ -47,15 +47,15 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 Item rest = null;
                 try
                 {
-                    ItemContainerStorage.IsTransferringOut = true;
+                    ItemContainerItem.IsTransferringOut = true;
                     rest = Main.LocalPlayer.GetItem(item, GetItemSettings.QuickTransferFromSlot);
                 }
                 finally
                 {
-                    ItemContainerStorage.IsTransferringOut = false;
+                    ItemContainerItem.IsTransferringOut = false;
                 }
-                storage.Slots[slotIndex] = rest ?? new Item();
-                storage.SaveNow();
+                container.Slots[slotIndex] = rest ?? new Item();
+                container.TriggerSlotsChanged();
                 return;
             }
 
@@ -65,14 +65,14 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
                 // 拿起整堆
                 Main.mouseItem = item;
-                storage.Slots[slotIndex] = new Item();
+                container.Slots[slotIndex] = new Item();
             }
             else if (item == null || item.IsAir)
             {
                 // 放下鼠标物品 (需满足准入条件)
-                if (!storage.MeetEntryCriteria(mouse)) return;
+                if (!container.MeetEntryCriteria(mouse)) return;
 
-                storage.Slots[slotIndex] = mouse;
+                container.Slots[slotIndex] = mouse;
                 Main.mouseItem = new Item();
             }
             else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
@@ -86,20 +86,20 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             else
             {
                 // 交换 (鼠标物品需满足准入条件)
-                if (!storage.MeetEntryCriteria(mouse)) return;
+                if (!container.MeetEntryCriteria(mouse)) return;
 
                 Main.mouseItem = item;
-                storage.Slots[slotIndex] = mouse;
+                container.Slots[slotIndex] = mouse;
             }
 
             SoundEngine.PlaySound(SoundID.Grab);
-            storage.SaveNow();
+            container.TriggerSlotsChanged();
         }
 
         public override void RightClick(UIMouseEvent evt)
         {
-            if (storage?.Slots == null || slotIndex < 0 || slotIndex >= storage.Slots.Length) return;
-            Item item = storage.Slots[slotIndex];
+            if (container?.Slots == null || slotIndex < 0 || slotIndex >= container.Slots.Length) return;
+            Item item = container.Slots[slotIndex];
             Item mouse = Main.mouseItem;
 
             if (mouse.IsAir)
@@ -111,19 +111,19 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 Item half = item.Clone();
                 half.stack = take;
                 item.stack -= take;
-                if (item.stack <= 0) storage.Slots[slotIndex] = new Item();
+                if (item.stack <= 0) container.Slots[slotIndex] = new Item();
                 Main.mouseItem = half;
             }
             else
             {
                 // 放 1 个
-                if (!storage.MeetEntryCriteria(mouse)) return;
+                if (!container.MeetEntryCriteria(mouse)) return;
 
                 if (item == null || item.IsAir)
                 {
                     Item one = mouse.Clone();
                     one.stack = 1;
-                    storage.Slots[slotIndex] = one;
+                    container.Slots[slotIndex] = one;
                     mouse.stack--;
                 }
                 else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
@@ -137,7 +137,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             }
 
             SoundEngine.PlaySound(SoundID.Grab);
-            storage.SaveNow();
+            container.TriggerSlotsChanged();
         }
 
         public override void Update(GameTime gameTime)
@@ -147,9 +147,9 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (!IsMouseHovering) return;
 
             Main.LocalPlayer.mouseInterface = true;
-            if (storage?.Slots != null && slotIndex >= 0 && slotIndex < storage.Slots.Length)
+            if (container?.Slots != null && slotIndex >= 0 && slotIndex < container.Slots.Length)
             {
-                Item item = storage.Slots[slotIndex];
+                Item item = container.Slots[slotIndex];
                 if (item != null && item.type > ItemID.None)
                 {
                     ItemSlot.MouseHover(new Item[] { item });
@@ -161,8 +161,8 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         {
             base.DrawSelf(spriteBatch);
 
-            if (storage?.Slots == null || slotIndex < 0 || slotIndex >= storage.Slots.Length) return;
-            Item item = storage.Slots[slotIndex];
+            if (container?.Slots == null || slotIndex < 0 || slotIndex >= container.Slots.Length) return;
+            Item item = container.Slots[slotIndex];
             if (item == null || item.IsAir) return;
 
             if (IsMouseHovering && item.type > ItemID.None)

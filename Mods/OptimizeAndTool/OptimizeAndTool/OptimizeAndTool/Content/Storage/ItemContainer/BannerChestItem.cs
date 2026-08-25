@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.QoL;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
 using TPML.Content;
@@ -12,14 +11,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
     /// 旗帜盒 (BannerChest)
-    /// 可容纳多达 500 种怪物旗帜，支持一键收集、存取、整理与自动拾取收纳；
-    /// 存入的怪物旗帜常驻提供全套随身怪物旗帜增益。
+    /// 实体级独立容器，可容纳多达 500 种怪物旗帜，支持一键收集、存取、整理与自动拾取收纳；
+    /// 存入的怪物旗帜常驻提供全套随身怪物旗帜增益，数据通过 TPML Sidecar 伴随存档无损保存。
     /// 作者: SaintCirno9
     /// </summary>
-    public class BannerChestItem : ModItem
+    public class BannerChestItem : ItemContainerItem
     {
         public override string Name => "BannerChest";
         public override string Texture => "BannerChest";
+        public override int Capacity => 500;
+        public override string ContainerTitle => "旗帜盒";
 
         public override void SetStaticDefaults()
         {
@@ -30,6 +31,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public override void SetDefaults()
         {
+            base.SetDefaults();
             Item.width = 48;
             Item.height = 42;
             Item.maxStack = 1;
@@ -39,11 +41,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             Item.useStyle = ItemUseStyleID.None;
         }
 
+        public override bool MeetEntryCriteria(Item item)
+        {
+            if (item == null || item.IsAir || item.type <= 0) return false;
+            return InfinitePotionAndBuff.ItemToBanner(item) >= 0;
+        }
+
         public override void ModifyTooltips(List<TooltipLine> tooltips)
         {
-            BannerChestStorage.Instance.EnsurePlayerLoaded();
-            int count = BannerChestStorage.Instance.GetStoredCount();
-            int max = BannerChestStorage.Instance.Capacity;
+            int count = GetStoredCount();
+            int max = Capacity;
 
             if (count > 0)
             {
@@ -53,7 +60,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                     OverrideColor = Color.LightGreen
                 });
 
-                var stored = BannerChestStorage.Instance.GetStoredItems();
+                var stored = GetStoredItems();
                 if (stored.Count > 20)
                 {
                     string iconStream = string.Empty;

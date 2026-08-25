@@ -1,52 +1,47 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using OptimizeAndTool.Content.QoL;
-using tContentPatch;
-using tContentPatch.Utils;
 using Terraria;
-using Terraria.Audio;
 using Terraria.ID;
 using TPML.Content;
+using TPML.Content.IO;
 
 namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
-    /// 收纳袋单格数据
+    /// 实体收纳容器接口定义
     /// </summary>
-    public class ContainerSlotData
+    public interface IItemContainer
     {
-        public int type;
-        public int prefix;
-        public int stack;
-        public string modName;
-        public string itemName;
+        string Title { get; }
+        int Capacity { get; }
+        Item[] Slots { get; }
+        bool AutoStorage { get; set; }
+        bool AutoSortEnabled { get; set; }
+
+        event Action OnSlotsChanged;
+        void TriggerSlotsChanged();
+
+        bool MeetEntryCriteria(Item item);
+        bool TryDeposit(Item item, bool sort = true);
+        bool TryDepositFromSlot(Item[] inv, int slot, bool justCheck);
+        void CollectFromAllInventories(Player player);
+        void QuickStackFromPlayer(Player player);
+        void WithdrawAll(Player player);
+        void AutoSort();
+        int GetStoredCount();
+        List<Item> GetStoredItems();
     }
 
     /// <summary>
-    /// 收纳袋持久化 JSON 结构
-    /// </summary>
-    public class ContainerJsonData
-    {
-        public bool AutoStorage = true;
-        public bool AutoSort = false;
-        public List<ContainerSlotData> Items = new List<ContainerSlotData>();
-    }
-
-    /// <summary>
-    /// 通用大型物品容器基类（药水袋与旗帜盒共用核心数据引擎）
-    /// 继承 ModSetting 接入统一配置与存档管道，同时支持基于角色 UUID 在 SaveData/ 下保存独立 JSON 文件，提供存取、收集、整理、提取与自动吸入
+    /// 通用大型实体收纳容器物品基类（药水袋与旗帜盒共用核心数据与持久化引擎）
+    /// 完全基于 TPML 伴随存档 (Sidecar) CustomData 序列化实现独立实体容器数据绑定。
     /// 作者: SaintCirno9
     /// </summary>
-    public abstract class ItemContainerStorage : ModSetting
+    public abstract class ItemContainerItem : ModItem, IItemContainer
     {
-        public abstract string StorageKey { get; }
         public abstract int Capacity { get; }
-        public abstract override string Title { get; }
-
-        public override bool HasUI => false;
-        public override string FilePath => $"{StorageKey}.json";
-        public override Type DataType => typeof(ContainerJsonData);
+        public abstract string ContainerTitle { get; }
+        public string Title => ContainerTitle;
 
         public Item[] Slots { get; protected set; }
         public bool AutoStorage { get; set; } = true;
@@ -58,205 +53,33 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public static bool IsTransferringOut = false;
 
         public event Action OnSlotsChanged;
+        public void TriggerSlotsChanged() => OnSlotsChanged?.Invoke();
 
-        protected string currentLoadedUUID = null;
-
-        public ItemContainerStorage(int capacity)
+        public ItemContainerItem()
         {
-            Slots = new Item[capacity];
-            for (int i = 0; i < capacity; i++) Slots[i] = new Item();
+            InitSlots();
+        }
+
+        protected void InitSlots()
+        {
+            if (Slots == null || Slots.Length != Capacity)
+            {
+                Slots = new Item[Capacity];
+                for (int i = 0; i < Capacity; i++) Slots[i] = new Item();
+            }
+        }
+
+        public override void SetDefaults()
+        {
+            base.SetDefaults();
+            InitSlots();
         }
 
         public abstract bool MeetEntryCriteria(Item item);
 
-        public static string GetCurrentPlayerUUID()
-        {
-            try
-            {
-                if (Main.ActivePlayerFileData != null)
-                {
-                    if (!string.IsNullOrEmpty(Main.ActivePlayerFileData.Path))
-                    {
-                        return Path.GetFileNameWithoutExtension(Main.ActivePlayerFileData.Path);
-                    }
-                    if (!string.IsNullOrEmpty(Main.ActivePlayerFileData.Name))
-                    {
-                        return Main.ActivePlayerFileData.Name;
-                    }
-                }
-                if (Main.LocalPlayer?.name != null && !string.IsNullOrEmpty(Main.LocalPlayer.name))
-                {
-                    return Main.LocalPlayer.name;
-                }
-                if (!string.IsNullOrEmpty(Main.clientUUID))
-                {
-                    return Main.clientUUID;
-                }
-            }
-            catch { }
-            return "default";
-        }
-
-        public void EnsurePlayerLoaded()
-        {
-            string uuid = GetCurrentPlayerUUID();
-            if (currentLoadedUUID != uuid)
-            {
-                LoadForPlayer(uuid);
-            }
-        }
-
-        public override void Load(object v)
-        {
-            if (v is ContainerJsonData jsonData)
-            {
-                ApplyData(jsonData);
-            }
-
-            EnsurePlayerLoaded();
-        }
-
-        public void LoadForPlayer(string uuid)
-        {
-            currentLoadedUUID = uuid;
-            string fileName = $"SaveData/{StorageKey}_{uuid}.json";
-            ContainerJsonData data = null;
-
-            bool loaded = ModFile.ReadFileTry(fileName, file =>
-            {
-                data = MyJson1.Get2(file, typeof(ContainerJsonData)) as ContainerJsonData;
-                return true;
-            });
-
-            // 回退到无 UUID 的旧存档路径
-            if (data == null)
-            {
-                ModFile.ReadFileTry($"SaveData/{StorageKey}.json", file =>
-                {
-                    data = MyJson1.Get2(file, typeof(ContainerJsonData)) as ContainerJsonData;
-                    return true;
-                });
-            }
-
-            if (data == null)
-            {
-                ModFile.ReadFileTry($"{StorageKey}.json", file =>
-                {
-                    data = MyJson1.Get2(file, typeof(ContainerJsonData)) as ContainerJsonData;
-                    return true;
-                });
-            }
-
-            if (data != null)
-            {
-                ApplyData(data);
-            }
-            else
-            {
-                for (int i = 0; i < Capacity; i++) Slots[i] = new Item();
-                OnSlotsChanged?.Invoke();
-            }
-        }
-
-        private void ApplyData(ContainerJsonData data)
-        {
-            if (data == null) return;
-
-            AutoStorage = data.AutoStorage;
-            AutoSortEnabled = data.AutoSort;
-
-            for (int i = 0; i < Capacity; i++)
-            {
-                if (data.Items != null && i < data.Items.Count && data.Items[i] != null)
-                {
-                    var d = data.Items[i];
-                    int itemType = d.type;
-
-                    if (!string.IsNullOrEmpty(d.itemName))
-                    {
-                        int resolved = ItemLoader.ItemType(d.modName, d.itemName);
-                        if (resolved > 0) itemType = resolved;
-                    }
-
-                    if (itemType > 0)
-                    {
-                        Item it = new Item();
-                        it.SetDefaults(itemType);
-                        if (d.prefix > 0) it.Prefix(d.prefix);
-                        it.stack = Math.Max(1, Math.Min(d.stack, it.maxStack));
-                        Slots[i] = it;
-                    }
-                    else
-                    {
-                        Slots[i] = new Item();
-                    }
-                }
-                else
-                {
-                    Slots[i] = new Item();
-                }
-            }
-
-            OnSlotsChanged?.Invoke();
-        }
-
-        public override object GetSaveData()
-        {
-            ContainerJsonData data = new ContainerJsonData
-            {
-                AutoStorage = AutoStorage,
-                AutoSort = AutoSortEnabled,
-                Items = new List<ContainerSlotData>(Capacity)
-            };
-
-            for (int i = 0; i < Capacity; i++)
-            {
-                Item item = Slots[i];
-                var d = new ContainerSlotData();
-                if (item != null && !item.IsAir && item.type > 0 && item.stack > 0)
-                {
-                    d.type = item.type;
-                    d.prefix = item.prefix;
-                    d.stack = item.stack;
-
-                    if (item.type >= ItemID.Count)
-                    {
-                        ModItem modItem = ItemLoader.GetModItem(item.type);
-                        if (modItem != null)
-                        {
-                            d.modName = modItem.Mod?.Name ?? "TPML";
-                            d.itemName = modItem.Name;
-                        }
-                    }
-                }
-                data.Items.Add(d);
-            }
-
-            return data;
-        }
-
-        public void SaveNow()
-        {
-            string uuid = GetCurrentPlayerUUID();
-            currentLoadedUUID = uuid;
-            string fileName = $"SaveData/{StorageKey}_{uuid}.json";
-
-            ContainerJsonData data = (ContainerJsonData)GetSaveData();
-
-            // 1. 保存到 ModSetting (potionBag.json / bannerChest.json)
-            NeedSave = true;
-            Save();
-
-            // 2. 保存到角色独立 UUID 存档
-            ModFile.SaveFileTry(fileName, file =>
-            {
-                MyJson1.Save(data, file);
-                return true;
-            });
-        }
-
         public int GetStoredCount()
         {
+            if (Slots == null) return 0;
             int count = 0;
             for (int i = 0; i < Slots.Length; i++)
             {
@@ -268,6 +91,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public List<Item> GetStoredItems()
         {
             var list = new List<Item>();
+            if (Slots == null) return list;
             for (int i = 0; i < Slots.Length; i++)
             {
                 if (Slots[i] != null && !Slots[i].IsAir && Slots[i].stack > 0)
@@ -282,6 +106,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         {
             if (item == null || item.IsAir || item.stack <= 0) return false;
             if (!MeetEntryCriteria(item)) return false;
+            InitSlots();
 
             bool depositedAny = false;
 
@@ -321,13 +146,12 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (depositedAny)
             {
-                SoundEngine.PlaySound(SoundID.Grab);
+                Terraria.Audio.SoundEngine.PlaySound(SoundID.Grab);
                 if (AutoSortEnabled && sort)
                 {
                     SortInternal();
                 }
-                SaveNow();
-                OnSlotsChanged?.Invoke();
+                TriggerSlotsChanged();
             }
 
             return depositedAny;
@@ -339,6 +163,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             Item item = inv[slot];
             if (item == null || item.IsAir || item.favorited || item.stack <= 0) return false;
             if (!MeetEntryCriteria(item)) return false;
+            InitSlots();
 
             if (justCheck)
             {
@@ -356,23 +181,19 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             return res;
         }
 
-        public void AutoCollect(Player player)
-        {
-            CollectFromAllInventories(player);
-        }
-
         public void CollectFromAllInventories(Player player)
         {
             if (player == null) return;
+            InitSlots();
             bool movedAny = false;
 
-            // 收集背包 (0..49, 跳过 favorited)
+            // 收集背包 (0..49, 跳过 favorited 与 容器自身)
             if (player.inventory != null)
             {
                 for (int i = 0; i < 50; i++)
                 {
                     Item pItem = player.inventory[i];
-                    if (pItem != null && !pItem.IsAir && !pItem.favorited && MeetEntryCriteria(pItem))
+                    if (pItem != null && !pItem.IsAir && !pItem.favorited && MeetEntryCriteria(pItem) && pItem != Item)
                     {
                         int orig = pItem.stack;
                         TryDeposit(pItem, sort: false);
@@ -390,7 +211,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 for (int i = 0; i < bank.Length; i++)
                 {
                     Item bItem = bank[i];
-                    if (bItem != null && !bItem.IsAir && !bItem.favorited && MeetEntryCriteria(bItem))
+                    if (bItem != null && !bItem.IsAir && !bItem.favorited && MeetEntryCriteria(bItem) && bItem != Item)
                     {
                         int orig = bItem.stack;
                         TryDeposit(bItem, sort: false);
@@ -402,22 +223,22 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (movedAny)
             {
-                SoundEngine.PlaySound(SoundID.Grab);
+                Terraria.Audio.SoundEngine.PlaySound(SoundID.Grab);
                 if (AutoSortEnabled) SortInternal();
-                SaveNow();
-                OnSlotsChanged?.Invoke();
+                TriggerSlotsChanged();
             }
         }
 
         public void QuickStackFromPlayer(Player player)
         {
             if (player == null || player.inventory == null) return;
+            InitSlots();
             bool movedAny = false;
 
             for (int i = 10; i < 50; i++)
             {
                 Item pItem = player.inventory[i];
-                if (pItem == null || pItem.IsAir || pItem.favorited || !MeetEntryCriteria(pItem)) continue;
+                if (pItem == null || pItem.IsAir || pItem.favorited || !MeetEntryCriteria(pItem) || pItem == Item) continue;
 
                 for (int j = 0; j < Slots.Length; j++)
                 {
@@ -439,16 +260,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (movedAny)
             {
-                SoundEngine.PlaySound(SoundID.Grab);
+                Terraria.Audio.SoundEngine.PlaySound(SoundID.Grab);
                 if (AutoSortEnabled) SortInternal();
-                SaveNow();
-                OnSlotsChanged?.Invoke();
+                TriggerSlotsChanged();
             }
         }
 
         public void WithdrawAll(Player player)
         {
             if (player == null || player.inventory == null) return;
+            InitSlots();
             bool movedAny = false;
 
             try
@@ -472,22 +293,21 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (movedAny)
             {
-                SoundEngine.PlaySound(SoundID.Grab);
-                SaveNow();
-                OnSlotsChanged?.Invoke();
+                Terraria.Audio.SoundEngine.PlaySound(SoundID.Grab);
+                TriggerSlotsChanged();
             }
         }
 
         public void AutoSort()
         {
             SortInternal();
-            SoundEngine.PlaySound(SoundID.Grab);
-            SaveNow();
-            OnSlotsChanged?.Invoke();
+            Terraria.Audio.SoundEngine.PlaySound(SoundID.Grab);
+            TriggerSlotsChanged();
         }
 
         private void SortInternal()
         {
+            InitSlots();
             // 1. 合并堆叠
             for (int i = 0; i < Slots.Length; i++)
             {
@@ -528,57 +348,124 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 else Slots[i] = new Item();
             }
         }
-    }
 
-    /// <summary>
-    /// 药水袋数据存储单例 (200格)
-    /// </summary>
-    public class PotionBagStorage : ItemContainerStorage
-    {
-        private static PotionBagStorage instance;
-        public static PotionBagStorage Instance => instance ?? (instance = new PotionBagStorage());
-
-        public override string StorageKey => "potionBag";
-        public override int Capacity => 200;
-        public override string Title => "药水袋";
-
-        public PotionBagStorage() : base(200)
+        public override void SaveData(TagCompound tag)
         {
-            instance = this;
-        }
+            tag["autoStorage"] = AutoStorage;
+            tag["autoSort"] = AutoSortEnabled;
 
-        public override bool MeetEntryCriteria(Item item)
-        {
-            if (item == null || item.IsAir || item.type <= 0) return false;
-            if (item.buffType > 0)
+            var list = new List<TagCompound>();
+            if (Slots != null)
             {
-                return item.consumable;
+                for (int i = 0; i < Capacity; i++)
+                {
+                    Item it = Slots[i];
+                    if (it != null && !it.IsAir && it.stack > 0)
+                    {
+                        var entryTag = new TagCompound
+                        {
+                            ["slot"] = i,
+                            ["id"] = it.type,
+                            ["stack"] = it.stack,
+                            ["prefix"] = it.prefix
+                        };
+                        if (it.type >= ItemID.Count)
+                        {
+                            ModItem modIt = ItemLoader.GetModItem(it.type);
+                            if (modIt != null)
+                            {
+                                entryTag["mod"] = modIt.Mod?.Name ?? "TPML";
+                                entryTag["name"] = modIt.Name;
+                            }
+                        }
+                        list.Add(entryTag);
+                    }
+                }
             }
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 旗帜盒数据存储单例 (500格)
-    /// </summary>
-    public class BannerChestStorage : ItemContainerStorage
-    {
-        private static BannerChestStorage instance;
-        public static BannerChestStorage Instance => instance ?? (instance = new BannerChestStorage());
-
-        public override string StorageKey => "bannerChest";
-        public override int Capacity => 500;
-        public override string Title => "旗帜盒";
-
-        public BannerChestStorage() : base(500)
-        {
-            instance = this;
+            tag["items"] = list;
         }
 
-        public override bool MeetEntryCriteria(Item item)
+        public override void LoadData(TagCompound tag)
         {
-            if (item == null || item.IsAir || item.type <= 0) return false;
-            return InfinitePotionAndBuff.ItemToBanner(item) >= 0;
+            if (tag == null) return;
+            AutoStorage = tag.GetBool("autoStorage");
+            AutoSortEnabled = tag.GetBool("autoSort");
+
+            InitSlots();
+            for (int i = 0; i < Capacity; i++) Slots[i] = new Item();
+
+            if (tag.TryGetValue("items", out object obj))
+            {
+                if (obj is Newtonsoft.Json.Linq.JArray jArr)
+                {
+                    foreach (var token in jArr)
+                    {
+                        int slot = token["slot"]?.ToObject<int>() ?? -1;
+                        int id = token["id"]?.ToObject<int>() ?? 0;
+                        int stack = token["stack"]?.ToObject<int>() ?? 1;
+                        int prefix = token["prefix"]?.ToObject<int>() ?? 0;
+                        string mod = token["mod"]?.ToString();
+                        string name = token["name"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(mod) && !string.IsNullOrEmpty(name))
+                        {
+                            int resolved = ItemLoader.ItemType(mod, name);
+                            if (resolved > 0) id = resolved;
+                        }
+
+                        if (id > 0 && slot >= 0 && slot < Capacity)
+                        {
+                            Item it = new Item();
+                            it.SetDefaults(id);
+                            it.stack = Math.Max(1, Math.Min(stack, it.maxStack));
+                            if (prefix > 0) it.Prefix(prefix);
+                            Slots[slot] = it;
+                        }
+                    }
+                }
+                else if (obj is List<TagCompound> tagList)
+                {
+                    foreach (var itemTag in tagList)
+                    {
+                        int slot = itemTag.GetInt("slot");
+                        int id = itemTag.GetInt("id");
+                        int stack = itemTag.GetInt("stack");
+                        int prefix = itemTag.GetInt("prefix");
+                        string mod = itemTag.GetString("mod");
+                        string name = itemTag.GetString("name");
+
+                        if (!string.IsNullOrEmpty(mod) && !string.IsNullOrEmpty(name))
+                        {
+                            int resolved = ItemLoader.ItemType(mod, name);
+                            if (resolved > 0) id = resolved;
+                        }
+
+                        if (id > 0 && slot >= 0 && slot < Capacity)
+                        {
+                            Item it = new Item();
+                            it.SetDefaults(id);
+                            it.stack = Math.Max(1, Math.Min(stack, it.maxStack));
+                            if (prefix > 0) it.Prefix(prefix);
+                            Slots[slot] = it;
+                        }
+                    }
+                }
+            }
+
+            TriggerSlotsChanged();
+        }
+
+        public override ModItem Clone(Item newEntity)
+        {
+            ItemContainerItem clone = (ItemContainerItem)base.Clone(newEntity);
+            clone.AutoStorage = AutoStorage;
+            clone.AutoSortEnabled = AutoSortEnabled;
+            clone.Slots = new Item[Capacity];
+            for (int i = 0; i < Capacity; i++)
+            {
+                clone.Slots[i] = (Slots != null && i < Slots.Length && Slots[i] != null) ? Slots[i].Clone() : new Item();
+            }
+            return clone;
         }
     }
 }

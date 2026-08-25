@@ -81,7 +81,7 @@ namespace TPML.Content.IO
                     Item it = array[i];
                     if (it != null && !it.IsAir && it.type >= ItemID.Count)
                     {
-                        ModItem modItem = ItemLoader.GetModItem(it.type);
+                        ModItem modItem = ItemLoader.GetModItem(it);
                         if (modItem != null)
                         {
                             string loc = $"{prefix}_{i}";
@@ -146,7 +146,7 @@ namespace TPML.Content.IO
             // 垃圾桶槽位
             if (player.trashItem != null && !player.trashItem.IsAir && player.trashItem.type >= ItemID.Count)
             {
-                ModItem modItem = ItemLoader.GetModItem(player.trashItem.type);
+                ModItem modItem = ItemLoader.GetModItem(player.trashItem);
                 if (modItem != null)
                 {
                     string customData = null;
@@ -274,7 +274,7 @@ namespace TPML.Content.IO
                     {
                         try
                         {
-                            ModItem modItem = ItemLoader.GetModItem(type);
+                            ModItem modItem = ItemLoader.GetModItem(item);
                             if (modItem != null)
                             {
                                 TagCompound tag = JsonConvert.DeserializeObject<TagCompound>(entry.CustomData);
@@ -392,7 +392,7 @@ namespace TPML.Content.IO
                         Item it = chest.item[s];
                         if (it != null && !it.IsAir && it.type >= ItemID.Count)
                         {
-                            ModItem modItem = ItemLoader.GetModItem(it.type);
+                            ModItem modItem = ItemLoader.GetModItem(it);
                             if (modItem != null)
                             {
                                 string loc = $"chest_{c}_{s}";
@@ -478,7 +478,7 @@ namespace TPML.Content.IO
         {
             if (it != null && !it.IsAir && it.type >= ItemID.Count)
             {
-                ModItem modItem = ItemLoader.GetModItem(it.type);
+                ModItem modItem = ItemLoader.GetModItem(it);
                 if (modItem != null)
                 {
                     string customData = null;
@@ -515,7 +515,7 @@ namespace TPML.Content.IO
                 Item it = array[i];
                 if (it != null && !it.IsAir && it.type >= ItemID.Count)
                 {
-                    ModItem modItem = ItemLoader.GetModItem(it.type);
+                    ModItem modItem = ItemLoader.GetModItem(it);
                     if (modItem != null)
                     {
                         string loc = $"{prefix}_{i}";
@@ -634,7 +634,7 @@ namespace TPML.Content.IO
                     {
                         try
                         {
-                            ModItem modItem = ItemLoader.GetModItem(type);
+                            ModItem modItem = ItemLoader.GetModItem(item);
                             if (modItem != null)
                             {
                                 TagCompound tag = JsonConvert.DeserializeObject<TagCompound>(entry.CustomData);

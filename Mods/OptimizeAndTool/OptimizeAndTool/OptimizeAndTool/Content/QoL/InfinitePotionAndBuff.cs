@@ -10,6 +10,7 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL
 {
@@ -122,11 +123,6 @@ namespace OptimizeAndTool.Content.QoL
             {
                 ScanSceneContainerItems(__instance, BigBagMod.Slots);
             }
-
-            if (OptimizeAndTool.Content.Storage.ItemContainer.BannerChestStorage.Instance?.Slots != null)
-            {
-                ScanSceneContainerItems(__instance, OptimizeAndTool.Content.Storage.ItemContainer.BannerChestStorage.Instance.Slots);
-            }
         }
 
         private static void ScanSceneContainerItems(SceneMetrics metrics, Item[] items)
@@ -137,6 +133,16 @@ namespace OptimizeAndTool.Content.QoL
             {
                 Item item = items[i];
                 if (item == null || item.IsAir || item.stack <= 0) continue;
+
+                // 递归扫描随身收纳容器内部物品（如旗帜盒）
+                if (item.type >= ItemID.Count)
+                {
+                    var container = ItemLoader.GetModItem(item) as OptimizeAndTool.Content.Storage.ItemContainer.IItemContainer;
+                    if (container?.Slots != null)
+                    {
+                        ScanSceneContainerItems(metrics, container.Slots);
+                    }
+                }
 
                 // 1. 随身旗帜注入
                 if (EnableMonsterBanners.val)
@@ -229,11 +235,6 @@ namespace OptimizeAndTool.Content.QoL
                 ScanPlayerBuffItems(__instance, BigBagMod.Slots);
             }
 
-            if (OptimizeAndTool.Content.Storage.ItemContainer.PotionBagStorage.Instance?.Slots != null)
-            {
-                ScanPlayerBuffItems(__instance, OptimizeAndTool.Content.Storage.ItemContainer.PotionBagStorage.Instance.Slots);
-            }
-
             // 应用达标药水增益
             int threshold = PotionThreshold.val;
             if (threshold <= 0) threshold = 30;
@@ -296,6 +297,16 @@ namespace OptimizeAndTool.Content.QoL
             {
                 Item item = items[i];
                 if (item == null || item.IsAir || item.stack <= 0) continue;
+
+                // 递归扫描随身收纳容器内部物品（如药水袋、旗帜盒）
+                if (item.type >= ItemID.Count)
+                {
+                    var container = ItemLoader.GetModItem(item) as OptimizeAndTool.Content.Storage.ItemContainer.IItemContainer;
+                    if (container?.Slots != null)
+                    {
+                        ScanPlayerBuffItems(player, container.Slots);
+                    }
+                }
 
                 // 1. 无尽药水扫描
                 if (EnableInfinitePotions.val && item.buffType > 0 && item.consumable)

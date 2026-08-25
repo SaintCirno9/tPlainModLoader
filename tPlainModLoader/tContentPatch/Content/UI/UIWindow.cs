@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
@@ -20,6 +20,8 @@ namespace tContentPatch.Content.UI
         public UIElement Child { get; protected set; } = null;
         /// <summary/>
         public bool IsOpen { get; protected set; } = false;
+        /// <summary/>
+        public UIText ui_title { get; protected set; } = null;
         private UIElement WindowParent = null;
         private UIElement uie = null;
         private bool dragPos = false;
@@ -51,7 +53,7 @@ namespace tContentPatch.Content.UI
                 dragPos = true;
             };
 
-            UIText ui_title = new UIText(title ?? string.Empty);
+            ui_title = new UIText(title ?? string.Empty);
 
             UIText ui_close = new UIText("X");
             ui_close.HAlign = 1;

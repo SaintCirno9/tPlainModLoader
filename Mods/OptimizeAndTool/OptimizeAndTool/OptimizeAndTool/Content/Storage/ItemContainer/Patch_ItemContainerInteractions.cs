@@ -4,7 +4,6 @@ using tContentPatch;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
-using Terraria.IO;
 using Terraria.UI;
 using TPML.Content;
 
@@ -12,11 +11,11 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
     /// 容器交互补丁：
-    /// 1. 物品栏右键点击药水袋/旗帜盒开闭对应界面
-    /// 2. 鼠标悬停中键快捷开闭
-    /// 3. 手持药水/旗帜左键点击收纳袋直接存入
-    /// 4. 容器打开时 Shift+左键 快速存入
-    /// 5. 拾取物品时若背包有对应袋子且开启自动收纳则直接吸入
+    /// 1. 物品栏右键点击药水袋/旗帜盒开闭对应实体界面
+    /// 2. 鼠标悬停中键快捷开闭对应实体界面
+    /// 3. 手持药水/旗帜左键点击收纳袋直接存入该实体
+    /// 4. 容器打开时 Shift+左键 快速存入当前打开的容器实体
+    /// 5. 拾取物品时若背包有对应开启自动收纳的袋子/盒子实体则自动吸入
     /// 作者: SaintCirno9
     /// </summary>
     [HarmonyPatch]
@@ -50,20 +49,15 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 {
                     Main.mouseRightRelease = false; // 消费本次点击，防止连续触发
 
-                    if (pbType > 0 && item.type == pbType)
+                    IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
+                    if (container != null)
                     {
-                        PotionBagWindow.Toggle();
-                        SoundEngine.PlaySound(SoundID.MenuOpen);
-                    }
-                    else if (bcType > 0 && item.type == bcType)
-                    {
-                        BannerChestWindow.Toggle();
+                        ItemContainerWindow.Toggle(container);
                         SoundEngine.PlaySound(SoundID.MenuOpen);
                     }
                 }
 
-                // 核心保障：只要是容器物品且正处于右键按下状态，全程返回 false，
-                // 彻底阻断原版后续帧进入 PickupItemIntoMouse 将盒子本体抓到鼠标手上！
+                // 核心保障：只要是容器物品且正处于右键按下状态，全程返回 false，彻底阻断原版抓取
                 return false;
             }
 
@@ -81,51 +75,38 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             int pbType = PotionBagType;
             int bcType = BannerChestType;
 
-            // 1. 手持物品左键点击收纳袋：存入对应容器（杜绝触发原版 MouseItemSwap 交换位置）
+            // 1. 手持物品左键点击收纳袋：存入对应容器实体（杜绝触发原版 MouseItemSwap 交换位置）
             if (!Main.mouseItem.IsAir && Main.mouseLeft && Main.mouseLeftRelease && !ItemSlot.ShiftInUse && !ItemSlot.ControlInUse)
             {
-                if (pbType > 0 && item.type == pbType && PotionBagStorage.Instance.MeetEntryCriteria(Main.mouseItem))
+                if ((pbType > 0 && item.type == pbType) || (bcType > 0 && item.type == bcType))
                 {
-                    if (PotionBagStorage.Instance.TryDeposit(Main.mouseItem, sort: true))
+                    IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
+                    if (container != null && container.MeetEntryCriteria(Main.mouseItem))
                     {
-                        SoundEngine.PlaySound(SoundID.Grab);
-                        if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
-                        Main.mouseLeftRelease = false;
-                        Recipe.UpdateRecipeList();
-                        return false;
-                    }
-                }
-
-                if (bcType > 0 && item.type == bcType && BannerChestStorage.Instance.MeetEntryCriteria(Main.mouseItem))
-                {
-                    if (BannerChestStorage.Instance.TryDeposit(Main.mouseItem, sort: true))
-                    {
-                        SoundEngine.PlaySound(SoundID.Grab);
-                        if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
-                        Main.mouseLeftRelease = false;
-                        Recipe.UpdateRecipeList();
-                        return false;
+                        if (container.TryDeposit(Main.mouseItem, sort: true))
+                        {
+                            SoundEngine.PlaySound(SoundID.Grab);
+                            if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
+                            Main.mouseLeftRelease = false;
+                            Recipe.UpdateRecipeList();
+                            return false;
+                        }
                     }
                 }
             }
 
-            // 2. 当收纳窗口打开时，Shift+左键背包物品快速存入
+            // 2. 当收纳窗口打开时，Shift+左键背包物品快速存入当前打开的容器实体
             if (Main.mouseLeft && Main.mouseLeftRelease && ItemSlot.ShiftInUse && Main.mouseItem.IsAir)
             {
-                if (PotionBagWindow.IsOpen && PotionBagStorage.Instance.TryDepositFromSlot(inv, slot, justCheck: false))
+                if (ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container != null)
                 {
-                    SoundEngine.PlaySound(SoundID.Grab);
-                    Main.mouseLeftRelease = false;
-                    Recipe.UpdateRecipeList();
-                    return false;
-                }
-
-                if (BannerChestWindow.IsOpen && BannerChestStorage.Instance.TryDepositFromSlot(inv, slot, justCheck: false))
-                {
-                    SoundEngine.PlaySound(SoundID.Grab);
-                    Main.mouseLeftRelease = false;
-                    Recipe.UpdateRecipeList();
-                    return false;
+                    if (ItemContainerWindow.Instance.Container.TryDepositFromSlot(inv, slot, justCheck: false))
+                    {
+                        SoundEngine.PlaySound(SoundID.Grab);
+                        Main.mouseLeftRelease = false;
+                        Recipe.UpdateRecipeList();
+                        return false;
+                    }
                 }
             }
 
@@ -144,11 +125,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (ItemSlot.ShiftInUse)
             {
-                if (PotionBagWindow.IsOpen && PotionBagStorage.Instance.TryDepositFromSlot(inv, slot, justCheck: true))
-                {
-                    __result = ItemSlot.AlternateClickAction.TransferToChest;
-                }
-                else if (BannerChestWindow.IsOpen && BannerChestStorage.Instance.TryDepositFromSlot(inv, slot, justCheck: true))
+                if (ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container != null && ItemContainerWindow.Instance.Container.TryDepositFromSlot(inv, slot, justCheck: true))
                 {
                     __result = ItemSlot.AlternateClickAction.TransferToChest;
                 }
@@ -167,19 +144,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 Terraria.GameInput.PlayerInput.MouseInfoOld.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
             {
                 int pbType = PotionBagType;
-                if (pbType > 0 && item.type == pbType)
-                {
-                    Terraria.GameInput.PlayerInput.MouseInfoOld = Terraria.GameInput.PlayerInput.MouseInfo;
-                    PotionBagWindow.Toggle();
-                    SoundEngine.PlaySound(SoundID.MenuOpen);
-                }
-
                 int bcType = BannerChestType;
-                if (bcType > 0 && item.type == bcType)
+                if ((pbType > 0 && item.type == pbType) || (bcType > 0 && item.type == bcType))
                 {
                     Terraria.GameInput.PlayerInput.MouseInfoOld = Terraria.GameInput.PlayerInput.MouseInfo;
-                    BannerChestWindow.Toggle();
-                    SoundEngine.PlaySound(SoundID.MenuOpen);
+                    IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
+                    if (container != null)
+                    {
+                        ItemContainerWindow.Toggle(container);
+                        SoundEngine.PlaySound(SoundID.MenuOpen);
+                    }
                 }
             }
         }
@@ -192,66 +166,52 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (newItem == null || newItem.IsAir || newItem.type <= 0) return true;
 
             // 当正在从收纳袋执行一键取出或单个提取时，放行原版正常进入背包，严禁重新吸入
-            if (ItemContainerStorage.IsTransferringOut) return true;
+            if (ItemContainerItem.IsTransferringOut) return true;
 
-            // 药水袋拾取自动收纳
             int pbType = PotionBagType;
-            if (pbType > 0 && PotionBagStorage.Instance.AutoStorage && __instance.HasItem(pbType) && PotionBagStorage.Instance.MeetEntryCriteria(newItem))
+            int bcType = BannerChestType;
+            if (pbType <= 0 && bcType <= 0) return true;
+
+            // 扫描背包与银行中所有开启自动收纳的容器实体
+            bool TryAutoStoreInArray(Item[] array)
             {
-                int orig = newItem.stack;
-                PotionBagStorage.Instance.TryDeposit(newItem, sort: true);
-                int absorbed = orig - newItem.stack;
-                if (absorbed > 0)
+                if (array == null) return false;
+                for (int i = 0; i < array.Length; i++)
                 {
-                    PopupText.NewText(PopupTextContext.RegularItemPickup, newItem, __instance.Center, absorbed, false, false);
+                    Item it = array[i];
+                    if (it != null && !it.IsAir && (it.type == pbType || it.type == bcType))
+                    {
+                        IItemContainer container = ItemLoader.GetModItem(it) as IItemContainer;
+                        if (container != null && container.AutoStorage && container.MeetEntryCriteria(newItem))
+                        {
+                            int orig = newItem.stack;
+                            container.TryDeposit(newItem, sort: true);
+                            int absorbed = orig - newItem.stack;
+                            if (absorbed > 0)
+                            {
+                                PopupText.NewText(PopupTextContext.RegularItemPickup, newItem, __instance.Center, absorbed, false, false);
+                            }
+                            if (newItem.stack <= 0)
+                            {
+                                return true;
+                            }
+                        }
+                    }
                 }
-                if (newItem.stack <= 0)
-                {
-                    __result = new Item();
-                    return false;
-                }
+                return false;
             }
 
-            // 旗帜盒拾取自动收纳
-            int bcType = BannerChestType;
-            if (bcType > 0 && BannerChestStorage.Instance.AutoStorage && __instance.HasItem(bcType) && BannerChestStorage.Instance.MeetEntryCriteria(newItem))
+            if (TryAutoStoreInArray(__instance.inventory) ||
+                (__instance.bank?.item != null && TryAutoStoreInArray(__instance.bank.item)) ||
+                (__instance.bank2?.item != null && TryAutoStoreInArray(__instance.bank2.item)) ||
+                (__instance.bank3?.item != null && TryAutoStoreInArray(__instance.bank3.item)) ||
+                (__instance.bank4?.item != null && TryAutoStoreInArray(__instance.bank4.item)))
             {
-                int orig = newItem.stack;
-                BannerChestStorage.Instance.TryDeposit(newItem, sort: true);
-                int absorbed = orig - newItem.stack;
-                if (absorbed > 0)
-                {
-                    PopupText.NewText(PopupTextContext.RegularItemPickup, newItem, __instance.Center, absorbed, false, false);
-                }
-                if (newItem.stack <= 0)
-                {
-                    __result = new Item();
-                    return false;
-                }
+                __result = new Item();
+                return false;
             }
 
             return true;
-        }
-    }
-
-    /// <summary>
-    /// 角色切换与存档同步生命周期钩子
-    /// </summary>
-    public class ItemContainerPlayerHook : PatchPlayer
-    {
-        public override void UpdatePrefix(Player This, int playerI)
-        {
-            if (This.whoAmI == Main.myPlayer && !Main.gameMenu)
-            {
-                PotionBagStorage.Instance.EnsurePlayerLoaded();
-                BannerChestStorage.Instance.EnsurePlayerLoaded();
-            }
-        }
-
-        public override void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave)
-        {
-            PotionBagStorage.Instance.SaveNow();
-            BannerChestStorage.Instance.SaveNow();
         }
     }
 }

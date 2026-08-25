@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.QoL;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
 using TPML.Content;
@@ -12,14 +11,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
     /// 药水袋 (PotionBag)
-    /// 可容纳多达 200 种药水，支持一键收集、存取、整理与自动拾取收纳；
-    /// 存入的药水自动计入无尽药水续杯检测。
+    /// 实体级独立容器，可容纳多达 200 种药水，支持一键收集、存取、整理与自动拾取收纳；
+    /// 存入的药水自动计入无尽药水续杯检测，数据通过 TPML Sidecar 伴随存档无损保存。
     /// 作者: SaintCirno9
     /// </summary>
-    public class PotionBagItem : ModItem
+    public class PotionBagItem : ItemContainerItem
     {
         public override string Name => "PotionBag";
         public override string Texture => "PotionBag";
+        public override int Capacity => 200;
+        public override string ContainerTitle => "药水袋";
 
         public override void SetStaticDefaults()
         {
@@ -30,6 +31,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public override void SetDefaults()
         {
+            base.SetDefaults();
             Item.width = 48;
             Item.height = 42;
             Item.maxStack = 1;
@@ -39,11 +41,20 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             Item.useStyle = ItemUseStyleID.None;
         }
 
+        public override bool MeetEntryCriteria(Item item)
+        {
+            if (item == null || item.IsAir || item.type <= 0) return false;
+            if (item.buffType > 0)
+            {
+                return item.consumable;
+            }
+            return false;
+        }
+
         public override void ModifyTooltips(List<TooltipLine> tooltips)
         {
-            PotionBagStorage.Instance.EnsurePlayerLoaded();
-            int count = PotionBagStorage.Instance.GetStoredCount();
-            int max = PotionBagStorage.Instance.Capacity;
+            int count = GetStoredCount();
+            int max = Capacity;
 
             if (count > 0)
             {
@@ -53,7 +64,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                     OverrideColor = Color.LightGreen
                 });
 
-                var stored = PotionBagStorage.Instance.GetStoredItems();
+                var stored = GetStoredItems();
                 if (stored.Count > 20)
                 {
                     string iconStream = string.Empty;

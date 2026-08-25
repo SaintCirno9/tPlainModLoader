@@ -79,6 +79,15 @@ namespace TPML.Content
         {
         }
 
+        public virtual ModItem Clone(Item newEntity)
+        {
+            ModItem clone = (ModItem)System.Activator.CreateInstance(GetType());
+            clone.Mod = Mod;
+            clone.Item = newEntity;
+            clone.SetType(Type);
+            return clone;
+        }
+
         public ModRecipe CreateRecipe(int amount = 1)
         {
             return RecipeLoader.CreateRecipe(this, amount);

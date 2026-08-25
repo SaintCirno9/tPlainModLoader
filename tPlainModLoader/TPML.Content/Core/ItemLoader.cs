@@ -23,6 +23,7 @@ namespace TPML.Content
         public const int ModItemOffset = 6200;
         private static int _nextItemID = ModItemOffset;
         private static readonly Dictionary<int, ModItem> _itemsByType = new Dictionary<int, ModItem>();
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Item, ModItem> _modItemInstances = new System.Runtime.CompilerServices.ConditionalWeakTable<Item, ModItem>();
         private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
         private static readonly Dictionary<int, string> _tooltips = new Dictionary<int, string>();
         private static readonly Dictionary<string, int> _itemsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -315,6 +316,39 @@ namespace TPML.Content
             }
         }
 
+        public static ModItem GetModItem(Item item)
+        {
+            if (item == null || item.IsAir || item.type < ItemID.Count) return null;
+            if (_modItemInstances.TryGetValue(item, out ModItem instance))
+            {
+                return instance;
+            }
+            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            {
+                ModItem newInst = template.Clone(item);
+                newInst.Item = item;
+                newInst.SetType(item.type);
+                _modItemInstances.Add(item, newInst);
+                return newInst;
+            }
+            return null;
+        }
+
+        public static T GetModItem<T>(Item item) where T : ModItem => GetModItem(item) as T;
+
+        public static void OnItemCloned(Item source, Item destination)
+        {
+            if (source == null || destination == null || source.type < ItemID.Count) return;
+            if (_modItemInstances.TryGetValue(source, out ModItem sourceModItem))
+            {
+                ModItem clonedModItem = sourceModItem.Clone(destination);
+                clonedModItem.Item = destination;
+                clonedModItem.SetType(destination.type);
+                _modItemInstances.Remove(destination);
+                _modItemInstances.Add(destination, clonedModItem);
+            }
+        }
+
         public static void SetDefaults(Item item)
         {
             if (item == null) return;
@@ -322,8 +356,12 @@ namespace TPML.Content
             if (_itemsByType.TryGetValue(item.type, out ModItem template))
             {
                 item.SetNameOverride(string.Empty);
-                template.Item = item;
-                template.SetDefaults();
+                ModItem instance = template.Clone(item);
+                instance.Item = item;
+                instance.SetType(item.type);
+                _modItemInstances.Remove(item);
+                _modItemInstances.Add(item, instance);
+                instance.SetDefaults();
 
                 string name = GetDisplayName(template.Type);
                 if (!string.IsNullOrEmpty(name))
@@ -348,9 +386,10 @@ namespace TPML.Content
         public static bool? CanUseItem(Item item, Player player)
         {
             if (item == null || item.IsAir) return null;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                bool? canUse = template.CanUseItem(player);
+                bool? canUse = modItem.CanUseItem(player);
                 if (canUse == false) return false;
             }
 
@@ -366,9 +405,10 @@ namespace TPML.Content
         public static bool? UseItem(Item item, Player player)
         {
             if (item == null || item.IsAir) return null;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                template.UseItem(player);
+                modItem.UseItem(player);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
@@ -382,9 +422,10 @@ namespace TPML.Content
         public static void HoldItem(Item item, Player player)
         {
             if (item == null || item.IsAir) return;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                template.HoldItem(player);
+                modItem.HoldItem(player);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
@@ -396,9 +437,10 @@ namespace TPML.Content
         public static void UpdateInventory(Item item, Player player)
         {
             if (item == null || item.IsAir) return;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                template.UpdateInventory(player);
+                modItem.UpdateInventory(player);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
@@ -410,9 +452,10 @@ namespace TPML.Content
         public static void UpdateEquip(Item item, Player player)
         {
             if (item == null || item.IsAir) return;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                template.UpdateEquip(player);
+                modItem.UpdateEquip(player);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
@@ -424,9 +467,10 @@ namespace TPML.Content
         public static void ModifyTooltips(Item item, List<TooltipLine> tooltips)
         {
             if (item == null || item.IsAir || tooltips == null) return;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                template.ModifyTooltips(tooltips);
+                modItem.ModifyTooltips(tooltips);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
@@ -438,9 +482,10 @@ namespace TPML.Content
         public static bool Shoot(Item item, Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
             if (item == null || item.IsAir) return true;
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
             {
-                return template.Shoot(player, source, position, velocity, type, damage, knockback);
+                return modItem.Shoot(player, source, position, velocity, type, damage, knockback);
             }
             return true;
         }

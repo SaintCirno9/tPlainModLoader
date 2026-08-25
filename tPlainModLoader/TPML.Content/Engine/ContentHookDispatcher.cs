@@ -98,6 +98,9 @@ namespace TPML.Content.Engine
             // 挂钩物品使用许可检查 (ModItem.CanUseItem)
             PatchItemCheck();
 
+            // 挂钩物品克隆 (ModItem 实体数据保持)
+            PatchItemClone();
+
             // 1. ModPlayer.PreUpdate & PostUpdate
             PatchPlayerUpdate();
             PatchInput();
@@ -107,6 +110,23 @@ namespace TPML.Content.Engine
             PatchLang();
             PatchPopupText();
             _patchesApplied = true;
+        }
+
+        private static void PatchItemClone()
+        {
+            var target = typeof(Item).GetMethod(nameof(Item.Clone), BindingFlags.Instance | BindingFlags.Public);
+            if (target != null)
+            {
+                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Item_Clone_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
+                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Item.Clone (ModItem 实体克隆与数据保持)");
+            }
+        }
+
+        private static void Item_Clone_Postfix(Item __instance, Item __result)
+        {
+            if (__instance == null || __result == null) return;
+            ItemLoader.OnItemCloned(__instance, __result);
         }
 
         private static void PatchItemDefaults()
