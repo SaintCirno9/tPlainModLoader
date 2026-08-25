@@ -520,6 +520,20 @@ namespace OptimizeAndTool.Content.BigBag
             OnCapacityChanged?.Invoke();
         }
 
+        /// <summary>
+        /// 重置所有槽位为空物品
+        /// </summary>
+        public static void ResetSlots()
+        {
+            int count = Math.Max(40, Math.Min(500, Capacity.val));
+            Slots = NewSlots(count);
+            BagChest.item = Slots;
+            BagChest.maxItems = Slots.Length;
+
+            EnsureCapacitySafety();
+            OnCapacityChanged?.Invoke();
+        }
+
         private static Item[] NewSlots(int count)
         {
             Item[] slots = new Item[count];
@@ -544,13 +558,22 @@ namespace OptimizeAndTool.Content.BigBag
     {
         public const string ContainerKey = "BigBag";
 
+        /// <summary>当前在内存中持有 BigBag.Slots 的玩家名称</summary>
+        public static string ActivePlayerName { get; private set; }
+
+        static BigBagStorage()
+        {
+            ModItemSidecarEngine.OnResetContainers += Reset;
+            ModItemSidecarEngine.OnLoadContainers += LoadForPlayer;
+        }
+
         /// <summary>
         /// 立即将当前活动玩家的大背包数据保存落盘至 Sidecar 伴随文件
         /// </summary>
         public static void SaveNow()
         {
             Player player = Main.LocalPlayer;
-            if (player == null) return;
+            if (player == null || string.IsNullOrEmpty(ActivePlayerName) || player.name != ActivePlayerName) return;
             ModItemSidecarEngine.SavePlayerContainer(player, ContainerKey, BigBag.Slots);
         }
 
@@ -559,10 +582,25 @@ namespace OptimizeAndTool.Content.BigBag
         /// </summary>
         public static void LoadForPlayer(Player player)
         {
-            if (player == null) return;
+            if (player == null)
+            {
+                Reset();
+                return;
+            }
+
+            ActivePlayerName = player.name;
             int cap = BigBag.Capacity.val;
             Item[] slots = ModItemSidecarEngine.LoadPlayerContainer(player, ContainerKey, cap);
             BigBag.SetItems(slots);
+        }
+
+        /// <summary>
+        /// 重置大背包内存状态为空白状态
+        /// </summary>
+        public static void Reset()
+        {
+            ActivePlayerName = null;
+            BigBag.ResetSlots();
         }
     }
 
@@ -576,7 +614,11 @@ namespace OptimizeAndTool.Content.BigBag
         {
             if (playerFile?.Player != null)
             {
-                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, BigBagStorage.ContainerKey, BigBag.Slots);
+                // 严格校验：只有被保存的角色正是当前内存加载激活的角色时，才允许写入内存槽位数据，杜绝新建角色被污染
+                if (!string.IsNullOrEmpty(BigBagStorage.ActivePlayerName) && playerFile.Player.name == BigBagStorage.ActivePlayerName)
+                {
+                    ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, BigBagStorage.ContainerKey, BigBag.Slots);
+                }
             }
         }
 

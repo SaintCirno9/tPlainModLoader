@@ -39,6 +39,7 @@ namespace tContentPatch.ModPatch
         }
 
         private static bool _UpdatePrefix_CanUpdateGameplay_old = false;
+        private static bool _UpdatePrefix_gameMenu_old = true;
 
         private static void UpdatePrefix_CanUpdateGameplay()
         {
@@ -46,14 +47,27 @@ namespace tContentPatch.ModPatch
 
             if (_UpdatePrefix_CanUpdateGameplay_old == false && Main.CanUpdateGameplay == true)
             {
+                if (Main.LocalPlayer != null)
+                {
+                    ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
+                }
                 mod.ForTry(item => item.OnEnterWorld());
             }
             else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
             {
                 mod.ForTry(item => item.OnEnterWorldPrefix());
+                // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
+                ModItemSidecarEngine.ResetContainers();
+            }
+
+            if (!_UpdatePrefix_gameMenu_old && Main.gameMenu)
+            {
+                // 检测到进入主菜单，安全复位所有容器内存驻留状态
+                ModItemSidecarEngine.ResetContainers();
             }
 
             _UpdatePrefix_CanUpdateGameplay_old = Main.CanUpdateGameplay;
+            _UpdatePrefix_gameMenu_old = Main.gameMenu;
         }
 
         [HarmonyPatch("Update")]

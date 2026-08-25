@@ -111,6 +111,17 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             OnCapacityChanged?.Invoke();
         }
 
+        /// <summary>
+        /// 重置所有槽位为空物品
+        /// </summary>
+        public static void ResetSlots()
+        {
+            int count = Math.Max(40, Math.Min(500, Capacity.val));
+            Slots = NewSlots(count);
+            EnsureCapacitySafety();
+            OnCapacityChanged?.Invoke();
+        }
+
         private static Item[] NewSlots(int count)
         {
             Item[] slots = new Item[count];
@@ -122,15 +133,11 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         {
             if (playerFile?.Player != null)
             {
-                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, AccessoryBoxStorage.ContainerKey, Slots);
-            }
-        }
-
-        public override void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave)
-        {
-            if (playerFile?.Player != null)
-            {
-                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, AccessoryBoxStorage.ContainerKey, Slots);
+                // 严格校验：只有被保存的角色正是当前内存加载激活的角色时，才允许写入内存槽位数据，杜绝新建角色被污染
+                if (!string.IsNullOrEmpty(AccessoryBoxStorage.ActivePlayerName) && playerFile.Player.name == AccessoryBoxStorage.ActivePlayerName)
+                {
+                    ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, AccessoryBoxStorage.ContainerKey, Slots);
+                }
             }
         }
 

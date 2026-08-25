@@ -188,11 +188,7 @@ namespace OptimizeAndTool
             if (bigBagWindow.IsOpen)
             {
                 bigBagWindow.Close();
-                if (fromKeybind && Main.playerInventory)
-                {
-                    Main.playerInventory = false;
-                    SoundEngine.PlaySound(SoundID.MenuClose);
-                }
+                SoundEngine.PlaySound(SoundID.MenuClose);
             }
             else
             {

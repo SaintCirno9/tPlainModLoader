@@ -108,7 +108,19 @@
 
 ---
 
-## 6. 全域模组持久化 (Sidecar) 与级联删除管理
+## 6. 全域模组持久化 (Sidecar) 与生命周期隔离管理
 
-- **伴随存档存储 (`SidecarSaveManager`)**：将模组物品持久化数据存储于 `TPML_Saves/Player_<PlayerName>.tpml_data` 与 `TPML_Saves/World_<WorldName>_<WorldID>.tpml_data`；
-- **全生命周期级联删除**：在 `Patch_Main` 中挂钩原版 `Main.ErasePlayer` 与 `Main.EraseWorld`，当玩家在游戏主菜单删除角色或世界存档时，自动级联清理 `TPML_Saves` 目录下的伴随存档文件（含 ID 兜底匹配），防止无效数据残留。
+- **伴随存档存储 (`SidecarSaveManager`)**：将模组物品与扩展容器持久化数据存储于 `TPML_Saves/Player_<PlayerName>.tpml_data` 与 `TPML_Saves/World_<WorldName>_<WorldID>.tpml_data`；
+- **全生命周期级联删除**：在 `Patch_Main` 中挂钩原版 `Main.ErasePlayer` 与 `Main.EraseWorld`，当玩家在游戏主菜单删除角色或世界存档时，自动级联清理 `TPML_Saves` 目录下的伴随存档文件（含 ID 兜底匹配），防止无效数据残留；
+- **扩展容器隔离与自动清理 (`ResetContainers`)**：
+  - **活动角色身份严格校验**：`BigBag` 与 `AccessoryBox` 维护当前在内存中持有槽位的 `ActivePlayerName`；在原版保存角色（`SavePlayerPrefix`）时，严格校验被保存角色是否与当前激活角色一致，杜绝新建角色首次保存时将其他角色的静态内存残留数据写入新角色伴随存档；
+  - **退出世界与切换角色自动复位**：离开世界退回主菜单（`gameMenu` 状态切换）或激活新角色（`SetAsActive`）时，自动触发 `ModItemSidecarEngine.ResetContainers()` 广播，将大背包、饰品箱内存槽位重设为空白数组，并复位吸管工具（`PipetteEngine`）调度状态，保证开局纯净无污染。
+
+---
+
+## 7. 大背包 (BigBag) 快捷键与物品栏交互优化
+
+- **关闭大背包独立解耦**：在 [`ModifyInterfaceLayers.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool/ModifyInterfaceLayers.cs) 中优化了 `SwitchBigBag` 方法，按快捷键关闭大背包时仅关闭自身窗口并播放 `SoundID.MenuClose` 音效，不再强制将 `Main.playerInventory` 设为 `false`，原版物品栏保持开启状态；
+- **打开大背包同步开启物品栏**：保持原有机制，若当前物品栏未开启，打开大背包时自动同步开启物品栏；
+- **关闭物品栏同步关闭大背包**：保持原有机制，当玩家关闭原版物品栏（`!Main.playerInventory`）时，大背包窗口自动同步关闭。
+

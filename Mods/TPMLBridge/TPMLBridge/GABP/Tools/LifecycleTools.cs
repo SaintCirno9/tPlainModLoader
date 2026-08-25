@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Terraria;
 using Terraria.IO;
+using TPML.Content.IO;
 
 namespace TPMLBridge.GABP.Tools
 {
@@ -328,6 +329,9 @@ namespace TPMLBridge.GABP.Tools
             Main.netMode = 0;
             Main.menuMode = 0;
             Main.gameMenu = true;
+
+            // 离开世界时立即重置扩展容器与吸管工具状态
+            ModItemSidecarEngine.ResetContainers();
 
             // 退出自动化测试后复位保护标志，确保玩家后续正常游玩时能够正常保存
             bool wasProtected = TPMLBridgeMod.WorldSaveProtectionEnabled;

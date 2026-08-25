@@ -8,6 +8,7 @@ using Terraria.UI;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
+using TPML.Content.IO;
 
 namespace OptimizeAndTool.Content.QoL.Pipette
 {
@@ -21,6 +22,11 @@ namespace OptimizeAndTool.Content.QoL.Pipette
         public static GetSetReset<bool> PickWall = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> PlaySound = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> ShowNotification = new GetSetReset<bool>(true, true);
+
+        static PipetteEngine()
+        {
+            ModItemSidecarEngine.OnResetContainers += ResetState;
+        }
 
         public static List<CommandObject> GetCO()
         {
@@ -58,6 +64,18 @@ namespace OptimizeAndTool.Content.QoL.Pipette
 
         // 记录从大背包调取物块时的源槽位索引
         private static int bigBagSourceSlot = -1;
+
+        /// <summary>
+        /// 重置吸管调度状态
+        /// </summary>
+        public static void ResetState()
+        {
+            lastNormalSlot = 0;
+            currentPipetteSlot = -1;
+            currentPipetteItemType = -1;
+            isFromBigBag = false;
+            bigBagSourceSlot = -1;
+        }
 
         /// <summary>
         /// 执行吸管动作（Pick Block）

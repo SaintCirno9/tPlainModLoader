@@ -85,6 +85,11 @@ namespace OptimizeAndTool.Content.BigBag
             };
             OnOpen += () =>
             {
+                if (Main.LocalPlayer != null && BigBagStorage.ActivePlayerName != Main.LocalPlayer.name)
+                {
+                    BigBagStorage.LoadForPlayer(Main.LocalPlayer);
+                }
+
                 if (!Main.playerInventory)
                 {
                     Main.playerInventory = true;

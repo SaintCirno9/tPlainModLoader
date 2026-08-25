@@ -13,13 +13,22 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     {
         public const string ContainerKey = "AccessoryBox";
 
+        /// <summary>当前在内存中持有 AccessoryBox.Slots 的玩家名称</summary>
+        public static string ActivePlayerName { get; private set; }
+
+        static AccessoryBoxStorage()
+        {
+            ModItemSidecarEngine.OnResetContainers += Reset;
+            ModItemSidecarEngine.OnLoadContainers += LoadForPlayer;
+        }
+
         /// <summary>
         /// 立即将当前活动玩家的随身饰品箱数据保存落盘至 Sidecar 伴随文件
         /// </summary>
         public static void SaveNow()
         {
             Player player = Main.LocalPlayer;
-            if (player == null) return;
+            if (player == null || string.IsNullOrEmpty(ActivePlayerName) || player.name != ActivePlayerName) return;
             ModItemSidecarEngine.SavePlayerContainer(player, ContainerKey, AccessoryBox.Slots);
         }
 
@@ -28,10 +37,25 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         /// </summary>
         public static void LoadForPlayer(Player player)
         {
-            if (player == null) return;
+            if (player == null)
+            {
+                Reset();
+                return;
+            }
+
+            ActivePlayerName = player.name;
             int cap = AccessoryBox.Capacity.val;
             Item[] slots = ModItemSidecarEngine.LoadPlayerContainer(player, ContainerKey, cap);
             AccessoryBox.SetItems(slots);
+        }
+
+        /// <summary>
+        /// 重置随身饰品箱内存状态为空白状态
+        /// </summary>
+        public static void Reset()
+        {
+            ActivePlayerName = null;
+            AccessoryBox.ResetSlots();
         }
     }
 }

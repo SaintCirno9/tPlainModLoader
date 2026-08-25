@@ -107,6 +107,9 @@ namespace tContentPatch.ModPatch
         {
             if (__instance?.Player != null)
             {
+                // 激活新角色前，先广播重置并清理上一个角色的扩展容器内存驻留状态
+                ModItemSidecarEngine.ResetContainers();
+
                 ModItemSidecarEngine.OnPlayerLoaded(__instance.Player);
                 Patch_Player.ModList.ForTry(item => item.SetAsActivePostfix(__instance));
             }

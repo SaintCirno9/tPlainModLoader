@@ -81,6 +81,31 @@ namespace TPML.Content.IO
         private static readonly Dictionary<string, Item> _playerTempSwap = new Dictionary<string, Item>();
         private static readonly Dictionary<string, Item> _worldTempSwap = new Dictionary<string, Item>();
 
+        /// <summary>
+        /// 当角色切换、离开世界或重置容器时触发的通知事件
+        /// </summary>
+        public static event Action OnResetContainers;
+
+        /// <summary>
+        /// 当玩家数据载入或进入世界时触发的扩展容器载入事件
+        /// </summary>
+        public static event Action<Player> OnLoadContainers;
+
+        /// <summary>
+        /// 广播重置所有扩展容器内存状态并清空驻留数据
+        /// </summary>
+        public static void ResetContainers()
+        {
+            try
+            {
+                OnResetContainers?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 容器重置事件触发异常: {ex.Message}");
+            }
+        }
+
         public static string GetPlayerSidecarPath(Player player) => SidecarSaveManager.GetPlayerSavePath(player);
         public static string GetWorldSidecarPath() => SidecarSaveManager.GetWorldSavePath();
 
@@ -496,13 +521,15 @@ namespace TPML.Content.IO
         {
             if (player == null) return;
             string path = GetPlayerSidecarPath(player);
-            if (!File.Exists(path)) return;
 
             try
             {
-                string json = File.ReadAllText(path);
-                PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
-                if (data?.Items == null) return;
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                    if (data?.Items != null)
+                    {
 
                 foreach (var entry in data.Items)
                 {
@@ -604,10 +631,24 @@ namespace TPML.Content.IO
                             break;
                     }
                 }
+                    }
+                }
             }
             catch (Exception ex)
             {
                 ModLoader.Log($"[Sidecar] 加载玩家伴随数据异常: {ex.Message}");
+            }
+            finally
+            {
+                // 广播扩展容器加载事件，确保大背包与饰品箱等扩展容器同步为该玩家载入数据
+                try
+                {
+                    OnLoadContainers?.Invoke(player);
+                }
+                catch (Exception ex)
+                {
+                    ModLoader.Log($"[Sidecar] 扩展容器加载事件广播异常: {ex.Message}");
+                }
             }
         }
 
