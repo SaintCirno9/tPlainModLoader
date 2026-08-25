@@ -7,6 +7,7 @@ using OptimizeAndTool.Content.Storage.AccessoryBox;
 using OptimizeAndTool.Content.Creative;
 using OptimizeAndTool.Content.QoL.Pipette;
 using tContentPatch;
+using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -133,10 +134,36 @@ namespace OptimizeAndTool
         }
 
         public static bool BigBagIsOpen => bigBagWindow?.IsOpen == true;
-        public static bool BigBagIsHovering => bigBagWindow?.IsOpen == true && bigBagWindow.ContainsPoint(Main.MouseScreen);
+        public static bool BigBagIsHovering => IsHoveringWindow(bigBagWindow);
 
         public static bool BoxIsOpen => BoxWindow.IsOpen;
-        public static bool BoxIsHovering => BoxWindow.IsOpenAndHovering;
+        public static bool BoxIsHovering => IsHoveringWindow(BoxWindow.Instance);
+
+        /// <summary>
+        /// 判定光标是否悬停在指定自定义窗口内（结合 IsMouseHovering 与 16px 边框容差，确保滑条与外沿判定 100% 覆盖）
+        /// </summary>
+        public static bool IsHoveringWindow(UIElement win)
+        {
+            if (win == null) return false;
+
+            if (win is UIWindow uiWin && !uiWin.IsOpen) return false;
+
+            if (win.IsMouseHovering) return true;
+
+            CalculatedStyle dims = win.GetDimensions();
+            if (dims.Width <= 0 || dims.Height <= 0) return false;
+
+            // 增加 16 像素外沿容差，彻底覆盖窗口边框、滚动条凸出区、阴影与缩放抓手
+            float margin = 16f;
+            Rectangle winRect = new Rectangle(
+                (int)(dims.X - margin),
+                (int)(dims.Y - margin),
+                (int)(dims.Width + margin * 2f),
+                (int)(dims.Height + margin * 2f)
+            );
+
+            return winRect.Contains(Main.MouseScreen.ToPoint());
+        }
 
         public static void SwitchBigBag(bool fromKeybind = false)
         {

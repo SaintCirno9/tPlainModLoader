@@ -185,6 +185,17 @@ namespace TPMLBridge.GABP.Tools
                             forUI = new { type = "boolean", description = "是否同时提供给 UI 状态机（默认 true）" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/get_scroll_state",
+                    Description = "获取当前鼠标滚轮、XNA 状态与快捷栏状态的实时诊断数据。",
+                    Tags = new List<string> { "read", "input" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
                 }
             };
         }
@@ -281,6 +292,10 @@ namespace TPMLBridge.GABP.Tools
                         bool forUI = args?["forUI"]?.Value<bool?>() ?? true;
                         return await MainThreadQueue.EnqueueAsync(() => SimulateScrollWheel(delta, forUI));
                     }
+
+                case "tpml/get_scroll_state":
+                case "tpml_get_scroll_state":
+                    return await MainThreadQueue.EnqueueAsync(() => GetScrollState());
 
                 default:
                     return null;
@@ -737,6 +752,7 @@ namespace TPMLBridge.GABP.Tools
             if (!Main.gameMenu && Main.LocalPlayer != null)
             {
                 Main.LocalPlayer.HandleHotbarControls();
+                Main.LocalPlayer.selectedItemState.Update();
             }
 
             int newSelected = Main.LocalPlayer?.selectedItem ?? -1;
@@ -749,9 +765,40 @@ namespace TPMLBridge.GABP.Tools
                 oldSelectedItem = oldSelected,
                 newSelectedItem = newSelected,
                 slotChanged = oldSelected != newSelected,
+                hotbar = Main.LocalPlayer?.selectedItemState.Hotbar ?? -1,
                 scrollWheelDelta = Terraria.GameInput.PlayerInput.ScrollWheelDelta,
                 scrollWheelDeltaForUI = Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI,
                 message = $"已模拟滚轮滚动 {delta} (快捷栏槽位: {oldSelected} -> {newSelected})"
+            };
+        }
+
+        public static object GetScrollState()
+        {
+            var p = Main.LocalPlayer;
+            var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+
+            return new
+            {
+                success = true,
+                xnaMouseWheel = mouseState.ScrollWheelValue,
+                playerInputMouseWheel = Terraria.GameInput.PlayerInput.MouseInfo.ScrollWheelValue,
+                scrollWheelValue = Terraria.GameInput.PlayerInput.ScrollWheelValue,
+                scrollWheelValueOld = Terraria.GameInput.PlayerInput.ScrollWheelValueOld,
+                scrollWheelDelta = Terraria.GameInput.PlayerInput.ScrollWheelDelta,
+                scrollWheelDeltaForUI = Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI,
+                allowInputProcessing = FocusHelper.AllowInputProcessing,
+                isAppActive = Main.instance?.IsActive ?? false,
+                playerInventory = Main.playerInventory,
+                mouseInterface = p?.mouseInterface ?? false,
+                selectedItem = p?.selectedItem ?? -1,
+                hotbarSelection = p?.selectedItemState.Hotbar ?? -1,
+                hasBufferedSelection = p?.selectedItemState.HasBufferedChange ?? false,
+                hasActiveOverride = p?.selectedItemState.HasActiveOverride ?? false,
+                canChangeImmediately = p?.selectedItemState.CanChangeSelectedItemImmediately ?? false,
+                itemAnimation = p?.itemAnimation ?? 0,
+                itemTime = p?.itemTime ?? 0,
+                usingOrReusing = p?.UsingOrReusingItem ?? false,
+                focusRecipe = Main.focusRecipe
             };
         }
     }

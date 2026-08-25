@@ -9,19 +9,45 @@ namespace OptimizeAndTool.Content.BigBag
     /// 当玩家光标在自定义悬浮窗口（大背包/饰品箱/物品浏览器）上时，阻止滚轮误切快捷栏
     /// 作者: SaintCirno9
     /// </summary>
-    [HarmonyPatch(typeof(Player), "HandleHotbarControls")]
+    [HarmonyPatch(typeof(Player), nameof(Player.HandleHotbarControls))]
     public class Patch_HotbarScroll
     {
         [HarmonyPrefix]
         public static void Prefix(Player __instance)
         {
-            // 当大背包、饰品箱或物品浏览器打开且鼠标悬停在窗口内时，清空当前帧快捷栏滚轮增量
-            if ((ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering) ||
-                (ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering) ||
-                (CreativeInventory.IsOpen && CreativeInventory.IsHovering))
+            // 仅当玩家确实打开了对应模组窗口且光标悬停在窗口内部时，才拦截快捷栏滚轮
+            bool inBigBag = Main.playerInventory && ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering;
+            bool inBox = Main.playerInventory && ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering;
+            bool inCreative = CreativeInventory.IsOpen && CreativeInventory.IsHovering;
+
+            if (inBigBag || inBox || inCreative)
             {
                 PlayerInput.ScrollWheelDelta = 0;
             }
+        }
+    }
+
+    /// <summary>
+    /// 当玩家光标在自定义悬浮窗口内部时，阻止原版背包左侧快速制造列表随滚轮滚动
+    /// 作者: SaintCirno9
+    /// </summary>
+    [HarmonyPatch(typeof(Main), nameof(Main.DoScrollingInInventory))]
+    public class Patch_DoScrollingInInventory
+    {
+        [HarmonyPrefix]
+        public static bool Prefix()
+        {
+            // 仅当玩家光标悬停在大背包/饰品箱/物品浏览器内部时，跳过原版制造列表与箱子列表滚动
+            bool inBigBag = ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering;
+            bool inBox = ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering;
+            bool inCreative = CreativeInventory.IsOpen && CreativeInventory.IsHovering;
+
+            if (inBigBag || inBox || inCreative)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

@@ -162,9 +162,32 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         public override void ScrollWheel(UIScrollWheelEvent evt)
         {
             base.ScrollWheel(evt);
-            if (scrollbar != null)
+            if (scrollbar != null && evt.ScrollWheelValue != 0)
             {
-                scrollbar.ViewPosition += -evt.ScrollWheelValue;
+                scrollbar.ViewPosition -= evt.ScrollWheelValue;
+                Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
+                Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
+            }
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+
+            // 鼠标悬停在饰品箱窗口范围内（含 16px 外沿与滑条容差）时，拦截快捷栏与制造列表滚轮，并平滑驱动滚动条
+            if (IsOpen && ModifyInterfaceLayers.IsHoveringWindow(this))
+            {
+                Main.LocalPlayer.mouseInterface = true;
+
+                int delta = Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI;
+                if (delta == 0) delta = Terraria.GameInput.PlayerInput.ScrollWheelDelta;
+
+                if (delta != 0 && scrollbar != null)
+                {
+                    scrollbar.ViewPosition -= delta;
+                    Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
+                    Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
+                }
             }
         }
     }

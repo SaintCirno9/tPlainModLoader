@@ -202,8 +202,8 @@ namespace OptimizeAndTool.Content.BigBag
             }
             wasDraggingOrResizing = isMouseLeft && ContainsPoint(Main.MouseScreen);
 
-            // 鼠标悬停在窗口范围内时，拦截快捷栏滚轮并驱动背包滚动条
-            if (ContainsPoint(Main.MouseScreen))
+            // 鼠标悬停在活动窗口范围内（含 16px 外沿与滑条容差）时，拦截快捷栏与制造列表滚轮并平滑驱动滚动条
+            if (IsOpen && ModifyInterfaceLayers.IsHoveringWindow(this))
             {
                 Main.LocalPlayer.mouseInterface = true;
 

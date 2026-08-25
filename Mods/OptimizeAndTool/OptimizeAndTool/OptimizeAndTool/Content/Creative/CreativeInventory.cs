@@ -7,7 +7,7 @@ namespace OptimizeAndTool.Content.Creative
         private static UICreativeInventory ui_ci = null;
 
         public static bool IsOpen => ui_ci != null && ui_ci.IsOpen;
-        public static bool IsHovering => ui_ci != null && ui_ci.IsOpen && ui_ci.ContainsPoint(Main.MouseScreen);
+        public static bool IsHovering => ModifyInterfaceLayers.IsHoveringWindow(ui_ci);
         public static UICreativeInventory UI => ui_ci;
 
         public static void SwitchOpenOrClose()

@@ -48,7 +48,6 @@ namespace tContentPatch.Utils
 
         private static volatile bool _applied = false;
         private static IntPtr _lastHwnd = IntPtr.Zero;
-        private static FormSubclassWindow _subclass = null;
         private static readonly object _lock = new object();
 
         /// <summary>
@@ -119,16 +118,6 @@ namespace tContentPatch.Utils
                             {
                                 setStyleMethod.Invoke(form, new object[] { ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true });
                             }
-
-                            if (_subclass == null || _subclass.Handle != hWnd)
-                            {
-                                if (_subclass != null)
-                                {
-                                    try { _subclass.ReleaseHandle(); } catch { }
-                                }
-                                _subclass = new FormSubclassWindow();
-                                _subclass.AssignHandle(hWnd);
-                            }
                         }
                     }
                     catch
@@ -143,24 +132,6 @@ namespace tContentPatch.Utils
                 {
                     Log.Add($"[GameWindowDarkener] 黑化窗口异常: {ex.Message}");
                 }
-            }
-        }
-
-        /// <summary>
-        /// 拦截窗口擦除背景消息 (WM_ERASEBKGND)，防止 WinForms / GDI 刷白客户区
-        /// </summary>
-        private class FormSubclassWindow : NativeWindow
-        {
-            protected override void WndProc(ref Message m)
-            {
-                if (m.Msg == WM_ERASEBKGND)
-                {
-                    // 返回 1 (非零) 告诉 Windows 背景已被应用程序自行擦除，禁止 GDI 填充默认白底
-                    m.Result = (IntPtr)1;
-                    return;
-                }
-
-                base.WndProc(ref m);
             }
         }
     }

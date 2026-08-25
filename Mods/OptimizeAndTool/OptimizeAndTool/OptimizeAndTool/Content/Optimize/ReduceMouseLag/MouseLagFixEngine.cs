@@ -63,24 +63,23 @@ namespace OptimizeAndTool.Content.Optimize.ReduceMouseLag
                 }
             }
 
+            MouseState currentXnaState = Mouse.GetState();
             if (!gotWin32)
             {
-                MouseState state = Mouse.GetState();
-                rawX = state.X;
-                rawY = state.Y;
+                rawX = currentXnaState.X;
+                rawY = currentXnaState.Y;
             }
 
-            // 保持按键与滚轮状态不变，仅刷新物理光标采样
-            MouseState mouseInfo = PlayerInput.MouseInfo;
+            // 保持最新硬件按键与滚轮状态，刷新物理光标采样
             PlayerInput.MouseInfo = new MouseState(
                 rawX,
                 rawY,
-                mouseInfo.ScrollWheelValue,
-                mouseInfo.LeftButton,
-                mouseInfo.MiddleButton,
-                mouseInfo.RightButton,
-                mouseInfo.XButton1,
-                mouseInfo.XButton2
+                currentXnaState.ScrollWheelValue,
+                currentXnaState.LeftButton,
+                currentXnaState.MiddleButton,
+                currentXnaState.RightButton,
+                currentXnaState.XButton1,
+                currentXnaState.XButton2
             );
 
             PlayerInput.MouseX = (int)((float)rawX * PlayerInput.RawMouseScale.X);

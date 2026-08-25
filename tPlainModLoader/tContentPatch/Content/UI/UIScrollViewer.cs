@@ -1,4 +1,4 @@
-﻿using Terraria.GameContent.UI.Elements;
+using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
 namespace tContentPatch.Content.UI
@@ -9,14 +9,18 @@ namespace tContentPatch.Content.UI
     public class UIScrollViewer : UIElement
     {
         private UIList ui_list = null;
+        private UIScrollbar ui_sb = null;
+
+        public UIScrollbar Scrollbar => ui_sb;
+        public UIList List => ui_list;
 
         /// <summary>
-        /// 
+        /// 构造函数
         /// </summary>
         /// <param name="scrollbarIsLeft">滚动条是否在左边</param>
         public UIScrollViewer(bool scrollbarIsLeft = false)
         {
-            UIScrollbar ui_sb = new UIScrollbar();
+            ui_sb = new UIScrollbar();
             ui_sb.Height.Set(-12, 1);
             ui_sb.HAlign = scrollbarIsLeft ? 0 : 1;
             ui_sb.VAlign = 0.5f;
@@ -29,6 +33,15 @@ namespace tContentPatch.Content.UI
 
             Append(ui_list);
             Append(ui_sb);
+        }
+
+        public override void ScrollWheel(UIScrollWheelEvent evt)
+        {
+            base.ScrollWheel(evt);
+            if (ui_sb != null && evt.ScrollWheelValue != 0)
+            {
+                ui_sb.ViewPosition -= evt.ScrollWheelValue;
+            }
         }
 
         /// <summary/>

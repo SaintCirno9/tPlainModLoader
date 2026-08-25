@@ -7,6 +7,7 @@ using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
+using Terraria.UI;
 using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace OptimizeAndTool.Content.Creative
@@ -220,6 +221,33 @@ namespace OptimizeAndTool.Content.Creative
                     Search_Text = Search_Text_new;
                     update_itemUI();
                 }
+            }
+
+            // 鼠标悬停在物品浏览器窗口范围内（含 16px 外沿与滑条容差）时，拦截快捷栏与制造列表滚轮，并平滑驱动滚动条
+            if (IsOpen && ModifyInterfaceLayers.IsHoveringWindow(this))
+            {
+                Main.LocalPlayer.mouseInterface = true;
+
+                int delta = Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI;
+                if (delta == 0) delta = Terraria.GameInput.PlayerInput.ScrollWheelDelta;
+
+                if (delta != 0 && panel_items_sv?.Scrollbar != null)
+                {
+                    panel_items_sv.Scrollbar.ViewPosition -= delta;
+                    Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
+                    Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
+                }
+            }
+        }
+
+        public override void ScrollWheel(UIScrollWheelEvent evt)
+        {
+            base.ScrollWheel(evt);
+            if (panel_items_sv?.Scrollbar != null && evt.ScrollWheelValue != 0)
+            {
+                panel_items_sv.Scrollbar.ViewPosition -= evt.ScrollWheelValue;
+                Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
+                Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
             }
         }
 
