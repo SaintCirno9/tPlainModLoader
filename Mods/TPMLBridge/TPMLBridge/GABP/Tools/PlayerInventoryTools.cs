@@ -462,8 +462,10 @@ namespace TPMLBridge.GABP.Tools
             player.reuseDelay = 0;
             player.changeItem = -1;
 
-            player.selectedItemState.Select(slot);
-            player.selectedItemState.Update();
+            player.selectedItemState.hotbar = slot < 10 ? slot : player.selectedItemState.hotbar;
+            player.selectedItemState.selected = slot;
+            player.selectedItemState.buffered = -1;
+            player.selectedItemState.overridden = -1;
 
             Console.WriteLine($"[SelectSlot DEBUG-AFTER] slot={slot}, inv[0]={player.inventory[0]?.type}x{player.inventory[0]?.stack}, inv[1]={player.inventory[1]?.type}x{player.inventory[1]?.stack}, inv[2]={player.inventory[2]?.type}x{player.inventory[2]?.stack}");
             Item held = player.HeldItem;
