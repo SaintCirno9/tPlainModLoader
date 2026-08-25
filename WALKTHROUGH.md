@@ -105,3 +105,10 @@
 3. **双模态存档只读保护机制**：
    - **日常游玩模式（默认）**：`WorldSaveProtectionEnabled = false`，玩家正常游戏与读写存档 100% 原版执行；
    - **自动化测试会话（自动接管）**：外部测试调度接管时动态激活保护，通过 Harmony 补丁拦截所有 `WorldFile.SaveWorld` 磁盘写操作，退出测试后自动重置，严禁污染或破坏玩家真实世界存档。
+
+---
+
+## 6. 全域模组持久化 (Sidecar) 与级联删除管理
+
+- **伴随存档存储 (`SidecarSaveManager`)**：将模组物品持久化数据存储于 `TPML_Saves/Player_<PlayerName>.tpml_data` 与 `TPML_Saves/World_<WorldName>_<WorldID>.tpml_data`；
+- **全生命周期级联删除**：在 `Patch_Main` 中挂钩原版 `Main.ErasePlayer` 与 `Main.EraseWorld`，当玩家在游戏主菜单删除角色或世界存档时，自动级联清理 `TPML_Saves` 目录下的伴随存档文件（含 ID 兜底匹配），防止无效数据残留。

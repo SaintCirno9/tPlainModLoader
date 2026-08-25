@@ -58,11 +58,69 @@ namespace TPML.Content.IO
             return Path.Combine(SaveDirectory, $"Player_{name}.tpml_data");
         }
 
+        public static string GetPlayerSavePath(string playerName)
+        {
+            string name = CleanFileName(playerName ?? "unknown");
+            return Path.Combine(SaveDirectory, $"Player_{name}.tpml_data");
+        }
+
         public static string GetWorldSavePath()
         {
             string name = CleanFileName(Main.worldName ?? "unknown");
             int id = Main.worldID;
             return Path.Combine(SaveDirectory, $"World_{name}_{id}.tpml_data");
+        }
+
+        public static string GetWorldSavePath(string worldName, int worldId)
+        {
+            string name = CleanFileName(worldName ?? "unknown");
+            return Path.Combine(SaveDirectory, $"World_{name}_{worldId}.tpml_data");
+        }
+
+        /// <summary>
+        /// 删除指定角色的伴随存档文件
+        /// </summary>
+        public static void DeletePlayerSave(string playerName)
+        {
+            try
+            {
+                string path = GetPlayerSavePath(playerName);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 删除指定世界的伴随存档文件
+        /// </summary>
+        public static void DeleteWorldSave(string worldName, int worldId)
+        {
+            try
+            {
+                string path = GetWorldSavePath(worldName, worldId);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+
+                // 兜底清理：若存在匹配 World_*_{worldId}.tpml_data 的文件也一并删除
+                if (Directory.Exists(SaveDirectory) && worldId > 0)
+                {
+                    string pattern = $"World_*_{worldId}.tpml_data";
+                    foreach (var file in Directory.GetFiles(SaveDirectory, pattern))
+                    {
+                        try
+                        {
+                            if (File.Exists(file)) File.Delete(file);
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
         }
     }
 }

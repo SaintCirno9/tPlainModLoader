@@ -7,7 +7,9 @@ using System.Reflection;
 using tContentPatch.Utils;
 using Terraria;
 using Terraria.GameInput;
+using Terraria.IO;
 using Terraria.UI;
+using TPML.Content.IO;
 
 namespace tContentPatch.ModPatch
 {
@@ -189,6 +191,51 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item => modifi = item.PlayerFocusedScreenPosition(origin, modifi));
 
             __result = modifi;
+        }
+
+        [HarmonyPatch("ErasePlayer")]
+        [HarmonyPrefix]
+        public static void ErasePlayerPrefix(int i)
+        {
+            try
+            {
+                if (Main.PlayerList != null && i >= 0 && i < Main.PlayerList.Count)
+                {
+                    PlayerFileData playerFile = Main.PlayerList[i];
+                    string playerName = playerFile?.Name ?? playerFile?.Player?.name;
+                    if (!string.IsNullOrEmpty(playerName))
+                    {
+                        SidecarSaveManager.DeletePlayerSave(playerName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputDebug.OutputException(ex);
+            }
+        }
+
+        [HarmonyPatch("EraseWorld")]
+        [HarmonyPrefix]
+        public static void EraseWorldPrefix(int i)
+        {
+            try
+            {
+                if (Main.WorldList != null && i >= 0 && i < Main.WorldList.Count)
+                {
+                    WorldFileData worldFile = Main.WorldList[i];
+                    if (worldFile != null)
+                    {
+                        string worldName = worldFile.Name ?? worldFile.GetWorldName();
+                        int worldId = worldFile.WorldId;
+                        SidecarSaveManager.DeleteWorldSave(worldName, worldId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputDebug.OutputException(ex);
+            }
         }
     }
 }
