@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Newtonsoft.Json.Linq;
 using Terraria;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -427,12 +428,44 @@ namespace TPMLBridge.GABP.Tools
             if (slot < 0 || slot >= player.inventory.Length)
                 return new { success = false, message = $"背包槽位无效: {slot}" };
 
+            Console.WriteLine($"[SelectSlot DEBUG-BEFORE] slot={slot}, inv[0]={player.inventory[0]?.type}x{player.inventory[0]?.stack}, inv[1]={player.inventory[1]?.type}x{player.inventory[1]?.stack}, inv[2]={player.inventory[2]?.type}x{player.inventory[2]?.stack}");
+
             Item selectedItem = player.inventory[slot];
             if (selectedItem == null || selectedItem.IsAir)
                 return new { success = false, slot, itemId = 0, message = $"背包槽位为空: {slot}" };
 
+            // 安全移开鼠标坐标到屏幕中心并清空鼠标点击状态，避免误触拾取、丢弃或使用
+            Main.mouseX = Main.screenWidth / 2;
+            Main.mouseY = Main.screenHeight / 2;
+            Main.mouseLeft = false;
+            Main.mouseLeftRelease = true;
+            Main.mouseRight = false;
+            Main.mouseRightRelease = true;
+            player.mouseInterface = false;
+
+            try
+            {
+                PlayerInput.Triggers.Current.MouseLeft = false;
+                PlayerInput.Triggers.Current.MouseRight = false;
+                PlayerInput.Triggers.JustPressed.MouseLeft = false;
+                PlayerInput.Triggers.JustPressed.MouseRight = false;
+            }
+            catch { }
+
+            player.controlUseItem = false;
+            player.controlUseTile = false;
+            player.releaseUseItem = true;
+            player.releaseUseTile = true;
+            player.itemAnimation = 0;
+            player.itemAnimationMax = 0;
+            player.itemTime = 0;
+            player.reuseDelay = 0;
+            player.changeItem = -1;
+
             player.selectedItemState.Select(slot);
             player.selectedItemState.Update();
+
+            Console.WriteLine($"[SelectSlot DEBUG-AFTER] slot={slot}, inv[0]={player.inventory[0]?.type}x{player.inventory[0]?.stack}, inv[1]={player.inventory[1]?.type}x{player.inventory[1]?.stack}, inv[2]={player.inventory[2]?.type}x{player.inventory[2]?.stack}");
             Item held = player.HeldItem;
             return new
             {
@@ -658,6 +691,13 @@ namespace TPMLBridge.GABP.Tools
                 TerrariaTools.PendingHoldUseFrames = frames - 1;
                 TerrariaTools.PendingHoldAlt = isAlt;
             }
+            else
+            {
+                p.controlUseItem = false;
+                p.releaseUseItem = false;
+                Main.mouseX = Main.screenWidth / 2;
+                Main.mouseY = Main.screenHeight / 2;
+            }
 
             return new
             {
@@ -792,6 +832,8 @@ namespace TPMLBridge.GABP.Tools
                 mouseInterface = p?.mouseInterface ?? false,
                 selectedItem = p?.selectedItem ?? -1,
                 hotbarSelection = p?.selectedItemState.Hotbar ?? -1,
+                stateTypeFields = typeof(Player.SelectedItemState).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Select(f => f.Name).ToList(),
+                stateTypeMethods = typeof(Player.SelectedItemState).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Select(m => m.Name).Distinct().ToList(),
                 hasBufferedSelection = p?.selectedItemState.HasBufferedChange ?? false,
                 hasActiveOverride = p?.selectedItemState.HasActiveOverride ?? false,
                 canChangeImmediately = p?.selectedItemState.CanChangeSelectedItemImmediately ?? false,

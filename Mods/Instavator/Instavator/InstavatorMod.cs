@@ -43,8 +43,8 @@ namespace Instavator
         {
             try
             {
-                // 在所有内容加载完成后触发配方构建与注入
-                ModInstance?.PostSetupContent();
+                // 在所有内容加载完成后由框架统一触发配方构建与注入
+                RecipeLoader.PostSetupRecipes();
                 Console.WriteLine($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
                 Terraria.ModLoader.ModLoader.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
             }
@@ -102,6 +102,7 @@ namespace Instavator
             }
         }
     }
+
     /// <summary>
     /// tModLoader 风格 Mod 内容定义
     /// </summary>
@@ -118,8 +119,7 @@ namespace Instavator
 
         public override void PostSetupContent()
         {
-            // 触发所有已注册 ModItem 的 AddRecipes()
-            ItemLoader.AddRecipes();
+            // 由框架统一 RecipeLoader 管理，无需手动调用
         }
     }
 }

@@ -79,7 +79,11 @@ namespace Terraria.ModLoader
 
         public void AddContent(ILoadable content)
         {
+            if (content == null || !content.IsLoadingEnabled(this))
+                return;
+
             _content.Add(content);
+            content.Load(this);
             ModContent.RegisterContent(content);
         }
 

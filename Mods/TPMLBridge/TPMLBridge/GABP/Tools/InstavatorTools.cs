@@ -143,11 +143,31 @@ namespace TPMLBridge.GABP.Tools
                     ? Lang.GetMapObjectName(recipe.requiredTile)
                     : string.Empty;
 
+                string baseTooltip = ItemLoader.GetTooltip(recipe.createItem.type) ?? string.Empty;
+                var tooltipLines = new List<string>();
+                try
+                {
+                    int yoyoLogo = -1;
+                    int numLines = 1;
+                    string[] lines = new string[30];
+                    Microsoft.Xna.Framework.Color[] colors = new Microsoft.Xna.Framework.Color[30];
+                    Main.MouseText_DrawItemTooltip_GetLinesInfo(recipe.createItem, ref yoyoLogo, recipe.createItem.knockBack, ref numLines, lines, colors);
+                    for (int j = 0; j < numLines && j < lines.Length; j++)
+                    {
+                        if (!string.IsNullOrEmpty(lines[j]))
+                            tooltipLines.Add(lines[j]);
+                    }
+                }
+                catch { }
+
                 recipes.Add(new
                 {
                     recipeIndex = i,
                     outputItemId = recipe.createItem.type,
-                    outputItemName = ToolHelpers.GetItemDisplayName(recipe.createItem.type),
+                    outputItemName = recipe.createItem.Name,
+                    outputItemDisplayName = ToolHelpers.GetItemDisplayName(recipe.createItem.type),
+                    outputItemBaseTooltip = baseTooltip,
+                    outputItemTooltips = tooltipLines,
                     requiredTileName = tileName,
                     requirements
                 });

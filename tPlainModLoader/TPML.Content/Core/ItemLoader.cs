@@ -89,6 +89,15 @@ namespace Terraria.ModLoader
             if (type > 0 && !string.IsNullOrEmpty(name))
             {
                 _displayNames[type] = name;
+                EnsureArraySizes(type);
+                if (Lang._itemNameCache != null && type < Lang._itemNameCache.Length)
+                {
+                    try
+                    {
+                        Lang._itemNameCache[type] = new LocalizedText($"ItemName.ModItem_{type}", name);
+                    }
+                    catch { }
+                }
             }
         }
 
@@ -360,9 +369,24 @@ namespace Terraria.ModLoader
                 if (item.stack <= 0) item.stack = 1;
                 item.alpha = 0;
 
-                string displayName = template.DisplayName;
+                string displayName = GetDisplayName(template.Type);
+                if (string.IsNullOrEmpty(displayName)) displayName = template.DisplayName;
                 if (string.IsNullOrEmpty(displayName)) displayName = template.Name;
+
                 item.SetNameOverride(displayName);
+
+                EnsureArraySizes(template.Type);
+                if (Lang._itemNameCache != null && template.Type < Lang._itemNameCache.Length)
+                {
+                    if (Lang._itemNameCache[template.Type] == null || Lang._itemNameCache[template.Type] == LocalizedText.Empty)
+                    {
+                        try
+                        {
+                            Lang._itemNameCache[template.Type] = new LocalizedText($"ItemName.ModItem_{template.Type}", displayName);
+                        }
+                        catch { }
+                    }
+                }
 
                 EnsureTextureLoaded(template.Type);
 
@@ -473,62 +497,9 @@ namespace Terraria.ModLoader
             return true;
         }
 
-        private static bool _recipesAdded = false;
-
         public static void AddRecipes()
         {
-            if (_recipesAdded)
-            {
-                ModLoader.Log("[ItemLoader] 配方已注册，跳过重复执行。");
-                return;
-            }
-
-            ModLoader.Log($"[ItemLoader] 开始执行模组配方注册 (已注册物品数={_items.Count})...");
-            int count = 0;
-            foreach (var item in _items)
-            {
-                try
-                {
-                    item.AddRecipes();
-                    count++;
-                }
-                catch (Exception ex)
-                {
-                    ModLoader.Log($"[ItemLoader] 执行 {item.Name}.AddRecipes() 异常: {ex}");
-                }
-            }
-            _recipesAdded = true;
-            ModLoader.Log($"[ItemLoader] 模组配方注册完成，共处理 {count} 个物品。当前全局配方数: {Recipe.numRecipes}");
-        }
-
-        internal static bool IsRecipeRegistered(Recipe recipe)
-        {
-            return recipe != null && _registeredRecipeKeys.Contains(BuildRecipeKey(recipe));
-        }
-
-        internal static void MarkRecipeRegistered(Recipe recipe)
-        {
-            if (recipe != null)
-                _registeredRecipeKeys.Add(BuildRecipeKey(recipe));
-        }
-
-        private static string BuildRecipeKey(Recipe recipe)
-        {
-            var parts = new List<string>
-            {
-                recipe.createItem?.type.ToString() ?? "0",
-                recipe.createItem?.stack.ToString() ?? "0",
-                recipe.requiredTile.ToString()
-            };
-
-            for (int i = 0; i < Recipe.maxRequirements; i++)
-            {
-                Item ingredient = recipe.requiredItem[i];
-                if (ingredient != null && !ingredient.IsAir && ingredient.type > 0)
-                    parts.Add($"{ingredient.type}:{ingredient.stack}");
-            }
-
-            return string.Join("|", parts);
+            RecipeLoader.AddRecipes();
         }
 
         public static void Clear()
@@ -539,8 +510,7 @@ namespace Terraria.ModLoader
             _typesByName.Clear();
             _displayNames.Clear();
             _tooltips.Clear();
-            _registeredRecipeKeys.Clear();
-            _recipesAdded = false;
+            RecipeLoader.Clear();
             NextItemID = 6200;
         }
     }

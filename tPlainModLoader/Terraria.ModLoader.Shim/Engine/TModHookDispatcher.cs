@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -312,6 +312,12 @@ namespace Terraria.ModLoader.Engine
             if (__instance.HeldItem != null && !__instance.HeldItem.IsAir)
             {
                 ItemLoader.HoldItem(__instance.HeldItem, __instance);
+            }
+
+            // 防御失焦/无物理按键时的 controlUseItem 残留，保护消耗品手持安全
+            if (!Main.mouseLeft && !Main.mouseRight && __instance.itemAnimation == 0)
+            {
+                __instance.controlUseItem = false;
             }
 
             for (int idx = 0; idx < ActiveModPlayers.Count; idx++)

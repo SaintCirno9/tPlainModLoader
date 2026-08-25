@@ -72,6 +72,14 @@ namespace TPMLBridge
                     Main.LocalPlayer.altFunctionUse = 1;
                 }
             }
+            else if (TerrariaTools.PendingHoldUseFrames == 0 && !Main.gameMenu && Main.LocalPlayer != null)
+            {
+                // 无长按任务且物理未按下时，主动回收 controlUseItem 防止泄漏误用消耗品
+                if (!Main.mouseLeft && !Main.mouseRight)
+                {
+                    Main.LocalPlayer.controlUseItem = false;
+                }
+            }
 
             // 每帧分发执行主线程队列中的任务
             MainThreadQueue.Update();
