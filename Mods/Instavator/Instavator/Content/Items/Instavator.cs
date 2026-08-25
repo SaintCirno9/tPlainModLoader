@@ -47,13 +47,6 @@ namespace Instavator.Content.Items
             return InstavatorShaftBuilder.CanUse(player);
         }
 
-        public override void HoldItem(Player player)
-        {
-            if (player.whoAmI == Main.myPlayer && !InstavatorShaftBuilder.IsBuildRunning)
-            {
-                InstaVisualSystem.RequestVisual(Main.MouseWorld, 7, 2000, new Color(255, 140, 40));
-            }
-        }
 
         public override bool? UseItem(Player player)
         {
