@@ -1,19 +1,15 @@
 using Microsoft.Xna.Framework;
 
-namespace Terraria.ModLoader
+namespace TPML.Content.UI
 {
-    /// <summary>
-    /// tModLoader 物品悬浮提示行对象
-    /// </summary>
     public class TooltipLine
     {
-        public readonly Mod Mod;
-        public readonly string Name;
-        public string Text;
-        public bool IsModifier;
-        public bool IsModifierBad;
-        public bool OneDropLogo;
-        public Color? OverrideColor;
+        public Mod Mod { get; }
+        public string Name { get; }
+        public string Text { get; set; }
+        public Color? OverrideColor { get; set; }
+        public bool IsModifier { get; set; }
+        public bool IsModifierBad { get; set; }
 
         public TooltipLine(Mod mod, string name, string text)
         {

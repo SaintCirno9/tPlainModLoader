@@ -13,11 +13,11 @@ namespace Instavator.Content.Logic
     public static class InstavatorShaftBuilder
     {
         private const int MaxCellsPerUpdate = 128;
-        private static readonly InstavatorUseGate UseGate = new InstavatorUseGate();
+        private const int LiquidSettlePasses = 6;
         private static BuildJob _activeJob;
 
         public static bool IsBuildRunning => _activeJob != null;
-        public static bool IsInputLocked => UseGate.IsLocked;
+        public static bool IsInputLocked => false;
         public static int PendingCellCount => _activeJob == null ? 0 : _activeJob.Plan.CellCount - _activeJob.NextCell;
         public static InstavatorBuildSummary LastBuildSummary { get; private set; }
 
@@ -28,7 +28,7 @@ namespace Instavator.Content.Logic
                 return true;
             }
 
-            return _activeJob == null && !UseGate.IsLocked;
+            return _activeJob == null;
         }
 
         public static bool OkayToDestroyTile(int x, int y)
@@ -110,12 +110,8 @@ namespace Instavator.Content.Logic
             if (Main.gameMenu)
             {
                 _activeJob = null;
-                UseGate.Reset();
                 return;
             }
-
-            Player player = Main.LocalPlayer;
-            UseGate.Update(player != null && player.controlUseItem);
 
             if (_activeJob == null)
             {
@@ -124,13 +120,21 @@ namespace Instavator.Content.Logic
 
             try
             {
+                bool finished = false;
                 int processed = 0;
                 while (_activeJob != null && processed++ < MaxCellsPerUpdate)
                 {
                     if (_activeJob.NextCell >= _activeJob.Plan.CellCount)
                     {
-                        FinishJob(_activeJob);
-                        _activeJob = null;
+                        if (_activeJob.RemainingDrainPasses > 0)
+                        {
+                            DrainResidualLiquidsPass(_activeJob);
+                            _activeJob.RemainingDrainPasses--;
+                        }
+                        else
+                        {
+                            finished = true;
+                        }
                         break;
                     }
 
@@ -139,14 +143,14 @@ namespace Instavator.Content.Logic
                     ProcessCell(_activeJob, cell);
                 }
 
-                if (_activeJob != null)
+                if (finished)
+                {
+                    FinishJob(_activeJob);
+                    _activeJob = null;
+                }
+                else if (_activeJob != null)
                 {
                     _activeJob.FramesElapsed++;
-                    if (_activeJob.NextCell >= _activeJob.Plan.CellCount)
-                    {
-                        FinishJob(_activeJob);
-                        _activeJob = null;
-                    }
                 }
             }
             catch (Exception ex)
@@ -180,6 +184,7 @@ namespace Instavator.Content.Logic
                 PlacedTorches = job.PlacedTorches,
                 PlacedBricks = job.PlacedBricks,
                 DrainedLiquids = job.DrainedLiquids,
+                DrainedResidualLiquids = job.DrainedResidualLiquids,
                 BypassedProtectedTiles = job.BypassedProtectedTiles,
                 CompletedAt = DateTime.Now
             };
@@ -188,7 +193,7 @@ namespace Instavator.Content.Logic
 
         private static bool TryStartBuild(Player player, Vector2 mouseWorld, InstavatorVariant variant, int endY, int minOffset, int maxOffset)
         {
-            if (player == null || player.whoAmI != Main.myPlayer || _activeJob != null || !UseGate.TryAcquire())
+            if (player == null || player.whoAmI != Main.myPlayer || _activeJob != null)
             {
                 return false;
             }
@@ -198,7 +203,6 @@ namespace Instavator.Content.Logic
             var plan = new InstavatorBuildPlan(startX, startY, endY, minOffset, maxOffset);
             if (plan.CellCount == 0)
             {
-                UseGate.Reset();
                 return false;
             }
 
@@ -277,6 +281,40 @@ namespace Instavator.Content.Logic
             return 0;
         }
 
+        private static bool IsInternalOffset(InstavatorVariant variant, int offset)
+        {
+            if (variant == InstavatorVariant.Full)
+            {
+                return offset != -3 && offset != 3;
+            }
+
+            if (variant == InstavatorVariant.DoubleObsidian)
+            {
+                return offset != -5 && offset != 0 && offset != 5;
+            }
+
+            return true;
+        }
+
+        private static void DrainResidualLiquidsPass(BuildJob job)
+        {
+            for (int i = 0; i < job.Plan.CellCount; i++)
+            {
+                InstavatorBuildCell cell = job.Plan.GetCell(i);
+                if (!IsInternalOffset(job.Variant, cell.Offset)) continue;
+                if (cell.X < 10 || cell.X >= Main.maxTilesX - 10 || cell.Y < 10 || cell.Y >= Main.maxTilesY - 10) continue;
+
+                Tile tile = Main.tile[cell.X, cell.Y];
+                if (tile == null || tile.liquid == 0) continue;
+
+                tile.liquid = 0;
+                tile.liquidType(0);
+                tile.checkingLiquid(false);
+                tile.skipLiquid(false);
+                job.DrainedResidualLiquids++;
+            }
+        }
+
         private sealed class BuildJob
         {
             public BuildJob(InstavatorBuildPlan plan, InstavatorVariant variant, int playerWhoAmI)
@@ -285,6 +323,7 @@ namespace Instavator.Content.Logic
                 Variant = variant;
                 PlayerWhoAmI = playerWhoAmI;
                 Stopwatch = new System.Diagnostics.Stopwatch();
+                RemainingDrainPasses = LiquidSettlePasses;
             }
 
             public InstavatorBuildPlan Plan { get; }
@@ -299,7 +338,9 @@ namespace Instavator.Content.Logic
             public int PlacedTorches { get; set; }
             public int PlacedBricks { get; set; }
             public int DrainedLiquids { get; set; }
+            public int DrainedResidualLiquids { get; set; }
             public int BypassedProtectedTiles { get; set; }
+            public int RemainingDrainPasses { get; set; }
             public System.Diagnostics.Stopwatch Stopwatch { get; }
         }
     }
@@ -327,6 +368,7 @@ namespace Instavator.Content.Logic
         public int PlacedTorches { get; set; }
         public int PlacedBricks { get; set; }
         public int DrainedLiquids { get; set; }
+        public int DrainedResidualLiquids { get; set; }
         public int BypassedProtectedTiles { get; set; }
         public DateTime CompletedAt { get; set; }
     }

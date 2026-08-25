@@ -8,7 +8,9 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.ID;
-using Terraria.ModLoader;
+using TPML.Content;
+using TPML.Content.UI;
+using Terraria.DataStructures;
 
 namespace TPMLBridge.GABP.Tools
 {
@@ -18,6 +20,8 @@ namespace TPMLBridge.GABP.Tools
     /// </summary>
     public static class PlayerInventoryTools
     {
+        public static bool IsManualUsingItem = false;
+
         public static List<GABPToolDescriptor> GetDescriptors()
         {
             return new List<GABPToolDescriptor>
@@ -229,7 +233,9 @@ namespace TPMLBridge.GABP.Tools
                     {
                         int itemId = args?["itemId"]?.Value<int>() ?? 0;
                         int stack = Math.Max(1, args?["stack"]?.Value<int>() ?? 1);
-                        return await MainThreadQueue.EnqueueAsync(() => SpawnItemInWorld(itemId, stack));
+                        float offsetX = args?["offsetX"]?.Value<float>() ?? 200f;
+                        float offsetY = args?["offsetY"]?.Value<float>() ?? 0f;
+                        return await MainThreadQueue.EnqueueAsync(() => SpawnItemInWorld(itemId, stack, offsetX, offsetY));
                     }
 
                 case "tpml/select_inventory_slot":
@@ -374,33 +380,33 @@ namespace TPMLBridge.GABP.Tools
             if (itemId <= 0)
                 return new { success = false, message = "物品 ID 无效" };
 
-            Item item = new Item();
-            if (ItemLoader.GetItem(itemId) != null)
+            try
             {
-                item.type = itemId;
-                ItemLoader.SetDefaults(item);
-                item.stack = stack;
-            }
-            else
-            {
+                Item item = new Item();
                 item.SetDefaults(itemId);
                 item.stack = stack;
-            }
 
-            Item overflow = Main.LocalPlayer.GetItem(item, GetItemSettings.PickupItemFromWorld);
-            int slot = ToolHelpers.FindInventorySlot(itemId);
-            return new
+                Item overflow = Main.LocalPlayer.GetItem(item, GetItemSettings.QuickTransferFromSlot);
+                int slot = ToolHelpers.FindInventorySlot(itemId);
+                return new
+                {
+                    success = slot >= 0 && (overflow == null || overflow.IsAir),
+                    slot,
+                    itemId,
+                    stack,
+                    message = slot >= 0 ? $"已发放物品 ID={itemId} x{stack}" : "物品未能进入背包",
+                    overflow = overflow?.stack ?? 0
+                };
+            }
+            catch (Exception ex)
             {
-                success = slot >= 0 && (overflow == null || overflow.IsAir),
-                slot,
-                itemId,
-                stack,
-                message = slot >= 0 ? $"已发放物品 ID={itemId} x{stack}" : "物品未能进入背包",
-                overflow = overflow?.stack ?? 0
-            };
+                Console.WriteLine($"[GiveItem] 异常: {ex}");
+                TPML.Content.ModLoader.Log($"[GiveItem] 异常: {ex}");
+                throw new Exception($"GiveItem 内部异常: {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}", ex);
+            }
         }
 
-        public static object SpawnItemInWorld(int itemId, int stack)
+        public static object SpawnItemInWorld(int itemId, int stack, float offsetX = 200f, float offsetY = 0f)
         {
             if (Main.gameMenu || Main.LocalPlayer == null)
                 return new { success = false, message = "当前未进入世界" };
@@ -408,14 +414,18 @@ namespace TPMLBridge.GABP.Tools
             if (itemId <= 0)
                 return new { success = false, message = "物品 ID 无效" };
 
-            int itemIndex = Item.NewItem(null, Main.LocalPlayer.Center, itemId, stack);
+            Player player = Main.LocalPlayer;
+            Vector2 spawnPos = player.Center + new Vector2(player.direction * offsetX, offsetY);
+            int itemIndex = Item.NewItem(new EntitySource_DebugCommand(), spawnPos, itemId, stack);
             return new
             {
-                success = itemIndex >= 0,
+                success = itemIndex >= 0 && itemIndex < Main.maxItems,
                 itemIndex,
                 itemId,
                 stack,
-                message = itemIndex >= 0 ? $"已生成地面物品 ID={itemId} x{stack}" : "地面物品生成失败"
+                spawnX = spawnPos.X,
+                spawnY = spawnPos.Y,
+                message = itemIndex >= 0 ? $"已生成远端地面物品 ID={itemId} x{stack} (实体索引: {itemIndex})" : "地面物品生成失败"
             };
         }
 
@@ -428,46 +438,38 @@ namespace TPMLBridge.GABP.Tools
             if (slot < 0 || slot >= player.inventory.Length)
                 return new { success = false, message = $"背包槽位无效: {slot}" };
 
-            Console.WriteLine($"[SelectSlot DEBUG-BEFORE] slot={slot}, inv[0]={player.inventory[0]?.type}x{player.inventory[0]?.stack}, inv[1]={player.inventory[1]?.type}x{player.inventory[1]?.stack}, inv[2]={player.inventory[2]?.type}x{player.inventory[2]?.stack}");
-
             Item selectedItem = player.inventory[slot];
             if (selectedItem == null || selectedItem.IsAir)
                 return new { success = false, slot, itemId = 0, message = $"背包槽位为空: {slot}" };
 
-            // 安全移开鼠标坐标到屏幕中心并清空鼠标点击状态，避免误触拾取、丢弃或使用
-            Main.mouseX = Main.screenWidth / 2;
-            Main.mouseY = Main.screenHeight / 2;
-            Main.mouseLeft = false;
-            Main.mouseLeftRelease = true;
-            Main.mouseRight = false;
-            Main.mouseRightRelease = true;
-            player.mouseInterface = false;
-
-            try
-            {
-                PlayerInput.Triggers.Current.MouseLeft = false;
-                PlayerInput.Triggers.Current.MouseRight = false;
-                PlayerInput.Triggers.JustPressed.MouseLeft = false;
-                PlayerInput.Triggers.JustPressed.MouseRight = false;
-            }
-            catch { }
-
+            // 清空任何潜在的鼠标指针残留与丢弃标志
+            Main.mouseItem = new Item();
+            player.inventory[58] = new Item();
             player.controlUseItem = false;
+            player.releaseUseItem = false;
             player.controlUseTile = false;
-            player.releaseUseItem = true;
-            player.releaseUseTile = true;
+            player.releaseUseTile = false;
+            player.controlThrow = false;
+            player.releaseThrow = false;
+            player.noThrow = 10;
+
+            // 彻底复位使用计时器与动画
             player.itemAnimation = 0;
             player.itemAnimationMax = 0;
             player.itemTime = 0;
+            player.itemTimeMax = 0;
             player.reuseDelay = 0;
-            player.changeItem = -1;
+            player.pendingItemReuse = false;
+            player.channel = false;
 
-            player.selectedItemState.hotbar = slot < 10 ? slot : player.selectedItemState.hotbar;
-            player.selectedItemState.selected = slot;
-            player.selectedItemState.buffered = -1;
-            player.selectedItemState.overridden = -1;
+            // 确保不残留 blockMouse 与 mouseInterface 污染玩家正常游玩
+            Main.blockMouse = false;
+            player.mouseInterface = false;
 
-            Console.WriteLine($"[SelectSlot DEBUG-AFTER] slot={slot}, inv[0]={player.inventory[0]?.type}x{player.inventory[0]?.stack}, inv[1]={player.inventory[1]?.type}x{player.inventory[1]?.stack}, inv[2]={player.inventory[2]?.type}x{player.inventory[2]?.stack}");
+            // 原版标准快捷栏状态转移
+            player.selectedItemState.Select(slot);
+            player.selectedItemState.Update();
+
             Item held = player.HeldItem;
             return new
             {
@@ -727,6 +729,17 @@ namespace TPMLBridge.GABP.Tools
                 return new { success = false, message = $"槽位索引超出有效范围 (0~{p.inventory.Length - 1})" };
 
             Utils.Swap(ref p.inventory[fromSlot], ref p.inventory[toSlot]);
+
+            // 彻底清空鼠标残留与投掷标记，复位状态机与游玩状态
+            Main.mouseItem = new Item();
+            p.inventory[58] = new Item();
+            p.controlThrow = false;
+            p.releaseThrow = false;
+            p.noThrow = 10;
+            Main.blockMouse = false;
+            p.mouseInterface = false;
+            p.selectedItemState.Update();
+
             return new
             {
                 success = true,

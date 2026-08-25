@@ -6,7 +6,8 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
-using Terraria.ModLoader;
+using TPML.Content;
+using TPML.Content.UI;
 
 namespace Instavator.Content.Items
 {
@@ -39,8 +40,6 @@ namespace Instavator.Content.Items
             Item.value = Item.buyPrice(0, 0, 8, 0);
             Item.noUseGraphic = true;
             Item.noMelee = true;
-            Item.shoot = 1;
-            Item.shootSpeed = 5f;
         }
 
         public override bool? CanUseItem(Player player)
@@ -56,14 +55,14 @@ namespace Instavator.Content.Items
             }
         }
 
-        public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
+        public override bool? UseItem(Player player)
         {
             if (player.whoAmI == Main.myPlayer)
             {
                 Vector2 target = Main.MouseWorld;
                 InstavatorShaftBuilder.BuildDoubleObsidianInstavator(player, target);
             }
-            return false;
+            return true;
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)

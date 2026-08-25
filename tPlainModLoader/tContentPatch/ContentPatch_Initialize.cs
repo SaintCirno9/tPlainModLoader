@@ -32,7 +32,7 @@ namespace tContentPatch
             Initialized = false;
             Log.Add($"{nameof(ContentPatch)}:服务端:{Main.dedServ}");
 
-            Terraria.ModLoader.ModLoader.LogCallback = msg =>
+            TPML.Content.ModLoader.LogCallback = msg =>
             {
                 Console.WriteLine(msg);
                 Log.Add(msg);

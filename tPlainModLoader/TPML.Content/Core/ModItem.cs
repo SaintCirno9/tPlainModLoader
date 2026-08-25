@@ -1,16 +1,21 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Terraria;
 using Terraria.DataStructures;
+using TPML.Content.UI;
 
-namespace Terraria.ModLoader
+namespace TPML.Content
 {
     /// <summary>
-    /// tModLoader 自定义物品基类
+    /// TPML 自定义物品基类
     /// </summary>
     public abstract class ModItem : ModType
     {
         public Item Item { get; internal set; }
-        public int Type => Item?.type ?? 0;
+        private int _type;
+        public int Type => Item != null && Item.type > 0 ? Item.type : _type;
+        internal void SetType(int type) => _type = type;
+
         public virtual string Texture => (GetType().Namespace + "." + Name).Replace('.', '/');
 
         public string DisplayName => ItemLoader.GetDisplayName(Type);
@@ -24,6 +29,10 @@ namespace Terraria.ModLoader
         }
 
         public virtual void SetDefaults()
+        {
+        }
+
+        public virtual void SetStaticDefaults()
         {
         }
 
@@ -64,9 +73,7 @@ namespace Terraria.ModLoader
 
         public ModRecipe CreateRecipe(int amount = 1)
         {
-            var recipe = new ModRecipe(Mod);
-            recipe.Create(Type, amount);
-            return recipe;
+            return RecipeLoader.CreateRecipe(this, amount);
         }
     }
 }

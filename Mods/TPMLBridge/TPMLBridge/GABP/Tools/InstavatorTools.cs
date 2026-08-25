@@ -7,7 +7,8 @@ using Newtonsoft.Json.Linq;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
-using Terraria.ModLoader;
+using TPML.Content;
+using TPML.Content.UI;
 
 namespace TPMLBridge.GABP.Tools
 {

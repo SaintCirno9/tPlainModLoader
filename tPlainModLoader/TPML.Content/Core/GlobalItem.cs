@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Terraria;
+using TPML.Content.UI;
 
-namespace Terraria.ModLoader
+namespace TPML.Content
 {
     /// <summary>
-    /// tModLoader 全局物品行为修饰基类
+    /// TPML 全局物品行为修饰基类
     /// </summary>
     public abstract class GlobalItem : ModType
     {
@@ -35,11 +37,6 @@ namespace Terraria.ModLoader
 
         public virtual void ModifyTooltips(Item item, List<TooltipLine> tooltips)
         {
-        }
-
-        public virtual bool CanStack(Item destination, Item source)
-        {
-            return true;
         }
     }
 }

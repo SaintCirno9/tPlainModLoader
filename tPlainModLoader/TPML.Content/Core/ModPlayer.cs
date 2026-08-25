@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameInput;
-using Terraria.ModLoader.IO;
+using TPML.Content.IO;
 
-namespace Terraria.ModLoader
+namespace TPML.Content
 {
     /// <summary>
-    /// tModLoader 玩家生命周期与数据绑定基类
+    /// TPML 玩家生命周期与数据绑定基类
     /// </summary>
     public abstract class ModPlayer : ModType
     {

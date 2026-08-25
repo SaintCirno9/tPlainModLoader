@@ -1,8 +1,8 @@
 using System;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.ModLoader;
-using Terraria.ModLoader.Engine;
+using TPML.Content;
+using TPML.Content.Engine;
 using Instavator.Content.Logic;
 
 namespace Instavator
@@ -19,10 +19,10 @@ namespace Instavator
             try
             {
                 Console.WriteLine("[Instavator] ===== 开始载入 Instavator Mod =====");
-                Terraria.ModLoader.ModLoader.Log("[Instavator] ===== 开始载入 Instavator Mod =====");
+                ModLoader.Log("[Instavator] ===== 开始载入 Instavator Mod =====");
 
-                // 1. 初始化 TModHookDispatcher（挂钩 SetDefaults, ItemCheck, Tooltips 等）
-                TModHookDispatcher.Initialize();
+                // 1. 初始化 ContentHookDispatcher（挂钩 SetDefaults, ItemCheck, Tooltips 等）
+                ContentHookDispatcher.Initialize();
 
                 // 2. 实例化并注册 Mod 内容
                 ModInstance = new InstavatorMod();
@@ -30,12 +30,12 @@ namespace Instavator
                 ModInstance.Load();
 
                 Console.WriteLine("[Instavator] ===== 模组物品注册完成 =====");
-                Terraria.ModLoader.ModLoader.Log("[Instavator] ===== 模组物品注册完成 =====");
+                ModLoader.Log("[Instavator] ===== 模组物品注册完成 =====");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Instavator] 载入异常: {ex}");
-                Terraria.ModLoader.ModLoader.Log($"[Instavator] 载入异常: {ex}");
+                ModLoader.Log($"[Instavator] 载入异常: {ex}");
             }
         }
 
@@ -44,14 +44,14 @@ namespace Instavator
             try
             {
                 // 在所有内容加载完成后由框架统一触发配方构建与注入
-                RecipeLoader.PostSetupRecipes();
+                RecipeLoader.SetupRecipes();
                 Console.WriteLine($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
-                Terraria.ModLoader.ModLoader.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
+                ModLoader.Log($"[Instavator] ★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Instavator] 配方注入异常: {ex}");
-                Terraria.ModLoader.ModLoader.Log($"[Instavator] 配方注入异常: {ex}");
+                ModLoader.Log($"[Instavator] 配方注入异常: {ex}");
             }
         }
 
@@ -104,17 +104,28 @@ namespace Instavator
     }
 
     /// <summary>
-    /// tModLoader 风格 Mod 内容定义
+    /// TPML 原生 Mod 内容定义
     /// </summary>
-    public class InstavatorMod : Terraria.ModLoader.Mod
+    public class InstavatorMod : TPML.Content.Mod
     {
         public override void Load()
         {
-            // 自动注册并实例化所有物品与系统
-            AddContent(new Content.Items.Instavator());
-            AddContent(new Content.Items.HalfInstavator());
-            AddContent(new Content.Items.DoubleObsidianInstavator());
-            AddContent(new Content.Systems.InstaVisualSystem());
+            try
+            {
+                ModLoader.Log("[InstavatorMod] 开始注册内容...");
+                AddContent(new Content.Items.Instavator());
+                ModLoader.Log("[InstavatorMod] 注册 Instavator 完成");
+                AddContent(new Content.Items.HalfInstavator());
+                ModLoader.Log("[InstavatorMod] 注册 HalfInstavator 完成");
+                AddContent(new Content.Items.DoubleObsidianInstavator());
+                ModLoader.Log("[InstavatorMod] 注册 DoubleObsidianInstavator 完成");
+                AddContent(new Content.Systems.InstaVisualSystem());
+                ModLoader.Log("[InstavatorMod] 注册 InstaVisualSystem 完成");
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[InstavatorMod] 注册内容异常: {ex}");
+            }
         }
 
         public override void PostSetupContent()

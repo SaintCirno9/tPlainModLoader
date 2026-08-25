@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Terraria.ModLoader.IO;
+using TPML.Content.IO;
 using Terraria.UI;
 
-namespace Terraria.ModLoader
+namespace TPML.Content
 {
     /// <summary>
-    /// tModLoader 全局系统级生命周期基类
+    /// TPML 全局系统级生命周期基类
     /// </summary>
     public abstract class ModSystem : ModType
     {

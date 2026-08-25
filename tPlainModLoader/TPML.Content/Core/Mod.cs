@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Terraria.ModLoader.Engine;
+using TPML.Content.Engine;
+using TPML.Content.Logging;
 
-namespace Terraria.ModLoader
+namespace TPML.Content
 {
     public enum ModSide
     {
@@ -16,7 +17,7 @@ namespace Terraria.ModLoader
     }
 
     /// <summary>
-    /// tModLoader 模组核心基类
+    /// TPML 模组核心基类
     /// </summary>
     public abstract class Mod
     {
@@ -49,6 +50,10 @@ namespace Terraria.ModLoader
         }
 
         public virtual void PostSetupContent()
+        {
+        }
+
+        public virtual void AddRecipes()
         {
         }
 
@@ -90,7 +95,7 @@ namespace Terraria.ModLoader
             _content.Add(content);
             content.Load(this);
             ModContent.RegisterContent(content);
-            TModHookDispatcher.RegisterHookInstances(new[] { content });
+            ContentHookDispatcher.RegisterHookInstances(new[] { content });
         }
 
         public IEnumerable<ILoadable> GetContent()
