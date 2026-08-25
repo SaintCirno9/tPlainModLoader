@@ -67,6 +67,7 @@ namespace TPML.Content.Engine
             ActiveModPlayers.Clear();
             ActiveModSystems.Clear();
             ActiveGlobalItems.Clear();
+            TPML.Content.Fusion.InventoryFusionManager.Clear();
             _harmony?.UnpatchAll(_harmony.Id);
             _initialized = false;
             _patchesApplied = false;
@@ -109,6 +110,10 @@ namespace TPML.Content.Engine
             PatchInterfaceLayers();
             PatchLang();
             PatchPopupText();
+
+            // 框架级全量背包融合系统补丁矩阵 (通用外部容器/魔杖/油漆/HasItem/ConsumeItem)
+            _harmony.CreateClassProcessor(typeof(TPML.Content.Fusion.Patch_UnifiedInventoryFusion)).Patch();
+
             _patchesApplied = true;
         }
 

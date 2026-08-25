@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content.Fusion;
 using TPML.Content.IO;
 
 namespace OptimizeAndTool.Content.BigBag
@@ -30,6 +31,9 @@ namespace OptimizeAndTool.Content.BigBag
 
         /// <summary>随身 Chest 包装（制作系统消耗扣除入口，SetCapacity 时原地更新字段引用不变）</summary>
         public static Chest BagChest { get; } = CreateChest(Slots);
+
+        /// <summary>通用背包融合数据源提供者单例</summary>
+        public static readonly BigBagFusionSource FusionSource = new BigBagFusionSource();
 
         /// <summary>容量变化后通知窗口重建格子</summary>
         public static event Action OnCapacityChanged;
@@ -64,6 +68,7 @@ namespace OptimizeAndTool.Content.BigBag
             Capacity.OnValUpdate += v => SetCapacity(v);
             BigBagKeybind.Initialize();
             EnsureCapacitySafety();
+            InventoryFusionManager.RegisterSource(FusionSource);
         }
 
         /// <summary>

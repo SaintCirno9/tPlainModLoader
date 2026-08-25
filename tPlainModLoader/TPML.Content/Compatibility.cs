@@ -97,3 +97,17 @@ namespace Terraria.ModLoader.IO
         public static string SaveDirectory => TPML.Content.IO.SidecarSaveManager.SaveDirectory;
     }
 }
+
+namespace Terraria.ModLoader.Fusion
+{
+    public interface IFusionItemSource : TPML.Content.Fusion.IFusionItemSource { }
+    public static class InventoryFusionManager
+    {
+        public static void RegisterSource(TPML.Content.Fusion.IFusionItemSource source) => TPML.Content.Fusion.InventoryFusionManager.RegisterSource(source);
+        public static void UnregisterSource(string id) => TPML.Content.Fusion.InventoryFusionManager.UnregisterSource(id);
+        public static void Clear() => TPML.Content.Fusion.InventoryFusionManager.Clear();
+        public static bool HasItem(Terraria.Player player, int type) => TPML.Content.Fusion.InventoryFusionManager.HasItem(player, type);
+        public static int CountItem(Terraria.Player player, int type, int stopCountingAt = 0) => TPML.Content.Fusion.InventoryFusionManager.CountItem(player, type, stopCountingAt);
+        public static bool ConsumeItem(Terraria.Player player, int type, bool reverseOrder = false) => TPML.Content.Fusion.InventoryFusionManager.ConsumeItem(player, type, reverseOrder);
+    }
+}

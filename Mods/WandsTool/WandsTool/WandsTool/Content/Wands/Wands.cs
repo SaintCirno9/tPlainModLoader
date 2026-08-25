@@ -74,6 +74,12 @@ namespace WandsTool.Content
                     string modeText = (fallbackMode == gameMain.StructureMode.Cut) ? "剪切模式" :
                                       (fallbackMode == gameMain.StructureMode.Copy) ? "复制模式" : "蓝图模式";
                     CombatText.NewText(Main.LocalPlayer.getRect(), Color.Orange, wasCut ? $"已取消剪切 (回到{modeText})" : $"已退出放置 (回到{modeText})", true, false);
+
+                    if (wandsPanel.AutoReopenManagerAfterPlacement)
+                    {
+                        wandsPanel.AutoReopenManagerAfterPlacement = false;
+                        wandsPanel.OpenBlueprintManager();
+                    }
                     return;
                 }
 
@@ -83,7 +89,12 @@ namespace WandsTool.Content
 
                     if (Structure.StructureStorage.Clipboard != null)
                     {
-                        Structure.StructurePlacement.Place(Structure.StructureStorage.Clipboard, Main.MouseWorld.ToTileCoordinates(), Main.LocalPlayer, gameMain.Wand_StructureOverwrite);
+                        bool placed = Structure.StructurePlacement.Place(Structure.StructureStorage.Clipboard, Main.MouseWorld.ToTileCoordinates(), Main.LocalPlayer, gameMain.Wand_StructureOverwrite);
+                        if (placed && wandsPanel.AutoReopenManagerAfterPlacement)
+                        {
+                            wandsPanel.AutoReopenManagerAfterPlacement = false;
+                            wandsPanel.OpenBlueprintManager();
+                        }
                     }
                     Main.mouseLeftRelease = false;
                     return;

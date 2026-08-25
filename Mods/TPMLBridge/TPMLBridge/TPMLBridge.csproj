@@ -41,6 +41,7 @@
     <ProjectReference Include="..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
     <ProjectReference Include="..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
     <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
+    <ProjectReference Include="..\..\WandsTool\WandsTool\WandsTool\WandsTool.csproj" Private="false" />
   </ItemGroup>
 
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">

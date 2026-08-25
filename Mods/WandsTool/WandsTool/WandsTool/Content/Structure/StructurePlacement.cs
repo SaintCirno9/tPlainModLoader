@@ -425,21 +425,12 @@ namespace WandsTool.Content.Structure
         }
 
         /// <summary>
-        /// 统计玩家背包中特定物品的总数量
+        /// 统计玩家背包及外部融合容器中特定物品的总数量
         /// </summary>
         public static int CountItemInInventory(Player player, int itemId)
         {
             if (player?.inventory == null || itemId <= 0) return 0;
-            int total = 0;
-            for (int i = 0; i < 58; i++)
-            {
-                Item item = player.inventory[i];
-                if (item != null && item.type == itemId)
-                {
-                    total += item.stack;
-                }
-            }
-            return total;
+            return player.CountItem(itemId);
         }
 
         private static bool InBounds(int x, int y)

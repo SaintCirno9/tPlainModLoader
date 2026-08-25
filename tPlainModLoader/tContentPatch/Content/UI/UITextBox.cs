@@ -15,17 +15,34 @@ using Terraria.UI;
 namespace tContentPatch.Content.UI
 {
     /// <summary>
-    /// 单行文本输入框控件（具备完整的 Windows IME 输入法支持、光标闪烁与防误失焦机制）
+    /// 通用单行文本输入框控件（具备完整的 Windows IME 输入法支持、光标闪烁、超长文本平滑视口滚动、防误失焦与回车/Esc快捷按键）
     /// 作者: SaintCirno9
     /// </summary>
     public class UITextBox : UIPanel
     {
         public Action<string> OnTextChanged = null;
         public Action OnLostFocus = null;
+        public Action OnFocusGain = null;
+        public Action<string> OnSubmit = null;
+        public Action OnCancel = null;
+
         public int Text_MaxLength = 50;
         public float TextScale { get; set; } = 0.8f;
+        public Color TextColor { get; set; } = Color.White;
+        public Color HintColor { get; set; } = Color.Gray;
+        public Color CursorColor { get; set; } = Color.White;
+
+        public Color? FocusedBorderColor { get; set; } = null;
+        public Color? UnfocusedBorderColor { get; set; } = null;
+
+        public bool UnfocusOnEnter { get; set; } = true;
+        public bool UnfocusOnEscape { get; set; } = true;
 
         private bool focus = false;
+        private bool _justFocused = false;
+        private bool _mouseLeftOld = false;
+        private int _frameCount = 0;
+
         public bool Focus
         {
             get => focus;
@@ -35,20 +52,31 @@ namespace tContentPatch.Content.UI
                 focus = value;
                 if (!focus)
                 {
+                    _justFocused = false;
                     PlayerInput.WritingText = false;
                     Main.instance?.HandleIME();
                     if (Main.CurrentInputTextTakerOverride == this)
                     {
                         Main.CurrentInputTextTakerOverride = null;
                     }
+                    if (UnfocusedBorderColor.HasValue)
+                    {
+                        BorderColor = UnfocusedBorderColor.Value;
+                    }
                     OnLostFocus?.Invoke();
                 }
                 else
                 {
+                    _justFocused = true;
                     PlayerInput.WritingText = true;
                     Main.CurrentInputTextTakerOverride = this;
                     Main.instance?.HandleIME();
                     Main.clrInput();
+                    if (FocusedBorderColor.HasValue)
+                    {
+                        BorderColor = FocusedBorderColor.Value;
+                    }
+                    OnFocusGain?.Invoke();
                 }
             }
         }
@@ -68,8 +96,6 @@ namespace tContentPatch.Content.UI
         }
 
         private string text_old = string.Empty;
-        private int _frameCount = 0;
-        private bool _mouseLeftOld = false;
 
         public UITextBox(string text_default = "")
         {
@@ -79,8 +105,8 @@ namespace tContentPatch.Content.UI
 
             OverflowHidden = true;
             SetPadding(4);
-            BackgroundColor = new Color(255, 255, 255, 240);
-            BorderColor = Color.White;
+            BackgroundColor = new Color(20, 25, 45, 240);
+            BorderColor = new Color(70, 100, 160);
         }
 
         public override void LeftClick(UIMouseEvent evt)
@@ -97,25 +123,33 @@ namespace tContentPatch.Content.UI
         {
             base.Update(gameTime);
 
-            bool mouseLeftJustPressed = Main.mouseLeft && !_mouseLeftOld;
-            _mouseLeftOld = Main.mouseLeft;
+            Vector2 mousePos = new Vector2(Main.mouseX, Main.mouseY);
+            bool isMouseHovering = ContainsPoint(mousePos);
 
-            string composition = Focus ? Platform.Get<IImeService>()?.CompositionString : null;
-            bool isComposing = !string.IsNullOrEmpty(composition);
-
-            // 当玩家点击控件外部区域时失焦
-            if (Focus && mouseLeftJustPressed)
+            // 当刚刚获得焦点时，等待当前鼠标左键抬起后才开始外部点击失焦判定
+            if (_justFocused)
             {
-                CalculatedStyle dims = GetDimensions();
-                Rectangle rect = new Rectangle((int)dims.X, (int)dims.Y, (int)dims.Width, (int)dims.Height);
-                if (!rect.Contains(Main.MouseScreen.ToPoint()))
+                if (!Main.mouseLeft)
+                {
+                    _justFocused = false;
+                }
+            }
+            else if (Focus)
+            {
+                // 玩家在外部区域点击左键时失焦
+                if (Main.mouseLeft && !_mouseLeftOld && !isMouseHovering)
                 {
                     Focus = false;
                 }
             }
 
+            _mouseLeftOld = Main.mouseLeft;
+
             if (Focus)
             {
+                string composition = Platform.Get<IImeService>()?.CompositionString;
+                bool isComposing = !string.IsNullOrEmpty(composition);
+
                 if (Main.drawingPlayerChat || Main.ingameOptionsWindow || (!isComposing && Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Escape)))
                 {
                     Focus = false;
@@ -132,9 +166,14 @@ namespace tContentPatch.Content.UI
             base.DrawSelf(spriteBatch);
 
             CalculatedStyle dims = GetDimensions();
-            Vector2 drawPos = new Vector2(dims.X + 8, dims.Y + 4);
             DynamicSpriteFont font = FontAssets.MouseText.Value;
             float scale = TextScale;
+
+            float paddingX = 8f;
+            float paddingY = (dims.Height - font.LineSpacing * scale) / 2f;
+            if (paddingY < 2f) paddingY = 2f;
+
+            float visibleWidth = dims.Width - paddingX * 2f;
 
             if (Focus)
             {
@@ -154,7 +193,11 @@ namespace tContentPatch.Content.UI
                     Main.inputTextEnter = false;
                     if (!isComposing)
                     {
-                        Focus = false;
+                        OnSubmit?.Invoke(text);
+                        if (UnfocusOnEnter)
+                        {
+                            Focus = false;
+                        }
                     }
                 }
                 else if (Main.inputTextEscape)
@@ -162,42 +205,69 @@ namespace tContentPatch.Content.UI
                     Main.inputTextEscape = false;
                     if (!isComposing)
                     {
-                        Focus = false;
+                        OnCancel?.Invoke();
+                        if (UnfocusOnEscape)
+                        {
+                            Focus = false;
+                        }
                     }
                 }
 
                 SetText(newText);
 
-                // 绘制当前输入的文本内容
                 string displayContent = text ?? string.Empty;
-                spriteBatch.DrawString(font, displayContent, drawPos, Color.Black, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                float textWidth = font.MeasureString(displayContent).X * scale;
+                float compWidth = 0f;
+                string compText = null;
 
-                float currentWidth = font.MeasureString(displayContent).X * scale;
-
-                // 若处于输入法拼音合成阶段，绘制内联拼音反馈
                 if (isComposing)
                 {
-                    string compText = $"[{composition}]";
-                    spriteBatch.DrawString(font, compText, new Vector2(drawPos.X + currentWidth, drawPos.Y), Main.imeCompositionStringColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-                    currentWidth += font.MeasureString(compText).X * scale;
+                    compText = $"[{composition}]";
+                    compWidth = font.MeasureString(compText).X * scale;
+                }
+
+                // 计算光标总横坐标及超长文本的水平视口平滑偏移
+                float totalWidth = textWidth + compWidth;
+                float scrollOffset = 0f;
+                if (totalWidth > visibleWidth)
+                {
+                    scrollOffset = visibleWidth - totalWidth;
+                }
+
+                Vector2 textPos = new Vector2(dims.X + paddingX + scrollOffset, dims.Y + paddingY);
+
+                // 绘制输入文本
+                spriteBatch.DrawString(font, displayContent, textPos, TextColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+
+                // 绘制拼音合成串
+                if (isComposing)
+                {
+                    spriteBatch.DrawString(font, compText, new Vector2(textPos.X + textWidth, textPos.Y), Main.imeCompositionStringColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                 }
 
                 // 绘制闪烁光标
                 _frameCount++;
                 if ((_frameCount %= 40) <= 20)
                 {
-                    spriteBatch.DrawString(font, "|", new Vector2(drawPos.X + currentWidth, drawPos.Y), Color.Black, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                    spriteBatch.DrawString(font, "|", new Vector2(textPos.X + totalWidth, textPos.Y), CursorColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                 }
             }
             else
             {
+                Vector2 textPos = new Vector2(dims.X + paddingX, dims.Y + paddingY);
                 if (string.IsNullOrEmpty(text))
                 {
-                    spriteBatch.DrawString(font, TextDefault ?? string.Empty, drawPos, Color.Gray, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                    spriteBatch.DrawString(font, TextDefault ?? string.Empty, textPos, HintColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                 }
                 else
                 {
-                    spriteBatch.DrawString(font, text, drawPos, Color.Black, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                    float textWidth = font.MeasureString(text).X * scale;
+                    float scrollOffset = 0f;
+                    if (textWidth > visibleWidth)
+                    {
+                        scrollOffset = visibleWidth - textWidth;
+                    }
+                    spriteBatch.DrawString(font, text, new Vector2(textPos.X + scrollOffset, textPos.Y), TextColor, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                 }
             }
         }

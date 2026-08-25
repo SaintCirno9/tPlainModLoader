@@ -6,16 +6,19 @@ using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
+using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace WandsTool.Content.Structure.UI
 {
     /// <summary>
-    /// 建筑蓝图管理器窗口（游戏内浏览、载入、保存、管理与打开文件夹）
+    /// 建筑蓝图管理器窗口（游戏内浏览、载入、保存、管理、即时搜索与打开文件夹）
     /// </summary>
     public class UIBlueprintManager : UIWindow
     {
         private UIScrollViewer2 scrollList = null;
         private UIText statusText = null;
+        private UITextBox txtSearch = null;
+        private string currentSearchFilter = string.Empty;
 
         public UIBlueprintManager() : base("建筑蓝图管理器 (Blueprint Library)", 560, 560)
         {
@@ -32,7 +35,7 @@ namespace WandsTool.Content.Structure.UI
                 IsAutoUpdateSize = true
             };
 
-            UIButton1 btnRefresh = new UIButton1("刷新列表", 0.85f)
+            UIButton1 btnRefresh = new UIButton1("刷新", 0.85f)
             {
                 Height = { Pixels = 34 },
                 EnableColorBack = new Color(40, 70, 130) * 0.9f
@@ -68,9 +71,28 @@ namespace WandsTool.Content.Structure.UI
             };
             btnFolder.OnLeftClick += (e, s) => StructureStorage.OpenInExplorer();
 
+            // 顶部搜索过滤输入框（通用 UITextBox）
+            txtSearch = new UITextBox("搜索蓝图...")
+            {
+                Height = { Pixels = 34 },
+                Width = { Pixels = 180 },
+                TextColor = Color.White,
+                HintColor = Color.LightSlateGray,
+                CursorColor = Color.Cyan,
+                FocusedBorderColor = Color.Cyan,
+                TextScale = 0.85f,
+                BackgroundColor = new Color(15, 20, 38) * 0.9f
+            };
+            txtSearch.OnTextChanged += (filter) =>
+            {
+                currentSearchFilter = filter?.Trim() ?? string.Empty;
+                RefreshList();
+            };
+
             headerBar.Append(btnRefresh);
             headerBar.Append(btnSaveClip);
             headerBar.Append(btnFolder);
+            headerBar.Append(txtSearch);
 
             // 2. 中间可滚动蓝图列表
             scrollList = new UIScrollViewer2(true);
@@ -99,7 +121,7 @@ namespace WandsTool.Content.Structure.UI
         }
 
         /// <summary>
-        /// 重新加载并刷新蓝图列表
+        /// 重新加载并刷新蓝图列表（支持即时名称过滤）
         /// </summary>
         public void RefreshList()
         {
@@ -107,6 +129,29 @@ namespace WandsTool.Content.Structure.UI
 
             scrollList.ClearChild();
             List<string> files = StructureStorage.GetSavedBlueprintFiles();
+
+            // 搜索词过滤
+            if (!string.IsNullOrEmpty(currentSearchFilter))
+            {
+                files = files.FindAll(file =>
+                {
+                    string fileName = Path.GetFileNameWithoutExtension(file);
+                    if (fileName.IndexOf(currentSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+
+                    try
+                    {
+                        StructureData data = StructureStorage.Load(file);
+                        if (data != null && !string.IsNullOrEmpty(data.Name))
+                        {
+                            return data.Name.IndexOf(currentSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+                        }
+                    }
+                    catch { }
+
+                    return false;
+                });
+            }
 
             string clipInfo = StructureStorage.Clipboard != null
                 ? $"[{StructureStorage.Clipboard.Name} ({StructureStorage.Clipboard.Width}×{StructureStorage.Clipboard.Height})]"
@@ -123,11 +168,13 @@ namespace WandsTool.Content.Structure.UI
                     BorderColor = Color.Gray * 0.5f
                 };
 
-                UIText emptyText = new UIText(
-                    "暂无已保存的蓝图文件。\n\n" +
-                    "• 在游戏中打开魔杖轮盘，选择【结构框选复制】抓取建筑并点击【保存剪贴板】；\n" +
-                    "• 或点击上方【打开文件夹】，将 .wstruct 或 .json 蓝图文件放入其中后点击刷新。",
-                    0.85f)
+                string emptyMsg = string.IsNullOrEmpty(currentSearchFilter)
+                    ? "暂无已保存的蓝图文件。\n\n" +
+                      "• 在游戏中打开魔杖轮盘，选择【结构框选复制】抓取建筑并点击【保存剪贴板】；\n" +
+                      "• 或点击上方【打开文件夹】，将 .wstruct 或 .json 蓝图文件放入其中后点击刷新。"
+                    : $"未找到包含 \"{currentSearchFilter}\" 的蓝图文件。\n\n• 请尝试其他关键词或清空搜索框。";
+
+                UIText emptyText = new UIText(emptyMsg, 0.85f)
                 {
                     TextColor = Color.LightGoldenrodYellow,
                     HAlign = 0.5f,

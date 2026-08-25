@@ -150,6 +150,7 @@ namespace WandsTool
                 WandAction.Clear();
                 gameMain.CutSourceRect = null;
                 gameMain.Wand_StructureMode = gameMain.StructureMode.None;
+                wandsPanel.AutoReopenManagerAfterPlacement = false;
             }
         }
     }

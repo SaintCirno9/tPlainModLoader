@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using Terraria.ID;
+using TPML.Content.Fusion;
 namespace WandsTool.Content.Structure
 {
     /// <summary>
@@ -538,13 +539,15 @@ namespace WandsTool.Content.Structure
         }
 
         /// <summary>
-        /// 从玩家背包中安全扣除指定数量的某种物品（支持跨槽位堆叠拆分扣除）
+        /// 从玩家背包及外部融合容器（如大背包）中安全扣除指定数量的某种物品（支持跨槽位与跨容器堆叠拆分扣除）
         /// </summary>
         private static void ConsumeItemFromPlayer(Player player, int itemId, int count)
         {
             if (player?.inventory == null || itemId <= 0 || count <= 0) return;
 
             int remaining = count;
+
+            // 1. 优先从原版主背包扣除 (0~57格)
             for (int i = 0; i < 58 && remaining > 0; i++)
             {
                 Item item = player.inventory[i];
@@ -556,16 +559,51 @@ namespace WandsTool.Content.Structure
                     if (item.stack <= 0) item.TurnToAir();
                 }
             }
+
+            // 2. 主背包不足时，从框架级外部融合源（大背包等）中安全扣除
+            if (remaining > 0)
+            {
+                var sources = InventoryFusionManager.GetActiveSources(player);
+                for (int s = 0; s < sources.Count && remaining > 0; s++)
+                {
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
+
+                    bool modified = false;
+                    for (int i = 0; i < slots.Length && remaining > 0; i++)
+                    {
+                        Item item = slots[i];
+                        if (item != null && !item.IsAir && item.type == itemId && item.stack > 0)
+                        {
+                            int take = Math.Min(item.stack, remaining);
+                            item.stack -= take;
+                            remaining -= take;
+                            if (item.stack <= 0)
+                            {
+                                slots[i] = new Item();
+                            }
+                            modified = true;
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        src.OnModified(player);
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// 抓取玩家背包（0-57号槽位）物品总数快照
+        /// 抓取玩家背包（0-57号槽位）及所有激活的外部融合容器（如大背包）物品总数快照
         /// </summary>
         public static Dictionary<int, int> GetPlayerInventorySnapshot(Player player)
         {
             Dictionary<int, int> stock = new Dictionary<int, int>();
             if (player?.inventory == null) return stock;
 
+            // 1. 扫描原版主背包 (0-57格)
             for (int i = 0; i < 58; i++)
             {
                 Item item = player.inventory[i];
@@ -576,11 +614,30 @@ namespace WandsTool.Content.Structure
                 }
             }
 
+            // 2. 扫描框架级外部融合物品源（如大背包等）
+            var sources = InventoryFusionManager.GetActiveSources(player);
+            for (int s = 0; s < sources.Count; s++)
+            {
+                var src = sources[s];
+                Item[] slots = src.GetSlots(player);
+                if (slots == null) continue;
+
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item item = slots[i];
+                    if (item != null && !item.IsAir && item.type > 0 && item.stack > 0)
+                    {
+                        if (stock.ContainsKey(item.type)) stock[item.type] += item.stack;
+                        else stock[item.type] = item.stack;
+                    }
+                }
+            }
+
             return stock;
         }
 
         /// <summary>
-        /// 计算玩家背包状态的快速指纹哈希（用于 Tooltip 缓存避免高频重算）
+        /// 计算玩家背包及外部融合容器状态的快速指纹哈希（用于 Tooltip 缓存避免高频重算）
         /// </summary>
         public static int GetInventoryHash(Player player)
         {
@@ -588,6 +645,8 @@ namespace WandsTool.Content.Structure
             unchecked
             {
                 int hash = 17;
+
+                // 1. 主背包哈希
                 for (int i = 0; i < 58; i++)
                 {
                     Item item = player.inventory[i];
@@ -597,6 +656,26 @@ namespace WandsTool.Content.Structure
                         hash = hash * 31 + item.stack;
                     }
                 }
+
+                // 2. 外部融合源哈希
+                var sources = InventoryFusionManager.GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
+                {
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        Item item = slots[i];
+                        if (item != null && !item.IsAir && item.type > 0 && item.stack > 0)
+                        {
+                            hash = hash * 31 + item.type;
+                            hash = hash * 31 + item.stack;
+                        }
+                    }
+                }
+
                 return hash;
             }
         }

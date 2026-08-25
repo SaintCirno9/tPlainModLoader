@@ -5,6 +5,7 @@ using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
+using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace WandsTool.Content.Structure.UI
 {
@@ -98,8 +99,14 @@ namespace WandsTool.Content.Structure.UI
                     StructureStorage.Clipboard = data;
                     gameMain.LastActiveStructureMode = gameMain.StructureMode.Copy;
                     gameMain.Wand_StructureMode = gameMain.StructureMode.Paste;
-                    Main.NewText($"[魔杖] 已载入蓝图: {data.Name}", 100, 255, 150);
-                    onReloadNeeded?.Invoke();
+                    Main.NewText($"[魔杖] 已载入蓝图: {data.Name}，请在世界中点击左键放置（右键取消）", 100, 255, 150);
+
+                    // 标记放置后/取消后自动重新显示蓝图管理器
+                    wandsPanel.AutoReopenManagerAfterPlacement = true;
+
+                    // 主动隐藏蓝图管理器面板与魔杖轮盘，让出完整视野
+                    wandsPanel.BlueprintManager.Close();
+                    wandsPanel.Instance?.Close();
                 }
                 else
                 {
@@ -167,10 +174,33 @@ namespace WandsTool.Content.Structure.UI
                 HAlign = 0,
                 VAlign = 0.5f,
                 BackgroundColor = new Color(15, 20, 38) * 0.95f,
-                BorderColor = Color.Cyan * 0.9f
+                BorderColor = Color.Cyan * 0.9f,
+                FocusedBorderColor = Color.Gold,
+                TextColor = Color.White,
+                HintColor = Color.LightSlateGray,
+                CursorColor = Color.Cyan,
+                TextScale = 0.85f
             };
             txtName.Text = currentTitleText;
             txtName.Focus = true;
+
+            void SaveRenameAction(string name)
+            {
+                string newName = name?.Trim();
+                if (!string.IsNullOrWhiteSpace(newName))
+                {
+                    bool ok = StructureStorage.Rename(filePath, newName);
+                    if (ok)
+                    {
+                        onReloadNeeded?.Invoke();
+                        return;
+                    }
+                }
+                RenderNormalView();
+            }
+
+            txtName.OnSubmit += (name) => SaveRenameAction(name);
+            txtName.OnCancel += () => RenderNormalView();
 
             // 2. 确认与取消按钮组
             UIStackPanel btnGroup = new UIStackPanel
@@ -192,17 +222,7 @@ namespace WandsTool.Content.Structure.UI
             };
             btnSave.OnLeftClick += (e, s) =>
             {
-                string newName = txtName.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(newName))
-                {
-                    bool ok = StructureStorage.Rename(filePath, newName);
-                    if (ok)
-                    {
-                        onReloadNeeded?.Invoke();
-                        return;
-                    }
-                }
-                RenderNormalView();
+                SaveRenameAction(txtName.Text);
             };
 
             // 【取消】按钮

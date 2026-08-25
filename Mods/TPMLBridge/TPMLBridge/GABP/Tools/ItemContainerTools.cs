@@ -39,6 +39,17 @@ namespace TPMLBridge.GABP.Tools
                 },
                 new GABPToolDescriptor
                 {
+                    Name = "tpml/test_inventory_fusion",
+                    Description = "全量诊断与验证 TPML.Content 框架级背包融合系统（HasItem/CountItem/ConsumeItem/魔杖使用与放置/油漆识别/大背包数据联动）。",
+                    Tags = new List<string> { "diagnostic", "inventory_fusion" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
+                },
+                new GABPToolDescriptor
+                {
                     Name = "tpml/manage_item_container",
                     Description = "对药水袋与旗帜盒执行实机自动化交互（开闭窗口、一键收集、快速堆叠、一键退回、整理排序、自动收纳开关、存取测试等）。",
                     Tags = new List<string> { "interaction", "item_container" },
@@ -62,6 +73,10 @@ namespace TPMLBridge.GABP.Tools
         {
             switch (name)
             {
+                case "tpml/test_inventory_fusion":
+                case "tpml_test_inventory_fusion":
+                    return await MainThreadQueue.EnqueueAsync(() => TestInventoryFusion());
+
                 case "tpml/test_item_containers":
                 case "tpml_test_item_containers":
                     return await MainThreadQueue.EnqueueAsync(() => TestItemContainers());
@@ -78,6 +93,169 @@ namespace TPMLBridge.GABP.Tools
 
                 default:
                     return null;
+            }
+        }
+
+        private static object TestInventoryFusion()
+        {
+            Player player = Main.LocalPlayer;
+            if (player == null || !player.active)
+            {
+                return new { success = false, message = "当前未进入有效世界或玩家未激活" };
+            }
+
+            var activeSources = TPML.Content.Fusion.InventoryFusionManager.GetActiveSources(player);
+            var sourceIds = activeSources.Select(s => s.Id).ToList();
+
+            // 1. 备份玩家原始背包 0~57 与大背包前 2 格
+            Item[] originalInv = new Item[58];
+            for (int i = 0; i < 58; i++)
+            {
+                originalInv[i] = player.inventory[i] != null ? player.inventory[i].Clone() : new Item();
+            }
+
+            Item originalBigBag0 = OptimizeAndTool.Content.BigBag.BigBag.Slots != null && OptimizeAndTool.Content.BigBag.BigBag.Slots.Length > 0
+                ? OptimizeAndTool.Content.BigBag.BigBag.Slots[0].Clone()
+                : new Item();
+            Item originalBigBag1 = OptimizeAndTool.Content.BigBag.BigBag.Slots != null && OptimizeAndTool.Content.BigBag.BigBag.Slots.Length > 1
+                ? OptimizeAndTool.Content.BigBag.BigBag.Slots[1].Clone()
+                : new Item();
+
+            try
+            {
+                // 2. 清空玩家主背包中的普通木材 (ItemID.Wood = 9)
+                for (int i = 0; i < 58; i++)
+                {
+                    if (player.inventory[i] != null && player.inventory[i].type == ItemID.Wood)
+                    {
+                        player.inventory[i] = new Item();
+                    }
+                }
+
+                // 3. 向大背包第 0 格放入 50 个普通木材
+                Item woodInBigBag = new Item();
+                woodInBigBag.SetDefaults(ItemID.Wood);
+                woodInBigBag.stack = 50;
+                OptimizeAndTool.Content.BigBag.BigBag.Slots[0] = woodInBigBag;
+                OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
+
+                // 4. 断言 HasItem & CountItem
+                bool hasItemWood = player.HasItem(ItemID.Wood);
+                int countItemWood = player.CountItem(ItemID.Wood);
+
+                // 5. 构造生命木魔棒 (ItemID.LivingWoodWand = 832)
+                Item livingWoodWand = new Item();
+                livingWoodWand.SetDefaults(ItemID.LivingWoodWand);
+
+                // 将生命木魔杖放入 0 号快捷栏并选中
+                player.inventory[0] = livingWoodWand;
+                player.selectedItemState.Select(0);
+                player.selectedItemState.Update();
+
+                // 测试挥动与放置可用性
+                bool canUseWand = player.ItemCheck_CheckCanUse_Inner(livingWoodWand);
+                bool canPlaceWandTile = player.PlaceThing_Tiles_CheckWandUsability(true);
+
+                // 6. 测试消耗：调用 InventoryFusionManager.ConsumeItem
+                bool consumeResult = TPML.Content.Fusion.InventoryFusionManager.ConsumeItem(player, ItemID.Wood);
+                int countAfterConsume = player.CountItem(ItemID.Wood);
+                int bigBagSlot0StackAfter = OptimizeAndTool.Content.BigBag.BigBag.Slots[0].stack;
+
+                // 7. 测试油漆/涂料查找
+                for (int i = 0; i < 58; i++)
+                {
+                    if (player.inventory[i] != null && player.inventory[i].PaintOrCoating)
+                    {
+                        player.inventory[i] = new Item();
+                    }
+                }
+                Item paintInBigBag = new Item();
+                paintInBigBag.SetDefaults(ItemID.RedPaint);
+                paintInBigBag.stack = 20;
+                OptimizeAndTool.Content.BigBag.BigBag.Slots[1] = paintInBigBag;
+
+                Item foundPaint = player.FindPaintOrCoating();
+                bool foundPaintSuccess = foundPaint != null && foundPaint.type == ItemID.RedPaint && foundPaint.stack == 20;
+
+                // 8. 测试蓝图魔杖自动制造与大背包材料联动 (StructureCraftingEngine)
+                var blueprintData = new WandsTool.Content.Structure.StructureData(2, 2, "TestBlueprint");
+                for (int x = 0; x < 2; x++)
+                {
+                    for (int y = 0; y < 2; y++)
+                    {
+                        blueprintData.Tiles[x, y] = new WandsTool.Content.Structure.TileSnapshot
+                        {
+                            TileType = -1,
+                            WallType = (short)WallID.Wood
+                        };
+                    }
+                }
+                // 清空主背包的木材与木墙
+                for (int i = 0; i < 58; i++)
+                {
+                    if (player.inventory[i] != null && (player.inventory[i].type == ItemID.Wood || player.inventory[i].type == ItemID.WoodWall))
+                    {
+                        player.inventory[i] = new Item();
+                    }
+                }
+                // 向大背包放入 1 个木材 (1 木材在工作台/免工作台可合成 4 木墙)
+                Item woodForBlueprint = new Item();
+                woodForBlueprint.SetDefaults(ItemID.Wood);
+                woodForBlueprint.stack = 1;
+                OptimizeAndTool.Content.BigBag.BigBag.Slots[0] = woodForBlueprint;
+                OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
+
+                var blueprintPlan = WandsTool.Content.Structure.StructureCraftingEngine.BuildPlan(blueprintData, player, allowAutoCraft: true);
+                bool blueprintPlanPossible = blueprintPlan.IsPossible && blueprintPlan.IngredientConsumes.ContainsKey(ItemID.Wood) && blueprintPlan.IngredientConsumes[ItemID.Wood] == 1;
+
+                if (blueprintPlanPossible)
+                {
+                    WandsTool.Content.Structure.StructureCraftingEngine.ExecutePlan(blueprintPlan, player);
+                }
+                bool blueprintExecuteSuccess = OptimizeAndTool.Content.BigBag.BigBag.Slots[0] == null || OptimizeAndTool.Content.BigBag.BigBag.Slots[0].IsAir;
+
+                bool allPassed = hasItemWood &&
+                                 countItemWood == 50 &&
+                                 canUseWand &&
+                                 canPlaceWandTile &&
+                                 consumeResult &&
+                                 countAfterConsume == 49 &&
+                                 bigBagSlot0StackAfter == 49 &&
+                                 foundPaintSuccess &&
+                                 blueprintPlanPossible &&
+                                 blueprintExecuteSuccess;
+
+                return new
+                {
+                    success = allPassed,
+                    activeSourceCount = activeSources.Count,
+                    sourceIds = sourceIds,
+                    hasItemWood = hasItemWood,
+                    countItemWood = countItemWood,
+                    canUseWand = canUseWand,
+                    canPlaceWandTile = canPlaceWandTile,
+                    consumeResult = consumeResult,
+                    countAfterConsume = countAfterConsume,
+                    bigBagSlot0StackAfter = bigBagSlot0StackAfter,
+                    foundPaintSuccess = foundPaintSuccess,
+                    blueprintPlanPossible = blueprintPlanPossible,
+                    blueprintExecuteSuccess = blueprintExecuteSuccess,
+                    message = allPassed ? "TPML 框架背包融合系统、生命木魔杖与蓝图自动制造全部断言通过！" : "部分断言未通过"
+                };
+            }
+            finally
+            {
+                // 还原现场
+                for (int i = 0; i < 58; i++)
+                {
+                    player.inventory[i] = originalInv[i];
+                }
+                if (OptimizeAndTool.Content.BigBag.BigBag.Slots != null && OptimizeAndTool.Content.BigBag.BigBag.Slots.Length > 1)
+                {
+                    OptimizeAndTool.Content.BigBag.BigBag.Slots[0] = originalBigBag0;
+                    OptimizeAndTool.Content.BigBag.BigBag.Slots[1] = originalBigBag1;
+                    OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
+                }
             }
         }
 

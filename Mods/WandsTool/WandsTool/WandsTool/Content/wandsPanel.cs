@@ -150,11 +150,31 @@ namespace WandsTool.Content
         protected wandsPanel_btn1 btn6_manager = null;
 
         public static Structure.UI.UIBlueprintManager BlueprintManager = new Structure.UI.UIBlueprintManager();
+        public static wandsPanel Instance { get; private set; }
+        public static bool AutoReopenManagerAfterPlacement = false;
+
+        public static void OpenBlueprintManager()
+        {
+            if (Instance == null) return;
+            if (!gameMain.UI_WandsPanel1_isOpen)
+            {
+                Instance.Open();
+            }
+            if (!BlueprintManager.IsOpen)
+            {
+                BlueprintManager.Open(Instance.container);
+            }
+            else
+            {
+                BlueprintManager.RefreshList();
+            }
+        }
 
         public bool isReset = true;
 
         public wandsPanel()
         {
+            Instance = this;
             container = new UIState();
             btns = new UIState();
             btns_2 = new UIState();
