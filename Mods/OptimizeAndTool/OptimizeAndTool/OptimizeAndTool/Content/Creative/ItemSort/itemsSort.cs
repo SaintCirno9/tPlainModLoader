@@ -67,33 +67,43 @@ namespace OptimizeAndTool.Content.Creative
 
         protected static void load_id()
         {
-            Item item = new Item();
-            int exception_id = 0;
-            int exception_sort = 0;
-
-            int maxId = Math.Max((int)ItemID.Count, Terraria.ModLoader.ItemLoader.NextItemID);
+            int maxId = Math.Max((int)ItemID.Count, TPML.Content.ItemLoader.NextItemID);
 
             for (int i = 1; i < maxId; ++i)
             {
-                if (i < ItemID.Count && ItemID.Sets.Deprecated[i]) continue;
-                item.SetDefaults(i);
-                if (item.type < 1 && i >= ItemID.Count)
+                if (i < ItemID.Count)
                 {
+                    if (ItemID.Sets.Deprecated[i]) continue;
+                    // 过滤原版未定义或无有效名称的占位空 ID（防止末尾产生空白框）
+                    string localizedName = Lang.GetItemNameValue(i);
+                    if (string.IsNullOrWhiteSpace(localizedName)) continue;
+
+                    Item item = new Item();
+                    item.SetDefaults(i);
+                    if (item.type < 1) continue;
+
+                    try
+                    {
+                        load_id_sort(item);
+                    }
+                    catch { }
+                }
+                else
+                {
+                    // 模组物品必须在 ItemLoader 中真实注册
+                    var modItem = TPML.Content.ItemLoader.GetItem(i);
+                    if (modItem == null) continue;
+
+                    Item item = new Item();
                     item.type = i;
-                    Terraria.ModLoader.ItemLoader.SetDefaults(item);
-                }
-                if (item.type < 1)
-                {
-                    ++exception_id;
-                    continue;
-                }
-                try
-                {
-                    load_id_sort(item);
-                }
-                catch
-                {
-                    ++exception_sort;
+                    TPML.Content.ItemLoader.SetDefaults(item);
+                    if (item.type < 1) continue;
+
+                    try
+                    {
+                        load_id_sort(item);
+                    }
+                    catch { }
                 }
             }
         }

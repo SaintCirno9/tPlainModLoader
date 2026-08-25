@@ -6,6 +6,7 @@ using Terraria;
 using Terraria.IO;
 using tContentPatch;
 using TPMLBridge.GABP;
+using TPMLBridge.GABP.Tools;
 
 namespace TPMLBridge
 {

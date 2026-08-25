@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -183,26 +184,26 @@ namespace TPMLBridge.GABP
 
         private static async Task<string> ReadAsciiLineAsync(Stream stream, CancellationToken ct)
         {
-            var sb = new StringBuilder();
+            var bytes = new List<byte>();
             byte[] buf = new byte[1];
             while (true)
             {
                 int read = await stream.ReadAsync(buf, 0, 1, ct);
                 if (read <= 0)
                 {
-                    return sb.Length > 0 ? sb.ToString() : null;
+                    return bytes.Count > 0 ? Encoding.UTF8.GetString(bytes.ToArray()) : null;
                 }
-                char ch = (char)buf[0];
-                if (ch == '\n')
+                byte b = buf[0];
+                if (b == (byte)'\n')
                 {
                     break;
                 }
-                if (ch != '\r')
+                if (b != (byte)'\r')
                 {
-                    sb.Append(ch);
+                    bytes.Add(b);
                 }
             }
-            return sb.ToString();
+            return Encoding.UTF8.GetString(bytes.ToArray());
         }
 
         private async Task<GABPResponse> ProcessRequestAsync(GABPRequest req)

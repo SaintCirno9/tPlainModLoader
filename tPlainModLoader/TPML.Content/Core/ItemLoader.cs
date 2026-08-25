@@ -331,6 +331,11 @@ namespace TPML.Content
                     item.SetNameOverride(name);
                 }
 
+                if (item.stack <= 0)
+                {
+                    item.stack = 1;
+                }
+
                 EnsureTextureLoaded(template.Type);
 
                 foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)

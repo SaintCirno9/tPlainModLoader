@@ -21,6 +21,7 @@ namespace TPMLBridge.GABP
             list.AddRange(PlayerInventoryTools.GetDescriptors());
             list.AddRange(CreativeInventoryTools.GetDescriptors());
             list.AddRange(InstavatorTools.GetDescriptors());
+            list.AddRange(ScreenCaptureTools.GetDescriptors());
             return list;
         }
 
@@ -40,6 +41,10 @@ namespace TPMLBridge.GABP
 
             // 4. Instavator 直通车与矿道物理扫描工具
             result = await InstavatorTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 5. 游戏内截图与 UI 捕获工具
+            result = await ScreenCaptureTools.HandleAsync(name, args);
             if (result != null) return result;
 
             throw new KeyNotFoundException($"未知的工具名称: {name}");

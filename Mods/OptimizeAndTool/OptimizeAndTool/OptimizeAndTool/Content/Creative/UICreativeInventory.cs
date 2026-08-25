@@ -282,13 +282,20 @@ namespace OptimizeAndTool.Content.Creative
             itemsID.for_ItemsAll((i) =>
             {
                 Item item = new Item();
-                item.SetDefaults(i);
-                if (item.type < 1 && i >= ItemID.Count)
+                if (i < ItemID.Count)
                 {
+                    if (string.IsNullOrWhiteSpace(Lang.GetItemNameValue(i))) return;
+                    item.SetDefaults(i);
+                }
+                else
+                {
+                    var modItem = TPML.Content.ItemLoader.GetItem(i);
+                    if (modItem == null) return;
                     item.type = i;
-                    Terraria.ModLoader.ItemLoader.SetDefaults(item);
+                    TPML.Content.ItemLoader.SetDefaults(item);
                 }
                 if (item.type < 1) return;
+                if (item.stack <= 0) item.stack = 1;
 
                 // 根据搜索文本筛选
                 if (!string.IsNullOrWhiteSpace(Search_Text))
@@ -356,7 +363,7 @@ namespace OptimizeAndTool.Content.Creative
                 return true;
             }
 
-            // 英文内部名 / DisplayName 模糊匹配
+            // 物品名称模糊匹配 (Name / NameOverride)
             if (!string.IsNullOrEmpty(item.Name) && item.Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return true;
@@ -367,6 +374,29 @@ namespace OptimizeAndTool.Content.Creative
             if (!string.IsNullOrEmpty(localizedName) && localizedName.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return true;
+            }
+
+            // 模组物品元数据（内部类名、FullName、自定义 Tooltip）匹配
+            if (item.type >= ItemID.Count)
+            {
+                var modItem = TPML.Content.ItemLoader.GetItem(item.type);
+                if (modItem != null)
+                {
+                    if (!string.IsNullOrEmpty(modItem.Name) && modItem.Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
+                    }
+                    if (!string.IsNullOrEmpty(modItem.FullName) && modItem.FullName.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
+                    }
+                }
+
+                string modTooltip = TPML.Content.ItemLoader.GetTooltip(item.type);
+                if (!string.IsNullOrEmpty(modTooltip) && modTooltip.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
             }
 
             return false;
