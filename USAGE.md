@@ -1,5 +1,6 @@
 # tPlainModLoader (TPML) 使用与开发手册
 
+> **项目来源**：Fork 自 [github-user-64/tPlainModLoader](https://github.com/github-user-64/tPlainModLoader)  
 > **文档版本**：v2.0　**维护者**：`SaintCirno9`  
 > **适用环境**：.NET Framework 4.7.2 / Terraria 1.4.4+ & 1.4.5+
 
