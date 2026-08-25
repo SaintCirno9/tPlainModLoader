@@ -1,4 +1,4 @@
-﻿using Terraria;
+using Terraria;
 using Terraria.IO;
 using Terraria.Localization;
 
@@ -33,6 +33,14 @@ namespace tContentPatch
         /// 保存玩家数据后, 单人和客户端有效
         /// </summary>
         public virtual void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave) { }
+        /// <summary>
+        /// 读取玩家数据后, 单人和客户端有效
+        /// </summary>
+        public virtual void LoadPlayerPostfix(PlayerFileData playerFile) { }
+        /// <summary>
+        /// 激活玩家为当前控制角色后调用
+        /// </summary>
+        public virtual void SetAsActivePostfix(PlayerFileData playerFile) { }
         /// <summary>
         /// 能否掉落墓碑
         /// </summary>

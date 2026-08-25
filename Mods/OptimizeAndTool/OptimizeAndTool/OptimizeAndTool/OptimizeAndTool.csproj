@@ -46,6 +46,10 @@
     <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" />
+  </ItemGroup>
+
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\OptimizeAndTool 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
@@ -64,6 +68,10 @@
     <Copy SourceFiles="$(ModSourceDir)\loadConfig.json"
           DestinationFiles="$(ModDeployDir)\loadConfig.json"
           Condition="!Exists('$(ModDeployDir)\loadConfig.json') and Exists('$(ModSourceDir)\loadConfig.json')" />
+    <ItemGroup>
+      <ModResourceFiles Include="$(ModSourceDir)\Resources\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModResourceFiles)" DestinationFolder="$(ModDeployDir)\Resources\%(RecursiveDir)" SkipUnchangedFiles="true" Condition="Exists('$(ModSourceDir)\Resources')" />
   </Target>
 
 </Project>

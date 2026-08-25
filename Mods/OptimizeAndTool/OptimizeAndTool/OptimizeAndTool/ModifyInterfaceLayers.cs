@@ -99,7 +99,7 @@ namespace OptimizeAndTool
                 return;
             }
 
-            // 大背包/饰品盒开启时，若物品栏关闭，同步关闭对应扩展窗口
+            // 大背包/饰品盒/药水袋/旗帜盒开启时，若物品栏关闭，同步关闭对应扩展窗口
             if (bigBagWindow?.IsOpen == true && !Main.playerInventory)
             {
                 bigBagWindow.Close();
@@ -107,6 +107,14 @@ namespace OptimizeAndTool
             if (BoxWindow.IsOpen && !Main.playerInventory)
             {
                 BoxWindow.Instance.Close();
+            }
+            if (Content.Storage.ItemContainer.PotionBagWindow.IsOpen && !Main.playerInventory)
+            {
+                Content.Storage.ItemContainer.PotionBagWindow.Instance.Close();
+            }
+            if (Content.Storage.ItemContainer.BannerChestWindow.IsOpen && !Main.playerInventory)
+            {
+                Content.Storage.ItemContainer.BannerChestWindow.Instance.Close();
             }
 
             ui_game?.Update(gameTime);
@@ -138,6 +146,12 @@ namespace OptimizeAndTool
 
         public static bool BoxIsOpen => BoxWindow.IsOpen;
         public static bool BoxIsHovering => IsHoveringWindow(BoxWindow.Instance);
+
+        public static bool PotionBagIsOpen => Content.Storage.ItemContainer.PotionBagWindow.IsOpen;
+        public static bool PotionBagIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.PotionBagWindow.Instance);
+
+        public static bool BannerChestIsOpen => Content.Storage.ItemContainer.BannerChestWindow.IsOpen;
+        public static bool BannerChestIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.BannerChestWindow.Instance);
 
         /// <summary>
         /// 判定光标是否悬停在指定自定义窗口内（结合 IsMouseHovering 与 16px 边框容差，确保滑条与外沿判定 100% 覆盖）

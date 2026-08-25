@@ -445,6 +445,39 @@ namespace TPML.Content
             return true;
         }
 
+        public static ModItem GetModItem(int type)
+        {
+            _itemsByType.TryGetValue(type, out ModItem item);
+            return item;
+        }
+
+        public static int ItemType(string modName, string itemName)
+        {
+            if (string.IsNullOrEmpty(itemName)) return 0;
+            if (!string.IsNullOrEmpty(modName) && _itemsByName.TryGetValue($"{modName}/{itemName}", out int type))
+            {
+                return type;
+            }
+            if (_itemsByName.TryGetValue(itemName, out int fallbackType))
+            {
+                return fallbackType;
+            }
+            return 0;
+        }
+
+        public static int ItemType(string fullName)
+        {
+            if (string.IsNullOrEmpty(fullName)) return 0;
+            if (_itemsByName.TryGetValue(fullName, out int type)) return type;
+            int idx = fullName.IndexOf('/');
+            if (idx >= 0 && idx < fullName.Length - 1)
+            {
+                string shortName = fullName.Substring(idx + 1);
+                if (_itemsByName.TryGetValue(shortName, out int shortType)) return shortType;
+            }
+            return 0;
+        }
+
         public static void Clear()
         {
             _itemsByType.Clear();

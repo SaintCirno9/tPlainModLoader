@@ -1,8 +1,9 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.IO;
 using Terraria.Localization;
+using TPML.Content.IO;
 
 namespace tContentPatch.ModPatch
 {
@@ -10,6 +11,7 @@ namespace tContentPatch.ModPatch
     internal class Patch_Player : ListCopy<PatchPlayer>
     {
         private static List<PatchPlayer> mod = new List<PatchPlayer>();
+        internal static List<PatchPlayer> ModList => mod;
 
         public Patch_Player() : base(mod) { }
 
@@ -54,6 +56,11 @@ namespace tContentPatch.ModPatch
         {
             if (Main.netMode != 0 && Main.netMode != 1) return;
 
+            if (playerFile?.Player != null)
+            {
+                ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player);
+            }
+
             mod.ForTry(item => item.SavePlayerPrefix(playerFile, skipMapSave));
         }
 
@@ -63,7 +70,24 @@ namespace tContentPatch.ModPatch
         {
             if (Main.netMode != 0 && Main.netMode != 1) return;
 
+            if (playerFile?.Player != null)
+            {
+                ModItemSidecarEngine.OnPlayerSavePostfix(playerFile.Player);
+            }
+
             mod.ForTry(item => item.SavePlayerPostfix(playerFile, skipMapSave));
+        }
+
+        [HarmonyPatch("LoadPlayer")]
+        [HarmonyPostfix]
+        public static void LoadPlayerPostfix(PlayerFileData __result)
+        {
+            if (__result?.Player != null)
+            {
+                ModItemSidecarEngine.OnPlayerLoaded(__result.Player);
+                PlayerFileData res = __result;
+                mod.ForTry(item => item.LoadPlayerPostfix(res));
+            }
         }
 
         [HarmonyPatch("DropTombstone")]
@@ -71,6 +95,21 @@ namespace tContentPatch.ModPatch
         internal static bool CanDropTombstone(Player __instance, long coinsOwned, NetworkText deathText, int hitDirection)
         {
             return mod.ForTry(item => item.CanDropTombstone(__instance, coinsOwned, deathText, hitDirection));
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerFileData))]
+    internal class Patch_PlayerFileData
+    {
+        [HarmonyPatch("SetAsActive")]
+        [HarmonyPostfix]
+        public static void SetAsActivePostfix(PlayerFileData __instance)
+        {
+            if (__instance?.Player != null)
+            {
+                ModItemSidecarEngine.OnPlayerLoaded(__instance.Player);
+                Patch_Player.ModList.ForTry(item => item.SetAsActivePostfix(__instance));
+            }
         }
     }
 }

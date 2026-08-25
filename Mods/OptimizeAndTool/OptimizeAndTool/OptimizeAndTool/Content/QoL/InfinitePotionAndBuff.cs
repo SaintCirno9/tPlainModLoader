@@ -22,7 +22,7 @@ namespace OptimizeAndTool.Content.QoL
     /// 作者: SaintCirno9
     /// </summary>
     [HarmonyPatch]
-    internal class InfinitePotionAndBuff
+    public static class InfinitePotionAndBuff
     {
         public static GetSetReset<bool> EnableInfinitePotions = new GetSetReset<bool>(true, true);
         public static GetSetReset<int> PotionThreshold = new GetSetReset<int>(30, 30);
@@ -121,6 +121,11 @@ namespace OptimizeAndTool.Content.QoL
             if (BigBagMod.EnableBigBag.val && BigBagMod.Slots != null)
             {
                 ScanSceneContainerItems(__instance, BigBagMod.Slots);
+            }
+
+            if (OptimizeAndTool.Content.Storage.ItemContainer.BannerChestStorage.Instance?.Slots != null)
+            {
+                ScanSceneContainerItems(__instance, OptimizeAndTool.Content.Storage.ItemContainer.BannerChestStorage.Instance.Slots);
             }
         }
 
@@ -222,6 +227,11 @@ namespace OptimizeAndTool.Content.QoL
             if (BigBagMod.EnableBigBag.val && BigBagMod.Slots != null)
             {
                 ScanPlayerBuffItems(__instance, BigBagMod.Slots);
+            }
+
+            if (OptimizeAndTool.Content.Storage.ItemContainer.PotionBagStorage.Instance?.Slots != null)
+            {
+                ScanPlayerBuffItems(__instance, OptimizeAndTool.Content.Storage.ItemContainer.PotionBagStorage.Instance.Slots);
             }
 
             // 应用达标药水增益

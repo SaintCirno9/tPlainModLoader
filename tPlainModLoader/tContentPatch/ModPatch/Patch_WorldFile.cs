@@ -1,6 +1,7 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using Terraria;
+using TPML.Content.IO;
 
 namespace tContentPatch.ModPatch
 {
@@ -17,6 +18,7 @@ namespace tContentPatch.ModPatch
         {
             if (Main.netMode != 0 && Main.dedServ == false) return;
 
+            ModItemSidecarEngine.OnWorldSavePrefix();
             mod.ForTry(item => item.SaveWorldPrefix(useCloudSaving, resetTime, useTemps, canBeSkipped));
         }
 
@@ -26,7 +28,16 @@ namespace tContentPatch.ModPatch
         {
             if (Main.netMode != 0 && Main.dedServ == false) return;
 
+            ModItemSidecarEngine.OnWorldSavePostfix();
             mod.ForTry(item => item.SaveWorldPostfix(useCloudSaving, resetTime, useTemps, canBeSkipped));
+        }
+
+        [HarmonyPatch("LoadWorld")]
+        [HarmonyPostfix]
+        public static void LoadWorldPostfix()
+        {
+            mod.ForTry(item => item.LoadWorldPostfix());
+            ModItemSidecarEngine.OnWorldLoaded();
         }
     }
 }

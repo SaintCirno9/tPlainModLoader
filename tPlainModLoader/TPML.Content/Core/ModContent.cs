@@ -131,6 +131,10 @@ namespace TPML.Content
             return 0;
         }
 
+        public static int ItemType(string modName, string itemName) => ItemLoader.ItemType(modName, itemName);
+        public static int ItemType(string fullName) => ItemLoader.ItemType(fullName);
+        public static ModItem GetModItem(int type) => ItemLoader.GetModItem(type);
+
         public static IEnumerable<T> GetContent<T>() where T : class
         {
             return _allContent.OfType<T>();

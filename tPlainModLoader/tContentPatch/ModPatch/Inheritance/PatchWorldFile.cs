@@ -1,4 +1,4 @@
-﻿namespace tContentPatch
+namespace tContentPatch
 {
     /// <summary/>
     public abstract class PatchWorldFile
@@ -15,5 +15,9 @@
         /// 保存世界后, 单人和服务端有效
         /// </summary>
         public virtual void SaveWorldPostfix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped) { }
+        /// <summary>
+        /// 加载世界后, 单人和服务端有效
+        /// </summary>
+        public virtual void LoadWorldPostfix() { }
     }
 }

@@ -21,6 +21,8 @@ namespace TPMLBridge.GABP
             list.AddRange(PlayerInventoryTools.GetDescriptors());
             list.AddRange(CreativeInventoryTools.GetDescriptors());
             list.AddRange(InstavatorTools.GetDescriptors());
+            list.AddRange(ItemContainerTools.GetDescriptors());
+            list.AddRange(SidecarTools.GetDescriptors());
             list.AddRange(ScreenCaptureTools.GetDescriptors());
             return list;
         }
@@ -43,7 +45,15 @@ namespace TPMLBridge.GABP
             result = await InstavatorTools.HandleAsync(name, args);
             if (result != null) return result;
 
-            // 5. 游戏内截图与 UI 捕获工具
+            // 5. 药水袋与旗帜盒收纳容器工具
+            result = await ItemContainerTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 6. Sidecar 模组物品全域持久化工具
+            result = await SidecarTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 7. 游戏内截图与 UI 捕获工具
             result = await ScreenCaptureTools.HandleAsync(name, args);
             if (result != null) return result;
 

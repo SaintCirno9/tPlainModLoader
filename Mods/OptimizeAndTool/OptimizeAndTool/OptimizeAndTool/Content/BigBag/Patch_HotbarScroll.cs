@@ -19,8 +19,10 @@ namespace OptimizeAndTool.Content.BigBag
             bool inBigBag = Main.playerInventory && ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering;
             bool inBox = Main.playerInventory && ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering;
             bool inCreative = CreativeInventory.IsOpen && CreativeInventory.IsHovering;
+            bool inPotionBag = Main.playerInventory && ModifyInterfaceLayers.PotionBagIsOpen && ModifyInterfaceLayers.PotionBagIsHovering;
+            bool inBannerChest = Main.playerInventory && ModifyInterfaceLayers.BannerChestIsOpen && ModifyInterfaceLayers.BannerChestIsHovering;
 
-            if (inBigBag || inBox || inCreative)
+            if (inBigBag || inBox || inCreative || inPotionBag || inBannerChest)
             {
                 PlayerInput.ScrollWheelDelta = 0;
             }
@@ -37,12 +39,14 @@ namespace OptimizeAndTool.Content.BigBag
         [HarmonyPrefix]
         public static bool Prefix()
         {
-            // 仅当玩家光标悬停在大背包/饰品箱/物品浏览器内部时，跳过原版制造列表与箱子列表滚动
+            // 仅当玩家光标悬停在大背包/饰品箱/物品浏览器/药水袋/旗帜盒内部时，跳过原版制造列表与箱子列表滚动
             bool inBigBag = ModifyInterfaceLayers.BigBagIsOpen && ModifyInterfaceLayers.BigBagIsHovering;
             bool inBox = ModifyInterfaceLayers.BoxIsOpen && ModifyInterfaceLayers.BoxIsHovering;
             bool inCreative = CreativeInventory.IsOpen && CreativeInventory.IsHovering;
+            bool inPotionBag = ModifyInterfaceLayers.PotionBagIsOpen && ModifyInterfaceLayers.PotionBagIsHovering;
+            bool inBannerChest = ModifyInterfaceLayers.BannerChestIsOpen && ModifyInterfaceLayers.BannerChestIsHovering;
 
-            if (inBigBag || inBox || inCreative)
+            if (inBigBag || inBox || inCreative || inPotionBag || inBannerChest)
             {
                 return false;
             }

@@ -71,6 +71,14 @@ namespace TPML.Content
         {
         }
 
+        public virtual void SaveData(TPML.Content.IO.TagCompound tag)
+        {
+        }
+
+        public virtual void LoadData(TPML.Content.IO.TagCompound tag)
+        {
+        }
+
         public ModRecipe CreateRecipe(int amount = 1)
         {
             return RecipeLoader.CreateRecipe(this, amount);

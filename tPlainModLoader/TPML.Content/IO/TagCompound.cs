@@ -24,7 +24,5 @@ namespace TPML.Content.IO
         public byte[] GetByteArray(string key) => Get<byte[]>(key);
         public TagCompound GetCompound(string key) => Get<TagCompound>(key);
         public List<T> GetList<T>(string key) => Get<List<T>>(key);
-
-        public bool ContainsKey(string key) => base.ContainsKey(key);
     }
 }
