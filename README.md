@@ -54,6 +54,7 @@ TPML 仓库内包含 14 个官方扩展模组与实用工具（如 `OptimizeAndT
 ## 📄 致谢与开源致意 (Credits & Acknowledgements)
 
 - **上游原作者**：特别鸣谢 **[github-user-64](https://github.com/github-user-64)** 创建了最初的 [tPlainModLoader](https://github.com/github-user-64/tPlainModLoader) 原型与启动框架基石！
+- **Fargo's Mod Team**：[Fargowilta/Fargowiltas](https://github.com/Fargowilta/Fargowiltas)（地狱直通车 Instavator 原始概念与贴图素材，遵循 MIT 许可证）
 - **Harmony**：[Lib.Harmony](https://github.com/pardeike/Harmony/)
 - **Mono.Cecil**：[jbevain/cecil](https://github.com/jbevain/cecil)
 - **Newtonsoft.Json**：[JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)
