@@ -267,7 +267,9 @@ namespace TPMLBridge.GABP.Tools
             }
             if (player == null)
             {
-                player = Main.PlayerList.OrderByDescending(p => p.LastPlayed).FirstOrDefault();
+                // 优先查找名为 "Test" 的专用测试角色，其次按最后游玩时间排序取最新角色
+                player = Main.PlayerList.FirstOrDefault(p => p.Name.Equals("Test", StringComparison.OrdinalIgnoreCase))
+                         ?? Main.PlayerList.OrderByDescending(p => p.LastPlayed).FirstOrDefault();
             }
 
             if (player == null)
@@ -285,7 +287,9 @@ namespace TPMLBridge.GABP.Tools
             }
             if (world == null)
             {
-                world = Main.WorldList.OrderByDescending(w => w.LastPlayed).FirstOrDefault();
+                // 优先查找名为 "Test" 的专用测试世界，其次按最后游玩时间排序取最新世界
+                world = Main.WorldList.FirstOrDefault(w => w.Name.Equals("Test", StringComparison.OrdinalIgnoreCase))
+                        ?? Main.WorldList.OrderByDescending(w => w.LastPlayed).FirstOrDefault();
             }
 
             if (world == null)

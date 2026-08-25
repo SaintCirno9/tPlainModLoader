@@ -118,6 +118,41 @@ namespace TPMLBridge.GABP.Tools
                             action = new { type = "string", description = "'save_player' / 'save_world' / 'load_player' / 'load_world' / 'save_all' / 'load_all'" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/set_container_slot",
+                    Description = "向玩家命名扩展容器（如 'bigBag' 或 'accessoryBox'）的指定槽位放置物品。",
+                    Tags = new List<string> { "write", "container", "sidecar" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        required = new[] { "container", "slot", "itemId" },
+                        properties = new
+                        {
+                            container = new { type = "string", description = "容器名称: 'bigBag' 或 'accessoryBox'" },
+                            slot = new { type = "integer", description = "槽位索引" },
+                            itemId = new { type = "integer", description = "物品 ID" },
+                            stack = new { type = "integer", description = "堆叠数量（默认 1）" },
+                            prefix = new { type = "integer", description = "物品前缀 ID（默认 0）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/get_container_slot",
+                    Description = "获取玩家命名扩展容器（如 'bigBag' 或 'accessoryBox'）指定槽位的物品详细数据。",
+                    Tags = new List<string> { "read-only", "container", "sidecar" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        required = new[] { "container", "slot" },
+                        properties = new
+                        {
+                            container = new { type = "string", description = "容器名称: 'bigBag' 或 'accessoryBox'" },
+                            slot = new { type = "integer", description = "槽位索引" }
+                        }
+                    }
                 }
             };
         }
@@ -126,6 +161,25 @@ namespace TPMLBridge.GABP.Tools
         {
             switch (name)
             {
+                case "tpml/set_container_slot":
+                case "tpml_set_container_slot":
+                    {
+                        string container = args?["container"]?.ToString() ?? "bigBag";
+                        int slot = args?["slot"]?.Value<int>() ?? 0;
+                        int itemId = args?["itemId"]?.Value<int>() ?? 0;
+                        int stack = Math.Max(1, args?["stack"]?.Value<int>() ?? 1);
+                        int prefix = args?["prefix"]?.Value<int>() ?? 0;
+                        bool save = args?["save"]?.Value<bool>() ?? true;
+                        return await MainThreadQueue.EnqueueAsync(() => SetContainerSlot(container, slot, itemId, stack, prefix, save));
+                    }
+
+                case "tpml/get_container_slot":
+                case "tpml_get_container_slot":
+                    {
+                        string container = args?["container"]?.ToString() ?? "bigBag";
+                        int slot = args?["slot"]?.Value<int>() ?? 0;
+                        return await MainThreadQueue.EnqueueAsync(() => GetContainerSlot(container, slot));
+                    }
                 case "tpml/test_sidecar_status":
                 case "tpml_test_sidecar_status":
                     return await MainThreadQueue.EnqueueAsync(() => GetSidecarStatus());
@@ -231,6 +285,29 @@ namespace TPMLBridge.GABP.Tools
                 return list;
             }
 
+            List<object> ExtractContainerItems(Item[] items)
+            {
+                var list = new List<object>();
+                if (items == null) return list;
+                for (int i = 0; i < items.Length; i++)
+                {
+                    Item it = items[i];
+                    if (it != null && !it.IsAir && it.type > 0)
+                    {
+                        list.Add(new
+                        {
+                            slot = i,
+                            id = it.type,
+                            name = it.Name,
+                            stack = it.stack,
+                            prefix = it.prefix,
+                            favorited = it.favorited
+                        });
+                    }
+                }
+                return list;
+            }
+
             return new
             {
                 playerSidecar = new
@@ -238,7 +315,9 @@ namespace TPMLBridge.GABP.Tools
                     path = playerPath,
                     exists = playerFileExists,
                     entryCount = playerData?.Items?.Count ?? 0,
-                    entries = playerData?.Items
+                    entries = playerData?.Items,
+                    containers = playerData?.Containers,
+                    containerNames = playerData?.Containers?.Keys?.ToList() ?? new List<string>()
                 },
                 worldSidecar = new
                 {
@@ -257,8 +336,94 @@ namespace TPMLBridge.GABP.Tools
                     bank1 = ExtractModItems(player?.bank?.item, "bank1"),
                     bank2 = ExtractModItems(player?.bank2?.item, "bank2"),
                     bank3 = ExtractModItems(player?.bank3?.item, "bank3"),
-                    bank4 = ExtractModItems(player?.bank4?.item, "bank4")
+                    bank4 = ExtractModItems(player?.bank4?.item, "bank4"),
+                    bigBag = ExtractContainerItems(OptimizeAndTool.Content.BigBag.BigBag.Slots),
+                    accessoryBox = ExtractContainerItems(OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.Slots)
                 }
+            };
+        }
+
+        private static Item[] GetContainerSlots(string containerName)
+        {
+            if (string.Equals(containerName, "bigBag", StringComparison.OrdinalIgnoreCase))
+            {
+                return OptimizeAndTool.Content.BigBag.BigBag.Slots;
+            }
+            if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase))
+            {
+                return OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.Slots;
+            }
+            return null;
+        }
+
+        public static object SetContainerSlot(string containerName, int slot, int itemId, int stack, int prefix, bool save = true)
+        {
+            Item[] slots = GetContainerSlots(containerName);
+            if (slots == null || slot < 0 || slot >= slots.Length)
+            {
+                return new { success = false, message = $"容器 '{containerName}' 不存在或槽位 {slot} 越界" };
+            }
+
+            if (itemId <= 0)
+            {
+                slots[slot] = new Item();
+            }
+            else
+            {
+                Item item = new Item();
+                item.SetDefaults(itemId);
+                item.stack = Math.Max(1, Math.Min(stack, item.maxStack));
+                if (prefix > 0) item.Prefix(prefix);
+                slots[slot] = item;
+            }
+
+            if (save)
+            {
+                if (string.Equals(containerName, "bigBag", StringComparison.OrdinalIgnoreCase))
+                {
+                    OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
+                    OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
+                }
+                else if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase))
+                {
+                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
+                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.NotifySlotsChanged();
+                }
+            }
+
+            return new
+            {
+                success = true,
+                container = containerName,
+                slot,
+                itemId,
+                stack = itemId <= 0 ? 0 : slots[slot].stack,
+                name = itemId <= 0 ? string.Empty : slots[slot].Name,
+                message = $"已向容器 {containerName} 槽位 {slot} 设置物品 (save={save})"
+            };
+        }
+
+        public static object GetContainerSlot(string containerName, int slot)
+        {
+            Item[] slots = GetContainerSlots(containerName);
+            if (slots == null || slot < 0 || slot >= slots.Length)
+            {
+                return new { success = false, message = $"容器 '{containerName}' 不存在或槽位 {slot} 越界" };
+            }
+
+            Item item = slots[slot];
+            bool isAir = item == null || item.IsAir || item.type <= 0;
+            return new
+            {
+                success = true,
+                container = containerName,
+                slot,
+                isAir,
+                itemId = isAir ? 0 : item.type,
+                name = isAir ? string.Empty : item.Name,
+                stack = isAir ? 0 : item.stack,
+                prefix = isAir ? 0 : item.prefix,
+                favorited = !isAir && item.favorited
             };
         }
 
@@ -412,6 +577,11 @@ namespace TPMLBridge.GABP.Tools
                         ModItemSidecarEngine.OnPlayerSavePrefix(Main.LocalPlayer);
                         ModItemSidecarEngine.OnPlayerSavePostfix(Main.LocalPlayer);
                     }
+                    if (Main.LocalPlayer != null)
+                    {
+                        OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
+                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
+                    }
                     return new { success = true, action, message = "已执行玩家数据与 Sidecar 保存" };
 
                 case "save_world":
@@ -426,8 +596,10 @@ namespace TPMLBridge.GABP.Tools
                     if (Main.LocalPlayer != null)
                     {
                         ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
+                        OptimizeAndTool.Content.BigBag.BigBagStorage.LoadForPlayer(Main.LocalPlayer);
+                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.LoadForPlayer(Main.LocalPlayer);
                     }
-                    return new { success = true, action, message = "已从 Sidecar 文件回填玩家数据" };
+                    return new { success = true, action, message = "已从 Sidecar 文件回填玩家数据与扩展容器" };
 
                 case "load_world":
                     ModItemSidecarEngine.OnWorldLoaded();
@@ -438,6 +610,8 @@ namespace TPMLBridge.GABP.Tools
                     {
                         ModItemSidecarEngine.OnPlayerSavePrefix(Main.LocalPlayer);
                         ModItemSidecarEngine.OnPlayerSavePostfix(Main.LocalPlayer);
+                        OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
+                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
                     }
                     ModItemSidecarEngine.OnWorldSavePrefix();
                     ModItemSidecarEngine.OnWorldSavePostfix();
@@ -447,6 +621,8 @@ namespace TPMLBridge.GABP.Tools
                     if (Main.LocalPlayer != null)
                     {
                         ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
+                        OptimizeAndTool.Content.BigBag.BigBagStorage.LoadForPlayer(Main.LocalPlayer);
+                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.LoadForPlayer(Main.LocalPlayer);
                     }
                     ModItemSidecarEngine.OnWorldLoaded();
                     return new { success = true, action, message = "已全量加载玩家与世界 Sidecar" };

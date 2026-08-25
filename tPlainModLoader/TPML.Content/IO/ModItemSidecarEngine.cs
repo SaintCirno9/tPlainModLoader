@@ -24,12 +24,38 @@ namespace TPML.Content.IO
     }
 
     /// <summary>
+    /// 单个容器槽位伴随持久化条目（支持原版物品与模组物品）
+    /// </summary>
+    public class ContainerSlotEntry
+    {
+        public int Slot { get; set; }
+        public int Type { get; set; }
+        public string ModName { get; set; }
+        public string ItemName { get; set; }
+        public int Stack { get; set; }
+        public int Prefix { get; set; }
+        public bool Favorited { get; set; }
+        public string CustomData { get; set; }
+    }
+
+    /// <summary>
     /// 玩家伴随存档数据结构
     /// </summary>
     public class PlayerSidecarData
     {
         public string PlayerName { get; set; }
         public List<ModItemSaveEntry> Items { get; set; } = new List<ModItemSaveEntry>();
+
+        /// <summary>
+        /// 玩家绑定的独立命名扩展容器（如 "BigBag", "AccessoryBox" 等）
+        /// 键为容器标识，值为槽位物品数据列表
+        /// </summary>
+        public Dictionary<string, List<ContainerSlotEntry>> Containers { get; set; } = new Dictionary<string, List<ContainerSlotEntry>>();
+
+        /// <summary>
+        /// 模组挂载在玩家上的通用自定义键值对数据
+        /// </summary>
+        public Dictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
     }
 
     /// <summary>
@@ -58,6 +84,212 @@ namespace TPML.Content.IO
         public static string GetPlayerSidecarPath(Player player) => SidecarSaveManager.GetPlayerSavePath(player);
         public static string GetWorldSidecarPath() => SidecarSaveManager.GetWorldSavePath();
 
+        #region 通用槽位与扩展容器序列化引擎
+
+        /// <summary>
+        /// 将物品槽位数组序列化为 ContainerSlotEntry 列表（自动区分原版物品与 Mod 物品及 TagCompound CustomData）
+        /// </summary>
+        public static List<ContainerSlotEntry> SerializeSlots(Item[] items)
+        {
+            var list = new List<ContainerSlotEntry>();
+            if (items == null) return list;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                Item it = items[i];
+                if (it == null || it.IsAir || it.type <= 0) continue;
+
+                string modName = "Terraria";
+                string itemName = null;
+                string customData = null;
+
+                if (it.type >= ItemID.Count)
+                {
+                    ModItem modItem = ItemLoader.GetModItem(it);
+                    if (modItem != null)
+                    {
+                        modName = modItem.Mod?.Name ?? "TPML";
+                        itemName = modItem.Name;
+                        try
+                        {
+                            TagCompound tag = new TagCompound();
+                            modItem.SaveData(tag);
+                            if (tag.Count > 0)
+                            {
+                                customData = JsonConvert.SerializeObject(tag);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ModLoader.Log($"[Sidecar] 容器槽位序列化自定义数据异常 [{modItem.FullName}]: {ex.Message}");
+                        }
+                    }
+                }
+
+                list.Add(new ContainerSlotEntry
+                {
+                    Slot = i,
+                    Type = it.type,
+                    ModName = modName,
+                    ItemName = itemName,
+                    Stack = it.stack,
+                    Prefix = it.prefix,
+                    Favorited = it.favorited,
+                    CustomData = customData
+                });
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 从 ContainerSlotEntry 列表反序列化回填至目标物品槽位数组
+        /// </summary>
+        public static void DeserializeSlots(List<ContainerSlotEntry> entries, Item[] targetArray)
+        {
+            if (targetArray == null) return;
+            for (int i = 0; i < targetArray.Length; i++)
+            {
+                targetArray[i] = new Item();
+            }
+
+            if (entries == null) return;
+
+            foreach (var entry in entries)
+            {
+                if (entry == null || entry.Slot < 0 || entry.Slot >= targetArray.Length) continue;
+
+                int type = 0;
+                if (entry.ModName != null && entry.ModName != "Terraria" && !string.IsNullOrEmpty(entry.ItemName))
+                {
+                    type = ItemLoader.ItemType(entry.ModName, entry.ItemName);
+                    if (type <= 0)
+                    {
+                        ModLoader.Log($"[Sidecar] 容器槽位回填跳过未加载模组物品: [{entry.ModName}/{entry.ItemName}]");
+                        continue;
+                    }
+                }
+                else
+                {
+                    type = entry.Type;
+                    if (type <= 0) continue;
+                }
+
+                Item it = new Item();
+                it.SetDefaults(type);
+                it.stack = Math.Max(1, Math.Min(entry.Stack, it.maxStack));
+                if (entry.Prefix > 0) it.Prefix(entry.Prefix);
+                it.favorited = entry.Favorited;
+
+                if (!string.IsNullOrEmpty(entry.CustomData))
+                {
+                    try
+                    {
+                        ModItem modItem = ItemLoader.GetModItem(it);
+                        if (modItem != null)
+                        {
+                            TagCompound tag = JsonConvert.DeserializeObject<TagCompound>(entry.CustomData);
+                            if (tag != null)
+                            {
+                                modItem.LoadData(tag);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLoader.Log($"[Sidecar] 容器槽位反序列化自定义数据异常: {ex.Message}");
+                    }
+                }
+
+                targetArray[entry.Slot] = it;
+            }
+        }
+
+        /// <summary>
+        /// 从 ContainerSlotEntry 列表新建指定容量的物品槽位数组并反序列化填充
+        /// </summary>
+        public static Item[] DeserializeSlots(List<ContainerSlotEntry> entries, int capacity)
+        {
+            Item[] slots = new Item[capacity];
+            DeserializeSlots(entries, slots);
+            return slots;
+        }
+
+        /// <summary>
+        /// 安全保存指定玩家的命名扩展容器数据至其伴随存档文件
+        /// </summary>
+        public static void SavePlayerContainer(Player player, string containerKey, Item[] items)
+        {
+            if (player == null || string.IsNullOrEmpty(containerKey)) return;
+
+            try
+            {
+                string path = GetPlayerSidecarPath(player);
+                PlayerSidecarData data = null;
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        string json = File.ReadAllText(path);
+                        data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                    }
+                    catch { }
+                }
+
+                if (data == null)
+                {
+                    data = new PlayerSidecarData { PlayerName = player.name };
+                }
+
+                if (data.Containers == null)
+                {
+                    data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
+                }
+
+                data.Containers[containerKey] = SerializeSlots(items);
+
+                string output = JsonConvert.SerializeObject(data, Formatting.Indented);
+                File.WriteAllText(path, output);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 保存玩家容器 [{containerKey}] 伴随数据异常: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 从伴随存档文件加载指定玩家的命名扩展容器物品数组
+        /// </summary>
+        public static Item[] LoadPlayerContainer(Player player, string containerKey, int capacity)
+        {
+            Item[] slots = new Item[capacity];
+            for (int i = 0; i < capacity; i++) slots[i] = new Item();
+
+            if (player == null || string.IsNullOrEmpty(containerKey)) return slots;
+
+            try
+            {
+                string path = GetPlayerSidecarPath(player);
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                    if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries))
+                    {
+                        DeserializeSlots(entries, slots);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 加载玩家容器 [{containerKey}] 伴随数据异常: {ex.Message}");
+            }
+
+            return slots;
+        }
+
+        #endregion
+
         #region 玩家全域槽位持久化
 
         /// <summary>
@@ -68,10 +300,28 @@ namespace TPML.Content.IO
             if (player == null) return;
             _playerTempSwap.Clear();
 
-            PlayerSidecarData data = new PlayerSidecarData
+            string path = GetPlayerSidecarPath(player);
+            PlayerSidecarData data = null;
+            if (File.Exists(path))
             {
-                PlayerName = player.name
-            };
+                try
+                {
+                    string existingJson = File.ReadAllText(path);
+                    data = JsonConvert.DeserializeObject<PlayerSidecarData>(existingJson);
+                }
+                catch { }
+            }
+
+            if (data == null)
+            {
+                data = new PlayerSidecarData { PlayerName = player.name };
+            }
+            else
+            {
+                data.PlayerName = player.name;
+                if (data.Items == null) data.Items = new List<ModItemSaveEntry>();
+                else data.Items.Clear();
+            }
 
             void CheckAndExtract(Item[] array, string prefix)
             {
@@ -179,7 +429,6 @@ namespace TPML.Content.IO
             // 保存伴随文件
             try
             {
-                string path = GetPlayerSidecarPath(player);
                 string json = JsonConvert.SerializeObject(data, Formatting.Indented);
                 File.WriteAllText(path, json);
             }

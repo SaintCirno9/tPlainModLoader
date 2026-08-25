@@ -7,6 +7,7 @@ using Terraria.Audio;
 using Terraria.ID;
 using Terraria.IO;
 using Terraria.UI;
+using TPML.Content.IO;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -45,6 +46,9 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public static Item[] Slots { get; private set; } = NewSlots(100);
         public static event Action OnCapacityChanged;
+
+        /// <summary>外部通知饰品箱数据发生变化并刷新 UI</summary>
+        public static void NotifySlotsChanged() => OnCapacityChanged?.Invoke();
 
         static AccessoryBox()
         {
@@ -114,9 +118,36 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             return slots;
         }
 
+        public override void SavePlayerPrefix(PlayerFileData playerFile, bool skipMapSave)
+        {
+            if (playerFile?.Player != null)
+            {
+                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, AccessoryBoxStorage.ContainerKey, Slots);
+            }
+        }
+
         public override void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave)
         {
-            AccessoryBoxStorage.SaveNow();
+            if (playerFile?.Player != null)
+            {
+                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, AccessoryBoxStorage.ContainerKey, Slots);
+            }
+        }
+
+        public override void LoadPlayerPostfix(PlayerFileData playerFile)
+        {
+            if (playerFile?.Player != null)
+            {
+                AccessoryBoxStorage.LoadForPlayer(playerFile.Player);
+            }
+        }
+
+        public override void SetAsActivePostfix(PlayerFileData playerFile)
+        {
+            if (playerFile?.Player != null)
+            {
+                AccessoryBoxStorage.LoadForPlayer(playerFile.Player);
+            }
         }
 
         public override void UpdateEquipsPostfix(Player This, int playerI)

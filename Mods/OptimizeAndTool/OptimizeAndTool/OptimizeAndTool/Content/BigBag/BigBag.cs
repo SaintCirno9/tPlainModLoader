@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content.IO;
 
 namespace OptimizeAndTool.Content.BigBag
 {
@@ -16,7 +17,7 @@ namespace OptimizeAndTool.Content.BigBag
     /// 格子交互复用原版 ItemSlot（context=BankItem），材料消耗为纯本地扣除。
     /// 作者: SaintCirno9
     /// </summary>
-    internal static class BigBag
+    public static class BigBag
     {
         public static readonly GetSetReset<bool> EnableBigBag = new GetSetReset<bool>(true, true);
         public static readonly GetSetReset<bool> EnableBigBagCraft = new GetSetReset<bool>(true, true);
@@ -536,81 +537,63 @@ namespace OptimizeAndTool.Content.BigBag
     }
 
     /// <summary>
-    /// 巨大背包物品持久化（bigBag.json），容量真值存于 setting.json 的 BigBagCapacity
+    /// 巨大背包角色伴随存档持久化 (Sidecar Containers: "BigBag")
+    /// 完全绑定角色生命周期，杜绝跨人物共享，支持原版与模组实体物品无损存读档
     /// </summary>
-    internal class BigBagStorage : ModSetting
+    public static class BigBagStorage
     {
-        public class SlotData
-        {
-            public int type;
-            public int prefix;
-            public int stack;
-        }
-
-        public override bool HasUI => false;
-        public override string FilePath => "bigBag.json";
-        public override Type DataType => typeof(List<SlotData>);
-
-        private static BigBagStorage instance = null;
-        private List<SlotData> date = null;
-
-        public override void Load(object v)
-        {
-            instance = this;
-
-            date = v as List<SlotData>;
-            if (date == null)
-            {
-                date = new List<SlotData>();
-                NeedSave = true;
-                Save();
-            }
-
-            // 先按 items 数量构建（后续 Capacity 配置加载触发 SetCapacity 校准）
-            int n = Math.Max(BigBag.Capacity.val, Math.Min(500, date.Count));
-            Item[] slots = new Item[n];
-            for (int i = 0; i < n; i++) slots[i] = new Item();
-
-            for (int i = 0; i < date.Count && i < n; i++)
-            {
-                SlotData d = date[i];
-                if (d == null || d.type <= 0) continue;
-
-                Item item = new Item();
-                item.SetDefaults(d.type);
-                if (d.prefix > 0) item.Prefix(d.prefix);
-                if (d.stack > 1) item.stack = Math.Min(d.stack, item.maxStack);
-                slots[i] = item;
-            }
-
-            BigBag.SetItems(slots);
-        }
-
-        public override object GetSaveData() => date;
+        public const string ContainerKey = "BigBag";
 
         /// <summary>
-        /// 立即落盘（窗口交互后/关闭时调用）
+        /// 立即将当前活动玩家的大背包数据保存落盘至 Sidecar 伴随文件
         /// </summary>
         public static void SaveNow()
         {
-            if (instance == null) return;
+            Player player = Main.LocalPlayer;
+            if (player == null) return;
+            ModItemSidecarEngine.SavePlayerContainer(player, ContainerKey, BigBag.Slots);
+        }
 
-            List<SlotData> list = new List<SlotData>(BigBag.Slots.Length);
-            foreach (Item item in BigBag.Slots)
+        /// <summary>
+        /// 为指定玩家加载其专属的大背包数据
+        /// </summary>
+        public static void LoadForPlayer(Player player)
+        {
+            if (player == null) return;
+            int cap = BigBag.Capacity.val;
+            Item[] slots = ModItemSidecarEngine.LoadPlayerContainer(player, ContainerKey, cap);
+            BigBag.SetItems(slots);
+        }
+    }
+
+    /// <summary>
+    /// 巨大背包角色生命周期监听器：
+    /// 角色保存、加载、切换时自动存取属于该角色的独立大背包数据
+    /// </summary>
+    public class BigBagPlayer : PatchPlayer
+    {
+        public override void SavePlayerPrefix(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
+        {
+            if (playerFile?.Player != null)
             {
-                SlotData d = new SlotData();
-                if (item != null && !item.IsAir && item.type > 0)
-                {
-                    d.type = item.type;
-                    d.prefix = item.prefix;
-                    d.stack = item.stack;
-                }
-                list.Add(d);
+                ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, BigBagStorage.ContainerKey, BigBag.Slots);
             }
+        }
 
-            instance.date = list;
-            instance.NeedSave = true;
-            instance.Save();
+        public override void LoadPlayerPostfix(Terraria.IO.PlayerFileData playerFile)
+        {
+            if (playerFile?.Player != null)
+            {
+                BigBagStorage.LoadForPlayer(playerFile.Player);
+            }
+        }
+
+        public override void SetAsActivePostfix(Terraria.IO.PlayerFileData playerFile)
+        {
+            if (playerFile?.Player != null)
+            {
+                BigBagStorage.LoadForPlayer(playerFile.Player);
+            }
         }
     }
 }
