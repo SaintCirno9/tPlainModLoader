@@ -1,18 +1,18 @@
 using CommandHelp;
 using HarmonyLib;
-using BigBagMod = OptimizeAndTool.Content.BigBag.BigBag;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Content.Fusion;
 
 namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 随身/便携制作站与水源补丁
-    /// 遍历背包、便携收纳与巨大背包，常驻激活其中的制作站与水源/熔岩/蜂蜜环境
+    /// 遍历背包、便携收纳与所有框架级外部融合容器（如大背包），常驻激活其中的制作站与水源/熔岩/蜂蜜环境
     /// 作者: SaintCirno9
     /// </summary>
     [HarmonyPatch(typeof(Player))]
@@ -32,7 +32,7 @@ namespace OptimizeAndTool.Content.QoL
         {
             return new List<UIElement>
             {
-                UIBuild.get2(Enable, "随身携带（含巨大背包）的制作站家具与水/岩浆/蜂蜜桶无需放置即可直接生效", "Images/Item_361", "便携制作站与水源")
+                UIBuild.get2(Enable, "随身携带（含大背包及外部融合容器）的制作站家具与水/岩浆/蜂蜜桶无需放置即可直接生效", "Images/Item_361", "便携制作站与水源")
             };
         }
 
@@ -42,17 +42,22 @@ namespace OptimizeAndTool.Content.QoL
         {
             if (__instance == null || !Enable.val) return;
 
-            // 扫描背包与便携收纳
+            // 1. 扫描原版玩家主背包与四箱便携收纳（猪猪/保险箱/护卫熔炉/虚空袋）
             ScanContainer(__instance, __instance.inventory);
             if (__instance.bank?.item != null) ScanContainer(__instance, __instance.bank.item);
             if (__instance.bank2?.item != null) ScanContainer(__instance, __instance.bank2.item);
             if (__instance.bank3?.item != null) ScanContainer(__instance, __instance.bank3.item);
             if (__instance.bank4?.item != null) ScanContainer(__instance, __instance.bank4.item);
 
-            // 扫描巨大背包中的制作站与水源环境
-            if (BigBagMod.EnableBigBag.val && BigBagMod.EnableBigBagCraft.val && BigBagMod.Slots != null)
+            // 2. 扫描框架级所有已激活外部融合源（如大背包等）中的制作站与水源环境
+            var sources = InventoryFusionManager.GetActiveSources(__instance);
+            for (int s = 0; s < sources.Count; s++)
             {
-                ScanContainer(__instance, BigBagMod.Slots);
+                Item[] slots = sources[s].GetSlots(__instance);
+                if (slots != null && slots.Length > 0)
+                {
+                    ScanContainer(__instance, slots);
+                }
             }
         }
 
@@ -71,32 +76,43 @@ namespace OptimizeAndTool.Content.QoL
                     int tile = item.createTile;
                     if (tile < player.adjTile.Length)
                     {
-                        player.adjTile[tile] = true;
+                        player.SetAdjTile(tile);
+
+                        // 原版水源环境家具识别 (如水槽/水泉等)
+                        if (tile < TileID.Sets.CountsAsWaterForCrafting.Length && TileID.Sets.CountsAsWaterForCrafting[tile])
+                        {
+                            player.adjWaterSource = true;
+                        }
                     }
 
-                    // 高阶制作站向下兼容与关联制作环境处理
+                    // 高阶制作站向下兼任与特殊制作环境拓展
                     switch (tile)
                     {
+                        case TileID.LivingLoom: // 生命木织机 (304) -> 兼任普通织布机 (86 Loom) 与基础工作台 (18 WorkBenches)
+                            player.SetAdjTile(TileID.Loom);
+                            player.SetAdjTile(TileID.WorkBenches);
+                            break;
+
                         case TileID.AlchemyTable: // 炼金桌 -> 瓶子 + 炼金减免
                             player.adjTile[TileID.Bottles] = true;
                             player.alchemyTable = true;
                             break;
 
                         case TileID.Hellforge: // 地狱熔炉 -> 普通熔炉
-                            player.adjTile[TileID.Furnaces] = true;
+                            player.SetAdjTile(TileID.Furnaces);
                             break;
 
                         case TileID.AdamantiteForge: // 精金/钛金熔炉 -> 地狱熔炉 + 普通熔炉
-                            player.adjTile[TileID.Hellforge] = true;
-                            player.adjTile[TileID.Furnaces] = true;
+                            player.SetAdjTile(TileID.Hellforge);
+                            player.SetAdjTile(TileID.Furnaces);
                             break;
 
                         case TileID.MythrilAnvil: // 秘银/山铜砧 -> 铁砧
-                            player.adjTile[TileID.Anvils] = true;
+                            player.SetAdjTile(TileID.Anvils);
                             break;
 
                         case TileID.HeavyWorkBench: // 重型工作台 -> 基础工作台
-                            player.adjTile[TileID.WorkBenches] = true;
+                            player.SetAdjTile(TileID.WorkBenches);
                             break;
 
                         case TileID.Sinks: // 水槽 -> 水源环境

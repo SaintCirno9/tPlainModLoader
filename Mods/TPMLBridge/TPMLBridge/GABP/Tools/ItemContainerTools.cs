@@ -214,6 +214,15 @@ namespace TPMLBridge.GABP.Tools
                 }
                 bool blueprintExecuteSuccess = OptimizeAndTool.Content.BigBag.BigBag.Slots[0] == null || OptimizeAndTool.Content.BigBag.BigBag.Slots[0].IsAir;
 
+                // 9. 测试大背包随身工作站与生命木织机识别 (PortableCraftingStation)
+                Item livingLoomInBigBag = new Item();
+                livingLoomInBigBag.SetDefaults(ItemID.LivingLoom);
+                OptimizeAndTool.Content.BigBag.BigBag.Slots[0] = livingLoomInBigBag;
+                OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
+
+                player.AdjTiles();
+                bool portableLivingLoomSuccess = player.adjTile[TileID.LivingLoom] && player.adjTile[TileID.Loom] && player.adjTile[TileID.WorkBenches];
+
                 bool allPassed = hasItemWood &&
                                  countItemWood == 50 &&
                                  canUseWand &&
@@ -223,7 +232,8 @@ namespace TPMLBridge.GABP.Tools
                                  bigBagSlot0StackAfter == 49 &&
                                  foundPaintSuccess &&
                                  blueprintPlanPossible &&
-                                 blueprintExecuteSuccess;
+                                 blueprintExecuteSuccess &&
+                                 portableLivingLoomSuccess;
 
                 return new
                 {
@@ -240,7 +250,8 @@ namespace TPMLBridge.GABP.Tools
                     foundPaintSuccess = foundPaintSuccess,
                     blueprintPlanPossible = blueprintPlanPossible,
                     blueprintExecuteSuccess = blueprintExecuteSuccess,
-                    message = allPassed ? "TPML 框架背包融合系统、生命木魔杖与蓝图自动制造全部断言通过！" : "部分断言未通过"
+                    portableLivingLoomSuccess = portableLivingLoomSuccess,
+                    message = allPassed ? "TPML 框架背包融合系统、生命木魔杖、蓝图制造与随身工作站全部断言通过！" : "部分断言未通过"
                 };
             }
             finally
