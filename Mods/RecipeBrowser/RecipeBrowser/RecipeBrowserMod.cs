@@ -119,7 +119,7 @@ namespace RecipeBrowser
             RBLanguage.Initialize();
 
             // 6. 初始化缓存与算法
-            new LootCache();
+            LootCacheManager.Setup();
             RecipePath.PrepareGetCraftPaths();
 
             // 7. 启动并发计算任务调度器

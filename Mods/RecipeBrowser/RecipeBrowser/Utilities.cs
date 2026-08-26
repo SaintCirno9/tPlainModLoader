@@ -29,55 +29,83 @@ namespace RecipeBrowser
         {
             if (tileTextures.ContainsKey(tile) && tileTextures[tile] != null) return;
 
-            Main.instance.LoadTiles(tile);
-            TileObjectData tileData = TileObjectData.GetTileData(tile, 0, 0);
-            if (tileData == null)
-            {
-                tileTextures[tile] = TextureAssets.MagicPixel.Value;
-                return;
-            }
-
-            int width = tileData.Width;
-            int height = tileData.Height;
-            int coordinatePadding = tileData.CoordinatePadding;
-
-            if (width <= 0 || height <= 0 || Main.graphics?.GraphicsDevice == null)
-            {
-                tileTextures[tile] = TextureAssets.MagicPixel.Value;
-                return;
-            }
-
             try
             {
-                RenderTarget2D rt = new RenderTarget2D(Main.graphics.GraphicsDevice, width * 16, height * 16);
-                Main.instance.GraphicsDevice.SetRenderTarget(rt);
-                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                if (tile < 0 || tile >= TextureAssets.Tile.Length)
+                {
+                    tileTextures[tile] = TextureAssets.MagicPixel.Value;
+                    return;
+                }
 
-                Main.spriteBatch.Begin();
+                Main.instance.LoadTiles(tile);
+                TileObjectData tileData = TileObjectData.GetTileData(tile, 0, 0);
+                if (tileData == null)
+                {
+                    tileTextures[tile] = TextureAssets.MagicPixel.Value;
+                    return;
+                }
+
+                int width = tileData.Width;
+                int height = tileData.Height;
+                int coordinatePadding = tileData.CoordinatePadding;
+
+                if (width <= 0 || height <= 0 || Main.graphics?.GraphicsDevice == null)
+                {
+                    tileTextures[tile] = TextureAssets.MagicPixel.Value;
+                    return;
+                }
+
+                var tileAsset = TextureAssets.Tile[tile];
+                if (tileAsset == null || !tileAsset.IsLoaded || tileAsset.Value == null)
+                {
+                    tileTextures[tile] = TextureAssets.MagicPixel.Value;
+                    return;
+                }
+
+                Texture2D sourceTex = tileAsset.Value;
+                int srcW = sourceTex.Width;
+                int srcH = sourceTex.Height;
+                Color[] srcPixels = new Color[srcW * srcH];
+                sourceTex.GetData(srcPixels);
+
+                int dstW = width * 16;
+                int dstH = height * 16;
+                Color[] dstPixels = new Color[dstW * dstH];
+
                 for (int i = 0; i < width; i++)
                 {
                     for (int j = 0; j < height; j++)
                     {
-                        if (tile < TextureAssets.Tile.Length && TextureAssets.Tile[tile]?.Value != null)
+                        int srcStartX = i * 16 + i * coordinatePadding;
+                        int srcStartY = j * 16 + j * coordinatePadding;
+                        int dstStartX = i * 16;
+                        int dstStartY = j * 16;
+
+                        for (int py = 0; py < 16; py++)
                         {
-                            Main.spriteBatch.Draw(TextureAssets.Tile[tile].Value, new Vector2(i * 16, j * 16), new Rectangle(i * 16 + i * coordinatePadding, j * 16 + j * coordinatePadding, 16, 16), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                            int srcY = srcStartY + py;
+                            int dstY = dstStartY + py;
+                            if (srcY >= srcH || dstY >= dstH) continue;
+
+                            for (int px = 0; px < 16; px++)
+                            {
+                                int srcX = srcStartX + px;
+                                int dstX = dstStartX + px;
+                                if (srcX >= srcW || dstX >= dstW) continue;
+
+                                dstPixels[dstY * dstW + dstX] = srcPixels[srcY * srcW + srcX];
+                            }
                         }
                     }
                 }
-                Main.spriteBatch.End();
 
-                Main.instance.GraphicsDevice.SetRenderTarget(null);
-                Texture2D result = new Texture2D(Main.instance.GraphicsDevice, width * 16, height * 16);
-                Color[] data = new Color[width * 16 * height * 16];
-                rt.GetData(data);
-                result.SetData(data);
-                rt.Dispose();
-
+                Texture2D result = new Texture2D(Main.instance.GraphicsDevice, dstW, dstH);
+                result.SetData(dstPixels);
                 tileTextures[tile] = result;
             }
             catch
             {
-                tileTextures[tile] = TextureAssets.MagicPixel.Value;
+                tileTextures[tile] = TextureAssets.MagicPixel?.Value;
             }
         }
 

@@ -82,11 +82,37 @@ dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /
   1. [`RBProfiler.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/Common/RBProfiler.cs) 默认关闭并短路（0 性能开销）；
   2. 新建 [`RecipeBrowserSetting.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/RecipeBrowserSetting.cs) 接入 TPML `ModSetting` 框架，支持在游戏内模组设置菜单中自由开关 Profiler 与各项偏好。
 
+### 4.5 掉落物缓存体系自愈与掉落物过滤恢复
+- **问题分析**：勾选物品图鉴中的“仅显示掉落物”时，列表显示为空。原因是原版 tModLoader 的掉落物收集逻辑在 TPML 环境下未触发。
+- **优化措施**：
+  1. 编写独立模块 [`LootCacheManager.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/LootCacheManager.cs)，通过 `Main.ItemDropsDB.GetRulesForNPCID` 安全遍历原版掉落规则，解析出 723 个掉落物项并填充 `LootCache.instance.lootInfos` 与 `ItemCatalogueUI.isLoot`；
+  2. 在 `ItemCatalogueUI` 与 `BestiaryUI` 中增加空缓存自愈检测，确保打开 UI 时自动初始化。
+
+### 4.6 角标与制作站贴图渲染安全重构
+- **问题分析**：
+  1. `UIItemSlot` / `UICatalogueSlots` 访问未加载的导线角标纹理导致 `ReLogic.Content.AssetLoadException` 崩溃；
+  2. `Utilities.GenerateTileTexture` 原先在 UI 绘制期间通过 GPU `RenderTarget2D` + `spriteBatch.Begin()` 嵌套合成，打乱渲染管线导致 `Cannot call Present when a render target is active` 崩溃。
+- **优化措施**：
+  1. 导线贴图访问全面增加 `IsLoaded` 守护与 `try...catch` 防护；
+  2. 将制作站贴图生成重构为纯 CPU 内存像素拷贝（`GetData` / `SetData`），彻底脱离 GPU 渲染目标管线，消灭帧末 Present 崩溃。
+
+### 4.7 制作树节点本地化与 ItemHoverTag 全面渲染
+- **问题分析**：制作面板中的缺少材料、已拥有材料等节点此前直接输出了未翻译英文及原始 ID 列表（如 `Missing: 9/619/620/... x1`）。
+- **优化措施**：
+  1. 重构 [`CraftPath.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/CraftPath.cs) 中全部节点（`UnfulfilledNode`, `HaveItemNode`, `HaveItemsNode`, `BuyItemNode`, `LootItemNode`, `MineItemNode`, `BugNetItemNode`, `JourneyDuplicateItemNode`）的 `ToUITextString()` 渲染逻辑；
+  2. 统一调用 [`ItemHoverFixTagHandler`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/TagHandlers/ItemHoverFixTagHandler.cs) 与 [`NPCTagHandler`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/TagHandlers/NPCTagHandler.cs)，配合 [`zh-Hans.hjson`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/Resources/Localization/zh-Hans.hjson)，将所有条目转换为带悬停 Tooltip 的图文标签（如 `缺少: [凝胶图标]`, `缺少: [木材图标 (任何木材)]`）。
+
+### 4.8 界面尺寸放大（640x520）与原生几何居中（HAlign/VAlign 0.5f）
+- **优化措施**：
+  1. 默认窗口尺寸由 `475 × 350` 放大至 **`640 × 520`**；
+  2. 主面板采用 UI 原生几何居中（`HAlign = 0.5f, VAlign = 0.5f, Left = 0, Top = 0`），由 Terraria UI 布局引擎自动确保在 1080p、2K、4K 及带鱼屏等各种分辨率下绝对正中央弹出；
+  3. [`UIDragableElement.cs`](file:///c:/Users/loris/Documents/Cirno9TerrariaMods/tPlainModLoader/Mods/RecipeBrowser/RecipeBrowser/UIElements/UIDragableElement.cs) 在拖拽/缩放结束时自动保存相对位置与尺寸至本地配置。
+
 ---
 
 ## 5. GABS 自动化端到端实机回归测试
 
-本模组开发了专属的 GABP 自动化实机测试套件，在原版游戏中完成了 9 个 Phase 的全链路自动化回归断言：
+本模组开发了专属的 GABP 自动化实机测试套件，在原版游戏中完成了 10 个阶段的全链路自动化回归断言：
 
 ```powershell
 uv run python Scripts/test_tpml_recipe_browser.py
@@ -96,14 +122,15 @@ uv run python Scripts/test_tpml_recipe_browser.py
 
 | 测试阶段 | 测试用例与断言内容 | 实机验证结果 |
 | :--- | :--- | :---: |
-| **Phase 1** | GABP 协议握手、7 个 RecipeBrowser 专属自动化工具（状态探测、面板开闭、Tab 切换、配方过滤、查询槽位、合成树分解、配方收藏）就绪性检测 | **PASS (100%)** |
+| **Phase 1** | GABP 协议握手、9 个 RecipeBrowser 专属自动化工具（状态探测、面板开闭、Tab 切换、配方过滤、查询槽位、合成树分解、配方收藏、图鉴过滤与状态获取）就绪性检测 | **PASS (100%)** |
 | **Phase 2** | 秒级载入 `Test` 角色与 `Test` 测试世界，动态启用只读存档保护机制（拦截一切写盘操作） | **PASS (100%)** |
-| **Phase 3** | 全景状态探测（3610 条原版配方已载入），主面板开启与关闭状态机切换 | **PASS (100%)** |
+| **Phase 3** | 全景状态探测（3612 条原版配方已载入），主面板开启与关闭状态机切换 | **PASS (100%)** |
 | **Phase 4** | 5 大核心 Tab 页面（Recipes / Craft / Items / Bestiary / Help）无缝切换与激活 | **PASS (100%)** |
 | **Phase 5** | 配方关键词中英双语检索（如 `'Night\'s Edge'` 匹配 3 条）、木材查询槽位过滤（匹配 163 条）与重置 | **PASS (100%)** |
-| **Phase 6** | 复杂物品递归合成树深度分析：永夜刃（ItemID: 273）成功递归解析出前置 4 把名剑（火山、村正大刀、草剑、光之驱逐）与制作台依赖节点 | **PASS (100%)** |
+| **Phase 6** | 复杂物品递归合成树深度分析：永夜刃（ItemID: 273）成功解析出 5 个节点（包含前置 4 把名剑、制作台与原材料），且全部以 `[itemhover]` 图文标签渲染 | **PASS (100%)** |
 | **Phase 7** | 配方收藏/取消收藏状态流转，收藏夹悬浮面板开启，Sidecar 伴随数据链路无缝同步 | **PASS (100%)** |
-| **Phase 8** | 物品图鉴高频选物（天顶剑、永夜刃、泰拉刃、铁阔剑）并秒切制作树 Tab 端到端渲染与稳定性断言 | **PASS (100%)** |
+| **Phase 7.5** | 物品图鉴掉落物与可制作过滤专项断言：断言仅显示掉落物匹配 723 条（>0 且与提取缓存条目一致）、仅显示可制作匹配 3215 条、重置恢复全量 6167 条 | **PASS (100%)** |
+| **Phase 8** | 物品图鉴高频选物（永夜刃、泰拉刃、铁阔剑、火把）并秒切制作树 Tab 端到端渲染与高频稳定性断言 | **PASS (100%)** |
 | **Phase 8.5** | 实机读取 `tpml.log` 运行日志，断言 0 绘制异常、0 裁剪异常、0 Present 崩溃且实时记录完整 | **PASS (100%)** |
 | **Phase 9** | 安全退出测试世界，确认玩家世界存档 100% 原始未被写盘污染 | **PASS (100%)** |
 

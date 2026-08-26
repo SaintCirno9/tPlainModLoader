@@ -24,8 +24,8 @@ namespace RecipeBrowser
         public bool OnlyShowFavoritedWhileInInventory { get; set; } = false;
         public bool EnableProfiler { get; set; } = false;
 
-        public Vector2 RecipeBrowserPosition { get; set; } = new Vector2(400, 400);
-        public Vector2 RecipeBrowserSize { get; set; } = new Vector2(475, 350);
+        public Vector2 RecipeBrowserPosition { get; set; } = new Vector2(-1, -1);
+        public Vector2 RecipeBrowserSize { get; set; } = new Vector2(640, 520);
         public Vector2 FavoritedRecipePanelPosition { get; set; } = new Vector2(20, 200);
 
         private static string ConfigPath

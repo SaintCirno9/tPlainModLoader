@@ -128,24 +128,41 @@ namespace RecipeBrowser
 
         public class UnfulfilledNode : CraftPathNode
         {
+            public RecipeGroup recipeGroup;
             public HashSet<int> item;
             public int stack;
 
-            public UnfulfilledNode(HashSet<int> item, int stack, int childNumber, CraftPathNode parent, CraftPath craftPath)
+            public UnfulfilledNode(RecipeGroup recipeGroup, HashSet<int> item, int stack, int childNumber, CraftPathNode parent, CraftPath craftPath)
                 : base(childNumber, parent, craftPath)
             {
+                this.recipeGroup = recipeGroup;
                 this.item = item;
                 this.stack = stack;
             }
 
+            public UnfulfilledNode(HashSet<int> item, int stack, int childNumber, CraftPathNode parent, CraftPath craftPath)
+                : this(null, item, stack, childNumber, parent, craftPath)
+            {
+            }
+
             public override CraftPathNode Clone(CraftPath craftPath, CraftPathNode parent)
             {
-                return new UnfulfilledNode(new HashSet<int>(item), stack, ChildNumber, parent, craftPath);
+                return new UnfulfilledNode(recipeGroup, new HashSet<int>(item), stack, ChildNumber, parent, craftPath);
             }
 
             public override string ToUITextString()
             {
-                return $"Missing: {string.Join("/", item)} x{stack}";
+                if (recipeGroup != null)
+                {
+                    int iconic = recipeGroup.ValidItems?.FirstOrDefault() ?? 0;
+                    return $"{RBLanguage.GetText("CraftUI", "Missing")}: {ItemHoverFixTagHandler.GenerateTag(iconic, stack, recipeGroup.GetText?.Invoke())}";
+                }
+                if (item != null && item.Count > 0)
+                {
+                    int first = item.First();
+                    return $"{RBLanguage.GetText("CraftUI", "Missing")}: {ItemHoverFixTagHandler.GenerateTag(first, stack)}";
+                }
+                return $"{RBLanguage.GetText("CraftUI", "Missing")}: ?";
             }
         }
 
@@ -168,28 +185,42 @@ namespace RecipeBrowser
 
             public override string ToUITextString()
             {
-                return $"Have: {ItemHoverFixTagHandler.GenerateTag(itemid, stack, null, true)}";
+                return $"{RBLanguage.GetText("CraftUI", "Have")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack, null, true)}";
             }
         }
 
         public class HaveItemsNode : CraftPathNode
         {
+            public RecipeGroup recipeGroup;
             public List<Tuple<int, int>> listOfItems;
 
-            public HaveItemsNode(List<Tuple<int, int>> listOfItems, int childNumber, CraftPathNode parent, CraftPath craftPath)
+            public HaveItemsNode(RecipeGroup recipeGroup, List<Tuple<int, int>> listOfItems, int childNumber, CraftPathNode parent, CraftPath craftPath)
                 : base(childNumber, parent, craftPath)
             {
+                this.recipeGroup = recipeGroup;
                 this.listOfItems = listOfItems;
+            }
+
+            public HaveItemsNode(List<Tuple<int, int>> listOfItems, int childNumber, CraftPathNode parent, CraftPath craftPath)
+                : this(null, listOfItems, childNumber, parent, craftPath)
+            {
             }
 
             public override CraftPathNode Clone(CraftPath craftPath, CraftPathNode parent)
             {
-                return new HaveItemsNode(new List<Tuple<int, int>>(listOfItems), ChildNumber, parent, craftPath);
+                return new HaveItemsNode(recipeGroup, new List<Tuple<int, int>>(listOfItems), ChildNumber, parent, craftPath);
             }
 
             public override string ToUITextString()
             {
-                return "Have Items";
+                int totalStack = listOfItems?.Sum(x => x.Item2) ?? 0;
+                string itemsTag = listOfItems != null ? string.Concat(listOfItems.Select(x => ItemHoverFixTagHandler.GenerateTag(x.Item1, x.Item2, null, true))) : "";
+                if (recipeGroup != null)
+                {
+                    int iconic = recipeGroup.ValidItems?.FirstOrDefault() ?? 0;
+                    return $"{RBLanguage.GetText("CraftUI", "Have")}: {ItemHoverFixTagHandler.GenerateTag(iconic, totalStack, recipeGroup.GetText?.Invoke(), true)} ({itemsTag})";
+                }
+                return $"{RBLanguage.GetText("CraftUI", "Have")}: {itemsTag}";
             }
         }
 
@@ -233,7 +264,7 @@ namespace RecipeBrowser
 
             public override string ToUITextString()
             {
-                return $"{RBLanguage.GetText("CraftUI", "PurchaseFrom")}: {NPCTagHandler.GenerateTag(npcType)} {GetTotalCostAsTags(TotalPrice)}";
+                return $"{RBLanguage.GetText("CraftUI", "Purchase")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack)} {RBLanguage.GetText("CraftUI", "From")} [npc:{npcType}] {RBLanguage.GetText("CraftUI", "For")} {GetTotalCostAsTags(TotalPrice)}";
             }
         }
 
@@ -259,9 +290,9 @@ namespace RecipeBrowser
                 string npcs = "";
                 if (LootCache.instance?.lootInfos != null && LootCache.instance.lootInfos.TryGetValue(itemid, out var list))
                 {
-                    npcs = string.Join(" ", list.Select(NPCTagHandler.GenerateTag));
+                    npcs = string.Concat(list.Select(NPCTagHandler.GenerateTag));
                 }
-                return $"{RBLanguage.GetText("CraftUI", "DroppedBy")}: {npcs}";
+                return $"{RBLanguage.GetText("CraftUI", "Farm")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack)} {RBLanguage.GetText("CraftUI", "From")} {npcs}";
             }
         }
 
@@ -284,7 +315,7 @@ namespace RecipeBrowser
 
             public override string ToUITextString()
             {
-                return $"{RBLanguage.GetText("CraftUI", "Mineable")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack)}";
+                return $"{RBLanguage.GetText("CraftUI", "Mine")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack)} {RBLanguage.GetText("CraftUI", "FromTheWorld")}";
             }
         }
 
@@ -309,7 +340,7 @@ namespace RecipeBrowser
 
             public override string ToUITextString()
             {
-                return $"{RBLanguage.GetText("CraftUI", "Bugnet")}: {NPCTagHandler.GenerateTag(npcType)}";
+                return $"{RBLanguage.GetText("CraftUI", "BugNet")}: {ItemHoverFixTagHandler.GenerateTag(itemid, stack)} {RBLanguage.GetText("CraftUI", "ByCapturing")} {NPCTagHandler.GenerateTag(npcType)}";
             }
         }
 
@@ -326,14 +357,16 @@ namespace RecipeBrowser
                 if (req != null && !req.IsAir)
                 {
                     HashSet<int> viable = new HashSet<int> { req.type };
+                    RecipeGroup matchedGroup = null;
                     foreach (var group in recipe.acceptedGroups)
                     {
                         if (RecipeGroup.recipeGroups.TryGetValue(group, out var rg) && rg.ValidItems.Contains(req.type))
                         {
                             viable.UnionWith(rg.ValidItems);
+                            matchedGroup = rg;
                         }
                     }
-                    root.children[idx] = new UnfulfilledNode(viable, req.stack, idx, root, this);
+                    root.children[idx] = new UnfulfilledNode(matchedGroup, viable, req.stack, idx, root, this);
                     idx++;
                 }
             }
@@ -365,14 +398,16 @@ namespace RecipeBrowser
                 if (req != null && !req.IsAir)
                 {
                     HashSet<int> viable = new HashSet<int> { req.type };
+                    RecipeGroup matchedGroup = null;
                     foreach (var group in recipe.acceptedGroups)
                     {
                         if (RecipeGroup.recipeGroups.TryGetValue(group, out var rg) && rg.ValidItems.Contains(req.type))
                         {
                             viable.UnionWith(rg.ValidItems);
+                            matchedGroup = rg;
                         }
                     }
-                    recipeNode.children[idx] = new UnfulfilledNode(viable, req.stack * multiplier, idx, recipeNode, this);
+                    recipeNode.children[idx] = new UnfulfilledNode(matchedGroup, viable, req.stack * multiplier, idx, recipeNode, this);
                     idx++;
                 }
             }

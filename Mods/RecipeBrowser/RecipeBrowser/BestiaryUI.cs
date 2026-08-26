@@ -188,6 +188,11 @@ namespace RecipeBrowser
         {
             if (NPCID.Count - 2 + 66 != npcSlots.Count)
             {
+                if (LootCache.instance == null || LootCache.instance.lootInfos == null || LootCache.instance.lootInfos.Count == 0)
+                {
+                    LootCacheManager.Setup();
+                }
+
                 npcSlots.Clear();
                 for (int i = -65; i < NPCID.Count; i++)
                 {

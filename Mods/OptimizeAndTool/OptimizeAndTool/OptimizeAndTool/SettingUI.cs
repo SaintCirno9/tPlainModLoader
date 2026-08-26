@@ -3,6 +3,7 @@ using OptimizeAndTool.Content.Cheat.Function1;
 using OptimizeAndTool.Content.Cheat.HeldItemModify;
 using OptimizeAndTool.Content.Cheat.PlayerModify;
 using OptimizeAndTool.Content.Cheat.QoL;
+using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Pipette;
@@ -24,6 +25,11 @@ namespace OptimizeAndTool
             public bool CopyChat = true;
             public bool ServerList = true;
             public bool ItemToolTipAdditional = true;
+            public bool ShowShimmerInfo = true;
+            public bool ShowAmmoInfo = true;
+            public bool ShowMoreDataInfo = false;
+            public bool AccessoryBoxArmorSets = true;
+            public bool AccessoryBoxHighlightSets = true;
 
             // 性能与输入优化
             public bool ReduceMouseLag = true;
@@ -159,6 +165,9 @@ namespace OptimizeAndTool
             CopyChat.Enable.val = data.CopyChat;
             ServerList.Enable.val = data.ServerList;
             ItemToolTipAdditional.Enable.val = data.ItemToolTipAdditional;
+            EnhancedTooltipConfig.ShowShimmerInfo.val = data.ShowShimmerInfo;
+            EnhancedTooltipConfig.ShowAmmoInfo.val = data.ShowAmmoInfo;
+            EnhancedTooltipConfig.ShowMoreDataInfo.val = data.ShowMoreDataInfo;
             MouseLagFixEngine.Enabled.val = data.ReduceMouseLag;
             MouseLagFixEngine.UseWin32Direct.val = data.ReduceMouseLagWin32;
 
@@ -182,12 +191,14 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableQuestFishStack.val = data.QuestFishStack;
             AnglerQuestOptimization.EnableNoFishingPenalty.val = data.NoFishingPenalty;
 
+            // 连锁挖矿
             VeinMiningLogic.Enable.val = data.VeinMining;
             VeinMiningLogic.MaxTiles.val = data.VeinMiningMaxTiles;
             VeinMiningLogic.IncludeOres.val = data.VeinMiningIncludeOres;
             VeinMiningLogic.IncludeGems.val = data.VeinMiningIncludeGems;
             VeinMiningLogic.IncludeTrash.val = data.VeinMiningIncludeTrash;
 
+            // 吸管工具
             PipetteEngine.Enable.val = data.PipetteTool;
             PipetteEngine.PickWall.val = data.PipettePickWall;
             PipetteEngine.PlaySound.val = data.PipettePlaySound;
@@ -203,6 +214,8 @@ namespace OptimizeAndTool
             BigBagHeight = data.BigBagHeight;
 
             AccessoryBagConfig.EnablePassive.val = data.AccessoryBoxPassive;
+            AccessoryBagConfig.EnableArmorSetBonuses.val = data.AccessoryBoxArmorSets;
+            AccessoryBagConfig.HighlightActiveSetBonusTooltips.val = data.AccessoryBoxHighlightSets;
             AccessoryBagConfig.TotalSlots.val = data.AccessoryBoxCapacity;
 
             // 玩家属性修改 (PlayerModify)
@@ -261,6 +274,9 @@ namespace OptimizeAndTool
             CopyChat.Enable.OnValUpdate += _ => NeedSave = true;
             ServerList.Enable.OnValUpdate += _ => NeedSave = true;
             ItemToolTipAdditional.Enable.OnValUpdate += _ => NeedSave = true;
+            EnhancedTooltipConfig.ShowShimmerInfo.OnValUpdate += _ => NeedSave = true;
+            EnhancedTooltipConfig.ShowAmmoInfo.OnValUpdate += _ => NeedSave = true;
+            EnhancedTooltipConfig.ShowMoreDataInfo.OnValUpdate += _ => NeedSave = true;
             MouseLagFixEngine.Enabled.OnValUpdate += _ => NeedSave = true;
             MouseLagFixEngine.UseWin32Direct.OnValUpdate += _ => NeedSave = true;
 
@@ -299,6 +315,8 @@ namespace OptimizeAndTool
             Content.BigBag.BigBag.Capacity.OnValUpdate += _ => NeedSave = true;
 
             AccessoryBagConfig.EnablePassive.OnValUpdate += _ => NeedSave = true;
+            AccessoryBagConfig.EnableArmorSetBonuses.OnValUpdate += _ => NeedSave = true;
+            AccessoryBagConfig.HighlightActiveSetBonusTooltips.OnValUpdate += _ => NeedSave = true;
             AccessoryBagConfig.TotalSlots.OnValUpdate += _ => NeedSave = true;
 
             // PlayerModify 自动保存监听
@@ -361,6 +379,9 @@ namespace OptimizeAndTool
                 CopyChat = CopyChat.Enable.val,
                 ServerList = ServerList.Enable.val,
                 ItemToolTipAdditional = ItemToolTipAdditional.Enable.val,
+                ShowShimmerInfo = EnhancedTooltipConfig.ShowShimmerInfo.val,
+                ShowAmmoInfo = EnhancedTooltipConfig.ShowAmmoInfo.val,
+                ShowMoreDataInfo = EnhancedTooltipConfig.ShowMoreDataInfo.val,
 
                 ReduceMouseLag = MouseLagFixEngine.Enabled.val,
                 ReduceMouseLagWin32 = MouseLagFixEngine.UseWin32Direct.val,
@@ -405,6 +426,8 @@ namespace OptimizeAndTool
 
                 AccessoryBox = true,
                 AccessoryBoxPassive = AccessoryBagConfig.EnablePassive.val,
+                AccessoryBoxArmorSets = AccessoryBagConfig.EnableArmorSetBonuses.val,
+                AccessoryBoxHighlightSets = AccessoryBagConfig.HighlightActiveSetBonusTooltips.val,
                 AccessoryBoxCapacity = AccessoryBagConfig.TotalSlots.val,
 
                 // 玩家属性修改
@@ -471,6 +494,9 @@ namespace OptimizeAndTool
             CopyChat.Enable.Reset();
             ServerList.Enable.Reset();
             ItemToolTipAdditional.Enable.Reset();
+            EnhancedTooltipConfig.ShowShimmerInfo.Reset();
+            EnhancedTooltipConfig.ShowAmmoInfo.Reset();
+            EnhancedTooltipConfig.ShowMoreDataInfo.Reset();
             MouseLagFixEngine.Enabled.Reset();
             MouseLagFixEngine.UseWin32Direct.Reset();
 
@@ -509,6 +535,8 @@ namespace OptimizeAndTool
             Content.BigBag.BigBag.Capacity.Reset();
 
             AccessoryBagConfig.EnablePassive.Reset();
+            AccessoryBagConfig.EnableArmorSetBonuses.Reset();
+            AccessoryBagConfig.HighlightActiveSetBonusTooltips.Reset();
             AccessoryBagConfig.TotalSlots.Reset();
 
             Content.Cheat.PlayerModify.ValSet.damage.Reset();

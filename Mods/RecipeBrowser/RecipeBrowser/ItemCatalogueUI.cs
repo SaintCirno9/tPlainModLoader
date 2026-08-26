@@ -213,6 +213,11 @@ namespace RecipeBrowser
                     }
                 }
 
+                if (LootCache.instance == null || LootCache.instance.lootInfos == null || LootCache.instance.lootInfos.Count == 0)
+                {
+                    LootCacheManager.Setup();
+                }
+
                 if (LootCache.instance?.lootInfos != null)
                 {
                     foreach (var kvp in LootCache.instance.lootInfos)
@@ -251,7 +256,7 @@ namespace RecipeBrowser
                 duplicationButton = null;
             }
 
-            if (Main.GameMode == 3 && RecipePath.ItemFullyResearched(slot.itemType))
+            if (Main.GameMode == 3 && slot.item != null && !slot.item.IsAir)
             {
                 duplicationButton = new UIJourneyDuplicateButton(new CraftPath.JourneyDuplicateItemNode(slot.itemType, slot.item.maxStack, 0, null, null));
                 duplicationButton.Top.Set(-18f, 1f);

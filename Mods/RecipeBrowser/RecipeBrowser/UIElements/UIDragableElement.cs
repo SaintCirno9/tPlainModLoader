@@ -74,6 +74,15 @@ namespace RecipeBrowser.UIElements
         {
             if (evt.Target == this || additionalDragTargets.Contains(evt.Target))
             {
+                if (dragging || resizeing)
+                {
+                    if (RecipeBrowserClientConfig.Instance != null && this == RecipeBrowserUI.instance?.mainPanel)
+                    {
+                        RecipeBrowserClientConfig.Instance.RecipeBrowserPosition = new Vector2(Left.Pixels, Top.Pixels);
+                        RecipeBrowserClientConfig.Instance.RecipeBrowserSize = new Vector2(Width.Pixels, Height.Pixels);
+                        RecipeBrowserClientConfig.Save();
+                    }
+                }
                 dragging = false;
                 resizeing = false;
             }

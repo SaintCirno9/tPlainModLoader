@@ -84,9 +84,12 @@ namespace RecipeBrowser.UIElements
                 spriteBatch.Draw(tex, drawPos, frame, item.GetColor(Color.White), 0f, origin, drawScale * lightScale, SpriteEffects.None, 0f);
             }
 
-            if (item.type < ItemID.Sets.TrapSigned.Length && ItemID.Sets.TrapSigned[item.type] && TextureAssets.Wire?.Value != null)
+            if (item.type < ItemID.Sets.TrapSigned.Length && ItemID.Sets.TrapSigned[item.type])
             {
-                spriteBatch.Draw(TextureAssets.Wire.Value, pos + new Vector2(40f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                if (TextureAssets.Wire != null && TextureAssets.Wire.IsLoaded && TextureAssets.Wire.Value != null)
+                {
+                    spriteBatch.Draw(TextureAssets.Wire.Value, pos + new Vector2(40f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                }
             }
 
             DrawAdditionalBadges(spriteBatch, pos, scale);

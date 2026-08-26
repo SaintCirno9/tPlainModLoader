@@ -253,17 +253,17 @@ Mods: {
 			Duplicate: 复制
 			Missing: 缺少
 			Unseen: 未找到
-			Cost: 统计:
+			Cost: "统计: "
 			Have: 拥有
-			Purchase: 买
+			Purchase: 购买
 			From: 来自
-			For: 给
+			For: 花费
 			Mine: 挖掘
 			FromTheWorld: 在世界中
 			BugNet: 虫网
-			ByCapturing: 通过捕捉
+			ByCapturing: 捕捉
 			Need: 需要
-			Farm: 种植
+			Farm: 刷怪掉落
 			PurchaseFrom: 购买自
 			DroppedBy: 掉落自
 		}

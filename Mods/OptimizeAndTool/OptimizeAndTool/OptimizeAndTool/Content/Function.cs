@@ -1,5 +1,6 @@
 using CommandHelp;
 using Microsoft.Xna.Framework.Graphics;
+using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.VeinMining;
@@ -24,6 +25,7 @@ namespace OptimizeAndTool.Content
             cos.AddRange(CopyChat.GetCO());
             cos.AddRange(ServerList.ServerList.GetCO());
             cos.AddRange(ItemToolTipAdditional.GetCO());
+            cos.AddRange(EnhancedTooltipConfig.GetCO());
             cos.AddRange(DisplayProjectileInfo.GetCO());
 
             // 2. 性能与输入优化
@@ -63,6 +65,7 @@ namespace OptimizeAndTool.Content
             uis.AddRange(CopyChat.GetUI());
             uis.AddRange(ServerList.ServerList.GetUI());
             uis.AddRange(ItemToolTipAdditional.GetUI());
+            uis.AddRange(EnhancedTooltipConfig.GetUI());
 
             // 1. 性能与输入优化
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_5010", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "性能与输入优化"));

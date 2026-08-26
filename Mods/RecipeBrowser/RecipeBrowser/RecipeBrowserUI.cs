@@ -32,8 +32,7 @@ namespace RecipeBrowser
         internal UIHoverImageButton closeButton;
         internal UIHoverImageButtonMod modFilterButton;
 
-        private BlockInputElement blockInput;
-        private UIElement activeDialog;
+
 
         internal RecipeCatalogueUI recipeCatalogueUI;
         internal CraftUI craftUI;
@@ -81,6 +80,24 @@ namespace RecipeBrowser
                 if (value)
                 {
                     Recipe.UpdateRecipeList();
+                    if (mainPanel != null)
+                    {
+                        var config = RecipeBrowserClientConfig.Instance;
+                        mainPanel.HAlign = 0.5f;
+                        mainPanel.VAlign = 0.5f;
+
+                        if (config == null || config.RecipeBrowserPosition == new Vector2(-1, -1) || config.RecipeBrowserPosition == new Vector2(400, 400))
+                        {
+                            mainPanel.Left.Set(0f, 0f);
+                            mainPanel.Top.Set(0f, 0f);
+                        }
+                        else
+                        {
+                            mainPanel.Left.Set(config.RecipeBrowserPosition.X, 0f);
+                            mainPanel.Top.Set(config.RecipeBrowserPosition.Y, 0f);
+                        }
+                        mainPanel.Recalculate();
+                    }
                     Append(mainPanel);
                 }
                 else
@@ -119,23 +136,38 @@ namespace RecipeBrowser
         public override void OnInitialize()
         {
             mainPanel = new UIDragableElement(dragable: true, resizeableX: true, resizeableY: true);
-            mainPanel.Left.Set(400f, 0f);
-            mainPanel.Top.Set(400f, 0f);
-            mainPanel.Width.Set(475f, 0f);
-            mainPanel.MinWidth.Set(415f, 0f);
-            mainPanel.MaxWidth.Set(884f, 0f);
-            mainPanel.Height.Set(350f, 0f);
-            mainPanel.MinHeight.Set(263f, 0f);
-            mainPanel.MaxHeight.Set(1000f, 0f);
+            mainPanel.HAlign = 0.5f;
+            mainPanel.VAlign = 0.5f;
+            mainPanel.MinWidth.Set(450f, 0f);
+            mainPanel.MaxWidth.Set(1400f, 0f);
+            mainPanel.MinHeight.Set(320f, 0f);
+            mainPanel.MaxHeight.Set(1200f, 0f);
 
             var config = RecipeBrowserClientConfig.Instance;
-            if (config != null)
+            float width = 640f;
+            float height = 520f;
+
+            if (config != null && config.RecipeBrowserSize.X >= 450f && config.RecipeBrowserSize.Y >= 300f)
             {
-                mainPanel.Left.Set(config.RecipeBrowserPosition.X, 0f);
-                mainPanel.Top.Set(config.RecipeBrowserPosition.Y, 0f);
-                mainPanel.Width.Set(config.RecipeBrowserSize.X, 0f);
-                mainPanel.Height.Set(config.RecipeBrowserSize.Y, 0f);
+                width = config.RecipeBrowserSize.X;
+                height = config.RecipeBrowserSize.Y;
             }
+
+            mainPanel.Width.Set(width, 0f);
+            mainPanel.Height.Set(height, 0f);
+
+            float offsetX = 0f;
+            float offsetY = 0f;
+
+            if (config != null && config.RecipeBrowserPosition != new Vector2(-1, -1) &&
+                config.RecipeBrowserPosition != new Vector2(400, 400))
+            {
+                offsetX = config.RecipeBrowserPosition.X;
+                offsetY = config.RecipeBrowserPosition.Y;
+            }
+
+            mainPanel.Left.Set(offsetX, 0f);
+            mainPanel.Top.Set(offsetY, 0f);
 
             new SharedUI();
             recipeCatalogueUI = new RecipeCatalogueUI();

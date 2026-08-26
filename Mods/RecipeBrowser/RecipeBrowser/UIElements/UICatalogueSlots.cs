@@ -54,25 +54,41 @@ namespace RecipeBrowser.UIElements
         internal override void DrawAdditionalBadges(SpriteBatch spriteBatch, Vector2 vector2, float scale)
         {
             base.DrawAdditionalBadges(spriteBatch, vector2, scale);
-            if (ItemCatalogueUI.instance != null)
+            try
             {
-                if (item.type < ItemCatalogueUI.instance.isLoot.Length && ItemCatalogueUI.instance.isLoot[item.type] && TextureAssets.Wire2?.Value != null)
+                if (ItemCatalogueUI.instance != null && ItemCatalogueUI.instance.isLoot != null)
                 {
-                    spriteBatch.Draw(TextureAssets.Wire2.Value, vector2 + new Vector2(40f, 10f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                    if (item.type > 0 && item.type < ItemCatalogueUI.instance.isLoot.Length && ItemCatalogueUI.instance.isLoot[item.type])
+                    {
+                        if (TextureAssets.Wire2 != null && TextureAssets.Wire2.IsLoaded && TextureAssets.Wire2.Value != null)
+                        {
+                            spriteBatch.Draw(TextureAssets.Wire2.Value, vector2 + new Vector2(40f, 10f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                        }
+                    }
+                    if (ItemCatalogueUI.instance.craftResults != null && item.type > 0 && item.type < ItemCatalogueUI.instance.craftResults.Length && ItemCatalogueUI.instance.craftResults[item.type])
+                    {
+                        if (TextureAssets.Wire3 != null && TextureAssets.Wire3.IsLoaded && TextureAssets.Wire3.Value != null)
+                        {
+                            spriteBatch.Draw(TextureAssets.Wire3.Value, vector2 + new Vector2(10f, 10f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                        }
+                    }
                 }
-                if (item.type < ItemCatalogueUI.instance.craftResults.Length && ItemCatalogueUI.instance.craftResults[item.type] && TextureAssets.Wire3?.Value != null)
+                if (RecipeBrowserUI.instance != null && RecipeBrowserUI.instance.foundItems != null && item.type > 0 && item.type < RecipeBrowserUI.instance.foundItems.Length && !RecipeBrowserUI.instance.foundItems[item.type])
                 {
-                    spriteBatch.Draw(TextureAssets.Wire3.Value, vector2 + new Vector2(10f, 10f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                    if (TextureAssets.Wire4 != null && TextureAssets.Wire4.IsLoaded && TextureAssets.Wire4.Value != null)
+                    {
+                        spriteBatch.Draw(TextureAssets.Wire4.Value, vector2 + new Vector2(10f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                    }
+                }
+                if (Main.GameMode == 3 && RecipePath.ItemFullyResearched(item.type))
+                {
+                    if (TextureAssets.Wire != null && TextureAssets.Wire.IsLoaded && TextureAssets.Wire.Value != null)
+                    {
+                        spriteBatch.Draw(TextureAssets.Wire.Value, vector2 + new Vector2(40f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
+                    }
                 }
             }
-            if (RecipeBrowserUI.instance != null && RecipeBrowserUI.instance.foundItems != null && item.type < RecipeBrowserUI.instance.foundItems.Length && !RecipeBrowserUI.instance.foundItems[item.type] && TextureAssets.Wire4?.Value != null)
-            {
-                spriteBatch.Draw(TextureAssets.Wire4.Value, vector2 + new Vector2(10f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
-            }
-            if (Main.GameMode == 3 && RecipePath.ItemFullyResearched(item.type) && TextureAssets.Wire?.Value != null)
-            {
-                spriteBatch.Draw(TextureAssets.Wire.Value, vector2 + new Vector2(40f, 40f) * scale, new Rectangle(4, 58, 8, 8), Color.White, 0f, new Vector2(4f), 1f, SpriteEffects.None, 0f);
-            }
+            catch { }
         }
     }
 
@@ -226,7 +242,7 @@ namespace RecipeBrowser.UIElements
             {
                 foreach (var lootInfo in LootCache.instance.lootInfos)
                 {
-                    if (lootInfo.Value.Contains(npc.type))
+                    if (lootInfo.Value.Contains(npc.type) || (npc.netID != 0 && lootInfo.Value.Contains(npc.netID)))
                     {
                         drops.Add(lootInfo.Key);
                     }

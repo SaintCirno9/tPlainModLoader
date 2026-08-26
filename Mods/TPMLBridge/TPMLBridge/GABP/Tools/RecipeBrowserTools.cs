@@ -143,6 +143,34 @@ namespace TPMLBridge.GABP.Tools
                             itemId = new { type = "integer", description = "物品 ID" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/recipe_browser_get_item_catalogue_state",
+                    Description = "诊断 RecipeBrowser 物品图鉴 (Item Catalogue) 状态（总物品数、过滤后显示数、掉落物过滤勾选状态、总掉落物数、LootCache 键数等）。",
+                    Tags = new List<string> { "read-only", "ui", "diagnostic" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/recipe_browser_set_item_catalogue_filter",
+                    Description = "设置 RecipeBrowser 物品图鉴 (Item Catalogue) 的过滤条件（仅显示掉落物、仅显示可制作、名称过滤、描述过滤）。",
+                    Tags = new List<string> { "write", "ui" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            lootOnly = new { type = "boolean", description = "是否仅显示掉落物" },
+                            craftedOnly = new { type = "boolean", description = "是否仅显示可制作物品" },
+                            itemName = new { type = "string", description = "物品名称搜索关键词" },
+                            itemTooltip = new { type = "string", description = "物品 Tooltip 搜索关键词" }
+                        }
+                    }
                 }
             };
         }
@@ -205,7 +233,7 @@ namespace TPMLBridge.GABP.Tools
                         {
                             ui.ShowRecipeBrowser = openToken.Value<bool>();
                         }
-                        else
+                        else if (!args.TryGetValue("openFavoritePanel", out _))
                         {
                             ui.ShowRecipeBrowser = !ui.ShowRecipeBrowser;
                         }
@@ -435,6 +463,103 @@ namespace TPMLBridge.GABP.Tools
                             success = true,
                             itemId = itemId,
                             selectedIndexesCount = craft.selectedIndexes.Count
+                        };
+                    });
+
+                case "tpml/recipe_browser_get_item_catalogue_state":
+                    return await MainThreadQueue.EnqueueAsync<object>(() =>
+                    {
+                        var itemCat = ItemCatalogueUI.instance;
+                        if (itemCat == null) return new { success = false, message = "ItemCatalogueUI 未初始化" };
+
+                        if (RecipeBrowserUI.instance != null)
+                        {
+                            RecipeBrowserUI.instance.ShowRecipeBrowser = true;
+                            if (RecipeBrowserUI.instance.CurrentPanel != 2 && RecipeBrowserUI.instance.tabController != null)
+                            {
+                                RecipeBrowserUI.instance.tabController.SetPanel(2);
+                            }
+                        }
+
+                        if (itemCat.updateNeeded || (itemCat.itemSlots?.Count ?? 0) == 0)
+                        {
+                            itemCat.Update();
+                        }
+
+                        int totalLootCount = itemCat.isLoot?.Count(x => x) ?? 0;
+                        int totalCraftedCount = itemCat.craftResults?.Count(x => x) ?? 0;
+                        int lootKeysCount = LootCache.instance?.lootInfos?.Count ?? 0;
+
+                        return new
+                        {
+                            success = true,
+                            totalItems = itemCat.itemSlots?.Count ?? 0,
+                            filteredItemsCount = itemCat.itemGrid?._items?.Count ?? 0,
+                            lootOnlySelected = itemCat.LootRadioButton?.Selected ?? false,
+                            craftedOnlySelected = itemCat.CraftedRadioButton?.Selected ?? false,
+                            totalLootItemsCount = totalLootCount,
+                            totalCraftedItemsCount = totalCraftedCount,
+                            lootInfosTotalKeys = lootKeysCount,
+                            itemNameFilter = itemCat.itemNameFilter?.currentString ?? "",
+                            itemDescriptionFilter = itemCat.itemDescriptionFilter?.currentString ?? ""
+                        };
+                    });
+
+                case "tpml/recipe_browser_set_item_catalogue_filter":
+                    return await MainThreadQueue.EnqueueAsync<object>(() =>
+                    {
+                        var itemCat = ItemCatalogueUI.instance;
+                        if (itemCat == null) return new { success = false, message = "ItemCatalogueUI 未初始化" };
+
+                        if (args.TryGetValue("lootOnly", out var lootToken))
+                        {
+                            if (itemCat.LootRadioButton != null)
+                            {
+                                itemCat.LootRadioButton.Selected = lootToken.Value<bool>();
+                            }
+                        }
+
+                        if (args.TryGetValue("craftedOnly", out var craftToken))
+                        {
+                            if (itemCat.CraftedRadioButton != null)
+                            {
+                                itemCat.CraftedRadioButton.Selected = craftToken.Value<bool>();
+                            }
+                        }
+
+                        if (args.TryGetValue("itemName", out var nameToken))
+                        {
+                            itemCat.itemNameFilter?.SetText(nameToken.Value<string>() ?? "");
+                        }
+
+                        if (args.TryGetValue("itemTooltip", out var tipToken))
+                        {
+                            itemCat.itemDescriptionFilter?.SetText(tipToken.Value<string>() ?? "");
+                        }
+
+                        if (RecipeBrowserUI.instance != null)
+                        {
+                            RecipeBrowserUI.instance.ShowRecipeBrowser = true;
+                            if (RecipeBrowserUI.instance.CurrentPanel != 2 && RecipeBrowserUI.instance.tabController != null)
+                            {
+                                RecipeBrowserUI.instance.tabController.SetPanel(2);
+                            }
+                        }
+
+                        itemCat.updateNeeded = true;
+                        itemCat.Update();
+
+                        int totalLootCount = itemCat.isLoot?.Count(x => x) ?? 0;
+
+                        return new
+                        {
+                            success = true,
+                            totalItems = itemCat.itemSlots?.Count ?? 0,
+                            filteredItemsCount = itemCat.itemGrid?._items?.Count ?? 0,
+                            lootOnlySelected = itemCat.LootRadioButton?.Selected ?? false,
+                            craftedOnlySelected = itemCat.CraftedRadioButton?.Selected ?? false,
+                            totalLootItemsCount = totalLootCount,
+                            lootInfosTotalKeys = LootCache.instance?.lootInfos?.Count ?? 0
                         };
                     });
 
