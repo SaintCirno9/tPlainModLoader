@@ -8,6 +8,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using tContentPatch.Prepatcher;
 using tContentPatch.Utils;
+using TPML.Core.Logging;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
@@ -24,15 +25,15 @@ namespace tPlainModLoader.Prepatcher
     /// </summary>
     public static class PrepatcherEngine
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("Prepatcher");
+
         public static void Process(AssemblyDefinition terrariaAssembly, string gameDir, string hostDir)
         {
             Stopwatch sw = Stopwatch.StartNew();
-            Console.WriteLine("[Prepatcher] 正在启动 Prepatcher 预修补引擎...");
-            Log.Add("[Prepatcher] 启动 Prepatcher 引擎");
+            Logger.Info("正在启动 Prepatcher 预修补引擎...");
 
             List<string> modDlls = ModScanner.ScanActiveModDlls(gameDir, hostDir);
-            Console.WriteLine($"[Prepatcher] 发现 {modDlls.Count} 个活跃模组程序集");
-            Log.Add($"[Prepatcher] 发现 {modDlls.Count} 个模组程序集");
+            Logger.Info($"发现 {modDlls.Count} 个活跃模组程序集");
 
             var resolver = new CustomModAssemblyResolver(gameDir, hostDir, modDlls);
             var readerParams = new ReaderParameters
@@ -74,9 +75,7 @@ namespace tPlainModLoader.Prepatcher
                         }
                         catch (Exception ex)
                         {
-                            string err = $"[Prepatcher] 处理字段访问器 {accessor.DeclaringType.FullName}.{accessor.Name} 失败: {ex.Message}";
-                            Console.WriteLine(err);
-                            Log.Add(err);
+                            Logger.Error($"处理字段访问器 {accessor.DeclaringType.FullName}.{accessor.Name} 失败: {ex.Message}", ex);
                         }
                     }
 
@@ -94,9 +93,7 @@ namespace tPlainModLoader.Prepatcher
                 }
                 catch (Exception ex)
                 {
-                    string err = $"[Prepatcher] 读取模组程序集 {Path.GetFileName(dllPath)} 失败: {ex.Message}";
-                    Console.WriteLine(err);
-                    Log.Add(err);
+                    Logger.Error($"读取模组程序集 {Path.GetFileName(dllPath)} 失败: {ex.Message}", ex);
                 }
             }
 
@@ -115,13 +112,15 @@ namespace tPlainModLoader.Prepatcher
 
                 try
                 {
-                    byte[] asmBytes;
-                    if (!PrepatcherStorage.TryGetPatchedBytes(modItem.DllPath, out asmBytes))
+                    Assembly modReflectionAsm;
+                    if (PrepatcherStorage.TryGetPatchedBytes(modItem.DllPath, out byte[] patchedBytes))
                     {
-                        asmBytes = File.ReadAllBytes(modItem.DllPath);
+                        modReflectionAsm = Assembly.Load(patchedBytes);
                     }
-
-                    Assembly modReflectionAsm = Assembly.Load(asmBytes);
+                    else
+                    {
+                        modReflectionAsm = Assembly.LoadFrom(modItem.DllPath);
+                    }
 
                     // 执行已声明的 IPrepatcher 实现类
                     foreach (TypeDefinition typeDef in prepatcherTypes)
@@ -134,15 +133,12 @@ namespace tPlainModLoader.Prepatcher
                                 IPrepatcher instance = (IPrepatcher)Activator.CreateInstance(type);
                                 instance.EarlyPatch(terrariaAssembly);
                                 executedEarlyPatchCount++;
-                                Console.WriteLine($"[Prepatcher] 成功执行早期补丁: {type.FullName}.EarlyPatch");
-                                Log.Add($"[Prepatcher] 执行早期补丁: {type.FullName}.EarlyPatch");
+                                Logger.Info($"成功执行早期补丁: {type.FullName}.EarlyPatch");
                             }
                         }
                         catch (Exception ex)
                         {
-                            string err = $"[Prepatcher] 执行 IPrepatcher {typeDef.FullName} 异常: {ex.Message}";
-                            Console.WriteLine(err);
-                            Log.Add(err);
+                            Logger.Error($"执行 IPrepatcher {typeDef.FullName} 异常: {ex.Message}", ex);
                         }
                     }
 
@@ -160,31 +156,25 @@ namespace tPlainModLoader.Prepatcher
                                 {
                                     method.Invoke(null, new object[] { terrariaAssembly });
                                     executedEarlyPatchCount++;
-                                    Console.WriteLine($"[Prepatcher] 成功执行 FreePatch: {type.FullName}.{method.Name}");
-                                    Log.Add($"[Prepatcher] 成功执行 FreePatch: {type.FullName}.{method.Name}");
+                                    Logger.Info($"成功执行 FreePatch: {type.FullName}.{method.Name}");
                                 }
                                 else if (pars.Length == 1 && pars[0].ParameterType == typeof(ModuleDefinition))
                                 {
                                     method.Invoke(null, new object[] { terrariaAssembly.MainModule });
                                     executedEarlyPatchCount++;
-                                    Console.WriteLine($"[Prepatcher] 成功执行 FreePatch: {type.FullName}.{method.Name}");
-                                    Log.Add($"[Prepatcher] 成功执行 FreePatch: {type.FullName}.{method.Name}");
+                                    Logger.Info($"成功执行 FreePatch: {type.FullName}.{method.Name}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            string err = $"[Prepatcher] 执行 FreePatch {methodDef.DeclaringType.FullName}.{methodDef.Name} 异常: {ex.Message}";
-                            Console.WriteLine(err);
-                            Log.Add(err);
+                            Logger.Error($"执行 FreePatch {methodDef.DeclaringType.FullName}.{methodDef.Name} 异常: {ex.Message}", ex);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    string err = $"[Prepatcher] 处理早期补丁程序集异常 {Path.GetFileName(modItem.DllPath)}: {ex.Message}";
-                    Console.WriteLine(err);
-                    Log.Add(err);
+                    Logger.Error($"处理早期补丁程序集异常 {Path.GetFileName(modItem.DllPath)}: {ex.Message}", ex);
                 }
             }
 
@@ -192,9 +182,7 @@ namespace tPlainModLoader.Prepatcher
             InjectGameWindowDarkener(terrariaAssembly);
 
             sw.Stop();
-            string finishMsg = $"[Prepatcher] 预修补完成 (注入字段: {injectedFieldCount}, 重写访问器: {patchedMethodCount}, 早期补丁: {executedEarlyPatchCount}, 耗时: {sw.ElapsedMilliseconds}ms)";
-            Console.WriteLine(finishMsg);
-            Log.Add(finishMsg);
+            Logger.Info($"预修补完成 (注入字段: {injectedFieldCount}, 重写访问器: {patchedMethodCount}, 早期补丁: {executedEarlyPatchCount}, 耗时: {sw.ElapsedMilliseconds}ms)");
         }
 
         private static void InjectGameWindowDarkener(AssemblyDefinition terrariaAssembly)
@@ -223,14 +211,11 @@ namespace tPlainModLoader.Prepatcher
                     il.InsertBefore(ret, call);
                 }
 
-                Console.WriteLine("[Prepatcher] 成功向 Terraria.Main..ctor 织入 GameWindowDarkener 早期黑化拦截");
-                Log.Add("[Prepatcher] 成功向 Terraria.Main..ctor 织入 GameWindowDarkener 早期黑化拦截");
+                Logger.Info("成功向 Terraria.Main..ctor 织入 GameWindowDarkener 早期黑化拦截");
             }
             catch (Exception ex)
             {
-                string err = $"[Prepatcher] 织入 GameWindowDarkener 失败: {ex.Message}";
-                Console.WriteLine(err);
-                Log.Add(err);
+                Logger.Error($"织入 GameWindowDarkener 失败: {ex.Message}", ex);
             }
         }
 

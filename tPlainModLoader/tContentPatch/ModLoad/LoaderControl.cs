@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tContentPatch.ModLoad
 {
     internal class LoaderControl
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("LoaderControl");
+
         public static Action<IModLoader> OnModLoad_Start = null;
         public static Action OnModLoad_Ok = null;
         public static Action<IModLoader> OnModLoad_Cancel = null;
@@ -44,12 +47,12 @@ namespace tContentPatch.ModLoad
         {
             if (CanLoad == false)
             {
-                Log.Add($"{nameof(LoaderControl)}:当前不可加载模组");
+                Logger.Warn("当前不可加载模组");
                 ContentPatch.PrintTry("当前不可加载模组");
                 return;
             }
 
-            Log.Add($"{nameof(LoaderControl)}:加载模组");
+            Logger.Info("开始加载模组...");
 
             ConsoleUtils.Clear();
             ContentPatch.PrintTry("加载模组");
@@ -66,13 +69,13 @@ namespace tContentPatch.ModLoad
 
                     _ = modLoader.Load();
 
-                    Log.Add($"{nameof(LoaderControl)}:加载模组成功");
+                    Logger.Info("加载模组成功");
                     ContentPatch.PrintTry("加载完成");
                     OnModLoad_Ok?.Invoke();//成功
                 }
                 catch (TaskCanceledException)
                 {
-                    Log.Add($"{nameof(LoaderControl)}:加载模组取消");
+                    Logger.Warn("加载模组取消");
                     ContentPatch.PrintTry("加载取消");
 
                     OnModLoad_Cancel?.Invoke(modLoader);//取消
@@ -83,7 +86,7 @@ namespace tContentPatch.ModLoad
                 }
                 catch (Exception ex)
                 {
-                    Log.Add($"{nameof(LoaderControl)}:加载模组失败:{ex}");
+                    Logger.Error($"加载模组失败: {ex.Message}", ex);
                     ContentPatch.PrintTry("加载失败");
 
                     OnModLoad_Exception?.Invoke(ex);//失败
@@ -95,7 +98,7 @@ namespace tContentPatch.ModLoad
 
         internal static void CancelLoad()
         {
-            Log.Add($"{nameof(LoaderControl)}:取消加载模组");
+            Logger.Warn("取消加载模组");
             ConsoleUtils.Clear();
             ContentPatch.PrintTry("取消加载");
 
@@ -106,21 +109,21 @@ namespace tContentPatch.ModLoad
         {
             try
             {
-                Log.Add($"{nameof(LoaderControl)}:卸载模组");
+                Logger.Info("正在卸载模组...");
                 ContentPatch.PrintTry("卸载");
 
                 loadedMod = null;
                 modLoader.Unload();
                 Input.KeybindLoader.Unload();
 
-                Log.Add($"{nameof(LoaderControl)}:卸载模组完成");
+                Logger.Info("卸载模组完成");
                 ContentPatch.PrintTry("卸载完成");
 
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(LoaderControl)}:卸载失败:{ex}");
+                Logger.Error($"卸载失败: {ex.Message}", ex);
                 ContentPatch.PrintTry("卸载失败");
 
                 OnModUnload_Exception?.Invoke(ex);

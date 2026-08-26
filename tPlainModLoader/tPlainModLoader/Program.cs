@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using tContentPatch;
 using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tPlainModLoader
 {
@@ -12,6 +13,7 @@ namespace tPlainModLoader
         public static string LauncherFilePath => launchConfig?.config?.LauncherFilePath;
         private static ConfigHelp<LauncherConfig> launchConfig = null;
         private static string ProgramPath = null;
+        private static readonly ILogger Logger = LogManager.GetLogger("Loader");
 
         public static void Main(string[] args)
         {
@@ -25,22 +27,19 @@ namespace tPlainModLoader
                     return;
                 }
 
-                Log.SetPath(Path.Combine(ProgramPath, InfoList.Files.Log));
-                DateTime time = DateTime.Now;
-                Log.Add($"{nameof(Program)}:{time.Year}.{time.Month}.{time.Day}");
-                Log.Add($"{nameof(Program)}:初始化");
-                Console.WriteLine($"初始化");
+                LogManager.Initialize(ProgramPath, "tpml.log", LogLevel.Info);
+
+                Logger.Info("=== tPlainModLoader 启动引导初始化 ===");
 
                 Initialize_Config();
                 Initialize_AssemblyResolveEvent();
                 LaunchGame.Initialize(launchConfig?.config);
 
-                Log.Add($"{nameof(Program)}:初始化完成");
+                Logger.Info("引导与 Cecil Prepatcher 初始化完成");
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(Program)}:初始化失败:{ex}");
-                Log.SaveTry();
+                Logger.Fatal("初始化失败", ex);
 
                 Console.WriteLine($"初始化失败:");
                 Console.WriteLine($"{ex}");
@@ -50,37 +49,28 @@ namespace tPlainModLoader
 
             //
 
-            Log.Add($"{nameof(Program)}:启动目标程序");
-            Console.WriteLine("启动目标程序");
+            Logger.Info("正在启动目标游戏进程...");
 
             if (LaunchTargetProgram())
             {
-                Log.Add($"{nameof(Program)}:启动目标程序成功");
-                Console.WriteLine("已启动");
+                Logger.Info("目标游戏进程已成功载入并启动");
             }
             else
             {
-                Log.Add($"{nameof(Program)}:启动目标程序失败");
-                Log.SaveTry();
-
-                Console.WriteLine("启动失败");
+                Logger.Error("启动目标程序失败");
                 return;
             }
 
             //
 
-            Log.Add($"{nameof(Program)}:初始化内容补丁");
-            Console.WriteLine("初始化内容补丁");
+            Logger.Info("正在初始化内容补丁...");
             if (Initialize_tContentPatch())
             {
-                Log.Add($"{nameof(Program)}:初始化内容补丁成功");
-                Console.WriteLine("初始化内容补丁成功");
+                Logger.Info("内容补丁初始化成功");
             }
             else
             {
-                Log.Add($"{nameof(Program)}:初始化内容补丁失败");
-                Log.SaveTry();
-                Console.WriteLine("初始化内容补丁失败");
+                Logger.Error("初始化内容补丁失败");
                 return;
             }
 
@@ -103,18 +93,15 @@ namespace tPlainModLoader
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(Program)}:启动目标程序失败:{ex}");
-                Console.WriteLine(ex);
+                Logger.Error($"启动目标程序失败: {ex.Message}", ex);
                 return false;
             }
         }
 
         private static void OnProgramExit()
         {
-            Log.Add($"{nameof(Program)}:目标程序退出");
-            Log.SaveTry();
-            Console.WriteLine("目标程序退出");
-
+            Logger.Info("目标游戏程序已退出，正在清理并结束宿主进程");
+            LogManager.Shutdown();
             Environment.Exit(0);
         }
 
@@ -131,8 +118,7 @@ namespace tPlainModLoader
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(Program)}:初始化内容补丁失败:{ex}");
-                Console.WriteLine($"初始化失败:{ex.Message}");
+                Logger.Error($"初始化内容补丁失败: {ex.Message}", ex);
                 return false;
             }
             return true;
@@ -143,7 +129,7 @@ namespace tPlainModLoader
             launchConfig = new ConfigHelp<LauncherConfig>(Path.Combine(ProgramPath, "launchConfig.json"));
             launchConfig.UpdateConfig(() => new LauncherConfig());
 
-            Log.Add($"{nameof(Program)}:启动文件位置:{LauncherFilePath}");
+            Logger.Info($"启动文件位置: {LauncherFilePath}");
         }
 
         private static void Initialize_AssemblyResolveEvent()

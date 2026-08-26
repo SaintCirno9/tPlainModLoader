@@ -451,6 +451,30 @@ namespace TPML.Content.IO
                 }
             }
 
+            // 保存所有已注册 ModPlayer 的自定义数据
+            try
+            {
+                if (data.CustomProperties == null) data.CustomProperties = new Dictionary<string, string>();
+                foreach (var mpTemplate in ModContent.GetContent<ModPlayer>())
+                {
+                    var mp = player.GetModPlayer(mpTemplate.GetType());
+                    if (mp != null)
+                    {
+                        var tag = new TagCompound();
+                        mp.SaveData(tag);
+                        if (tag.Count > 0)
+                        {
+                            string key = $"ModPlayer_{mp.GetType().FullName}";
+                            data.CustomProperties[key] = JsonConvert.SerializeObject(tag);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 收集 ModPlayer 数据异常: {ex.Message}");
+            }
+
             // 保存伴随文件
             try
             {
@@ -630,7 +654,32 @@ namespace TPML.Content.IO
                             if (player.bank4 != null && index >= 0 && index < player.bank4.item.Length) player.bank4.item[index] = item;
                             break;
                     }
-                }
+                        }
+                    }
+
+                    // 自动回填所有已注册 ModPlayer 的自定义数据
+                    if (data?.CustomProperties != null)
+                    {
+                        foreach (var mpTemplate in ModContent.GetContent<ModPlayer>())
+                        {
+                            var mp = player.GetModPlayer(mpTemplate.GetType());
+                            if (mp != null)
+                            {
+                                string key = $"ModPlayer_{mp.GetType().FullName}";
+                                if (data.CustomProperties.TryGetValue(key, out string jsonStr) && !string.IsNullOrEmpty(jsonStr))
+                                {
+                                    try
+                                    {
+                                        var tag = JsonConvert.DeserializeObject<TagCompound>(jsonStr);
+                                        if (tag != null)
+                                        {
+                                            mp.LoadData(tag);
+                                        }
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using TPML.Content.Engine;
-using TPML.Content.Logging;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -25,7 +25,7 @@ namespace TPML.Content
         public virtual string DisplayName { get; internal set; }
         public virtual Version Version { get; internal set; } = new Version(1, 0, 0, 0);
         public virtual ModSide Side { get; internal set; } = ModSide.Both;
-        public ModLogger Logger { get; internal set; }
+        public ILogger Logger { get; internal set; }
         public Assembly Code { get; internal set; }
         public Assets.ModAssetRepository Assets { get; internal set; }
 
@@ -36,7 +36,7 @@ namespace TPML.Content
         {
             Name = GetType().Name;
             DisplayName = Name;
-            Logger = new ModLogger(Name);
+            Logger = LogManager.GetLogger(Name);
             Code = GetType().Assembly;
             Assets = new Assets.ModAssetRepository(this);
         }

@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using tContentPatch;
 using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tPlainModLoaderInjector
 {
@@ -13,6 +14,7 @@ namespace tPlainModLoaderInjector
         private static ConfigHelp<LauncherConfig> launchConfig = null;
         public static string ProgramPath = null;
         public static string InjectDllFilePath = null;
+        private static readonly ILogger Logger = LogManager.GetLogger("Injector");
 
         static void Main(string[] args)
         {
@@ -29,21 +31,17 @@ namespace tPlainModLoaderInjector
                     return;
                 }
 
-                Log.SetPath(Path.Combine(ProgramPath, InfoList.Files.Log));
-                DateTime time = DateTime.Now;
-                Log.Add($"{nameof(Program)}:{time.Year}.{time.Month}.{time.Day}");
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:初始化");
-                Console.WriteLine($"初始化");
+                LogManager.Initialize(ProgramPath, "tpml.log", LogLevel.Info);
+                Logger.Info("=== tPlainModLoaderInjector 注入器初始化 ===");
 
                 Initialize_Config();
                 Initialize_Inject();
 
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:初始化完成");
+                Logger.Info("注入器初始化完成");
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:初始化失败:{ex}");
-                Log.SaveTry();
+                Logger.Fatal("初始化失败", ex);
 
                 Console.WriteLine($"初始化失败:");
                 Console.WriteLine($"{ex}");
@@ -56,14 +54,12 @@ namespace tPlainModLoaderInjector
 
             try
             {
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:选择目标程序pid");
-                Console.WriteLine("选择目标程序pid");
+                Logger.Info("正在选择目标程序 pid...");
                 pid = ProcessUtils.SwitchPID(InjectorProgramName);
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:选择失败:{ex}");
-                Log.SaveTry();
+                Logger.Fatal("选择目标程序失败", ex);
 
                 Console.WriteLine($"选择失败:");
                 Console.WriteLine($"{ex}");
@@ -75,8 +71,7 @@ namespace tPlainModLoaderInjector
 
             try
             {
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:尝试注入:{pid}");
-                Console.WriteLine($"尝试注入:{pid}");
+                Logger.Info($"尝试注入目标进程: {pid}");
 
                 int state = InjectorGame.Injector(pid, InjectDllFilePath);
                 string stateString = null;
@@ -96,13 +91,11 @@ namespace tPlainModLoaderInjector
                     commandPort = state;
                 }
 
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:{stateString}");
-                Console.WriteLine(stateString);
+                Logger.Info(stateString);
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(tPlainModLoaderInjector)}:注入失败:{ex}");
-                Log.SaveTry();
+                Logger.Fatal("注入失败", ex);
 
                 Console.WriteLine($"注入失败:");
                 Console.WriteLine($"{ex}");
@@ -135,8 +128,7 @@ namespace tPlainModLoaderInjector
             }
             s = $"注入程序名列表:{s}";
 
-            Log.Add($"{nameof(tPlainModLoaderInjector)}:{s}");
-            Console.WriteLine(s);
+            Logger.Info(s);
         }
 
         private static void Initialize_Inject()

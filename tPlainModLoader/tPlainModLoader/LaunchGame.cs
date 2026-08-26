@@ -7,12 +7,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using tContentPatch;
-using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tPlainModLoader
 {
     internal class LaunchGame
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("LaunchGame");
         internal static Assembly GameAssembly { get; private set; } = null;
 
         internal static void Initialize(LauncherConfig launchConfig)
@@ -59,14 +60,27 @@ namespace tPlainModLoader
 
         private static void Initialize_AssemblyResolveEvent()
         {
-            // 从工作目录找匹配的dll
             AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
             {
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), new AssemblyName(e.Name).Name + ".dll");
+                string requestedName = new AssemblyName(e.Name).Name;
 
-                if (File.Exists(filePath) == false) return null;
+                // 1. 优先从已加载程序集中按名称查找
+                var loaded = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => string.Equals(a.GetName().Name, requestedName, StringComparison.OrdinalIgnoreCase));
+                if (loaded != null) return loaded;
 
-                return Assembly.LoadFile(filePath);
+                // 2. 从当前工作目录查找
+                string filePath = Path.Combine(Directory.GetCurrentDirectory(), requestedName + ".dll");
+                if (File.Exists(filePath)) return Assembly.LoadFile(filePath);
+
+                // 3. 从 tPlainModLoader/Mods/ 各子目录查找
+                string modsDir = Path.Combine(Directory.GetCurrentDirectory(), "tPlainModLoader", "Mods");
+                if (Directory.Exists(modsDir))
+                {
+                    string candidate = Path.Combine(modsDir, requestedName, requestedName + ".dll");
+                    if (File.Exists(candidate)) return Assembly.LoadFile(candidate);
+                }
+
+                return null;
             };
         }
 
@@ -137,8 +151,7 @@ namespace tPlainModLoader
         private static Assembly LoadAndPublicizeAssembly(string filePath)
         {
             Stopwatch sw = Stopwatch.StartNew();
-            Console.WriteLine($"[Publicizer] 正在对目标程序集执行公有化预处理: {Path.GetFileName(filePath)}...");
-            Log.Add($"[Publicizer] 开始公有化元数据: {filePath}");
+            Logger.Info($"[Publicizer] 正在对目标程序集执行公有化预处理: {Path.GetFileName(filePath)}...");
 
             var resolver = new CustomAssemblyResolver(filePath);
             var readerParams = new ReaderParameters
@@ -163,9 +176,7 @@ namespace tPlainModLoader
             }
 
             sw.Stop();
-            string msg = $"[Publicizer] 公有化完成 (类型: {typeCount}, 方法: {methodCount}, 字段: {fieldCount}, 耗时: {sw.ElapsedMilliseconds}ms)";
-            Console.WriteLine(msg);
-            Log.Add(msg);
+            Logger.Info($"[Publicizer] 公有化完成 (类型: {typeCount}, 方法: {methodCount}, 字段: {fieldCount}, 耗时: {sw.ElapsedMilliseconds}ms)");
 
             // 执行 Prepatcher 预修补引擎（自由字段注入与早期 Cecil 预补丁）
             try
@@ -176,9 +187,7 @@ namespace tPlainModLoader
             }
             catch (Exception ex)
             {
-                string errMsg = $"[Prepatcher] 执行预修补异常: {ex}";
-                Console.WriteLine(errMsg);
-                Log.Add(errMsg);
+                Logger.Error($"[Prepatcher] 执行预修补异常: {ex.Message}", ex);
             }
 
             byte[] assemblyBytes;
@@ -260,7 +269,7 @@ namespace tPlainModLoader
                 }
                 catch (Exception ex)
                 {
-                    Log.Add($"{nameof(LaunchGame)}:目标程序运行异常:{ex}");
+                    Logger.Fatal("目标程序运行异常", ex);
                     Console.WriteLine("目标程序运行异常:");
                     Console.WriteLine($"{ex}");
                     runExit?.Invoke();

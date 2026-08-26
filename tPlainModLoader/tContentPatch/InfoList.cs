@@ -17,8 +17,6 @@ namespace tContentPatch
         /// <summary/>
         public class Files
         {
-            /// <summary/>
-            public const string Log = "tpmlLog.txt";
             /// <summary>统一模组启用配置文件 (对齐 tML 规范)</summary>
             public const string EnabledJson = "enabled.json";
             /// <summary/>

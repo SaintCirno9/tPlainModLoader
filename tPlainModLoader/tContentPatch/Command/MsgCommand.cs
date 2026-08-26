@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -6,12 +6,15 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using tContentPatch.Utils;
 using tContentPatch.Utils.TCPUtils;
+using TPML.Core.Logging;
 
 namespace tContentPatch.Command
 {
     /// <summary/>
     public class MsgCommand
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("MsgCommand");
+
         /// <summary>
         /// 窗口标题是这个的才能连接
         /// </summary>
@@ -24,6 +27,8 @@ namespace tContentPatch.Command
 
         internal static void Initialize()
         {
+            if (tcps != null) return;
+
             tcps = new TCPS(5);
             tcps.OnCanJoin += (ip, port) =>
             {
@@ -40,20 +45,15 @@ namespace tContentPatch.Command
 
             _ = Task.Run(() =>
             {
-                string s = "启动指令接收";
-
                 try
                 {
-                    Log.Add(s);
-                    Console.WriteLine(s);
+                    Logger.Info("启动指令接收服务");
                     tcps.Start(0);
                 }
                 catch { }
 
                 tcps = null;
-                s = "指令消息接收端关闭,现在无法收到指令";
-                Log.Add(s);
-                Console.WriteLine(s);
+                Logger.Info("指令消息接收端关闭,现在无法收到指令");
             });
         }
 

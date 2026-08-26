@@ -45,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\CommandHelp\CommandHelp.csproj" />
     <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />
   </ItemGroup>

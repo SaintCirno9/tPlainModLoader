@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using tContentPatch.ModLoad;
 using Terraria.GameInput;
+using TPML.Core.Logging;
 
 namespace tContentPatch.Input
 {
@@ -12,6 +13,7 @@ namespace tContentPatch.Input
     /// </summary>
     public static class KeybindLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("KeybindLoader");
         private static readonly Dictionary<string, ModKeybind> _keybinds = new Dictionary<string, ModKeybind>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
@@ -47,7 +49,7 @@ namespace tContentPatch.Input
             var keybind = new ModKeybind(modName.Trim(), name.Trim(), defaultBinding ?? "", displayName);
             _keybinds[keybind.FullName] = keybind;
 
-            tContentPatch.Utils.Log.Add($"[KeybindLoader] 已注册模组快捷键: [{keybind.FullName}] (默认按键: {keybind.DefaultBinding}, 显示名称: {keybind.DisplayName})");
+            Logger.Info($"已注册模组快捷键: [{keybind.FullName}] (默认按键: {keybind.DefaultBinding}, 显示名称: {keybind.DisplayName})");
 
             // 如果此时游戏已处于运行阶段，立即执行增量同步
             SyncKeybindWithPlayerInput(keybind);
@@ -143,12 +145,12 @@ namespace tContentPatch.Input
 
                 if (restoredKeys.Count > 0)
                 {
-                    tContentPatch.Utils.Log.Add($"[KeybindLoader] 成功从磁盘恢复 {restoredKeys.Count} 个模组快捷键配置 ({string.Join(", ", restoredKeys)})");
+                    Logger.Info($"成功从磁盘恢复 {restoredKeys.Count} 个模组快捷键配置 ({string.Join(", ", restoredKeys)})");
                 }
             }
             catch (Exception ex)
             {
-                tContentPatch.Utils.Log.Add($"[KeybindLoader] 从磁盘加载历史按键配置异常 (已忽略): {ex.Message}");
+                Logger.Warn($"从磁盘加载历史按键配置异常 (已忽略): {ex.Message}");
             }
         }
 

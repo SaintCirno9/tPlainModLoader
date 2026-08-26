@@ -1,0 +1,482 @@
+Mods: {
+	RecipeBrowser: {
+		RecipeBrowserUI: {
+			Recipes: Recettes
+			Craft: Artisanat
+			Items: Objets
+			Bestiary: Bestiaire
+			Help: Aide
+			Close: Fermer
+			All: Voir tout
+			ModFilter: Filtre par modules
+			// NoFavoritedRecipes: No favorited recipes
+			// RecipeAddedBy: Recipe added by {0}
+		}
+
+		# These are image paths, do not localize unless you make your own version of these png files in your language.
+		ImagePaths: {
+			// FilterMod: Images/filterMod
+			// FilterModColorable: Images/filterModColorable
+		}
+
+		Common: {
+			FilterByName: Filtrer par nom
+			FilterByTooltip: Filtrer par description
+			InstallItemChecklistToUse: Installer Item Checklist pour utiliser
+		}
+
+		Keybind: {
+			ToggleRecipeBrowser: Ouvrir le navigateur de recettes
+			QueryHoveredItem: Interroger l'élément survolé
+			ToggleFavoritedRecipesWindow: Ouvrir les recettes favorites
+		}
+
+		RecipeCatalogueUI: {
+			Tile: St.
+			AllRecipes: Toutes les recettes
+			NearbyChests: Coffres à proximité
+			ClickToRefresh: Cliquer pour rafraîchir
+			ItemChecklistOnly: Item Checklist uniquement
+			OnlyNewItemsMadeFromSeenItems: Uniquement les nouveaux objets fabriqués à partir d'objets vus
+			EmptyQuerySlotHint: Placer un objet ici
+			ShowInheritedRecipes: Afficher les recettes héritées
+			ShowUniqueRecipes: Afficher des recettes uniques
+			// ShowRecipesThatNeedThisCraftingStation: Viewing recipes that need this tile
+			// ShowRecipesThatNeedThisCraftingStationNoInherited: Viewing recipes that need this tile (no inherited recipes)
+			// ShowRecipesThatNeedThisCraftingStationHint: (Left click to view recipes that need this tile)
+			// ShowRecipesForCraftingStationItself: Viewing recipes that create this tile
+			// ShowRecipesForCraftingStationItselfHint: (Right click to view recipes that create this tile)
+			// NoTileEntry: " (err no entry)"
+			// HistoryBackwardTooltip: Go back in query history
+			// HistoryForwardTooltip: Go forward in query history
+			// HistoryEmpty: There is no query history yet
+			// HistoryReachedStart: Query history start reached
+			// HistoryReachedEnd: Query history end reached
+		}
+
+		RecipeCatalogueFilters: {
+			// RecipeOrder: Recipe Order
+			// CreativeSort: Creative Sort
+			// ItemID: Item ID
+			// Value: Value
+			// Alphabetical: Alphabetical
+			// Rarity: Rarity
+			// Materials: Materials
+			// Craftable: Craftable
+			// ExtendedCraftable: Extended Craftable (RMB on Recipe to view, Auto-disables to prevent lag)
+			// DisabledRecipes: Show recipes disabled by Mods
+			// Unresearched: Unresearched
+			// ModFilterByResultItemTooltip: Showing recipes that craft an item from '{0}'
+			// ModFilterByRecipeSourceTooltip: Showing recipes added by '{0}'
+			// ModFilterByIngredientTooltip: Showing recipes using ingredients from '{0}'
+			// All: All
+			// RMB: (RMB)
+			// RecipesRemainToBeCalculated: recipes remain to be calculated
+
+			Weapons: {
+				// Name: Weapons
+				// Melee: Melee
+				// Yoyo: Yoyo
+				// Magic: Magic
+				// Ranged: Ranged
+				// UseAmmoType: Use Ammo Type
+				// Throwing: Throwing
+				// Summon: Summon
+				// Whip: Whip
+				// Sentry: Sentry
+				// CycleUsedAmmoTypes: Cycle Used Ammo Types
+			}
+
+			// Damage: Damage
+
+			Tools: {
+				// Name: Tools
+				// Pickaxes: Pickaxes
+				// PickPower: Pick Power
+				// Axes: Axes
+				// AxePower: Axe Power
+				// Hammers: Hammers
+				// HammerPower: Hammer Power
+			}
+
+			Armor: {
+				// Name: Armor and Vanity
+				// Head: Head
+				// Body: Body
+				// Legs: Legs
+				// Defense: Defense
+				// Vanity: Vanity
+				// ArmorOnly: Armor
+				// TotalDefense: Total Defense
+			}
+
+			Tiles: {
+				// Name: Tiles
+				// CraftingStations: Crafting Stations
+				// Furniture: "{$CreativePowers.TabFurniture}"
+				// Blocks: "{$CreativePowers.TabBlocks}"
+				// Containers: Containers
+				// Wiring: Wiring
+				// Statues: Statues
+				// Doors: Doors
+				// Chairs: Chairs
+				// Tables: Tables
+				// LightSources: Light Sources
+				// Torches: Torches
+				// PlaceTile: Place Tile
+				// Solid: Solid
+				// NonSolid: Background
+			}
+
+			// Walls: Walls
+
+			Accessories: {
+				// Name: Accessories
+
+				Wings: {
+					// Name: Wings
+					// FlightTime: Flight Time
+					// HorizontalSpeed: Horizontal Speed
+					// AccelerationMultiplier: Acceleration Multiplier
+				}
+			}
+
+			Ammo: {
+				// Name: Ammo
+				// AmmoType: Ammo Type
+				// CycleAmmoTypes: Cycle Ammo Types
+			}
+
+			Potions: {
+				// Name: Potions and food
+				// HealthPotions: Health Potions
+				// HealLife: Heal Life
+				// ManaPotions: Mana Potions
+				// HealMana: Heal Mana
+				// BuffPotions: Buff Potions
+				// Food: Food
+			}
+
+			// Expert: Expert
+			// Master: Master
+
+			Pets: {
+				// Name: Pets
+				// CommonPets: Pets
+				// LightPets: Light Pets
+			}
+
+			// Mounts: Mounts
+			// Carts: Carts
+			// Hooks: Hooks
+			// GrappleRange: Grapple Range
+
+			Dyes: {
+				// Name: Dyes
+				// CommonDyes: Dyes
+				// HairDyes: Hair Dyes
+			}
+
+			BossSummons: {
+				// Name: Boss Summons
+				// ProgressionOrder: Progression Order
+			}
+
+			Consumables: {
+				// Name: Consumables
+				// CapturedNPC: Captured NPC
+			}
+
+			GrabBags: {
+				// Name: Grab Bags
+				// FishingCrate: Fishing Crate (Pre-Hardmode)
+				// FishingCrateHardmode: Fishing Crate (Hardmode)
+				// BossBag: Boss Bag (Pre-Hardmode)
+				// BossBagHardmode: Boss Bag (Hardmode)
+				// ExpectedValue: Expected Value
+			}
+
+			Fishing: {
+				// Name: Fishing
+				// Poles: Poles
+				// PolePower: Pole Power
+				// Bait: Bait
+				// BaitPower: Bait Power
+				// Bobbers: Bobbers
+				// QuestFish: Quest Fish
+			}
+
+			// Extractinator: Extractinator
+			// Other: Other
+		}
+
+		FavoritedUI: {
+			Close: Fermer ({0})
+			ToggleHint: Appuyer sur {0} pour afficher
+			ToggleUnboundHint: Définir le raccourci clavier pour afficher
+			AlwaysShow: Toujours afficher
+			ShowWhenInventory: Afficher avec l'inventaire
+			// ShowOtherPlayersFavorited: Show all other players' favorited recipes
+			// ShowTeammatesFavorited: Show teammates' favorited recipes only (if on team)
+			// HideOtherPlayersFavorited: Hide other players' favorited recipes
+			// NoRecipeFoundFor: "No recipe found for "
+		}
+
+		CraftUI: {
+			EmptyQuerySlotHint: Placer un objet ici
+			Calc: Calc
+			CalcTooltip:
+				'''
+				Active le calcul préemptif de l'artisanat étendu dans les recettes
+				Peut provoquer du lag
+				'''
+			Loot: Butin
+			LootTooltip: Afficher les recettes des objets lâchés par les créatures découvertes dans le bestiaire
+			Bugnet: Filet
+			BugnetTooltip: Afficher les recettes à partir d'objets pouvant être capturés avec un filet
+			Mineable: Minable
+			MineableTooltip: Afficher les recettes à partir d'objets extraits avec une pioche
+			Shop: Boutique
+			ShopTooltip: Afficher les recettes des objets vendus par les PNJ débloqués dans le bestiaire
+			MissingStations: Stations manquantes
+			MissingStationsTooltip:
+				'''
+				Afficher les recettes des objets fabriqués dans des stations d'artisanat jamais rencontrées
+				(se réinitialise en rentrant dans le monde)
+				'''
+			Inventory: Inventaire
+			Banks: Banques
+			BanksTooltip:
+				'''
+				Prendre en compte les objets des Tirelire,
+				coffre-fort et Forge des défenseurs (à venir)
+				'''
+			Chests: Coffres
+			ChestsTooltip: Prendre en compte les objets des coffres à proximité (à venir)
+			MagicStorage: Stockage magique
+			MagicStorageTooltip:
+				'''
+				Prendre en compte les objets et les stations d'artisanat 
+				des stockages magique à proximité (à venir)
+				'''
+			BottomInstructions: Clic droit sur une recette pour accéder à cet onglet
+			NoPathsFound: L'arbre de fabrication de cet objet est manquant ou indisponible
+			// Craft: Craft
+			// Duplicate: Duplicate
+			// Missing: "Missing "
+			// Unseen: "Unseen "
+			// Cost: "Cost: "
+			// Have: Have
+			// Purchase: Purchase
+			// From: from
+			// For: for
+			// Mine: Mine
+			// FromTheWorld: from the world
+			// BugNet: Bug Net
+			// ByCapturing: by capturing
+			// Need: Need
+			// Farm: Farm
+			// PurchaseFrom: Purchase from
+			// DroppedBy: Dropped by
+		}
+
+		ItemCatalogueUI: {
+			Crafted: Fabriqué
+			OnlyShowCraftedItems: Afficher uniquement les objets fabriqués
+			Loot: Butin
+			ShowOnlyLootItems: Afficher uniquement les objets lâchés par les créatures
+			Unobtained: Non obtenu
+			OnlyUnobtainedItems: Afficher uniquement les objets non obtenus
+			BottomInstructions: 2x LMB: Voir les Recettes  ---  2x RMB: Voir les Ennemis à Butin
+			// ExpectedValue: Expected Value: {0}
+		}
+
+		UIArmorSetCatalogue: {
+			// TotalSetDefense: Total Set Defense: {0}
+			/* ArmorSets:
+				'''
+				Armor Sets
+				(Warning: May take many seconds to calculate)
+				''' */
+			// ShowItems: Show Items
+			// ShowItemsTooltip: Display the items that make up the set
+			// UseDye: Use Dye
+			// UseDyeTooltip: Draw armor sets with currently equipped dye
+			// Animate: Animate
+			// AnimateTooltip: Mimic player animation
+			// Accessories: Accessories
+			// AccessoriesTooltip: Visualize with current accessories
+		}
+
+		BestiaryUI: {
+			Encountered: Rencontrés
+			Unencountered: Non-rencontrés
+			ShowOnlyNPCKilledAlready:
+				'''
+				Afficher uniquement les PNJ déjà rencontrés
+				(Clic droit pour afficher les non-rencontrés)
+				'''
+			ShowOnlyNPCNotKilled:
+				'''
+				Afficher uniquement les PNJ non-rencontrés
+				(Clic droit pour afficher les rencontrés)
+				'''
+			HasLoot: Butin
+			ShowOnlyNPCWithLoot: Afficher uniquement les PNJ avec du butin
+			NewLoot: Nouveau Butin
+			ShowOnlyNPCWithNeverBeforeSeenLoot: Afficher uniquement les PNJ qui lâchent des objets qui n'ont jamais été obtenus
+			EmptyQuerySlotHint: Placer un objet ici
+			// NPCDrops: "{0} drops:"
+		}
+
+		HelpUI: {
+			JumbledText:
+				'''
+				[c/{0}:Le texte dépasse-t-il les limites ?]
+				    Si le texte ci-dessous ne s'affiche pas correctement, vous devrez désactiver Terraria Overhaul pour le corriger.
+				'''
+			Recipes:
+				'''
+				[c/{0}:Recettes]
+				    Placez un objet dans l'emplacement supérieur gauche pour voir sa recette et/ou les objets fabriqués à partir de celui-ci. En utilisant les filtres juste à droite, vous pouvez trier ce que vous voulez voir dans ce menu. Le filtre Coffres à Proximité affiche uniquement les recettes des éléments à votre portée. Le filtre [c/{1}:"{$RecipeCatalogueUI.ItemChecklistOnly}"] (disponible uniquement si le mod correspondant est installé) affiche uniquement les éléments non reçus précédemment qui peuvent être créés à partir de ceux déjà reçus.
+				L'option "St." à gauche ouvre un petit menu des stations d'artisanat', classées selon les besoins les plus fréquents ; cliquer sur une station affichera uniquement les recettes pour lesquelles elle est nécessaire. L'option [image:RecipeBrowser/Images/Help/uniqueTile] vous permet de basculer entre des recettes uniques et héritées : le Hellforge, par exemple, hérite de la plupart des recettes du four ordinaire (fusion de minerais pré-Hardmode), mais a également ses propres recettes.
+				Les matériaux et la station requis pour créer la recette que vous sélectionnez seront affichés dans le champ tout en bas du menu. Si le nom d'une station est affiché en orange, cette station n'est pas à proximité ; s'il est vert, au contraire, elle l'est. Le champ de droite répertorie les créatures qui lâchent l'objet sélectionné, le cas échéant. Double-cliquez sur une créature dans ce champ pour accéder à sa page dans le menu des créatures.
+				Double-clique gauche sur une recette ou un élément du menu, il se déplacera vers la cellule principale en haut et les recettes avec sa participation seront affichées dans le champ - cela peut être utilisé pour naviguer facilement et rapidement dans les arbres de recettes. Cliquer sur une recette tout en maintenant Alt l'ajoutera à vos favoris - pour plus de détails, consultez la section « Recettes préférées ».
+				'''
+			Craft:
+				'''
+				[c/{0}:Artisanat]
+				    Dans ce menu, vous pourrez voir toutes les branches disponibles pour créer des objets à partir des objets de votre inventaire. Un clic droit sur un élément du menu de recettes vous amènera à sa page dans ce menu. Si l'option Calculer est activée, les recettes dont la création nécessite plusieurs étapes auront un arrière-plan comme celui-ci: [image/s0.5:RecipeBrowser/Images/CanCraftExtendedBackground]. Par exemple, si vous possédez de l'or et du minerai de fer, le menu vous montrera toutes les étapes de la recette que vous pouvez suivre pour créer une montre en or.
+				En haut du menu se trouvent des filtres que vous pouvez activer si, par exemple, vous souhaitez voir des recettes impliquant des stations que vous n'avez pas actuellement. L'icône [c/{1}: ✓] à côté d'une station signifie que vous en êtes maintenant à proximité, [c/{3}:?] signifie que vous en étiez près auparavant et [c/{2}:X] signifie que vous n'avez pas été près d'elle une seule fois au cours de la session de jeu en cours. Vous pouvez cliquer sur le bouton [image/s0.7:RecipeBrowser/Images/Help/CraftIcon] pour fabriquer rapidement un objet si toutes les conditions sont remplies.
+				'''
+			Items:
+				'''
+				[c/{0}:Objets]
+				    Dans ce menu, vous pouvez explorer tous les éléments du jeu. Utilisez les filtres et les tris pour trouver ce que vous voulez. Double-cliquez sur un élément pour l'interroger dans le panneau Recette. Double-cliquez avec le bouton droit sur un élément pour interroger l'élément dans le Bestiaire. L'option "Non obtenu" affiche uniquement les éléments non encore collectés avec [c/{1}:Item Checklist].
+				'''
+			Bestiary:
+				'''
+				[c/{0}:Bestiaire]
+				    Dans ce menu, vous pouvez explorer tous les PNJ du jeu. Utilisez les filtres et les tris pour trouver ce que vous voulez. Cliquer sur un PNJ affiche le butin de ce PNJ. Placer un objet dans l'emplacement de requête filtre la grille pour afficher uniquement les PNJ qui lâchent cet objet. Double-cliquez sur un objet pour l'interroger dans le panneau Recette. Cliquez avec le bouton droit sur un objet pour remplir l'emplacement de requête, idéal pour voir qui d'autre lâchent le même object. L'option "Nouveau butin" ([c/{1} :{$RecipeCatalogueUI.ItemChecklistOnly}]) affiche uniquement les PNJ dont les objets n'ont pas encore été collectés, ce qui est idéal pour savoir quels PNJ cachent encore un butin précieux.
+				'''
+			Borders:
+				'''
+				[c/{0}:Bordures]
+				    Parfois, les éléments s'affichent avec des bordures différentes, voici ce qu'elles signifient:
+				[image/s0.5:RecipeBrowser/Images/FavoritedOverlay] Cette recette est marquée comme favorite, lisez la section Favoris ci-dessous.
+				[image/s0.5:RecipeBrowser/Images/SelectedOverlay] Cet objet/recette/PNJ est sélectionné. Les informations affichées se rapportent à cet élément.
+				[image/s0.5:RecipeBrowser/Images/CanCraftBackground] Cette recette peut actuellement être fabriquée. Cliquez dessus pour ouvrir directement le menu Artisanat.
+				[image/s0.5:RecipeBrowser/Images/CanCraftExtendedBackground] Cette recette peut actuellement être élaborée en plusieurs étapes. Faites un clic droit dessus pour ouvrir l'outil Artisanat et afficher les options de fabrication.
+				[image/s0.5:RecipeBrowser/Images/Help/Inventory_Back8] [c/{1}:Intégration de Item Checklist:] Ces éléments utilisent le nouvel élément le plus récent que vous avez collecté.
+				'''
+			Favorite:
+				'''
+				[c/{0}:Favoris]
+				    Dans le menu Recette, vous pouvez mettre vos recettes en favoris en cliquant dessus tout en maintenant Alt. Si vous avez des recettes favorites, le panneau des favoris apparaîtra à l'écran. Ce panneau vous aidera à suivre les progrès vers la collecte de tous les ingrédients. En multijoueur, les recettes préférées des autres joueurs apparaîtront également dans le panneau des favoris. Vous pouvez suivre les progrès des autres joueurs et coopérer efficacement. Le nombre d'articles affichés correspond au joueur qui a mis la recette en favori.
+				[image:RecipeBrowser/Images/Help/mpFavorited]
+				'''
+			QueryHoveredItem:
+				'''
+				[c/{0}:Interroger l'élément survolé]
+				    En attribuant un raccourci clavier dans le menu des raccourcis clavier, vous pouvez utiliser cette fonctionnalité pour amener rapidement l'élément dans l'un des outils. Vous pouvez l'utiliser à tout moment lorsque vous survolez n'importe quel élément n'importe où dans le jeu. En fonction du dernier panneau sur lequel vous vous trouviez, le comportement change. L'outil Recettes remplira l'emplacement de requête, l'outil Artisanat affichera les options pour fabriquer l'objet, l'outil Objets fera défiler et sélectionnera l'objet, et l'outil Bestiaire remplira l'emplacement de requête de butin. Utiliser le raccourci clavier une deuxième fois sur le même élément fermera l'outil.
+				'''
+			# The sortsExplanation_en-US.png image used in this section can be localized if desired by editing sortsExplanation.psd and saving out a new png. Swap out sortsExplanation_en-US in the final line with the localized image path if this is done.
+			CategoriesSubCategoriesSortsAndFilters:
+				'''
+				[c/{0}:Catégories, sous-catégories, tris et filtres]
+				    Les menu Recette et Objet proposent tous deux de nombreuses façons de filtrer et de trier les objets et les recettes. Vous pouvez rechercher des élements à partir de leur description ou leur nom et utiliser le bouton [image:RecipeBrowser/{$ImagePaths.FilterMod}] pour filtrer par mod. Vous pouvez également cliquer sur des catégories telles que [image:RecipeBrowser/Images/Help/Item_2430] et [image:RecipeBrowser/Images/Help/Item_54] pour filtrer par catégorie. Certaines catégories ont des sous-catégories. Vous remarquerez également sur la 2ème ligne divers tris tels que [image:RecipeBrowser/Images/sortValue] et [image:RecipeBrowser/Images/sortAZ].
+				Il existe également des filtres comme [image:RecipeBrowser/Images/Help/Item_531]. De nombreux tris et filtres ne sont visibles que dans des catégories spécifiques. Certains filtres, comme le filtre de munitions, proposeront de nombreuses options. Pour ces filtres, utilisez les clics gauche et droit pour avancer et reculer, et le clic du milieu pour effacer le filtre.
+				[image:RecipeBrowser/Images/Help/sortsExplanation_fr-FR]
+				'''
+			ItemChecklistIntegration:
+				'''
+				[c/{0}:Intégration du mod Item Checklist]
+				    En utilisant le mod Item Checklist en même temps, vous pouvez affiner votre navigation vers de nouveaux objets que vous n'avez jamais obtenus auparavant parmi les objets que vous avez collectés jusqu'à présent. Cela vous aide à vous concentrer sur les objets au stade actuel de votre jeu. Item Checklist affecte également les outils Objets et Bestiaire. [l/github.com/user-attachments/assets/714db9bf-75dd-41b1-b603-10d266c53908:Vidéo de Item Checklist].
+				'''
+		}
+
+		Keybinds: {
+			ToggleRecipeBrowser.DisplayName: Ouvrir le navigateur de recettes
+			QueryHoveredItem.DisplayName: Interroger l'élément survolé
+			ToggleFavoritedRecipesWindow.DisplayName: Ouvrir les recettes favorites
+		}
+
+		Configs: {
+			RecipeBrowserClientConfig: {
+				DisplayName: Configuration principale
+
+				ShowRecipeModSource: {
+					Label: Afficher la source de la recette
+					Tooltip: Montrer quel mod ajoute quelle recette dans le catalogue de recettes. Désactiver pour l'immersion.
+				}
+
+				ShowItemModSource: {
+					Label: Afficher la source de l'objet
+					Tooltip: Montrer quel mod ajoute quel objet dans le catalogue de recettes. Désactiver pour l'immersion.
+				}
+
+				ShowNPCModSource: {
+					Label: Afficher la source du PNJ
+					Tooltip: Montrer quel mod ajoute quel PNJ dans le bestiaire. Désactiver pour l'immersion.
+				}
+
+				OpenKeybindingsMenuButton: {
+					// Label: Open Keybindings Menu
+					// Tooltip: Open the keybindings menu to change the hotkeys for this mod
+				}
+
+				Headers.AutomaticSettings: Paramètres automatiques
+
+				RecipeBrowserSize: {
+					Label: Taille du navigateur de recettes
+					Tooltip: Taille de l'interface utilisateur du navigateur de recettes. Cette valeur sera enregistrée automatiquement afin que vous n'ayez pas à ajuster la taille à chaque fois
+				}
+
+				RecipeBrowserPosition: {
+					Label: Position du navigateur de recettes
+					Tooltip: Position de l'interface utilisateur du navigateur de recettes. Cette valeur sera enregistrée automatiquement afin que vous n'ayez pas à ajuster la taille à chaque fois
+				}
+
+				FavoritedRecipePanelPosition: {
+					Label: Position des recettes favorites
+					Tooltip: Position de la fenêtre des recettes favorites. Cette valeur sera enregistrée automatiquement afin que vous n'ayez pas à ajuster la taille à chaque fois
+				}
+
+				OnlyShowFavoritedWhileInInventory: {
+					Label: Afficher uniquement les favoris lorsque l'inventaire est ouvert
+					Tooltip: Afficher et masquer automatiquement le panneau des recettes favorites. Cette valeur sera enregistrée automatiquement afin que vous n'ayez pas à ajuster la taille à chaque fois
+				}
+
+				ShowOtherPlayersFavoritedRecipes: {
+					// Label: Show Other Players' Favorited Recipes
+					/* Tooltip:
+						'''
+						Whether or not to show the favorited recipes of other players for collaboration.
+						This will automatically save, no need to adjust
+						''' */
+				}
+			}
+
+			ShowOtherPlayersFavoritedRecipesOption: {
+				// Tooltip: ""
+
+				ShowAll: {
+					// Label: Show All
+					// Tooltip: ""
+				}
+
+				ShowTeamOnly: {
+					// Label: Show Team Only
+					// Tooltip: ""
+				}
+
+				Hide: {
+					// Label: Hide
+					// Tooltip: ""
+				}
+			}
+		}
+
+		// ItemLostInQuerySlotWarning: "You left an item in the recipe browser with a full inventory and have lost the item: "
+	}
+}

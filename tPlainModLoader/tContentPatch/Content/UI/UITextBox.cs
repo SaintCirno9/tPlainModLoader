@@ -158,33 +158,7 @@ namespace tContentPatch.Content.UI
 
                 PlayerInput.WritingText = true;
                 Main.CurrentInputTextTakerOverride = this;
-            }
-        }
-
-        protected override void DrawSelf(SpriteBatch spriteBatch)
-        {
-            base.DrawSelf(spriteBatch);
-
-            CalculatedStyle dims = GetDimensions();
-            DynamicSpriteFont font = FontAssets.MouseText.Value;
-            float scale = TextScale;
-
-            float paddingX = 8f;
-            float paddingY = (dims.Height - font.LineSpacing * scale) / 2f;
-            if (paddingY < 2f) paddingY = 2f;
-
-            float visibleWidth = dims.Width - paddingX * 2f;
-
-            if (Focus)
-            {
-                PlayerInput.WritingText = true;
                 Main.instance?.HandleIME();
-
-                Vector2 imeAnchor = new Vector2(dims.X, dims.Y + dims.Height + 4);
-                Main.instance?.SetIMEPanelAnchor(imeAnchor, 0f);
-
-                string composition = Platform.Get<IImeService>()?.CompositionString;
-                bool isComposing = !string.IsNullOrEmpty(composition);
 
                 string newText = Main.GetInputText(text);
 
@@ -214,6 +188,30 @@ namespace tContentPatch.Content.UI
                 }
 
                 SetText(newText);
+            }
+        }
+
+        protected override void DrawSelf(SpriteBatch spriteBatch)
+        {
+            base.DrawSelf(spriteBatch);
+
+            CalculatedStyle dims = GetDimensions();
+            DynamicSpriteFont font = FontAssets.MouseText.Value;
+            float scale = TextScale;
+
+            float paddingX = 8f;
+            float paddingY = (dims.Height - font.LineSpacing * scale) / 2f;
+            if (paddingY < 2f) paddingY = 2f;
+
+            float visibleWidth = dims.Width - paddingX * 2f;
+
+            if (Focus)
+            {
+                Vector2 imeAnchor = new Vector2(dims.X, dims.Y + dims.Height + 4);
+                Main.instance?.SetIMEPanelAnchor(imeAnchor, 0f);
+
+                string composition = Platform.Get<IImeService>()?.CompositionString;
+                bool isComposing = !string.IsNullOrEmpty(composition);
 
                 string displayContent = text ?? string.Empty;
                 float textWidth = font.MeasureString(displayContent).X * scale;

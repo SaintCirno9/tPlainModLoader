@@ -127,6 +127,47 @@ namespace TPML.Content
             return null;
         }
 
+        public static ModPlayer GetModPlayer(this Player player, Type type)
+        {
+            if (player == null || type == null) return null;
+
+            if (!_playerMods.TryGetValue(player, out var map))
+            {
+                map = new Dictionary<Type, ModPlayer>();
+                _playerMods[player] = map;
+            }
+
+            if (map.TryGetValue(type, out var existing))
+            {
+                return existing;
+            }
+
+            foreach (var mp in ModContent.GetContent<ModPlayer>())
+            {
+                if (type.IsAssignableFrom(mp.GetType()))
+                {
+                    var instance = (ModPlayer)Activator.CreateInstance(type, true);
+                    instance.Player = player;
+                    instance.Mod = mp.Mod;
+                    instance.Initialize();
+                    map[type] = instance;
+                    return instance;
+                }
+            }
+
+            try
+            {
+                var instance = (ModPlayer)Activator.CreateInstance(type, true);
+                instance.Player = player;
+                instance.Initialize();
+                map[type] = instance;
+                return instance;
+            }
+            catch { }
+
+            return null;
+        }
+
         internal static void ClearInstances()
         {
             _playerMods.Clear();

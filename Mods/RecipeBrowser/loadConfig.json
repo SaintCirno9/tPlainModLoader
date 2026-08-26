@@ -1,0 +1,7 @@
+{
+  "key": "SaintCirno9.RecipeBrowser",
+  "version": "0.12.0",
+  "isEnable": true,
+  "dllPath": "RecipeBrowser.dll",
+  "frontModKeys": []
+}

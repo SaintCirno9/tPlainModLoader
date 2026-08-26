@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
-using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tContentPatch.ModLoad
 {
     internal class Intercept : IModLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("Intercept");
         public Action<List<ModObject>> OnLoaded = null;
         public Action<Exception> OnLoadException = null;
         private IModLoader ml = null;
@@ -24,7 +25,7 @@ namespace tContentPatch.ModLoad
             }
             catch (Exception ex)
             {
-                Log.Add($"[Intercept] 模组加载异常: {ex}");
+                Logger.Error($"模组加载异常: {ex.Message}", ex);
                 OnLoadException?.Invoke(ex);
                 throw;
             }

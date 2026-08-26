@@ -24,6 +24,7 @@ namespace TPMLBridge.GABP
             list.AddRange(ItemContainerTools.GetDescriptors());
             list.AddRange(SidecarTools.GetDescriptors());
             list.AddRange(ScreenCaptureTools.GetDescriptors());
+            list.AddRange(RecipeBrowserTools.GetDescriptors());
             return list;
         }
 
@@ -55,6 +56,10 @@ namespace TPMLBridge.GABP
 
             // 7. 游戏内截图与 UI 捕获工具
             result = await ScreenCaptureTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 8. RecipeBrowser 合成表与物品图鉴工具
+            result = await RecipeBrowserTools.HandleAsync(name, args);
             if (result != null) return result;
 
             throw new KeyNotFoundException($"未知的工具名称: {name}");

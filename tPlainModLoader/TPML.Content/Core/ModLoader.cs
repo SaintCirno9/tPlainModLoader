@@ -1,4 +1,5 @@
 using System;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -12,7 +13,7 @@ namespace TPML.Content
 
         public static void Log(string message)
         {
-            Console.WriteLine($"[TPML] {message}");
+            LogManager.CoreLogger.Info(message);
             try
             {
                 LogCallback?.Invoke(message);

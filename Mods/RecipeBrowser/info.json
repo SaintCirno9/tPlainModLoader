@@ -1,0 +1,7 @@
+{
+  "name": "RecipeBrowser",
+  "version": "0.12.0",
+  "author": "SaintCirno9",
+  "description": "配方浏览器与全能物品/掉落图鉴 (移植自 RecipeBrowser v0.12，深度适配 TPML 原生生态、Sidecar 数据持久化与 Fusion 背包融合)",
+  "enabled": true
+}

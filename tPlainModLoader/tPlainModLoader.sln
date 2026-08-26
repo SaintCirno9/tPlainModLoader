@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tPlainModLoader", "tPlainMo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tContentPatch", "tContentPatch\tContentPatch.csproj", "{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPML.Core", "TPML.Core\TPML.Core.csproj", "{9E1A3C4D-5B6E-7F8A-9B0C-1D2E3F4A5B6C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPML.Content", "TPML.Content\TPML.Content.csproj", "{6F6E4D2C-1B0A-49D8-8D7C-6E5F4A3B2C1D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandHelp", "CommandHelp\CommandHelp.csproj", "{28032285-BA86-4A99-88C3-82A8483DC05C}"
@@ -38,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPMLBridge", "..\Mods\TPMLB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Instavator", "..\Mods\Instavator\Instavator\Instavator.csproj", "{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeBrowser", "..\Mods\RecipeBrowser\RecipeBrowser\RecipeBrowser.csproj", "{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +56,10 @@ Global
 		{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E1A3C4D-5B6E-7F8A-9B0C-1D2E3F4A5B6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E1A3C4D-5B6E-7F8A-9B0C-1D2E3F4A5B6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E1A3C4D-5B6E-7F8A-9B0C-1D2E3F4A5B6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E1A3C4D-5B6E-7F8A-9B0C-1D2E3F4A5B6C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6F6E4D2C-1B0A-49D8-8D7C-6E5F4A3B2C1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6F6E4D2C-1B0A-49D8-8D7C-6E5F4A3B2C1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F6E4D2C-1B0A-49D8-8D7C-6E5F4A3B2C1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -112,6 +120,10 @@ Global
 		{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -128,6 +140,7 @@ Global
 		{E8E81B66-2513-464C-BB08-B6D6F900480B} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{A8F1C3E2-9B7D-4C6A-8E1F-2D3C4B5A6E7F} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 		{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
+		{B2C3D4E5-6F7A-8B9C-0D1E-2F3A4B5C6D7E} = {A8F3B9D1-3456-42E1-9876-1234567890AB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0461D13B-9EBE-463D-B23A-869FE0BAD7C6}

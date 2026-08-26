@@ -20,6 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\FastWin32-master\FastWin32\FastWin32.csproj" />
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
   </ItemGroup>

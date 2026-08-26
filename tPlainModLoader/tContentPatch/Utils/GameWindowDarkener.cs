@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using TPML.Core.Logging;
 
 namespace tContentPatch.Utils
 {
@@ -12,11 +13,11 @@ namespace tContentPatch.Utils
     /// </summary>
     public static class GameWindowDarkener
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("GameWindowDarkener");
         private const int GCLP_HBRBACKGROUND = -10;
         private const int BLACK_BRUSH = 4;
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         private const int DWMWA_USE_IMMERSIVE_DARK_MODE_OLD = 19;
-        private const int WM_ERASEBKGND = 0x0014;
 
         [DllImport("user32.dll", EntryPoint = "SetClassLong", CharSet = CharSet.Auto)]
         private static extern int SetClassLong32(IntPtr hWnd, int nIndex, int dwNewLong);
@@ -74,7 +75,7 @@ namespace tContentPatch.Utils
             }
             catch (Exception ex)
             {
-                Log.Add($"[GameWindowDarkener] ApplyFromGame 异常: {ex.Message}");
+                Logger.Error($"[GameWindowDarkener] ApplyFromGame 异常: {ex.Message}", ex);
             }
         }
 
@@ -126,11 +127,11 @@ namespace tContentPatch.Utils
 
                     _applied = true;
                     _lastHwnd = hWnd;
-                    Log.Add("[GameWindowDarkener] 已成功对主窗口应用纯黑背景与防白屏闪烁配置");
+                    Logger.Info("[GameWindowDarkener] 已成功对主窗口应用纯黑背景与防白屏闪烁配置");
                 }
                 catch (Exception ex)
                 {
-                    Log.Add($"[GameWindowDarkener] 黑化窗口异常: {ex.Message}");
+                    Logger.Error($"[GameWindowDarkener] 黑化窗口异常: {ex.Message}", ex);
                 }
             }
         }

@@ -7,36 +7,32 @@ using tContentPatch.Content.Menus.ModLoadException;
 using tContentPatch.Content.Menus.ModManager;
 using tContentPatch.ModLoad;
 using tContentPatch.Patch;
-using tContentPatch.Utils;
 using Terraria;
 using Terraria.ID;
+using TPML.Core.Logging;
 
 namespace tContentPatch
 {
     /// <summary/>
     public partial class ContentPatch
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("ContentPatch");
+
         /// <summary>
         /// 在修补前启动的线程使用的方法还是修补前的, 最好在有线程启动前修补
         /// </summary>
         public void Initialize()
         {
-            Log.Add($"{nameof(ContentPatch)}:初始化");
-            string p = $"{nameof(ContentPatch)}:版本:{VersionTPlainModLoader}";
-            Log.Add(p);
+            Logger.Info("=== 初始化 ContentPatch ===");
+            string p = $"版本: {VersionTPlainModLoader}";
+            Logger.Info(p);
             PrintTry(p);
 
             if (Instance == null) Instance = this;
             else throw new Exception("不可重复初始化");
 
             Initialized = false;
-            Log.Add($"{nameof(ContentPatch)}:服务端:{Main.dedServ}");
-
-            TPML.Content.ModLoader.LogCallback = msg =>
-            {
-                Console.WriteLine(msg);
-                Log.Add(msg);
-            };
+            Logger.Info($"服务端运行状态: {Main.dedServ}");
 
             Initialize_CommandMsg();
             Initialize_ModDirectory();
@@ -46,8 +42,7 @@ namespace tContentPatch
 
             Initialized = true;
 
-            Log.Add($"{nameof(ContentPatch)}:初始化完成");
-            Log.SaveTry();
+            Logger.Info("ContentPatch 初始化完成");
 
             if (Main.dedServ)
             {
@@ -75,7 +70,6 @@ namespace tContentPatch
             LoaderControl.OnModLoad_Ok += () =>
             {
                 Input.KeybindLoader.SyncWithPlayerInput();
-                Log.SaveTry();
 
                 if (Main.netMode != 0 && Main.netMode != 1) return;
                 Main.menuMode = MenuID.Title;
@@ -87,7 +81,6 @@ namespace tContentPatch
             //加载异常时
             LoaderControl.OnModLoad_Exception += (e) =>
             {
-                Log.SaveTry();
                 ModLoadException.OpenModLoadExceptionMenu(e);
                 ModLoadException.WaitMenuClose();
                 ModManager.OpenModManagerMenu(null);
@@ -95,7 +88,6 @@ namespace tContentPatch
             //卸载异常时
             LoaderControl.OnModUnload_Exception += (e) =>
             {
-                Log.SaveTry();
                 Environment.Exit(0);
             };
         }
@@ -108,8 +100,8 @@ namespace tContentPatch
 
             if (has == false) return;
 
-            string s = $"{nameof(ContentPatch)}:在修补前已有线程启动(在多人游戏中或服务端已启动),一些功能会失效";
-            Log.Add(s);
+            string s = "在修补前已有线程启动(在多人游戏中或服务端已启动),一些功能会失效";
+            Logger.Warn(s);
             PrintTry(s);
         }
 
@@ -138,7 +130,7 @@ namespace tContentPatch
 
         private void Initialize_ModDirectory()
         {
-            Log.Add($"{nameof(ContentPatch)}:初始化模组与用户数据目录");
+            Logger.Info("初始化模组与用户数据目录");
 
             string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (Directory.Exists(path) == false) throw new Exception($"目录不存在[{path}]");
@@ -152,7 +144,7 @@ namespace tContentPatch
 
             if (Directory.Exists(ModDirectory) == false) throw new Exception($"目录不存在[{ModDirectory}]");
 
-            Log.Add($"{nameof(ContentPatch)}:模组目录:{ModDirectory}");
+            Logger.Info($"模组目录: {ModDirectory}");
 
             // 初始化 Windows 文档用户数据目录 (Documents/My Games/Terraria/tPlainModLoader)
             try
@@ -168,12 +160,12 @@ namespace tContentPatch
                 ConfigDirectory = Path.Combine(UserSaveDirectory, InfoList.Directorys.Config);
                 if (!Directory.Exists(ConfigDirectory)) Directory.CreateDirectory(ConfigDirectory);
 
-                Log.Add($"{nameof(ContentPatch)}:用户数据目录:{UserSaveDirectory}");
-                Log.Add($"{nameof(ContentPatch)}:模组配置目录:{ConfigDirectory}");
+                Logger.Info($"用户数据目录: {UserSaveDirectory}");
+                Logger.Info($"模组配置目录: {ConfigDirectory}");
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(ContentPatch)}:用户数据目录初始化异常:{ex.Message}");
+                Logger.Error($"用户数据目录初始化异常: {ex.Message}", ex);
             }
         }
 

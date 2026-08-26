@@ -1,16 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using tContentPatch;
-using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tPlainModLoaderInjector
 {
     internal static class InjectorGame
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("InjectorGame");
+
         public static int Injector(int pid, string dll)
         {
             if (File.Exists(dll) == false) throw new FileNotFoundException($"找不到注入用文件[{dll}]");
@@ -23,19 +25,11 @@ namespace tPlainModLoaderInjector
         private static int InjectorAction(string args)
         {
             Program.ProgramPath = args;
-
-            if (Log.path == null)
-            {
-                Log.SetPath(Path.Combine(Program.ProgramPath, InfoList.Files.Log));
-
-                DateTime time = DateTime.Now;
-                Log.Add($"{nameof(Program)}:{time.Year}.{time.Month}.{time.Day}");
-            }
+            LogManager.Initialize(Program.ProgramPath, "tpml.log", LogLevel.Info);
 
             try
             {
-                Log.Add($"{nameof(InjectorGame)}:已附加到程序");
-                Log.Add($"{nameof(InjectorGame)}:日志位置:[{Log.path}]");
+                Logger.Info("已附加到目标游戏程序");
 
                 if (ContentPatch.Initialized) return GetMsgCommandPort(-3);//如果已注入
 
@@ -50,26 +44,22 @@ namespace tPlainModLoaderInjector
 
                 try
                 {
-                    Log.Add($"{nameof(InjectorGame)}:初始化内容补丁");
+                    Logger.Info("正在初始化内容补丁...");
                     cp.Initialize();
-                    Log.Add($"{nameof(InjectorGame)}:初始化内容补丁成功");
+                    Logger.Info("内容补丁初始化成功");
 
                     return GetMsgCommandPort(-3);
                 }
                 catch (Exception ex)
                 {
-                    Log.Add($"{nameof(InjectorGame)}:初始化内容补丁失败:{ex}");
+                    Logger.Error($"初始化内容补丁失败: {ex.Message}", ex);
                     return -2;
                 }
             }
             catch (Exception ex)
             {
-                Log.Add($"{nameof(InjectorGame)}:未知异常:{ex}");
+                Logger.Fatal("未知异常", ex);
                 return -1;
-            }
-            finally
-            {
-                Log.SaveTry();
             }
         }
 

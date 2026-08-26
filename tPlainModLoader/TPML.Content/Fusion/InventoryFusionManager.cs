@@ -132,6 +132,31 @@ namespace TPML.Content.Fusion
         }
 
         /// <summary>
+        /// 获取所有外部激活物品源中的全部非空物品列表
+        /// </summary>
+        public static List<Item> GetAllFusionItems(Player player)
+        {
+            List<Item> result = new List<Item>();
+            var sources = GetActiveSources(player);
+            for (int s = 0; s < sources.Count; s++)
+            {
+                var src = sources[s];
+                Item[] slots = src.GetSlots(player);
+                if (slots == null) continue;
+
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item it = slots[i];
+                    if (it != null && !it.IsAir && it.stack > 0)
+                    {
+                        result.Add(it);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 检查所有外部物品源中是否存在符合条件的物品
         /// </summary>
         public static bool HasMatchingItem(Player player, Func<Item, bool> predicate)
