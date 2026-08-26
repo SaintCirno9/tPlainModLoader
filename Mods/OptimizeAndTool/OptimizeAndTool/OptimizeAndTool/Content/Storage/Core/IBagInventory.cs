@@ -20,6 +20,9 @@ namespace OptimizeAndTool.Content.Storage.Core
         /// <summary>总容量大小</summary>
         int Capacity { get; }
 
+        /// <summary>是否为动态扩增容量容器（如大背包，支持随存随扩与尾部保底空位）</summary>
+        bool IsDynamicCapacity { get; }
+
         /// <summary>是否允许 Alt/Ctrl 收藏锁定物品</summary>
         bool CanFavorite { get; }
 
@@ -61,6 +64,14 @@ namespace OptimizeAndTool.Content.Storage.Core
 
         /// <summary>获取容量统计文本（如 "已存: 12/40"）</summary>
         string GetCapacityText();
+
+        /// <summary>确保容器末尾拥有指定数量的有效空位（若不足则自动扩充底层槽位数组）</summary>
+        /// <param name="trailingCount">期望保留的末尾空位数（默认为 10）</param>
+        void EnsureTrailingEmptySlots(int trailingCount = 10);
+
+        /// <summary>主动向容器末尾扩增指定数量的空槽位</summary>
+        /// <param name="addedCount">追加的空槽位数量</param>
+        void ExpandCapacity(int addedCount);
 
         /// <summary>槽位发生变动事件通知</summary>
         event Action OnSlotsChanged;

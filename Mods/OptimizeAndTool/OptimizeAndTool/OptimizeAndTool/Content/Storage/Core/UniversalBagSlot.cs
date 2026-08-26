@@ -122,6 +122,10 @@ namespace OptimizeAndTool.Content.Storage.Core
                 SoundEngine.PlaySound(SoundID.Grab);
             }
 
+            if (bag.IsDynamicCapacity)
+            {
+                bag.EnsureTrailingEmptySlots(10);
+            }
             bag.TriggerSlotsChanged();
         }
 
@@ -167,6 +171,10 @@ namespace OptimizeAndTool.Content.Storage.Core
                 if (mouse.stack <= 0) Main.mouseItem = new Item();
             }
 
+            if (bag.IsDynamicCapacity)
+            {
+                bag.EnsureTrailingEmptySlots(10);
+            }
             bag.TriggerSlotsChanged();
         }
 

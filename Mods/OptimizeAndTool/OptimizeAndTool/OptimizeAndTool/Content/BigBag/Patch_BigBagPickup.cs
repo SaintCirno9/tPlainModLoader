@@ -1,4 +1,5 @@
 using HarmonyLib;
+using OptimizeAndTool.Content.Storage.ItemContainer;
 using Terraria;
 
 namespace OptimizeAndTool.Content.BigBag
@@ -14,6 +15,7 @@ namespace OptimizeAndTool.Content.BigBag
         public static bool GetItemPrefix(Player __instance, Item newItem, GetItemSettings settings, ref Item __result)
         {
             if (__instance == null || __instance.whoAmI != Main.myPlayer) return true;
+            if (ItemContainerItem.IsTransferringOut) return true;
             if (newItem == null || newItem.IsAir || newItem.type <= 0) return true;
             if (!BigBag.EnableBigBag.val) return true;
 
@@ -35,6 +37,7 @@ namespace OptimizeAndTool.Content.BigBag
         public static void GetItemPostfix(Player __instance, Item newItem, GetItemSettings settings, ref Item __result)
         {
             if (__instance == null || __instance.whoAmI != Main.myPlayer) return;
+            if (ItemContainerItem.IsTransferringOut) return;
             if (__result == null || __result.IsAir || __result.type <= 0 || __result.stack <= 0) return;
             if (!BigBag.EnableBigBag.val || !BigBag.PickupOverflowToBigBag.val) return;
 

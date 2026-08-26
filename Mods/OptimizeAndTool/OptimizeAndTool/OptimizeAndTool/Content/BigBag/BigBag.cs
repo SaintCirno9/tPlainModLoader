@@ -9,6 +9,7 @@ using Terraria;
 using Terraria.UI;
 using TPML.Content.Fusion;
 using TPML.Content.IO;
+using OptimizeAndTool.Content.Storage.ItemContainer;
 
 namespace OptimizeAndTool.Content.BigBag
 {
@@ -62,7 +63,7 @@ namespace OptimizeAndTool.Content.BigBag
             return new List<UIElement>
             {
                 UIBuild.get2(EnableBigBag, "随身巨大额外背包（已接入统一快捷键系统，可在【设置->控件】中自定义按键）", "Images/Item_4131", "巨大背包"),
-                UIBuild.get1(EnableBigBag, Capacity, int.Parse, "背包容量格数（40~500，缩容时溢出物品自动回收背包）", "Images/Item_87", "背包容量"),
+                UIBuild.get1(EnableBigBag, Capacity, int.Parse, "背包保底容量格数（无限动态扩容，末尾始终保留 10 个空位）", "Images/Item_87", "保底容量"),
                 UIBuild.get2(EnableBigBagCraft, "巨大背包中的材料参与制作判定与消耗扣除", "Images/Item_346", "背包材料制作"),
                 UIBuild.get2(AutoStackOnPickup, "拾取物品时若巨大背包已有同类物品则自动堆入", "Images/Item_5010", "拾取自动堆叠"),
                 UIBuild.get2(PickupOverflowToBigBag, "本体背包装满时拾取自动存入巨大背包", "Images/Item_3813", "满包拾取溢出")
@@ -74,62 +75,108 @@ namespace OptimizeAndTool.Content.BigBag
             Capacity.OnValUpdate += v => SetCapacity(v);
             BigBagKeybind.Initialize();
             EnsureCapacitySafety();
+            EnsureTrailingEmptySlots(10);
             InventoryFusionManager.RegisterSource(FusionSource);
         }
 
         /// <summary>
-        /// 原版 ItemSlot/CoinSlot 底层静态数组扩容至 1000，防止大容量大背包发生越界崩溃
+        /// 原版 ItemSlot/CoinSlot 底层静态数组动态扩容，防止大容量大背包发生越界崩溃
         /// </summary>
-        public static void EnsureCapacitySafety()
+        public static void EnsureCapacitySafety(int requiredSize = 1000)
         {
             try
             {
-                if (ItemSlot.inventoryGlowTimeChest != null && ItemSlot.inventoryGlowTimeChest.Length < 1000)
+                int targetSize = Math.Max(1000, requiredSize + 50);
+                if (ItemSlot.inventoryGlowTimeChest != null && ItemSlot.inventoryGlowTimeChest.Length < targetSize)
                 {
-                    Array.Resize(ref ItemSlot.inventoryGlowTimeChest, 1000);
+                    Array.Resize(ref ItemSlot.inventoryGlowTimeChest, targetSize);
                 }
 
-                if (ItemSlot.inventoryGlowHueChest != null && ItemSlot.inventoryGlowHueChest.Length < 1000)
+                if (ItemSlot.inventoryGlowHueChest != null && ItemSlot.inventoryGlowHueChest.Length < targetSize)
                 {
-                    Array.Resize(ref ItemSlot.inventoryGlowHueChest, 1000);
+                    Array.Resize(ref ItemSlot.inventoryGlowHueChest, targetSize);
                 }
 
-                if (CoinSlot.ChestEntries != null && CoinSlot.ChestEntries.Length < 1000)
+                if (CoinSlot.ChestEntries != null && CoinSlot.ChestEntries.Length < targetSize)
                 {
-                    Array.Resize(ref CoinSlot.ChestEntries, 1000);
+                    Array.Resize(ref CoinSlot.ChestEntries, targetSize);
                 }
             }
             catch { }
         }
 
         /// <summary>
-        /// 调整容量（40~500），扩容补空格，缩容溢出物回收背包（放不下掉落）
+        /// 确保大背包末尾始终保留指定数量的空位（若不足则自动扩充底层槽位数组）
         /// </summary>
-        public static void SetCapacity(int capacity)
+        public static void EnsureTrailingEmptySlots(int trailingCount = 10)
         {
-            capacity = Math.Max(40, Math.Min(500, capacity));
-            if (capacity == Slots.Length) return;
-
-            Item[] old = Slots;
-            Slots = NewSlots(capacity);
-
-            int keep = Math.Min(old.Length, capacity);
-            for (int i = 0; i < keep; i++) Slots[i] = old[i];
-
-            Player player = Main.LocalPlayer;
-            if (player?.active == true)
+            if (trailingCount <= 0) trailingCount = 10;
+            if (Slots == null)
             {
-                for (int i = capacity; i < old.Length; i++)
+                Slots = NewSlots(Math.Max(Capacity.val, trailingCount));
+                BagChest.item = Slots;
+                BagChest.maxItems = Slots.Length;
+                EnsureCapacitySafety(Slots.Length);
+                OnCapacityChanged?.Invoke();
+                return;
+            }
+
+            int trailingEmpty = 0;
+            for (int i = Slots.Length - 1; i >= 0; i--)
+            {
+                if (Slots[i] == null || Slots[i].IsAir || Slots[i].stack <= 0)
                 {
-                    if (old[i] == null || old[i].IsAir) continue;
-                    player.GetOrDropItem(old[i], GetItemSettings.RefundConsumedItem);
+                    trailingEmpty++;
+                }
+                else
+                {
+                    break;
                 }
             }
 
+            if (trailingEmpty < trailingCount)
+            {
+                int needAdd = trailingCount - trailingEmpty;
+                ExpandCapacityInternal(needAdd);
+            }
+        }
+
+        /// <summary>
+        /// 主动向大背包末尾扩增指定数量的空槽位
+        /// </summary>
+        public static void ExpandCapacity(int addedCount)
+        {
+            if (addedCount <= 0) return;
+            ExpandCapacityInternal(addedCount);
+        }
+
+        private static void ExpandCapacityInternal(int addedCount)
+        {
+            int oldLen = Slots != null ? Slots.Length : 0;
+            int newLen = oldLen + addedCount;
+            Item[] newSlots = new Item[newLen];
+            for (int i = 0; i < oldLen; i++) newSlots[i] = Slots[i];
+            for (int i = oldLen; i < newLen; i++) newSlots[i] = new Item();
+
+            Slots = newSlots;
             BagChest.item = Slots;
             BagChest.maxItems = Slots.Length;
-
+            EnsureCapacitySafety(Slots.Length);
             OnCapacityChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 设置保底最小容量（无限动态扩容，末尾始终保留 10 个空位）
+        /// </summary>
+        public static void SetCapacity(int minCapacity)
+        {
+            minCapacity = Math.Max(10, minCapacity);
+            if (Slots == null || Slots.Length < minCapacity)
+            {
+                int add = minCapacity - (Slots?.Length ?? 0);
+                if (add > 0) ExpandCapacityInternal(add);
+            }
+            EnsureTrailingEmptySlots(10);
         }
 
         /// <summary>
@@ -166,11 +213,13 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            // 2. 剩余物品放入大背包空格子（跳过快捷栏 0~9，仅遍历 10~49）
+            // 2. 剩余物品放入大背包空格子（动态扩容保底）
             for (int i = 10; i < 50; i++)
             {
                 Item pItem = inv[i];
                 if (pItem == null || pItem.IsAir || pItem.favorited) continue;
+
+                EnsureTrailingEmptySlots(10);
 
                 for (int j = 0; j < Slots.Length; j++)
                 {
@@ -185,10 +234,12 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
+            EnsureTrailingEmptySlots(10);
+
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                OnCapacityChanged?.Invoke();
+                NotifySlotsChanged();
             }
         }
 
@@ -200,25 +251,33 @@ namespace OptimizeAndTool.Content.BigBag
             if (player == null || player.inventory == null) return;
 
             bool movedAny = false;
-            for (int i = 0; i < Slots.Length; i++)
+            try
             {
-                Item bItem = Slots[i];
-                if (bItem == null || bItem.IsAir) continue;
-
-                int origStack = bItem.stack;
-                Slots[i] = player.GetItem(bItem, GetItemSettings.QuickTransferFromSlot);
-
-                if (Slots[i] == null) Slots[i] = new Item();
-                if (Slots[i].stack != origStack)
+                ItemContainerItem.IsTransferringOut = true;
+                for (int i = 0; i < Slots.Length; i++)
                 {
-                    movedAny = true;
+                    Item bItem = Slots[i];
+                    if (bItem == null || bItem.IsAir) continue;
+
+                    int origStack = bItem.stack;
+                    Slots[i] = player.GetItem(bItem, GetItemSettings.QuickTransferFromSlot);
+
+                    if (Slots[i] == null) Slots[i] = new Item();
+                    if (Slots[i].stack != origStack)
+                    {
+                        movedAny = true;
+                    }
                 }
+            }
+            finally
+            {
+                ItemContainerItem.IsTransferringOut = false;
             }
 
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                OnCapacityChanged?.Invoke();
+                NotifySlotsChanged();
             }
         }
 
@@ -255,15 +314,17 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
+            EnsureTrailingEmptySlots(10);
+
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                OnCapacityChanged?.Invoke();
+                NotifySlotsChanged();
             }
         }
 
         /// <summary>
-        /// 整理大背包：合并同类未满堆叠并按类别/ID 排序紧凑排列
+        /// 整理大背包：合并同类未满堆叠并按类别/ID 排序紧凑排列，末尾精准保留 10 个空位
         /// </summary>
         public static void SortBigBag()
         {
@@ -306,13 +367,20 @@ namespace OptimizeAndTool.Content.BigBag
                 return y.stack.CompareTo(x.stack);
             });
 
-            // 3. 写回 Slots 并补齐空格
-            for (int i = 0; i < Slots.Length; i++)
+            // 3. 紧凑收缩至物品数 + 10 空位（且不低于保底容量）
+            int targetCap = Math.Max(Math.Max(10, Capacity.val), items.Count + 10);
+            Item[] newSlots = new Item[targetCap];
+            for (int i = 0; i < targetCap; i++)
             {
-                if (i < items.Count) Slots[i] = items[i];
-                else Slots[i] = new Item();
+                if (i < items.Count) newSlots[i] = items[i];
+                else newSlots[i] = new Item();
             }
 
+            Slots = newSlots;
+            BagChest.item = Slots;
+            BagChest.maxItems = Slots.Length;
+
+            EnsureCapacitySafety(Slots.Length);
             Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
             OnCapacityChanged?.Invoke();
         }
@@ -359,6 +427,7 @@ namespace OptimizeAndTool.Content.BigBag
 
             if (totalStacked > 0)
             {
+                EnsureTrailingEmptySlots(10);
                 // 生成拾取飘字
                 Vector2 pos = Main.LocalPlayer?.Center ?? Vector2.Zero;
                 PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, totalStacked, false, false);
@@ -406,9 +475,11 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            // 2. 若仍有剩余，放入大背包空格子
+            // 2. 若仍有剩余，放入大背包空格子（动态扩容保底）
             if (newItem.stack > 0)
             {
+                EnsureTrailingEmptySlots(10);
+
                 for (int i = 0; i < Slots.Length; i++)
                 {
                     Item slot = Slots[i];
@@ -422,6 +493,8 @@ namespace OptimizeAndTool.Content.BigBag
                     }
                 }
             }
+
+            EnsureTrailingEmptySlots(10);
 
             if (totalPlaced > 0)
             {
@@ -443,31 +516,10 @@ namespace OptimizeAndTool.Content.BigBag
             if (newItem == null || newItem.IsAir || newItem.type <= 0) return false;
             if (!EnableBigBag.val) return false;
 
-            // 1. 若开启自动堆叠：检查是否可堆入已有槽位
-            if (AutoStackOnPickup.val && newItem.maxStack > 1)
+            // 动态大背包具备无限容量与保底 10 空位，只要开启满包溢出或自动堆叠即可无缝接收
+            if (PickupOverflowToBigBag.val || AutoStackOnPickup.val)
             {
-                for (int i = 0; i < Slots.Length; i++)
-                {
-                    Item slot = Slots[i];
-                    if (slot != null && !slot.IsAir && slot.type == newItem.type && slot.stack < slot.maxStack && Item.CanStack(slot, newItem))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 2. 若开启满包溢出：检查是否有同类槽位或空格子
-            if (PickupOverflowToBigBag.val)
-            {
-                for (int i = 0; i < Slots.Length; i++)
-                {
-                    Item slot = Slots[i];
-                    if (slot == null || slot.IsAir) return true;
-                    if (newItem.maxStack > 1 && slot.type == newItem.type && slot.stack < slot.maxStack && Item.CanStack(slot, newItem))
-                    {
-                        return true;
-                    }
-                }
+                return true;
             }
 
             return false;
@@ -486,6 +538,8 @@ namespace OptimizeAndTool.Content.BigBag
             Item item = inv[slot];
             if (item == null || item.IsAir || item.favorited) return false;
 
+            if (justCheck) return true;
+
             Item[] slots = Slots;
             bool transferred = false;
 
@@ -498,35 +552,29 @@ namespace OptimizeAndTool.Content.BigBag
                     if (target != null && !target.IsAir && target.type == item.type && target.stack < target.maxStack && Item.CanStack(target, item))
                     {
                         int canTake = Math.Min(item.stack, target.maxStack - target.stack);
-                        if (justCheck)
+                        target.stack += canTake;
+                        item.stack -= canTake;
+                        transferred = true;
+                        if (item.stack <= 0)
                         {
-                            if (canTake > 0) return true;
-                        }
-                        else
-                        {
-                            target.stack += canTake;
-                            item.stack -= canTake;
-                            transferred = true;
-                            if (item.stack <= 0)
-                            {
-                                inv[slot] = new Item();
-                                break;
-                            }
+                            inv[slot] = new Item();
+                            break;
                         }
                     }
                 }
             }
 
-            // 2. 如果还有剩余，放入空格子
+            // 2. 如果还有剩余，放入空格子（动态扩容）
             if (item.stack > 0)
             {
+                EnsureTrailingEmptySlots(10);
+                slots = Slots;
+
                 for (int i = 0; i < slots.Length; i++)
                 {
                     Item target = slots[i];
                     if (target == null || target.IsAir)
                     {
-                        if (justCheck) return true;
-
                         slots[i] = item.Clone();
                         inv[slot] = new Item();
                         transferred = true;
@@ -535,8 +583,16 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
+            EnsureTrailingEmptySlots(10);
+
+            if (transferred)
+            {
+                NotifySlotsChanged();
+            }
+
             return transferred;
         }
+
         /// <summary>
         /// 在大背包中查找指定物品类型的首个有效槽位索引，未找到返回 -1
         /// </summary>
@@ -555,7 +611,7 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 将物品存入大背包（优先存入指定首选槽位，次选同类堆叠，再选空格）
+        /// 将物品存入大背包（优先存入指定首选槽位，次选同类堆叠，再选空格，不足时自动动态扩容）
         /// </summary>
         public static bool DepositItem(Item item, int preferredSlot = -1)
         {
@@ -570,6 +626,7 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     slots[preferredSlot] = item.Clone();
                     item.TurnToAir();
+                    EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
                     return true;
                 }
@@ -587,6 +644,7 @@ namespace OptimizeAndTool.Content.BigBag
                     if (item.stack <= 0)
                     {
                         item.TurnToAir();
+                        EnsureTrailingEmptySlots(10);
                         NotifySlotsChanged();
                         return true;
                     }
@@ -601,6 +659,23 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     slots[i] = item.Clone();
                     item.TurnToAir();
+                    EnsureTrailingEmptySlots(10);
+                    NotifySlotsChanged();
+                    return true;
+                }
+            }
+
+            // 4. 若无空格则自动扩容放入
+            EnsureTrailingEmptySlots(10);
+            slots = Slots;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                Item target = slots[i];
+                if (target == null || target.IsAir)
+                {
+                    slots[i] = item.Clone();
+                    item.TurnToAir();
+                    EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
                     return true;
                 }
@@ -610,7 +685,7 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 直接替换存储数组（持久化加载时使用）
+        /// 直接替换存储数组（持久化加载时使用，自动扩容补齐末尾 10 空位）
         /// </summary>
         public static void SetItems(Item[] slots)
         {
@@ -620,7 +695,8 @@ namespace OptimizeAndTool.Content.BigBag
             BagChest.item = Slots;
             BagChest.maxItems = Slots.Length;
 
-            EnsureCapacitySafety();
+            EnsureCapacitySafety(Slots.Length);
+            EnsureTrailingEmptySlots(10);
             OnCapacityChanged?.Invoke();
         }
 
@@ -629,12 +705,13 @@ namespace OptimizeAndTool.Content.BigBag
         /// </summary>
         public static void ResetSlots()
         {
-            int count = Math.Max(40, Math.Min(500, Capacity.val));
+            int count = Math.Max(40, Capacity.val);
             Slots = NewSlots(count);
             BagChest.item = Slots;
             BagChest.maxItems = Slots.Length;
 
-            EnsureCapacitySafety();
+            EnsureCapacitySafety(Slots.Length);
+            EnsureTrailingEmptySlots(10);
             OnCapacityChanged?.Invoke();
         }
 
@@ -682,7 +759,7 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 为指定玩家加载其专属的大背包数据
+        /// 为指定玩家加载其专属的大背包数据（自动补齐末尾 10 空位，绝不截断丢物）
         /// </summary>
         public static void LoadForPlayer(Player player)
         {
@@ -696,6 +773,7 @@ namespace OptimizeAndTool.Content.BigBag
             int cap = BigBag.Capacity.val;
             Item[] slots = ModItemSidecarEngine.LoadPlayerContainer(player, ContainerKey, cap);
             BigBag.SetItems(slots);
+            BigBag.EnsureTrailingEmptySlots(10);
         }
 
         /// <summary>

@@ -231,11 +231,24 @@ namespace TPML.Content.IO
         }
 
         /// <summary>
-        /// 从 ContainerSlotEntry 列表新建指定容量的物品槽位数组并反序列化填充
+        /// 从 ContainerSlotEntry 列表新建物品槽位数组并反序列化填充（自动比对存档最大槽位索引，自适应扩展容量，防止丢物）
         /// </summary>
         public static Item[] DeserializeSlots(List<ContainerSlotEntry> entries, int capacity)
         {
-            Item[] slots = new Item[capacity];
+            int maxSlot = -1;
+            if (entries != null)
+            {
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    if (entries[i] != null && entries[i].Slot > maxSlot)
+                    {
+                        maxSlot = entries[i].Slot;
+                    }
+                }
+            }
+
+            int actualCapacity = Math.Max(capacity, maxSlot + 1);
+            Item[] slots = new Item[actualCapacity];
             DeserializeSlots(entries, slots);
             return slots;
         }
@@ -283,14 +296,17 @@ namespace TPML.Content.IO
         }
 
         /// <summary>
-        /// 从伴随存档文件加载指定玩家的命名扩展容器物品数组
+        /// 从伴随存档文件加载指定玩家的命名扩展容器物品数组（根据存档内最大槽位索引动态自适应扩展容量，绝不丢物）
         /// </summary>
         public static Item[] LoadPlayerContainer(Player player, string containerKey, int capacity)
         {
-            Item[] slots = new Item[capacity];
-            for (int i = 0; i < capacity; i++) slots[i] = new Item();
-
-            if (player == null || string.IsNullOrEmpty(containerKey)) return slots;
+            int baseCap = Math.Max(0, capacity);
+            if (player == null || string.IsNullOrEmpty(containerKey))
+            {
+                Item[] defSlots = new Item[baseCap];
+                for (int i = 0; i < baseCap; i++) defSlots[i] = new Item();
+                return defSlots;
+            }
 
             try
             {
@@ -299,9 +315,21 @@ namespace TPML.Content.IO
                 {
                     string json = File.ReadAllText(path);
                     PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
-                    if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries))
+                    if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries) && entries != null)
                     {
+                        int maxSlot = -1;
+                        for (int i = 0; i < entries.Count; i++)
+                        {
+                            if (entries[i] != null && entries[i].Slot > maxSlot)
+                            {
+                                maxSlot = entries[i].Slot;
+                            }
+                        }
+
+                        int actualCapacity = Math.Max(baseCap, maxSlot + 1);
+                        Item[] slots = new Item[actualCapacity];
                         DeserializeSlots(entries, slots);
+                        return slots;
                     }
                 }
             }
@@ -310,7 +338,9 @@ namespace TPML.Content.IO
                 ModLoader.Log($"[Sidecar] 加载玩家容器 [{containerKey}] 伴随数据异常: {ex.Message}");
             }
 
-            return slots;
+            Item[] fallbackSlots = new Item[baseCap];
+            for (int i = 0; i < baseCap; i++) fallbackSlots[i] = new Item();
+            return fallbackSlots;
         }
 
         #endregion

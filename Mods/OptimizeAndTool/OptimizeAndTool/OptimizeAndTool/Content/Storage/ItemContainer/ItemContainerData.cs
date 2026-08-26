@@ -186,6 +186,9 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public void LootAll(Player player) => WithdrawAll(player);
         public void Sort() => AutoSort();
         public string GetCapacityText() => $"已存: {GetStoredCount()}/{Capacity}";
+        public virtual bool IsDynamicCapacity => false;
+        public virtual void EnsureTrailingEmptySlots(int trailingCount = 10) { }
+        public virtual void ExpandCapacity(int addedCount) { }
 
         public IEnumerable<BagToolbarButton> GetCustomToolbarButtons()
         {

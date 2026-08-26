@@ -75,10 +75,14 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     if (slots[i] != null && !slots[i].IsAir) filled++;
                 }
-                return $"已存: {filled}/{slots.Length}";
+                return $"已存: {filled}/{slots.Length} (动态)";
             }
             return "0/0";
         }
+
+        public bool IsDynamicCapacity => true;
+        public void EnsureTrailingEmptySlots(int trailingCount = 10) => BigBag.EnsureTrailingEmptySlots(trailingCount);
+        public void ExpandCapacity(int addedCount) => BigBag.ExpandCapacity(addedCount);
 
         public IEnumerable<BagToolbarButton> GetCustomToolbarButtons()
         {

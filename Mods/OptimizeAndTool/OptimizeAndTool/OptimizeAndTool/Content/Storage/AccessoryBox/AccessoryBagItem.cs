@@ -9,6 +9,7 @@ using Terraria.ID;
 using TPML.Content;
 using TPML.Content.IO;
 using TPML.Content.UI;
+using OptimizeAndTool.Content.Storage.ItemContainer;
 
 namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
@@ -238,15 +239,23 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             bool moved = false;
             Item[] bInv = personalInventory;
 
-            for (int i = 0; i < bInv.Length; i++)
+            try
             {
-                Item bIt = bInv[i];
-                if (bIt == null || bIt.IsAir) continue;
+                ItemContainerItem.IsTransferringOut = true;
+                for (int i = 0; i < bInv.Length; i++)
+                {
+                    Item bIt = bInv[i];
+                    if (bIt == null || bIt.IsAir) continue;
 
-                int orig = bIt.stack;
-                bInv[i] = player.GetItem(bIt, GetItemSettings.QuickTransferFromSlot);
-                if (bInv[i] == null) bInv[i] = new Item();
-                if (bInv[i].stack != orig) moved = true;
+                    int orig = bIt.stack;
+                    bInv[i] = player.GetItem(bIt, GetItemSettings.QuickTransferFromSlot);
+                    if (bInv[i] == null) bInv[i] = new Item();
+                    if (bInv[i].stack != orig) moved = true;
+                }
+            }
+            finally
+            {
+                ItemContainerItem.IsTransferringOut = false;
             }
 
             if (moved)
@@ -316,6 +325,10 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             }
             return t;
         }
+
+        public bool IsDynamicCapacity => false;
+        public void EnsureTrailingEmptySlots(int trailingCount = 10) { }
+        public void ExpandCapacity(int addedCount) { }
         #endregion
 
         #region IVisualToggleable 实现
