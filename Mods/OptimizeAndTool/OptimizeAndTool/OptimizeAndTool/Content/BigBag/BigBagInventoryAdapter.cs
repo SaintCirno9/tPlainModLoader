@@ -20,6 +20,7 @@ namespace OptimizeAndTool.Content.BigBag
         public int Capacity => BigBag.Slots != null ? BigBag.Slots.Length : BigBag.Capacity.val;
         public bool CanFavorite => true;
         public bool ShowModSidebar => true;
+        public bool ShowFilterBar => true;
 
         public event Action OnSlotsChanged;
         public void TriggerSlotsChanged() => OnSlotsChanged?.Invoke();

@@ -36,6 +36,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         public int Capacity => personalInventory != null ? personalInventory.Length : 0;
         public bool CanFavorite => true;
         public bool ShowModSidebar => true;
+        public bool ShowFilterBar => true;
 
         public static bool IsValidBagItem(Item item)
         {

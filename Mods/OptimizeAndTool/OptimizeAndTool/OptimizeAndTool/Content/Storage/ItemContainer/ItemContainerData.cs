@@ -44,6 +44,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public virtual bool CanFavorite => true;
         public virtual bool ShowModSidebar => true;
+        public virtual bool ShowFilterBar => true;
 
         /// <summary>
         /// 正在向个人背包转移/取出物品的防重入标志（彻底防止一键取出或快速提取时被自动收纳误吸回）

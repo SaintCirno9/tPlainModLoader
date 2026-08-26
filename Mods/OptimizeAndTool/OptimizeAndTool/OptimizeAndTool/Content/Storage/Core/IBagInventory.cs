@@ -26,6 +26,9 @@ namespace OptimizeAndTool.Content.Storage.Core
         /// <summary>是否在存有多 Mod 物品时展示 Mod 来源侧边栏</summary>
         bool ShowModSidebar { get; }
 
+        /// <summary>是否展示分类与拼音搜索工具栏（默认开启）</summary>
+        bool ShowFilterBar { get; }
+
         /// <summary>
         /// 物品准入限制与查重校验
         /// </summary>

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
+using ReLogic.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,12 +14,13 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
+using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace OptimizeAndTool.Content.Storage.Core
 {
     /// <summary>
     /// 通用大型容器 UI 窗口：
-    /// 精确对齐饰品包经典原生质感与自适应排版，杜绝左右空隙，具备原版物品栏材质、智能 Mod 侧边栏与扩展动作插槽。
+    /// 精确对齐饰品包经典原生质感与自适应排版，杜绝左右空隙，具备原版物品栏材质、智能 Mod 侧边栏、分类筛选、多维拼音搜索与扩展动作插槽。
     /// 作者: SaintCirno9
     /// </summary>
     public class UniversalBagWindow : UIWindow
@@ -31,6 +33,7 @@ namespace OptimizeAndTool.Content.Storage.Core
         public const float SLOT_MARGIN = 4f;
 
         private UIElement topToolbar = null;
+        private UIElement filterToolbar = null;
         private UIElement contentArea = null;
         private UIBoxWrapPanel wp = null;
         private UIList uiList = null;
@@ -38,9 +41,21 @@ namespace OptimizeAndTool.Content.Storage.Core
         private ModIconSidebar sidebar = null;
         private UIText capacityText = null;
 
+        // 分类与拼音检索组件
+        private UITextBox searchTextBox = null;
+        private UIClearButton btnSearchClear = null;
+        private BagItemCategory currentCategory = BagItemCategory.All;
+        private List<UIBoxButton> categoryButtons = new List<UIBoxButton>();
+        private string searchQuery = string.Empty;
+        private string searchPendingQuery = string.Empty;
+        private int searchDebounceTimer = 0;
+
+        public BagItemCategory CurrentCategory => currentCategory;
+        public string SearchQuery => searchQuery;
+
         public UniversalBagWindow(string defaultTitle = "收纳容器") : base(defaultTitle, 476, 360)
         {
-            // 移除右下角缩放手柄，保持 AccBag 原版紧凑自适应尺寸
+            // 移除右下角缩放手柄，保持原生紧凑自适应尺寸
             foreach (UIElement el in Elements)
             {
                 if (el is UIImage img && el != Child)
@@ -52,18 +67,29 @@ namespace OptimizeAndTool.Content.Storage.Core
 
             float toolbarTopMargin = 8f;
             float toolbarHeight = 22f;
-            float contentMarginTop = 6f;
+            float filterToolbarTopMargin = 4f;
+            float filterToolbarHeight = 22f;
 
+            // 1. 第一行：顶部操作按钮栏
             topToolbar = new UIElement();
             topToolbar.Width.Set(0, 1);
             topToolbar.Top.Set(toolbarTopMargin, 0);
             topToolbar.Height.Set(toolbarHeight, 0);
             Child.Append(topToolbar);
 
+            // 2. 第二行：分类图标与搜索工具栏
+            filterToolbar = new UIElement();
+            filterToolbar.Width.Set(0, 1);
+            filterToolbar.Top.Set(toolbarTopMargin + toolbarHeight + filterToolbarTopMargin, 0);
+            filterToolbar.Height.Set(filterToolbarHeight, 0);
+            Child.Append(filterToolbar);
+
+            // 3. 内容展示区（网格 + 侧边栏 + 滚动条）
+            float topOffset = toolbarTopMargin + toolbarHeight + filterToolbarTopMargin + filterToolbarHeight + 6f;
             contentArea = new UIElement();
             contentArea.Width.Set(0, 1);
-            contentArea.Top.Set(toolbarTopMargin + toolbarHeight + contentMarginTop, 0);
-            contentArea.Height.Set(-(toolbarTopMargin + toolbarHeight + contentMarginTop), 1);
+            contentArea.Top.Set(topOffset, 0);
+            contentArea.Height.Set(-topOffset, 1);
             Child.Append(contentArea);
 
             sidebar = new ModIconSidebar(null);
@@ -116,6 +142,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             }
 
             BuildTopToolbar();
+            BuildFilterToolbar();
             Open(parentState);
             Rebuild();
         }
@@ -169,7 +196,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             btnSort.OnClick += () => CurrentBag?.Sort();
             sp.Append(btnSort);
 
-            // 5. 外观显隐扩展按钮（若实现 IVisualToggleable）
+            // 5. 外观显隐扩展按钮（若实现 IIVisualToggleable）
             if (CurrentBag is IVisualToggleable vis)
             {
                 UIBoxButton btnAllVisuals = new UIBoxButton(
@@ -208,6 +235,110 @@ namespace OptimizeAndTool.Content.Storage.Core
             sp.Append(capacityText);
         }
 
+        private void BuildFilterToolbar()
+        {
+            filterToolbar.Elements.Clear();
+            categoryButtons.Clear();
+
+            if (CurrentBag == null || !CurrentBag.ShowFilterBar)
+            {
+                if (filterToolbar.Parent == Child)
+                {
+                    Child.RemoveChild(filterToolbar);
+                }
+                return;
+            }
+
+            if (filterToolbar.Parent != Child)
+            {
+                Child.Append(filterToolbar);
+            }
+
+            int height = 22;
+
+            // 1. 左侧：分类按钮横向堆叠
+            UIStackPanel catSp = new UIStackPanel();
+            catSp.Height.Set(height, 0);
+            catSp.VAlign = 0.5f;
+            catSp.IsAutoUpdateSize = true;
+            catSp.Horizontal = true;
+            catSp.ItemMargin = 2;
+            filterToolbar.Append(catSp);
+
+            var categories = new (BagItemCategory cat, string desc, string icon)[]
+            {
+                (BagItemCategory.All, "全部物品", "Images/Item_2712"),
+                (BagItemCategory.Weapon, "武器（近战/远程/魔法/召唤）", "Images/Item_3507"),
+                (BagItemCategory.Armor, "防具（头盔/胸甲/护腿/时装/染料）", "Images/Item_895"),
+                (BagItemCategory.Accessory, "饰品（配饰/坐骑/宠物/钩爪）", "Images/Item_54"),
+                (BagItemCategory.Tool, "工具（镐/斧/锤/钓竿/电线工具）", "Images/Item_3509"),
+                (BagItemCategory.Potion, "药水与食物（治疗/魔力/增益/食物）", "Images/Item_296"),
+                (BagItemCategory.Ammo, "弹药（箭矢/子弹/火箭/飞镖）", "Images/Item_40"),
+                (BagItemCategory.Tile, "物块与建筑（方块/墙壁/平台）", "Images/Item_2"),
+                (BagItemCategory.Material, "合成素材（矿石/锭/灵魂/制作材料）", "Images/Item_706"),
+                (BagItemCategory.Other, "杂项与家具（家具/钱币/其他）", "Images/Item_9")
+            };
+
+            foreach (var (cat, desc, icon) in categories)
+            {
+                BagItemCategory targetCat = cat;
+                UIBoxButton btn = new UIBoxButton(
+                    height,
+                    () => $"{desc} {(currentCategory == targetCat ? "[已选中]" : "")}",
+                    () => icon,
+                    () => currentCategory == targetCat ? Color.White : new Color(180, 180, 180),
+                    () => currentCategory == targetCat
+                );
+                btn.OnClick += () =>
+                {
+                    currentCategory = targetCat;
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    RebuildSlots();
+                };
+                categoryButtons.Add(btn);
+                catSp.Append(btn);
+            }
+
+            // 2. 右侧：搜索框
+            searchTextBox = new UITextBox("搜索/拼音/ID/词条");
+            searchTextBox.Width.Set(136, 0);
+            searchTextBox.Height.Set(height, 0);
+            searchTextBox.Left.Set(-160, 1);
+            searchTextBox.VAlign = 0.5f;
+            searchTextBox.TextScale = 0.75f;
+            searchTextBox.Text_MaxLength = 40;
+            searchTextBox.SetPadding(3);
+            searchTextBox.Text = searchQuery;
+            searchTextBox.OnTextChanged += (text) =>
+            {
+                searchDebounceTimer = 2;
+                searchPendingQuery = text;
+            };
+            searchTextBox.OnRightClick += (evt, el) => ClearSearch();
+            filterToolbar.Append(searchTextBox);
+
+            // 3. 右侧：一键清空搜索按钮
+            btnSearchClear = new UIClearButton(20, () => "清空搜索内容 (亦可右键搜索框清空)");
+            btnSearchClear.Height.Set(height, 0);
+            btnSearchClear.Left.Set(-20, 1);
+            btnSearchClear.VAlign = 0.5f;
+            btnSearchClear.OnClick += ClearSearch;
+            filterToolbar.Append(btnSearchClear);
+        }
+
+        public void ClearSearch()
+        {
+            if (searchTextBox != null)
+            {
+                searchTextBox.Text = string.Empty;
+            }
+            searchQuery = string.Empty;
+            searchPendingQuery = string.Empty;
+            searchDebounceTimer = 0;
+            SoundEngine.PlaySound(SoundID.MenuTick);
+            RebuildSlots();
+        }
+
         public void Rebuild()
         {
             if (sidebar != null && CurrentBag != null)
@@ -227,25 +358,72 @@ namespace OptimizeAndTool.Content.Storage.Core
             wp.Elements.Clear();
             if (CurrentBag?.Slots == null) return;
 
-            string filter = sidebar != null ? sidebar.CurrentFilter : "All";
+            bool showFilter = CurrentBag.ShowFilterBar;
+            if (showFilter && filterToolbar.Parent != Child)
+            {
+                Child.Append(filterToolbar);
+            }
+            else if (!showFilter && filterToolbar.Parent == Child)
+            {
+                Child.RemoveChild(filterToolbar);
+            }
+
+            float topOffset = showFilter ? (8f + 22f + 4f + 22f + 6f) : (8f + 22f + 6f);
+            contentArea.Top.Set(topOffset, 0);
+            contentArea.Height.Set(-topOffset, 1);
+
+            string modFilter = sidebar != null ? sidebar.CurrentFilter : "All";
             Item[] inv = CurrentBag.Slots;
+            bool isFiltering = currentCategory != BagItemCategory.All ||
+                               !string.IsNullOrWhiteSpace(searchQuery) ||
+                               modFilter != "All";
 
             int filledCount = 0;
             int matchedSlotCount = 0;
+
             for (int i = 0; i < inv.Length; i++)
             {
                 Item it = inv[i];
                 if (it != null && !it.IsAir) filledCount++;
 
                 bool pass = true;
-                if (filter != "All")
+
+                if (!isFiltering)
                 {
-                    if (it == null || it.IsAir) pass = false;
-                    else if (filter == "Terraria") pass = it.type < ItemID.Count;
+                    // 未处于任何筛选状态时，展示全部槽位（含空格）
+                    pass = true;
+                }
+                else
+                {
+                    // 处于筛选/搜索状态时，仅保留命中的非空物品
+                    if (it == null || it.IsAir)
+                    {
+                        pass = false;
+                    }
                     else
                     {
-                        ModItem modIt = ItemLoader.GetModItem(it.type);
-                        pass = (modIt?.Mod?.Name ?? "TPML") == filter;
+                        // 1. Mod 来源筛选
+                        if (modFilter != "All")
+                        {
+                            if (modFilter == "Terraria") pass = it.type < ItemID.Count;
+                            else
+                            {
+                                ModItem modIt = ItemLoader.GetModItem(it.type);
+                                pass = (modIt?.Mod?.Name ?? "TPML") == modFilter;
+                            }
+                        }
+
+                        // 2. 物品分类筛选
+                        if (pass && currentCategory != BagItemCategory.All)
+                        {
+                            pass = BagCategoryHelper.MatchesCategory(it, currentCategory);
+                        }
+
+                        // 3. 拼音/ID/词条搜索匹配
+                        if (pass && !string.IsNullOrWhiteSpace(searchQuery))
+                        {
+                            pass = BagCategoryHelper.MatchesSearch(it, searchQuery);
+                        }
                     }
                 }
 
@@ -282,32 +460,41 @@ namespace OptimizeAndTool.Content.Storage.Core
                 if (scrollbar.Parent != contentArea) contentArea.Append(scrollbar);
                 scrollbar.Left.Set(sidebarOffset + gridW + 4f, 0);
                 scrollbar.Width.Set(18f, 0);
+                scrollbar.Height.Set(gridH, 0);
             }
             else
             {
                 if (scrollbar.Parent == contentArea) contentArea.RemoveChild(scrollbar);
             }
 
+            contentArea.Height.Set(gridH, 0);
             uiList.Left.Set(sidebarOffset, 0);
             uiList.Width.Set(gridW, 0);
             uiList.Height.Set(gridH, 0);
 
             float totalWinW = sidebarOffset + gridW + (needScrollbar ? 26f : 0f) + 24f;
-            float totalWinH = (topToolbar?.Top.Pixels ?? 8f) + (topToolbar?.Height.Pixels ?? 22f) + 6f + gridH + 34f;
+            float totalWinH = topOffset + gridH + 44f;
 
             Width.Set(totalWinW, 0);
             Height.Set(totalWinH, 0);
 
             if (capacityText != null)
             {
-                string t = CurrentBag.GetCapacityText();
-                if (string.IsNullOrEmpty(t))
+                if (isFiltering)
                 {
-                    int total = inv.Length;
-                    t = $"已存: {filledCount}/{total}";
+                    capacityText.SetText($"匹配: {matchedSlotCount} | 已存: {filledCount}/{inv.Length}");
+                    capacityText.TextColor = Color.LightSkyBlue;
                 }
-                capacityText.SetText(t);
-                capacityText.TextColor = filledCount >= inv.Length ? Color.Gold : Color.LightGray;
+                else
+                {
+                    string t = CurrentBag.GetCapacityText();
+                    if (string.IsNullOrEmpty(t))
+                    {
+                        t = $"已存: {filledCount}/{inv.Length}";
+                    }
+                    capacityText.SetText(t);
+                    capacityText.TextColor = filledCount >= inv.Length ? Color.Gold : Color.LightGray;
+                }
             }
 
             Recalculate();
@@ -328,6 +515,17 @@ namespace OptimizeAndTool.Content.Storage.Core
         {
             base.Update(gameTime);
 
+            // 搜索输入防抖处理
+            if (searchDebounceTimer > 0)
+            {
+                searchDebounceTimer--;
+                if (searchDebounceTimer == 0)
+                {
+                    searchQuery = searchPendingQuery;
+                    RebuildSlots();
+                }
+            }
+
             if (IsOpen && ModifyInterfaceLayers.IsHoveringWindow(this))
             {
                 Main.LocalPlayer.mouseInterface = true;
@@ -345,6 +543,9 @@ namespace OptimizeAndTool.Content.Storage.Core
         }
     }
 
+    /// <summary>
+    /// 自适应换行排版容器
+    /// </summary>
     public class UIBoxWrapPanel : UIElement
     {
         public int ItemMargin { get; set; } = 4;
@@ -382,21 +583,27 @@ namespace OptimizeAndTool.Content.Storage.Core
         }
     }
 
+    /// <summary>
+    /// 通用容器方形操作按钮控件（支持图标、悬停提示、选中高亮与左右键交互）
+    /// </summary>
     public class UIBoxButton : UIPanel
     {
         public event Action OnClick;
+        public new event Action OnRightClick;
         private readonly Func<string> tooltip;
         private readonly Func<string> iconPathFunc;
         private readonly Func<Color> colorFunc;
+        private readonly Func<bool> isActiveFunc;
 
-        public UIBoxButton(int size, Func<string> tooltip, string iconPath, Func<Color> colorFunc = null)
-            : this(size, tooltip, () => iconPath, colorFunc) { }
+        public UIBoxButton(int size, Func<string> tooltip, string iconPath, Func<Color> colorFunc = null, Func<bool> isActiveFunc = null)
+            : this(size, tooltip, () => iconPath, colorFunc, isActiveFunc) { }
 
-        public UIBoxButton(int size, Func<string> tooltip, Func<string> iconPathFunc, Func<Color> colorFunc = null)
+        public UIBoxButton(int size, Func<string> tooltip, Func<string> iconPathFunc, Func<Color> colorFunc = null, Func<bool> isActiveFunc = null)
         {
             this.tooltip = tooltip;
             this.iconPathFunc = iconPathFunc;
             this.colorFunc = colorFunc;
+            this.isActiveFunc = isActiveFunc;
 
             Width.Set(size, 0);
             Height.Set(size, 0);
@@ -409,8 +616,17 @@ namespace OptimizeAndTool.Content.Storage.Core
             OnClick?.Invoke();
         }
 
+        public override void RightClick(UIMouseEvent evt)
+        {
+            OnRightClick?.Invoke();
+        }
+
         protected override void DrawSelf(SpriteBatch sb)
         {
+            bool active = isActiveFunc != null && isActiveFunc();
+            BackgroundColor = active ? new Color(60, 95, 185) : (IsMouseHovering ? new Color(55, 80, 150) : new Color(43, 60, 120));
+            BorderColor = active ? Color.Gold : (IsMouseHovering ? Color.White : new Color(43, 60, 120));
+
             base.DrawSelf(sb);
 
             CalculatedStyle dim = GetDimensions();
@@ -425,10 +641,52 @@ namespace OptimizeAndTool.Content.Storage.Core
                     float scale = maxSide > 16f ? 16f / maxSide : 1f;
                     Vector2 origin = tex.Size() / 2f;
                     Vector2 pos = new Vector2(dim.X + dim.Width / 2f, dim.Y + dim.Height / 2f);
-                    Color drawColor = colorFunc != null ? colorFunc() : Color.White;
+                    Color drawColor = colorFunc != null ? colorFunc() : (active ? Color.White : new Color(220, 220, 220));
                     sb.Draw(tex, pos, null, drawColor, 0f, origin, scale, SpriteEffects.None, 0f);
                 }
             }
+
+            if (IsMouseHovering && tooltip != null)
+            {
+                Main.hoverItemName = tooltip();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 微型清空按钮控件
+    /// </summary>
+    public class UIClearButton : UIPanel
+    {
+        public event Action OnClick;
+        private readonly Func<string> tooltip;
+
+        public UIClearButton(int size, Func<string> tooltip)
+        {
+            this.tooltip = tooltip;
+            Width.Set(size, 0);
+            Height.Set(size, 0);
+            SetPadding(0);
+            BackgroundColor = BorderColor = new Color(43, 60, 120);
+        }
+
+        public override void LeftClick(UIMouseEvent evt)
+        {
+            OnClick?.Invoke();
+        }
+
+        protected override void DrawSelf(SpriteBatch sb)
+        {
+            BackgroundColor = IsMouseHovering ? new Color(150, 50, 50) : new Color(43, 60, 120);
+            BorderColor = IsMouseHovering ? Color.Gold : new Color(43, 60, 120);
+            base.DrawSelf(sb);
+
+            CalculatedStyle dim = GetDimensions();
+            DynamicSpriteFont font = FontAssets.MouseText.Value;
+            string text = "×";
+            Vector2 textSize = font.MeasureString(text) * 0.75f;
+            Vector2 pos = new Vector2(dim.X + (dim.Width - textSize.X) / 2f, dim.Y + (dim.Height - textSize.Y) / 2f);
+            sb.DrawString(font, text, pos, Color.White, 0f, Vector2.Zero, 0.75f, SpriteEffects.None, 0f);
 
             if (IsMouseHovering && tooltip != null)
             {
