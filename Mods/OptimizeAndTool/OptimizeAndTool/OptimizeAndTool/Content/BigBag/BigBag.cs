@@ -35,6 +35,9 @@ namespace OptimizeAndTool.Content.BigBag
         /// <summary>通用背包融合数据源提供者单例</summary>
         public static readonly BigBagFusionSource FusionSource = new BigBagFusionSource();
 
+        /// <summary>通用容器 IBagInventory 适配器单例</summary>
+        public static readonly BigBagInventoryAdapter Inventory = new BigBagInventoryAdapter();
+
         /// <summary>容量变化后通知窗口重建格子</summary>
         public static event Action OnCapacityChanged;
 

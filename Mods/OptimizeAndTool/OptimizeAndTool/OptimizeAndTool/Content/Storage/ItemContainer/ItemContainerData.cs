@@ -1,6 +1,9 @@
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using OptimizeAndTool.Content.Storage.Core;
 using Terraria;
+using Terraria.Audio;
 using Terraria.ID;
 using TPML.Content;
 using TPML.Content.IO;
@@ -8,22 +11,14 @@ using TPML.Content.IO;
 namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
-    /// 实体收纳容器接口定义
+    /// 实体收纳容器接口定义（继承自通用 IBagInventory）
     /// </summary>
-    public interface IItemContainer
+    public interface IItemContainer : IBagInventory
     {
-        string Title { get; }
-        int Capacity { get; }
-        Item[] Slots { get; }
         bool AutoStorage { get; set; }
         bool AutoSortEnabled { get; set; }
 
-        event Action OnSlotsChanged;
-        void TriggerSlotsChanged();
-
         bool MeetEntryCriteria(Item item);
-        bool TryDeposit(Item item, bool sort = true);
-        bool TryDepositFromSlot(Item[] inv, int slot, bool justCheck);
         void CollectFromAllInventories(Player player);
         void QuickStackFromPlayer(Player player);
         void WithdrawAll(Player player);
@@ -37,7 +32,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
     /// 完全基于 TPML 伴随存档 (Sidecar) CustomData 序列化实现独立实体容器数据绑定。
     /// 作者: SaintCirno9
     /// </summary>
-    public abstract class ItemContainerItem : ModItem, IItemContainer
+    public abstract class ItemContainerItem : ModItem, IItemContainer, IToolbarCustomActions
     {
         public abstract int Capacity { get; }
         public abstract string ContainerTitle { get; }
@@ -46,6 +41,9 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public Item[] Slots { get; protected set; }
         public bool AutoStorage { get; set; } = true;
         public bool AutoSortEnabled { get; set; } = false;
+
+        public virtual bool CanFavorite => true;
+        public virtual bool ShowModSidebar => true;
 
         /// <summary>
         /// 正在向个人背包转移/取出物品的防重入标志（彻底防止一键取出或快速提取时被自动收纳误吸回）
@@ -76,6 +74,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         }
 
         public abstract bool MeetEntryCriteria(Item item);
+        public bool MeetEntryCriteria(Item item, int targetSlot = -1) => MeetEntryCriteria(item);
 
         public int GetStoredCount()
         {
@@ -181,6 +180,27 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             return res;
         }
 
+        public void DepositAll(Player player) => CollectFromAllInventories(player);
+        public void QuickStack(Player player) => QuickStackFromPlayer(player);
+        public void LootAll(Player player) => WithdrawAll(player);
+        public void Sort() => AutoSort();
+        public string GetCapacityText() => $"已存: {GetStoredCount()}/{Capacity}";
+
+        public IEnumerable<BagToolbarButton> GetCustomToolbarButtons()
+        {
+            yield return new BagToolbarButton(
+                () => $"拾取时自动吸入收纳: {(AutoStorage ? "[开启]" : "[关闭]")}",
+                () => "Images/Item_5010",
+                () =>
+                {
+                    AutoStorage = !AutoStorage;
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    TriggerSlotsChanged();
+                },
+                () => AutoStorage ? Color.White : Color.Gray * 0.5f
+            );
+        }
+
         public void CollectFromAllInventories(Player player)
         {
             if (player == null) return;
@@ -278,7 +298,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 for (int i = 0; i < Slots.Length; i++)
                 {
                     Item item = Slots[i];
-                    if (item == null || item.IsAir) continue;
+                    if (item == null || item.IsAir || item.favorited) continue;
 
                     int orig = item.stack;
                     Slots[i] = player.GetItem(item, GetItemSettings.QuickTransferFromSlot);
@@ -325,13 +345,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 }
             }
 
-            // 2. 排序
+            // 2. 排序 (保留 favorited 位置)
             var items = new List<Item>();
+            var favPositions = new Dictionary<int, Item>();
+
             for (int i = 0; i < Slots.Length; i++)
             {
                 if (Slots[i] != null && !Slots[i].IsAir && Slots[i].type > 0)
                 {
-                    items.Add(Slots[i]);
+                    if (Slots[i].favorited) favPositions[i] = Slots[i];
+                    else items.Add(Slots[i]);
                 }
             }
 
@@ -342,10 +365,21 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 return y.stack.CompareTo(x.stack);
             });
 
+            int listIdx = 0;
             for (int i = 0; i < Slots.Length; i++)
             {
-                if (i < items.Count) Slots[i] = items[i];
-                else Slots[i] = new Item();
+                if (favPositions.ContainsKey(i))
+                {
+                    Slots[i] = favPositions[i];
+                }
+                else if (listIdx < items.Count)
+                {
+                    Slots[i] = items[listIdx++];
+                }
+                else
+                {
+                    Slots[i] = new Item();
+                }
             }
         }
 
@@ -367,7 +401,8 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                             ["slot"] = i,
                             ["id"] = it.type,
                             ["stack"] = it.stack,
-                            ["prefix"] = it.prefix
+                            ["prefix"] = it.prefix,
+                            ["fav"] = it.favorited
                         };
                         if (it.type >= ItemID.Count)
                         {
@@ -404,6 +439,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                         int id = token["id"]?.ToObject<int>() ?? 0;
                         int stack = token["stack"]?.ToObject<int>() ?? 1;
                         int prefix = token["prefix"]?.ToObject<int>() ?? 0;
+                        bool fav = token["fav"]?.ToObject<bool>() ?? false;
                         string mod = token["mod"]?.ToString();
                         string name = token["name"]?.ToString();
 
@@ -419,6 +455,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                             it.SetDefaults(id);
                             it.stack = Math.Max(1, Math.Min(stack, it.maxStack));
                             if (prefix > 0) it.Prefix(prefix);
+                            it.favorited = fav;
                             Slots[slot] = it;
                         }
                     }
@@ -431,6 +468,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                         int id = itemTag.GetInt("id");
                         int stack = itemTag.GetInt("stack");
                         int prefix = itemTag.GetInt("prefix");
+                        bool fav = itemTag.GetBool("fav");
                         string mod = itemTag.GetString("mod");
                         string name = itemTag.GetString("name");
 
@@ -446,6 +484,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                             it.SetDefaults(id);
                             it.stack = Math.Max(1, Math.Min(stack, it.maxStack));
                             if (prefix > 0) it.Prefix(prefix);
+                            it.favorited = fav;
                             Slots[slot] = it;
                         }
                     }

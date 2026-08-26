@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using OptimizeAndTool.Content.Storage.Core;
 using Terraria;
+using Terraria.Audio;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
 using TPML.Content;
@@ -12,10 +14,10 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
     /// <summary>
     /// 随身饰品袋实体物品 (AccessoryBag)
-    /// 拥有独立 BagID 与伴随存档数据绑定，支持槽位饰品被动生效、外观显隐切换与工作台合成
+    /// 拥有独立 BagID 与伴随存档数据绑定，实现通用 IBagInventory 契约，支持槽位饰品被动生效、外观显隐切换与工作台合成
     /// 作者: SaintCirno9
     /// </summary>
-    public class AccessoryBagItem : ModItem
+    public class AccessoryBagItem : ModItem, IBagInventory, IVisualToggleable, IToolbarCustomActions
     {
         public override string Name => "AccessoryBag";
         public override string Texture => "AccessoryBag";
@@ -27,6 +29,338 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public event Action OnSlotsChanged;
         public void TriggerSlotsChanged() => OnSlotsChanged?.Invoke();
+
+        #region IBagInventory 实现
+        public string Title => $"随身饰品袋 [{ShortID}]";
+        public Item[] Slots => personalInventory;
+        public int Capacity => personalInventory != null ? personalInventory.Length : 0;
+        public bool CanFavorite => true;
+        public bool ShowModSidebar => true;
+
+        public bool MeetEntryCriteria(Item item, int targetSlot = -1)
+        {
+            if (item == null || item.IsAir) return false;
+            if (!item.accessory && item.prefix <= 0 && item.defense <= 0) return false;
+            if (!item.accessory) return false;
+
+            if (CheckDuplicates(item, targetSlot)) return false;
+            return true;
+        }
+
+        public bool CheckDuplicates(Item candidate, int currentSlot)
+        {
+            if (candidate == null || candidate.IsAir || !candidate.accessory) return false;
+
+            if (AccessoryBagConfig.PreventBagDuplicates.val && personalInventory != null)
+            {
+                for (int i = 0; i < personalInventory.Length; i++)
+                {
+                    if (i != currentSlot && personalInventory[i] != null && !personalInventory[i].IsAir && personalInventory[i].type == candidate.type)
+                    {
+                        SoundEngine.PlaySound(SoundID.MenuClose);
+                        Main.NewText($"[饰品袋] 已存在同种饰品 {candidate.Name}，禁止重复存放！", Color.OrangeRed);
+                        return true;
+                    }
+                }
+            }
+
+            if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && Main.LocalPlayer?.armor != null)
+            {
+                for (int i = 3; i < Main.LocalPlayer.armor.Length; i++)
+                {
+                    Item armorIt = Main.LocalPlayer.armor[i];
+                    if (armorIt != null && !armorIt.IsAir && armorIt.type == candidate.type)
+                    {
+                        SoundEngine.PlaySound(SoundID.MenuClose);
+                        Main.NewText($"[饰品袋] 角色已装备 {candidate.Name}，禁止在袋中重复挂载！", Color.OrangeRed);
+                        return true;
+                    }
+                }
+            }
+
+            if (AccessoryBagConfig.EnableMaxDuplicateAccessory.val)
+            {
+                int curCount = CountDuplicate(candidate);
+                if (curCount >= AccessoryBagConfig.MaxDuplicateAccessory.val)
+                {
+                    SoundEngine.PlaySound(SoundID.MenuClose);
+                    Main.NewText($"[饰品袋] 同种饰品最大上限为 {AccessoryBagConfig.MaxDuplicateAccessory.val} 个！", Color.OrangeRed);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryDeposit(Item item, bool sort = true)
+        {
+            if (item == null || item.IsAir || !item.accessory || personalInventory == null) return false;
+            if (CheckDuplicates(item, -1)) return false;
+
+            // 1. 同类堆叠
+            for (int i = 0; i < personalInventory.Length; i++)
+            {
+                Item target = personalInventory[i];
+                if (target != null && !target.IsAir && target.type == item.type && target.stack < target.maxStack && Item.CanStack(target, item))
+                {
+                    int take = Math.Min(item.stack, target.maxStack - target.stack);
+                    target.stack += take;
+                    item.stack -= take;
+                    if (item.stack <= 0)
+                    {
+                        item.TurnToAir();
+                        TriggerSlotsChanged();
+                        return true;
+                    }
+                }
+            }
+
+            // 2. 放入空格
+            for (int i = 0; i < personalInventory.Length; i++)
+            {
+                Item target = personalInventory[i];
+                if (target == null || target.IsAir)
+                {
+                    personalInventory[i] = item.Clone();
+                    item.TurnToAir();
+                    TriggerSlotsChanged();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryDepositFromSlot(Item[] inv, int slot, bool justCheck)
+        {
+            if (inv == null || slot < 0 || slot >= inv.Length) return false;
+            Item item = inv[slot];
+            if (item == null || item.IsAir || item.favorited || !item.accessory || personalInventory == null) return false;
+
+            if (justCheck)
+            {
+                if (CheckDuplicates(item, -1)) return false;
+                for (int i = 0; i < personalInventory.Length; i++)
+                {
+                    Item target = personalInventory[i];
+                    if (target == null || target.IsAir) return true;
+                    if (target.type == item.type && target.stack < target.maxStack && Item.CanStack(target, item)) return true;
+                }
+                return false;
+            }
+
+            bool res = TryDeposit(item, sort: true);
+            if (item.stack <= 0) inv[slot] = new Item();
+            return res;
+        }
+
+        public void DepositAll(Player player)
+        {
+            if (player?.inventory == null || personalInventory == null) return;
+
+            bool moved = false;
+            Item[] pInv = player.inventory;
+            Item[] bInv = personalInventory;
+
+            for (int i = 10; i < 50; i++)
+            {
+                Item pIt = pInv[i];
+                if (pIt == null || pIt.IsAir || pIt.favorited || !pIt.accessory) continue;
+                if (CheckDuplicates(pIt, -1)) continue;
+
+                for (int j = 0; j < bInv.Length; j++)
+                {
+                    if (bInv[j] == null || bInv[j].IsAir)
+                    {
+                        bInv[j] = pIt.Clone();
+                        pInv[i] = new Item();
+                        moved = true;
+                        break;
+                    }
+                }
+            }
+
+            if (moved)
+            {
+                SoundEngine.PlaySound(SoundID.Grab);
+                TriggerSlotsChanged();
+            }
+        }
+
+        public void QuickStack(Player player)
+        {
+            if (player?.inventory == null || personalInventory == null) return;
+
+            bool moved = false;
+            Item[] pInv = player.inventory;
+            Item[] bInv = personalInventory;
+
+            for (int i = 10; i < 50; i++)
+            {
+                Item pIt = pInv[i];
+                if (pIt == null || pIt.IsAir || pIt.favorited || !pIt.accessory) continue;
+
+                for (int j = 0; j < bInv.Length; j++)
+                {
+                    Item bIt = bInv[j];
+                    if (bIt != null && !bIt.IsAir && bIt.type == pIt.type && bIt.stack < bIt.maxStack && Item.CanStack(bIt, pIt))
+                    {
+                        int take = Math.Min(pIt.stack, bIt.maxStack - bIt.stack);
+                        bIt.stack += take;
+                        pIt.stack -= take;
+                        moved = true;
+                        if (pIt.stack <= 0)
+                        {
+                            pInv[i] = new Item();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (moved)
+            {
+                SoundEngine.PlaySound(SoundID.Grab);
+                TriggerSlotsChanged();
+            }
+        }
+
+        public void LootAll(Player player)
+        {
+            if (player?.inventory == null || personalInventory == null) return;
+
+            bool moved = false;
+            Item[] bInv = personalInventory;
+
+            for (int i = 0; i < bInv.Length; i++)
+            {
+                Item bIt = bInv[i];
+                if (bIt == null || bIt.IsAir) continue;
+
+                int orig = bIt.stack;
+                bInv[i] = player.GetItem(bIt, GetItemSettings.QuickTransferFromSlot);
+                if (bInv[i] == null) bInv[i] = new Item();
+                if (bInv[i].stack != orig) moved = true;
+            }
+
+            if (moved)
+            {
+                SoundEngine.PlaySound(SoundID.Grab);
+                TriggerSlotsChanged();
+            }
+        }
+
+        public void Sort()
+        {
+            if (personalInventory == null) return;
+            Item[] bInv = personalInventory;
+
+            var items = new List<Item>();
+            var favPositions = new Dictionary<int, Item>();
+
+            for (int i = 0; i < bInv.Length; i++)
+            {
+                if (bInv[i] != null && !bInv[i].IsAir)
+                {
+                    if (bInv[i].favorited) favPositions[i] = bInv[i];
+                    else items.Add(bInv[i]);
+                }
+            }
+
+            items.Sort((x, y) =>
+            {
+                if (x.rare != y.rare) return y.rare.CompareTo(x.rare);
+                if (x.value != y.value) return y.value.CompareTo(x.value);
+                return x.type.CompareTo(y.type);
+            });
+
+            int listIdx = 0;
+            for (int i = 0; i < bInv.Length; i++)
+            {
+                if (favPositions.ContainsKey(i))
+                {
+                    bInv[i] = favPositions[i];
+                }
+                else if (listIdx < items.Count)
+                {
+                    bInv[i] = items[listIdx++];
+                }
+                else
+                {
+                    bInv[i] = new Item();
+                }
+            }
+
+            SoundEngine.PlaySound(SoundID.Grab);
+            TriggerSlotsChanged();
+        }
+
+        public string GetCapacityText()
+        {
+            if (personalInventory == null) return "0/0";
+            int filled = 0;
+            for (int i = 0; i < personalInventory.Length; i++)
+            {
+                if (personalInventory[i] != null && !personalInventory[i].IsAir) filled++;
+            }
+            string t = $"已存: {filled}/{personalInventory.Length}";
+            if (AccessoryBagConfig.EnableEffectiveSlotsLimit.val)
+            {
+                t += $" (生效前 {AccessoryBagConfig.EffectiveSlots.val} 格)";
+            }
+            return t;
+        }
+        #endregion
+
+        #region IVisualToggleable 实现
+        public bool[] HideVisuals => hideVisuals;
+
+        public void ToggleVisual(int slot)
+        {
+            if (hideVisuals != null && slot >= 0 && slot < hideVisuals.Length)
+            {
+                hideVisuals[slot] = !hideVisuals[slot];
+                TriggerSlotsChanged();
+            }
+        }
+
+        public bool HasAnyVisibleVisuals()
+        {
+            if (hideVisuals == null) return false;
+            for (int i = 0; i < hideVisuals.Length; i++)
+            {
+                if (!hideVisuals[i]) return true;
+            }
+            return false;
+        }
+
+        public void ToggleAllVisuals()
+        {
+            if (hideVisuals == null) return;
+            bool targetHidden = HasAnyVisibleVisuals();
+            for (int i = 0; i < hideVisuals.Length; i++)
+            {
+                hideVisuals[i] = targetHidden;
+            }
+            TriggerSlotsChanged();
+        }
+        #endregion
+
+        #region IToolbarCustomActions 实现
+        public IEnumerable<BagToolbarButton> GetCustomToolbarButtons()
+        {
+            yield return new BagToolbarButton(
+                () => AccessoryBagConfig.EnablePassive.val ? "被动饰品属性: 已生效 (点击禁用)" : "被动饰品属性: 已禁用 (点击开启)",
+                () => AccessoryBagConfig.EnablePassive.val ? "Images/Item_158" : "Images/UI/InfoIcon_5",
+                () =>
+                {
+                    AccessoryBagConfig.EnablePassive.val = !AccessoryBagConfig.EnablePassive.val;
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    TriggerSlotsChanged();
+                }
+            );
+        }
+        #endregion
 
         public override void SetStaticDefaults()
         {
