@@ -198,9 +198,8 @@ namespace OptimizeAndTool
             BigBagWidth = data.BigBagWidth;
             BigBagHeight = data.BigBagHeight;
 
-            AccessoryBox.Enable.val = data.AccessoryBox;
-            AccessoryBox.EnablePassive.val = data.AccessoryBoxPassive;
-            AccessoryBox.Capacity.val = data.AccessoryBoxCapacity;
+            AccessoryBagConfig.EnablePassive.val = data.AccessoryBoxPassive;
+            AccessoryBagConfig.TotalSlots.val = data.AccessoryBoxCapacity;
 
             // 玩家属性修改 (PlayerModify)
             Content.Cheat.PlayerModify.ValSet.damage.val = data.PlayerDamage;
@@ -293,9 +292,8 @@ namespace OptimizeAndTool
             Content.BigBag.BigBag.EnableBigBagCraft.OnValUpdate += _ => NeedSave = true;
             Content.BigBag.BigBag.Capacity.OnValUpdate += _ => NeedSave = true;
 
-            AccessoryBox.Enable.OnValUpdate += _ => NeedSave = true;
-            AccessoryBox.EnablePassive.OnValUpdate += _ => NeedSave = true;
-            AccessoryBox.Capacity.OnValUpdate += _ => NeedSave = true;
+            AccessoryBagConfig.EnablePassive.OnValUpdate += _ => NeedSave = true;
+            AccessoryBagConfig.TotalSlots.OnValUpdate += _ => NeedSave = true;
 
             // PlayerModify 自动保存监听
             Content.Cheat.PlayerModify.ValSet.damage.OnValUpdate += _ => NeedSave = true;
@@ -397,9 +395,9 @@ namespace OptimizeAndTool
                 BigBagWidth = BigBagWidth,
                 BigBagHeight = BigBagHeight,
 
-                AccessoryBox = AccessoryBox.Enable.val,
-                AccessoryBoxPassive = AccessoryBox.EnablePassive.val,
-                AccessoryBoxCapacity = AccessoryBox.Capacity.val,
+                AccessoryBox = true,
+                AccessoryBoxPassive = AccessoryBagConfig.EnablePassive.val,
+                AccessoryBoxCapacity = AccessoryBagConfig.TotalSlots.val,
 
                 // 玩家属性修改
                 PlayerDamage = Content.Cheat.PlayerModify.ValSet.damage.val,
@@ -500,9 +498,8 @@ namespace OptimizeAndTool
             Content.BigBag.BigBag.EnableBigBagCraft.Reset();
             Content.BigBag.BigBag.Capacity.Reset();
 
-            AccessoryBox.Enable.Reset();
-            AccessoryBox.EnablePassive.Reset();
-            AccessoryBox.Capacity.Reset();
+            AccessoryBagConfig.EnablePassive.Reset();
+            AccessoryBagConfig.TotalSlots.Reset();
 
             Content.Cheat.PlayerModify.ValSet.damage.Reset();
             Content.Cheat.PlayerModify.ValSet.damage_val.Reset();

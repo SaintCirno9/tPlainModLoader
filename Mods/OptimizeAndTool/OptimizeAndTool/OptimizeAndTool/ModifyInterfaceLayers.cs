@@ -36,9 +36,9 @@ namespace OptimizeAndTool
             ui_game_state = new UIState();
             ui_game.SetState(ui_game_state);
 
-            // 注册原生按键绑定
+            // 注册原生按键绑定与背包融合源
             BigBagKeybind.Initialize();
-            AccessoryBoxKeybind.Register();
+            TPML.Content.Fusion.InventoryFusionManager.RegisterSource(new AccessoryBagFusionSource());
             CreativeInventoryKeybind.Initialize();
             PipetteKeybind.Register();
         }
@@ -95,18 +95,18 @@ namespace OptimizeAndTool
             if (Main.gameMenu)
             {
                 if (bigBagWindow?.IsOpen == true) bigBagWindow.Close();
-                if (BoxWindow.IsOpen) BoxWindow.Instance.Close();
+                if (AccessoryBagWindow.IsOpen) AccessoryBagWindow.Instance.Close();
                 return;
             }
 
-            // 大背包/饰品盒/药水袋/旗帜盒开启时，若物品栏关闭，同步关闭对应扩展窗口
+            // 大背包/随身饰品袋/药水袋/旗帜盒开启时，若物品栏关闭，同步关闭对应扩展窗口
             if (bigBagWindow?.IsOpen == true && !Main.playerInventory)
             {
                 bigBagWindow.Close();
             }
-            if (BoxWindow.IsOpen && !Main.playerInventory)
+            if (AccessoryBagWindow.IsOpen && !Main.playerInventory)
             {
-                BoxWindow.Instance.Close();
+                AccessoryBagWindow.Instance.Close();
             }
             if (Content.Storage.ItemContainer.PotionBagWindow.IsOpen && !Main.playerInventory)
             {
@@ -125,7 +125,7 @@ namespace OptimizeAndTool
                 SwitchBigBag(fromKeybind: true);
             }
 
-            AccessoryBoxKeybind.Update();
+            Patch_AccessoryBagInteractions.UpdateKeybinds();
             PipetteKeybind.Update();
 
             if (CreativeInventoryKeybind.ToggleKeybind?.JustPressed == true)
@@ -144,8 +144,8 @@ namespace OptimizeAndTool
         public static bool BigBagIsOpen => bigBagWindow?.IsOpen == true;
         public static bool BigBagIsHovering => IsHoveringWindow(bigBagWindow);
 
-        public static bool BoxIsOpen => BoxWindow.IsOpen;
-        public static bool BoxIsHovering => IsHoveringWindow(BoxWindow.Instance);
+        public static bool BoxIsOpen => AccessoryBagWindow.IsOpen;
+        public static bool BoxIsHovering => IsHoveringWindow(AccessoryBagWindow.Instance);
 
         public static bool PotionBagIsOpen => Content.Storage.ItemContainer.PotionBagWindow.IsOpen;
         public static bool PotionBagIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.PotionBagWindow.Instance);

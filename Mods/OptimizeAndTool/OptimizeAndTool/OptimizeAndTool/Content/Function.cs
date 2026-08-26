@@ -32,7 +32,7 @@ namespace OptimizeAndTool.Content
 
             // 3. 扩展存储系统
             cos.AddRange(Content.BigBag.BigBag.GetCO());
-            cos.AddRange(AccessoryBox.GetCO());
+            cos.AddRange(AccessoryBagConfig.GetCO());
 
             // 4. QoL 规则与自动化
             cos.AddRange(VeinMiningLogic.GetCO());
@@ -69,10 +69,10 @@ namespace OptimizeAndTool.Content
             uis.AddRange(MouseLagFixEngine.GetUI());
             uis.AddRange(PatchGameViewMatrixZoomLimit.GetUI());
 
-            // 2. 扩展存储系统 (大背包 + 饰品箱)
+            // 2. 扩展存储系统 (大背包 + 随身饰品袋)
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_3813", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "扩展存储系统"));
             uis.AddRange(Content.BigBag.BigBag.GetUI());
-            uis.AddRange(AccessoryBox.GetUI());
+            uis.AddRange(AccessoryBagConfig.GetUI());
 
             // 3. 采矿与建筑 QoL
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_3509", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "采矿与建造体验"));

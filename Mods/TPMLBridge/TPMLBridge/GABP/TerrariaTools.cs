@@ -22,6 +22,7 @@ namespace TPMLBridge.GABP
             list.AddRange(CreativeInventoryTools.GetDescriptors());
             list.AddRange(InstavatorTools.GetDescriptors());
             list.AddRange(ItemContainerTools.GetDescriptors());
+            list.AddRange(AccessoryBagTools.GetDescriptors());
             list.AddRange(SidecarTools.GetDescriptors());
             list.AddRange(ScreenCaptureTools.GetDescriptors());
             list.AddRange(RecipeBrowserTools.GetDescriptors());
@@ -50,15 +51,19 @@ namespace TPMLBridge.GABP
             result = await ItemContainerTools.HandleAsync(name, args);
             if (result != null) return result;
 
-            // 6. Sidecar 模组物品全域持久化工具
+            // 6. 随身饰品袋独立实体与属性挂载工具
+            result = await AccessoryBagTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 7. Sidecar 模组物品全域持久化工具
             result = await SidecarTools.HandleAsync(name, args);
             if (result != null) return result;
 
-            // 7. 游戏内截图与 UI 捕获工具
+            // 8. 游戏内截图与 UI 捕获工具
             result = await ScreenCaptureTools.HandleAsync(name, args);
             if (result != null) return result;
 
-            // 8. RecipeBrowser 合成表与物品图鉴工具
+            // 9. RecipeBrowser 合成表与物品图鉴工具
             result = await RecipeBrowserTools.HandleAsync(name, args);
             if (result != null) return result;
 

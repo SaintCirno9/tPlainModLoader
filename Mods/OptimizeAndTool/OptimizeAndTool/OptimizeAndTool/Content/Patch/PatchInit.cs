@@ -7,6 +7,8 @@ using tContentPatch.Patch;
 using TPML.Content;
 using TPML.Content.Engine;
 
+using OptimizeAndTool.Content.Storage.AccessoryBox;
+
 namespace OptimizeAndTool.Content.Patch
 {
     internal class PatchInit : tContentPatch.Mod
@@ -60,12 +62,16 @@ namespace OptimizeAndTool.Content.Patch
 
     public class OptimizeAndToolContentMod : TPML.Content.Mod
     {
+        public override string Name => "OptimizeAndTool";
+        public override string DisplayName => "优化与实用工具 (OptimizeAndTool)";
+
         public override void Load()
         {
             try
             {
                 AddContent(new PotionBagItem());
                 AddContent(new BannerChestItem());
+                AddContent(new AccessoryBagItem());
             }
             catch (Exception ex)
             {

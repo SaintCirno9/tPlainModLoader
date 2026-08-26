@@ -59,7 +59,7 @@ namespace OptimizeAndTool.ModLinkage
                 mi.Invoke(null, new object[] { "OptimizeAndTool.BigBag.Switch", ui_bag });
             }
 
-            // 2. 随身饰品箱按钮
+            // 2. 随身饰品袋按钮
             if (EnableAccessoryBoxBtn)
             {
                 UIImage ui_box = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_1862", ReLogic.Content.AssetRequestMode.ImmediateLoad));
@@ -68,12 +68,12 @@ namespace OptimizeAndTool.ModLinkage
                 ui_box.ScaleToFit = true;
                 ui_box.OnUpdate += _ =>
                 {
-                    if (ui_box.IsMouseHovering) Main.instance.MouseText("饰品箱");
+                    if (ui_box.IsMouseHovering) Main.instance.MouseText("随身饰品袋");
                 };
                 ui_box.OnLeftClick += (e, s) =>
                 {
                     SoundEngine.PlaySound(SoundID.MenuTick);
-                    BoxWindow.Toggle();
+                    AccessoryBagWindow.Toggle();
                 };
                 mi.Invoke(null, new object[] { "OptimizeAndTool.AccessoryBox.Switch", ui_box });
             }

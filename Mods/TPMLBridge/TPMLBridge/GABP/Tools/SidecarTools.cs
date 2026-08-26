@@ -338,7 +338,7 @@ namespace TPMLBridge.GABP.Tools
                     bank3 = ExtractModItems(player?.bank3?.item, "bank3"),
                     bank4 = ExtractModItems(player?.bank4?.item, "bank4"),
                     bigBag = ExtractContainerItems(OptimizeAndTool.Content.BigBag.BigBag.Slots),
-                    accessoryBox = ExtractContainerItems(OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.Slots)
+                    accessoryBox = ExtractContainerItems(OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.personalInventory)
                 }
             };
         }
@@ -349,9 +349,10 @@ namespace TPMLBridge.GABP.Tools
             {
                 return OptimizeAndTool.Content.BigBag.BigBag.Slots;
             }
-            if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(containerName, "accessoryBag", StringComparison.OrdinalIgnoreCase))
             {
-                return OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.Slots;
+                return OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.personalInventory;
             }
             return null;
         }
@@ -384,10 +385,10 @@ namespace TPMLBridge.GABP.Tools
                     OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
                     OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
                 }
-                else if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(containerName, "accessoryBag", StringComparison.OrdinalIgnoreCase))
                 {
-                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
-                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBox.NotifySlotsChanged();
+                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.TriggerSlotsChanged();
                 }
             }
 
@@ -580,7 +581,6 @@ namespace TPMLBridge.GABP.Tools
                     if (Main.LocalPlayer != null)
                     {
                         OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
-                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
                     }
                     return new { success = true, action, message = "已执行玩家数据与 Sidecar 保存" };
 
@@ -597,7 +597,6 @@ namespace TPMLBridge.GABP.Tools
                     {
                         ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
                         OptimizeAndTool.Content.BigBag.BigBagStorage.LoadForPlayer(Main.LocalPlayer);
-                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.LoadForPlayer(Main.LocalPlayer);
                     }
                     return new { success = true, action, message = "已从 Sidecar 文件回填玩家数据与扩展容器" };
 
@@ -611,7 +610,6 @@ namespace TPMLBridge.GABP.Tools
                         ModItemSidecarEngine.OnPlayerSavePrefix(Main.LocalPlayer);
                         ModItemSidecarEngine.OnPlayerSavePostfix(Main.LocalPlayer);
                         OptimizeAndTool.Content.BigBag.BigBagStorage.SaveNow();
-                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.SaveNow();
                     }
                     ModItemSidecarEngine.OnWorldSavePrefix();
                     ModItemSidecarEngine.OnWorldSavePostfix();
@@ -622,7 +620,6 @@ namespace TPMLBridge.GABP.Tools
                     {
                         ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
                         OptimizeAndTool.Content.BigBag.BigBagStorage.LoadForPlayer(Main.LocalPlayer);
-                        OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBoxStorage.LoadForPlayer(Main.LocalPlayer);
                     }
                     ModItemSidecarEngine.OnWorldLoaded();
                     return new { success = true, action, message = "已全量加载玩家与世界 Sidecar" };
