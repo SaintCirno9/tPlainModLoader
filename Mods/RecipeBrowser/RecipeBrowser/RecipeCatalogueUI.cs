@@ -13,6 +13,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 using TPML.Content.Fusion;
+using TPML.Core.Pinyin;
 
 namespace RecipeBrowser
 {
@@ -502,22 +503,21 @@ namespace RecipeBrowser
             {
                 string name = recipe.createItem.Name;
                 string internalName = (recipe.createItem.type > 0 && recipe.createItem.type < ItemID.Count) ? ItemID.Search.GetName(recipe.createItem.type) : "";
-                string cleanFilter = filterName.Replace(" ", "").Replace("'", "").Replace("-", "");
-                string cleanInternal = internalName.Replace(" ", "").Replace("'", "").Replace("-", "");
+                string localizedName = Lang.GetItemNameValue(recipe.createItem.type);
 
-                if (name.IndexOf(filterName, StringComparison.OrdinalIgnoreCase) == -1 &&
-                    internalName.IndexOf(filterName, StringComparison.OrdinalIgnoreCase) == -1 &&
-                    cleanInternal.IndexOf(cleanFilter, StringComparison.OrdinalIgnoreCase) == -1)
+                if (!PinyinHelper.Matches(name, filterName) &&
+                    !PinyinHelper.Matches(localizedName, filterName) &&
+                    !PinyinHelper.Matches(internalName, filterName))
                 {
                     return false;
                 }
             }
 
-            string filterDesc = itemDescriptionFilter.currentString.Trim().ToLower();
+            string filterDesc = itemDescriptionFilter.currentString.Trim();
             if (filterDesc.Length > 0)
             {
                 string tooltips = GetTooltipsAsString(recipe.createItem.ToolTip);
-                if (tooltips.IndexOf(filterDesc, StringComparison.OrdinalIgnoreCase) == -1)
+                if (!PinyinHelper.Matches(tooltips, filterDesc))
                 {
                     return false;
                 }

@@ -12,4 +12,8 @@
     <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Pinyin\PinyinResource.txt" />
+  </ItemGroup>
+
 </Project>

@@ -6,6 +6,7 @@ using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
+using TPML.Core.Pinyin;
 using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace WandsTool.Content.Structure.UI
@@ -130,13 +131,13 @@ namespace WandsTool.Content.Structure.UI
             scrollList.ClearChild();
             List<string> files = StructureStorage.GetSavedBlueprintFiles();
 
-            // 搜索词过滤
+            // 搜索词过滤（支持中英文直接包含、全拼与拼音首字母缩写）
             if (!string.IsNullOrEmpty(currentSearchFilter))
             {
                 files = files.FindAll(file =>
                 {
                     string fileName = Path.GetFileNameWithoutExtension(file);
-                    if (fileName.IndexOf(currentSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (PinyinHelper.Matches(fileName, currentSearchFilter))
                         return true;
 
                     try
@@ -144,7 +145,7 @@ namespace WandsTool.Content.Structure.UI
                         StructureData data = StructureStorage.Load(file);
                         if (data != null && !string.IsNullOrEmpty(data.Name))
                         {
-                            return data.Name.IndexOf(currentSearchFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+                            return PinyinHelper.Matches(data.Name, currentSearchFilter);
                         }
                     }
                     catch { }

@@ -59,7 +59,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         private static void HandleQuickHoverTransfer(AccessoryBagItem bag)
         {
             Item hover = Main.HoverItem;
-            if (hover == null || hover.IsAir || !hover.accessory) return;
+            if (hover == null || hover.IsAir || !AccessoryBagItem.IsValidBagItem(hover)) return;
 
             Player player = Main.LocalPlayer;
             if (player?.inventory == null || bag.personalInventory == null) return;
@@ -84,6 +84,8 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 Item pIt = player.inventory[i];
                 if (pIt != null && !pIt.IsAir && pIt.type == hover.type && pIt.prefix == hover.prefix)
                 {
+                    if (bag.CheckDuplicates(pIt, -1)) return;
+
                     for (int j = 0; j < bag.personalInventory.Length; j++)
                     {
                         if (bag.personalInventory[j] == null || bag.personalInventory[j].IsAir)
@@ -133,9 +135,11 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             AccessoryBagItem bag = ItemLoader.GetModItem(item) as AccessoryBagItem;
 
-            // 1. 手持饰品左键点击饰品袋直接存入
-            if (bag != null && !Main.mouseItem.IsAir && Main.mouseItem.accessory && Main.mouseLeft && Main.mouseLeftRelease && !ItemSlot.ShiftInUse && !ItemSlot.ControlInUse)
+            // 1. 手持物品左键点击饰品袋直接存入
+            if (bag != null && !Main.mouseItem.IsAir && AccessoryBagItem.IsValidBagItem(Main.mouseItem) && Main.mouseLeft && Main.mouseLeftRelease && !ItemSlot.ShiftInUse && !ItemSlot.ControlInUse)
             {
+                if (bag.CheckDuplicates(Main.mouseItem, -1)) return false;
+
                 for (int i = 0; i < bag.personalInventory.Length; i++)
                 {
                     if (bag.personalInventory[i] == null || bag.personalInventory[i].IsAir)
@@ -153,9 +157,11 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             // 2. 窗口打开时 Shift+左键 快速存入
             if (Main.mouseLeft && Main.mouseLeftRelease && ItemSlot.ShiftInUse && Main.mouseItem.IsAir)
             {
-                if (AccessoryBagWindow.IsOpen && AccessoryBagWindow.Instance.CurrentBag != null && item.accessory)
+                if (AccessoryBagWindow.IsOpen && AccessoryBagWindow.Instance.CurrentBag != null && AccessoryBagItem.IsValidBagItem(item))
                 {
                     AccessoryBagItem currentBag = AccessoryBagWindow.Instance.CurrentBag;
+                    if (currentBag.CheckDuplicates(item, -1)) return false;
+
                     for (int i = 0; i < currentBag.personalInventory.Length; i++)
                     {
                         if (currentBag.personalInventory[i] == null || currentBag.personalInventory[i].IsAir)

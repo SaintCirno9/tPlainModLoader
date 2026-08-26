@@ -31,7 +31,7 @@ namespace OptimizeAndTool.Content.QoL
         public static GetSetReset<bool> EnableContainerCraft = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableMiddleClickOpen = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableAutoCoinsToPiggyBank = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> RequirePiggyBankItem = new GetSetReset<bool>(false, false);
+        public static GetSetReset<bool> RequirePiggyBankItem = new GetSetReset<bool>(true, true);
         /// 便携容器物品 -> 对应的随身 Chest 界面编号（-2 存钱罐 / -3 保险箱 / -4 护卫熔炉 / -5 虚空库）
         /// 全面对齐 ImproveGame (Lookups.BankItems) 支持所有便携媒介
         /// </summary>
@@ -455,6 +455,104 @@ namespace OptimizeAndTool.Content.QoL
         {
             if (__instance == null || __instance.whoAmI != Main.myPlayer) return;
             PortableContainer.TransferInventoryCoinsToPiggyBank(__instance);
+        }
+    }
+
+    /// <summary>
+    /// 商人入驻财富判定增强补丁：
+    /// 原版 NPC.SpawnAllowed_Merchant 仅统计活跃玩家背包（0~57格）中的钱币是否达到 50 银币（5000 铜币），
+    /// 完全忽略了四大随身银行（存钱罐 bank、保险箱 bank2、护卫熔炉 bank3、虚空仓库 bank4）。
+    /// 本补丁在原版判定未达成（false）时，继续统计四大银行中的钱币总价值，
+    /// 确保钱币即使被自动存入存钱罐，商人依然能正常满足入驻条件并生成！
+    /// </summary>
+    [HarmonyPatch(typeof(NPC), nameof(NPC.SpawnAllowed_Merchant))]
+    internal static class Patch_SpawnAllowed_Merchant
+    {
+        [HarmonyPostfix]
+        public static void Postfix(ref bool __result)
+        {
+            if (__result) return;
+            if (NPC.unlockedMerchantSpawn)
+            {
+                __result = true;
+                return;
+            }
+
+            long totalCoins = 0;
+            const long targetCoins = 5000L; // 50 银币 = 5000 铜币
+
+            for (int i = 0; i < Main.maxPlayers; i++)
+            {
+                Player player = Main.player[i];
+                if (player == null || !player.active) continue;
+
+                // 累加背包（0~57格）
+                totalCoins += CountCoinsInItems(player.inventory);
+                if (totalCoins >= targetCoins)
+                {
+                    __result = true;
+                    return;
+                }
+
+                // 累加四大随身银行
+                if (player.bank?.item != null)
+                {
+                    totalCoins += CountCoinsInItems(player.bank.item);
+                    if (totalCoins >= targetCoins)
+                    {
+                        __result = true;
+                        return;
+                    }
+                }
+                if (player.bank2?.item != null)
+                {
+                    totalCoins += CountCoinsInItems(player.bank2.item);
+                    if (totalCoins >= targetCoins)
+                    {
+                        __result = true;
+                        return;
+                    }
+                }
+                if (player.bank3?.item != null)
+                {
+                    totalCoins += CountCoinsInItems(player.bank3.item);
+                    if (totalCoins >= targetCoins)
+                    {
+                        __result = true;
+                        return;
+                    }
+                }
+                if (player.bank4?.item != null)
+                {
+                    totalCoins += CountCoinsInItems(player.bank4.item);
+                    if (totalCoins >= targetCoins)
+                    {
+                        __result = true;
+                        return;
+                    }
+                }
+            }
+        }
+
+        private static long CountCoinsInItems(Item[] items)
+        {
+            if (items == null) return 0;
+            long val = 0;
+            for (int j = 0; j < items.Length; j++)
+            {
+                Item item = items[j];
+                if (item != null && item.stack > 0 && item.IsACoin)
+                {
+                    switch (item.type)
+                    {
+                        case ItemID.CopperCoin: val += item.stack; break;
+                        case ItemID.SilverCoin: val += (long)item.stack * 100L; break;
+                        case ItemID.GoldCoin: val += (long)item.stack * 10000L; break;
+                        case ItemID.PlatinumCoin: val += (long)item.stack * 1000000L; break;
+                    }
+                }
+            }
+            return val;
         }
     }
 }

@@ -8,6 +8,7 @@ using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Core.Pinyin;
 using UITextBox = tContentPatch.Content.UI.UITextBox;
 
 namespace OptimizeAndTool.Content.Creative
@@ -363,37 +364,27 @@ namespace OptimizeAndTool.Content.Creative
                 return true;
             }
 
-            // 物品名称模糊匹配 (Name / NameOverride)
-            if (!string.IsNullOrEmpty(item.Name) && item.Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-
-            // 本地化名称匹配
+            // 物品名称（英文/内部）与本地化中文名称模糊匹配（支持全拼与拼音首字母缩写）
             string localizedName = Lang.GetItemNameValue(item.type);
-            if (!string.IsNullOrEmpty(localizedName) && localizedName.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (PinyinHelper.Matches(localizedName, s) || PinyinHelper.Matches(item.Name, s))
             {
                 return true;
             }
 
-            // 模组物品元数据（内部类名、FullName、自定义 Tooltip）匹配
+            // 模组物品元数据（内部类名、FullName、自定义 Tooltip）拼音匹配
             if (item.type >= ItemID.Count)
             {
                 var modItem = TPML.Content.ItemLoader.GetItem(item.type);
                 if (modItem != null)
                 {
-                    if (!string.IsNullOrEmpty(modItem.Name) && modItem.Name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        return true;
-                    }
-                    if (!string.IsNullOrEmpty(modItem.FullName) && modItem.FullName.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (PinyinHelper.Matches(modItem.Name, s) || PinyinHelper.Matches(modItem.FullName, s))
                     {
                         return true;
                     }
                 }
 
                 string modTooltip = TPML.Content.ItemLoader.GetTooltip(item.type);
-                if (!string.IsNullOrEmpty(modTooltip) && modTooltip.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(modTooltip) && PinyinHelper.Matches(modTooltip, s))
                 {
                     return true;
                 }

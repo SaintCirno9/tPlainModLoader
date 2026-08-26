@@ -22,6 +22,7 @@
   - [2.7 Harmony 运行时补丁规范](#27-harmony-运行时补丁规范)
   - [2.8 统一文本输入框 (UITextBox)](#28-统一文本输入框-uitextbox)
   - [2.9 模组配置与自动持久化 (ModSetting)](#29-模组配置与自动持久化-modsetting)
+  - [2.10 全局拼音搜索与多模匹配 (TPML.Core.Pinyin)](#210-全局拼音搜索与多模匹配-tpmlcorepinyin)
 - [三、 构建与部署](#三-构建与部署)
 
 ---
@@ -341,6 +342,38 @@ TPML 在 `tContentPatch.Content.UI.UITextBox` 中提供了通用的单行文本�
 模组可通过继承 `ModSetting` 实现结构化配置与文件持久化：
 - **自动落盘机制**：配置项变更时仅需设置 `NeedSave = true`；
 - **全生命周期安全网**：框架提供了 `ModSetting.SaveAllDirty()`，在**快速设置菜单关闭 (`UIQuickSetting.Close`)**、**玩家离开世界**、**退回主菜单**以及**进程退出 (`ProcessExit`)** 时全自动执行持久化写盘，确保任何游戏内调参不丢失。
+
+---
+
+### 2.10 全局拼音搜索与多模匹配 (TPML.Core.Pinyin)
+
+TPML 核心库提供了原生的拼音分词、全拼生成与首字母缩写多模模糊搜索基础设施：
+- **零外部 DLL 依赖**：443KB 拼音字典以内嵌资源形式直接编译至 `TPML.Core.dll`，无需额外分发或部署外部动态链接库；
+- **高性能字典树与内存缓存**：基于 Trie 前缀树进行汉字与多音词分词，结合 `ConcurrentDictionary` 元数据缓存，微秒级极速比对（~6µs/次）；
+- **全覆盖多模匹配**：
+  - 中文原文（如 `"钻石"`）；
+  - 全拼连写与局部拼音（如 `"zuanshigao"` / `"shigao"` 匹配 `"钻石镐"`）；
+  - 拼音首字母缩写（如 `"zsg"` 匹配 `"钻石镐"`，`"sjzh"` 匹配 `"世纪之花"`）；
+  - 自动忽略空格与大小写。
+
+```csharp
+using TPML.Core.Pinyin;
+
+// 1. 直接多模匹配 (支持首拼/全拼/中文/英文)
+bool isMatch = PinyinHelper.Matches("钻石镐", "zsg"); // true
+bool isMatch2 = PinyinHelper.Matches("世纪之花", "shiji"); // true
+
+// 2. 字符串扩展方法
+bool isMatch3 = "天界星盘".MatchesPinyin("tjxp"); // true
+
+// 3. 原生系统全量接入
+// - 原版网格制作系统 (NewCraftingUI) & 向导配方查询窗口输入框
+// - 原版旅程模式制作与复制搜索框 (UICreativeInfiniteItemsDisplay)
+// - 原版怪物图鉴搜索 (Bestiary.Filters.BySearch)
+// - RecipeBrowser 物品/配方/怪物图鉴搜索
+// - OptimizeAndTool 创造模式背包搜索 (UICreativeInventory)
+// - WandsTool 蓝图管理器搜索 (UIBlueprintManager)
+```
 
 ---
 

@@ -8,6 +8,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.UI;
+using TPML.Core.Pinyin;
 
 namespace RecipeBrowser
 {
@@ -260,10 +261,15 @@ namespace RecipeBrowser
             {
                 return false;
             }
-            string filterText = npcNameFilter.currentString.Trim().ToLower();
-            if (filterText.Length > 0 && Lang.GetNPCNameValue(slot.npc.netID).IndexOf(filterText, StringComparison.OrdinalIgnoreCase) == -1)
+            string filterText = npcNameFilter.currentString.Trim();
+            if (filterText.Length > 0)
             {
-                return false;
+                string npcName = Lang.GetNPCNameValue(slot.npc.netID);
+                string internalNpcName = (slot.npc.netID > 0 && slot.npc.netID < NPCID.Count) ? NPCID.Search.GetName(slot.npc.netID) : "";
+                if (!PinyinHelper.Matches(npcName, filterText) && !PinyinHelper.Matches(internalNpcName, filterText))
+                {
+                    return false;
+                }
             }
             return true;
         }

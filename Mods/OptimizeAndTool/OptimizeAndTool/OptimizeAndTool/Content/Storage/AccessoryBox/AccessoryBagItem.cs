@@ -37,11 +37,16 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         public bool CanFavorite => true;
         public bool ShowModSidebar => true;
 
+        public static bool IsValidBagItem(Item item)
+        {
+            if (item == null || item.IsAir) return false;
+            return item.accessory || item.headSlot >= 0 || item.bodySlot >= 0 || item.legSlot >= 0 || item.defense > 0 || item.prefix > 0;
+        }
+
         public bool MeetEntryCriteria(Item item, int targetSlot = -1)
         {
             if (item == null || item.IsAir) return false;
-            if (!item.accessory && item.prefix <= 0 && item.defense <= 0) return false;
-            if (!item.accessory) return false;
+            if (!IsValidBagItem(item)) return false;
 
             if (CheckDuplicates(item, targetSlot)) return false;
             return true;
@@ -49,7 +54,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public bool CheckDuplicates(Item candidate, int currentSlot)
         {
-            if (candidate == null || candidate.IsAir || !candidate.accessory) return false;
+            if (candidate == null || candidate.IsAir || !IsValidBagItem(candidate)) return false;
 
             if (AccessoryBagConfig.PreventBagDuplicates.val && personalInventory != null)
             {
@@ -58,7 +63,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                     if (i != currentSlot && personalInventory[i] != null && !personalInventory[i].IsAir && personalInventory[i].type == candidate.type)
                     {
                         SoundEngine.PlaySound(SoundID.MenuClose);
-                        Main.NewText($"[饰品袋] 已存在同种饰品 {candidate.Name}，禁止重复存放！", Color.OrangeRed);
+                        Main.NewText($"[饰品袋] 已存在同种物品 {candidate.Name}，禁止重复存放！", Color.OrangeRed);
                         return true;
                     }
                 }
@@ -66,7 +71,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && Main.LocalPlayer?.armor != null)
             {
-                for (int i = 3; i < Main.LocalPlayer.armor.Length; i++)
+                for (int i = 0; i < Main.LocalPlayer.armor.Length; i++)
                 {
                     Item armorIt = Main.LocalPlayer.armor[i];
                     if (armorIt != null && !armorIt.IsAir && armorIt.type == candidate.type)
@@ -84,7 +89,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 if (curCount >= AccessoryBagConfig.MaxDuplicateAccessory.val)
                 {
                     SoundEngine.PlaySound(SoundID.MenuClose);
-                    Main.NewText($"[饰品袋] 同种饰品最大上限为 {AccessoryBagConfig.MaxDuplicateAccessory.val} 个！", Color.OrangeRed);
+                    Main.NewText($"[饰品袋] 同种物品最大上限为 {AccessoryBagConfig.MaxDuplicateAccessory.val} 个！", Color.OrangeRed);
                     return true;
                 }
             }
@@ -94,7 +99,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public bool TryDeposit(Item item, bool sort = true)
         {
-            if (item == null || item.IsAir || !item.accessory || personalInventory == null) return false;
+            if (item == null || item.IsAir || !IsValidBagItem(item) || personalInventory == null) return false;
             if (CheckDuplicates(item, -1)) return false;
 
             // 1. 同类堆叠
@@ -135,7 +140,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         {
             if (inv == null || slot < 0 || slot >= inv.Length) return false;
             Item item = inv[slot];
-            if (item == null || item.IsAir || item.favorited || !item.accessory || personalInventory == null) return false;
+            if (item == null || item.IsAir || item.favorited || !IsValidBagItem(item) || personalInventory == null) return false;
 
             if (justCheck)
             {
@@ -165,7 +170,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             for (int i = 10; i < 50; i++)
             {
                 Item pIt = pInv[i];
-                if (pIt == null || pIt.IsAir || pIt.favorited || !pIt.accessory) continue;
+                if (pIt == null || pIt.IsAir || pIt.favorited || !IsValidBagItem(pIt)) continue;
                 if (CheckDuplicates(pIt, -1)) continue;
 
                 for (int j = 0; j < bInv.Length; j++)
@@ -198,7 +203,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             for (int i = 10; i < 50; i++)
             {
                 Item pIt = pInv[i];
-                if (pIt == null || pIt.IsAir || pIt.favorited || !pIt.accessory) continue;
+                if (pIt == null || pIt.IsAir || pIt.favorited || !IsValidBagItem(pIt)) continue;
 
                 for (int j = 0; j < bInv.Length; j++)
                 {
@@ -364,8 +369,8 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public override void SetStaticDefaults()
         {
-            ItemLoader.SetDisplayName(Type, "饰品袋");
-            ItemLoader.SetTooltip(Type, "便携式饰品收纳与被动属性挂载袋\n[c/88ff88:【操作提示】] 物品栏右键或中键打开饰品面板\n每格右上角眼睛图标可切换饰品外观可见性\n光标悬停在饰品上按快捷键 (默认 ]) 可极速转移\n袋内饰品无需拿取可直接参与工作台合成配方");
+            ItemLoader.SetDisplayName(Type, "随身饰品袋");
+            ItemLoader.SetTooltip(Type, "便携式饰品与装备收纳与被动属性挂载袋\n[c/88ff88:【核心特性】] 支持饰品与装备（头盔/胸甲/护腿），自动激活属性与套装奖励\n[c/88ff88:【操作提示】] 物品栏右键或中键打开面板，每格右上角眼睛可切换外观\n光标悬停在饰品/装备上按快捷键 (默认 ]) 可极速转移，袋内物品直连参与配方合成");
             CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;
         }
 
@@ -434,7 +439,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public int CountDuplicate(Item target)
         {
-            if (target == null || target.IsAir || !target.accessory || personalInventory == null) return 0;
+            if (target == null || target.IsAir || !IsValidBagItem(target) || personalInventory == null) return 0;
             int count = 0;
             for (int i = 0; i < personalInventory.Length; i++)
             {
@@ -681,7 +686,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             if (count > 0)
             {
-                string header = count >= max ? $"已存入饰品: {count}/{max} (已满)" : $"已存入饰品: {count}/{max}";
+                string header = count >= max ? $"已存入物品: {count}/{max} (已满)" : $"已存入物品: {count}/{max}";
                 tooltips.Add(new TooltipLine(Mod, "AccBagCount", header)
                 {
                     OverrideColor = Color.LightGreen
@@ -709,7 +714,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
                 if (count > 24)
                 {
-                    tooltips.Add(new TooltipLine(Mod, "AccBagRemaining", $"还有 {count - 24} 个饰品...")
+                    tooltips.Add(new TooltipLine(Mod, "AccBagRemaining", $"还有 {count - 24} 个物品...")
                     {
                         OverrideColor = Color.Gray
                     });

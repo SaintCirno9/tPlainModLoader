@@ -41,6 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Core\TPML.Core.csproj" Private="false" />
     <ProjectReference Include="..\..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
     <ProjectReference Include="..\..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
     <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />

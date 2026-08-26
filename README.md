@@ -27,6 +27,7 @@
 - **解耦底层核心库 (TPML.Core)**：独立于 XNA/Terraria 游戏上下文的底层基础库，提供企业级高性能日志系统（`ILogger` / `LogManager`、高对比度彩色控制台、后台异步非阻塞磁盘刷盘与日志滚动）以及 `ScopedTimer` 微秒级性能分析诊断器；
 - **原生级统一按键框架 (KeybindLoader)**：模组快捷键自动注入原版控件设置界面与输入配置；
 - **原生内容加载引擎 (TPML.Content)**：标准化物品、配方与系统生命周期注册，支持手持与分帧建造；
+- **原生多模拼音搜索 (TPML.Core.Pinyin)**：内置零外部 DLL 依赖的拼音分词与 Trie 字典树引擎，全量打通原版网格制作系统、向导配方查询、旅程模式物品界面、原版怪物图鉴与生态模组的拼音与首字母搜索；
 - **4GB 虚拟内存感知 (LargeAddressAware)**：构建流自动注入 LAA 标志，扩展 32 位寻址上限。
 
 ---
@@ -55,6 +56,7 @@ TPML 仓库内包含 14 个官方扩展模组与实用工具（如 `OptimizeAndT
 ## 📄 致谢与开源致意 (Credits & Acknowledgements)
 
 - **上游原作者**：特别鸣谢 **[github-user-64](https://github.com/github-user-64)** 创建了最初的 [tPlainModLoader](https://github.com/github-user-64/tPlainModLoader) 原型与启动框架基石！
+- **RecipeBrowserPinyin**：[Cyrillya/RecipeBrowserPinyin](https://github.com/Cyrillya/RecipeBrowserPinyin)（拼音搜索算法模型与词库灵感）
 - **Fargo's Mod Team**：[Fargowilta/Fargowiltas](https://github.com/Fargowilta/Fargowiltas)（地狱直通车 Instavator 原始概念与贴图素材，遵循 MIT 许可证）
 - **Harmony**：[Lib.Harmony](https://github.com/pardeike/Harmony/)
 - **Mono.Cecil**：[jbevain/cecil](https://github.com/jbevain/cecil)

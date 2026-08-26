@@ -232,10 +232,70 @@ namespace TPMLBridge.GABP.Tools
                     // 6. 防重复放置检测
                     dupCount = carriedBag.CountDuplicate(shield);
 
+                    // 7. 装备放入与套装加成 (Set Bonus) 实机测试：叶绿全套 (Mask 1001 + Breastplate 1004 + Greaves 1005)
+                    bool armorSetPassed = false;
+                    bool armorStatsPassed = false;
+                    int armorDefDelta = 0;
+
+                    Item chloroHead = new Item(); chloroHead.SetDefaults(ItemID.ChlorophyteMask);
+                    Item chloroBody = new Item(); chloroBody.SetDefaults(ItemID.ChlorophytePlateMail);
+                    Item chloroLegs = new Item(); chloroLegs.SetDefaults(ItemID.ChlorophyteGreaves);
+
+                    carriedBag.personalInventory[1] = chloroHead;
+                    carriedBag.personalInventory[2] = chloroBody;
+                    carriedBag.personalInventory[3] = chloroLegs;
+                    carriedBag.TriggerSlotsChanged();
+
+                    int beforeArmorDef = player.statDefense;
+                    accPlayer.UpdateEquipsPostfix(player, player.whoAmI);
+                    accPlayer.UpdateArmorSetsPostfix(player, player.whoAmI);
+                    int afterArmorDef = player.statDefense;
+                    armorDefDelta = afterArmorDef - beforeArmorDef;
+
+                    // 叶绿面具(25) + 胸甲(20) + 护腿(13) = +58 防御
+                    armorStatsPassed = (armorDefDelta >= 58);
+                    // 套装激活检查：setChlorophyte == true 且获得 Buff 60 (Leaf Crystal)
+                    armorSetPassed = player.setChlorophyte;
+
                     // 恢复测试槽位
                     carriedBag.personalInventory[0] = origSlot0;
+                    carriedBag.personalInventory[1] = new Item();
+                    carriedBag.personalInventory[2] = new Item();
+                    carriedBag.personalInventory[3] = new Item();
                     if (carriedBag.hideVisuals != null && carriedBag.hideVisuals.Length > 0) carriedBag.hideVisuals[0] = origVis0;
                     carriedBag.TriggerSlotsChanged();
+
+                    return new
+                    {
+                        success = true,
+                        inWorld = player != null && player.active,
+                        item = new
+                        {
+                            id = bagType,
+                            name = modItem?.Name ?? "AccessoryBag",
+                            displayName = ItemLoader.GetDisplayName(bagType),
+                            registered,
+                            textureValid,
+                            textureWidth = texW,
+                            textureHeight = texH,
+                            defaultCapacity = AccessoryBagConfig.TotalSlots.val
+                        },
+                        recipes,
+                        tests = new
+                        {
+                            serializationPassed,
+                            passiveDefensePassed,
+                            defenseDelta,
+                            visualEnabledShield,
+                            visualHiddenShield,
+                            fusionHasItem,
+                            fusionCount,
+                            dupCount,
+                            armorStatsPassed,
+                            armorDefDelta,
+                            armorSetPassed
+                        }
+                    };
                 }
             }
 

@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using RecipeBrowser.Common;
 using RecipeBrowser.UIElements;
+using TPML.Core.Pinyin;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Bestiary;
@@ -304,25 +305,24 @@ namespace RecipeBrowser
             {
                 string name = slot.item.Name;
                 string internalName = (slot.item.type > 0 && slot.item.type < ItemID.Count) ? ItemID.Search.GetName(slot.item.type) : "";
-                string cleanFilter = nameStr.Replace(" ", "").Replace("'", "").Replace("-", "");
-                string cleanInternal = internalName.Replace(" ", "").Replace("'", "").Replace("-", "");
+                string localizedName = Lang.GetItemNameValue(slot.item.type);
 
-                if (name.IndexOf(nameStr, StringComparison.OrdinalIgnoreCase) == -1 &&
-                    internalName.IndexOf(nameStr, StringComparison.OrdinalIgnoreCase) == -1 &&
-                    cleanInternal.IndexOf(cleanFilter, StringComparison.OrdinalIgnoreCase) == -1)
+                if (!PinyinHelper.Matches(name, nameStr) &&
+                    !PinyinHelper.Matches(localizedName, nameStr) &&
+                    !PinyinHelper.Matches(internalName, nameStr))
                 {
                     return false;
                 }
             }
 
-            string descStr = itemDescriptionFilter.currentString.Trim().ToLower();
+            string descStr = itemDescriptionFilter.currentString.Trim();
             if (descStr.Length > 0)
             {
                 if (slot is UIArmorSetCatalogueItemSlot armorSlot)
                 {
-                    return armorSlot.set.Item4.IndexOf(descStr, StringComparison.OrdinalIgnoreCase) != -1;
+                    return PinyinHelper.Matches(armorSlot.set.Item4, descStr);
                 }
-                if (slot.item.ToolTip != null && GetTooltipsAsString(slot.item.ToolTip).IndexOf(descStr, StringComparison.OrdinalIgnoreCase) != -1)
+                if (slot.item.ToolTip != null && PinyinHelper.Matches(GetTooltipsAsString(slot.item.ToolTip), descStr))
                 {
                     return true;
                 }
