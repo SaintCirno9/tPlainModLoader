@@ -32,7 +32,8 @@ namespace OptimizeAndTool.Content.QoL
     public static class TownNPCOptimization
     {
         public static GetSetReset<bool> EnableInfiniteNPCReach = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> EnableNightAutoHome = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> EnableInstantHousingTeleport = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> EnableNightAutoHome = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> EnableAutoHouse = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableOptimalHappiness = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableTravellingMerchantStay = new GetSetReset<bool>(true, true);
@@ -51,6 +52,7 @@ namespace OptimizeAndTool.Content.QoL
             return new List<CommandObject>
             {
                 CommandBuild.get2("npcInfiniteReach", EnableInfiniteNPCReach),
+                CommandBuild.get2("npcInstantHousingTeleport", EnableInstantHousingTeleport),
                 CommandBuild.get2("npcNightAutoHome", EnableNightAutoHome),
                 CommandBuild.get2("npcAutoHouse", EnableAutoHouse),
                 CommandBuild.get2("npcOptimalHappiness", EnableOptimalHappiness),
@@ -66,7 +68,8 @@ namespace OptimizeAndTool.Content.QoL
             return new List<UIElement>
             {
                 UIBuild.get2(EnableInfiniteNPCReach, "超远/全屏 NPC 对话交互，屏幕内点击任意城镇 NPC 即可直接开启对话，NPC 走动不会打断对话", "Images/Item_50", "NPC 视距全屏交互"),
-                UIBuild.get2(EnableNightAutoHome, "城镇 NPC 在夜晚或恶劣天气强制传送回各自房间的椅子上就座，不再在外面游荡", "Images/Item_29", "NPC 夜间回房就座"),
+                UIBuild.get2(EnableInstantHousingTeleport, "在房屋管理面板插旗或调整 NPC 住房分配时，立即将该 NPC 瞬移至新分配的房间与椅子上", "Images/Item_29", "换房即时瞬移"),
+                UIBuild.get2(EnableNightAutoHome, "城镇 NPC 在夜晚或恶劣天气自动传送回各自房间的椅子上就座（非必要，推荐使用右键一键回房）", "Images/Item_1309", "NPC 夜间自动回房"),
                 UIBuild.get2(EnableOptimalHappiness, "锁定所有城镇 NPC 快乐度为最优（75%最低买入价，133%最高卖出价）", "Images/Item_73", "NPC 快乐度锁定最优"),
                 UIBuild.get2(EnableTravellingMerchantStay, "阻止旅商在傍晚离开或消失，常驻留在城镇中", "Images/Item_2274", "旅商常驻不离开"),
                 UIBuild.get2(EnableQuickNurse, "右键护士直接扣费回满血并清除负面效果，跳过繁琐对话", "Images/Item_499", "快捷护士一键治疗")
@@ -105,7 +108,7 @@ namespace OptimizeAndTool.Content.QoL
         }
 
         /// <summary>
-        /// 玩家主循环：定期检测无家可归的 NPC、自动分配空余房屋、夜晚强制回房就座
+        /// 玩家主循环：定期检测无家可归的 NPC、自动分配空余房屋、夜晚强制回房就座（可选）
         /// </summary>
         [HarmonyPatch(typeof(Player), nameof(Player.Update))]
         [HarmonyPostfix]
@@ -116,45 +119,28 @@ namespace OptimizeAndTool.Content.QoL
             autoHousingTimer++;
             if (autoHousingTimer % 60 == 0) // 每秒检测一次
             {
-                // 2. 城镇 NPC 夜晚或恶劣天气强制回房就座（即使在玩家屏幕内也归位，防止在外面游荡）
+                // 1. 若开启了夜间自动回房，在夜晚或事件期间检查并回房
                 if (EnableNightAutoHome.val)
                 {
                     bool isNightOrDanger = !Main.dayTime || Main.eclipse || Main.bloodMoon || Main.pumpkinMoon || Main.snowMoon || Main.invasionType > 0;
                     if (isNightOrDanger)
                     {
-                        // 第一轮：人类城镇 NPC 优先就座
                         for (int n = 0; n < Main.maxNPCs; n++)
                         {
                             NPC npc = Main.npc[n];
                             if (npc == null || !npc.active || !npc.townNPC || npc.homeless || npc.homeTileX <= 0 || npc.homeTileY <= 0) continue;
-                            if (NPCID.Sets.IsTownPet[npc.type] || NPCID.Sets.IsTownSlime[npc.type] || npc.type == 637 || npc.type == 638 || npc.type == 656) continue;
 
                             int distX = Math.Abs((int)(npc.position.X / 16f) - npc.homeTileX);
                             int distY = Math.Abs((int)(npc.position.Y / 16f) - npc.homeTileY);
                             if (distX > 3 || distY > 3 || (npc.ai[0] != 5f && npc.velocity.X != 0f))
                             {
-                                TeleportNPCToChairOrHome(npc);
-                            }
-                        }
-
-                        // 第二轮：城镇宠物与史莱姆归位至同房间主人身旁
-                        for (int n = 0; n < Main.maxNPCs; n++)
-                        {
-                            NPC npc = Main.npc[n];
-                            if (npc == null || !npc.active || !npc.townNPC || npc.homeless || npc.homeTileX <= 0 || npc.homeTileY <= 0) continue;
-                            if (!NPCID.Sets.IsTownPet[npc.type] && !NPCID.Sets.IsTownSlime[npc.type] && npc.type != 637 && npc.type != 638 && npc.type != 656) continue;
-
-                            int distX = Math.Abs((int)(npc.position.X / 16f) - npc.homeTileX);
-                            int distY = Math.Abs((int)(npc.position.Y / 16f) - npc.homeTileY);
-                            if (distX > 3 || distY > 3 || npc.velocity.X != 0f)
-                            {
-                                TeleportNPCToChairOrHome(npc);
+                                TeleportNPCToChairOrHome(npc, playEffects: false);
                             }
                         }
                     }
                 }
 
-                // 3. 自动入住与加速生成
+                // 2. 自动入住与加速生成
                 if (EnableAutoHouse.val)
                 {
                     if (Main.checkForSpawns < 7000)
@@ -178,6 +164,8 @@ namespace OptimizeAndTool.Content.QoL
                         NPC.savedWizard = true;
                         NPC.savedTaxCollector = true;
                     }
+                    if (NPC.downedBoss2) NPC.savedBartender = true;
+                    NPC.savedStylist = true;
                     if (NPC.downedBoss2) NPC.savedBartender = true;
                     NPC.savedStylist = true;
                     NPC.savedGolfer = true;
@@ -256,12 +244,13 @@ namespace OptimizeAndTool.Content.QoL
 
         #endregion
 
-        #region 4. 城镇 NPC 一键全员回家与房屋管理悬停提示
+        #region 4. 城镇 NPC 一键全员回家、插旗换房即时瞬移与房屋管理悬停提示
 
         /// <summary>
-        /// 将城镇 NPC 或宠物精准传送回所属房间：人类 NPC 独占坐具入座，宠物/史莱姆依附在主人脚边房间内地面
+        /// 将城镇 NPC 或宠物精准传送回所属房间：人类 NPC 独占房间内坐具入座，宠物/史莱姆依附在主人脚边或房间内地面
+        /// 使用 StartRoomCheck 与 Housing_CheckIfInRoom 实现严格房间空间隔离，防止在紧凑多层房屋中误选隔壁或上下层椅子
         /// </summary>
-        public static bool TeleportNPCToChairOrHome(NPC npc)
+        public static bool TeleportNPCToChairOrHome(NPC npc, bool playEffects = false)
         {
             if (npc == null || !npc.active || !npc.townNPC || npc.homeless) return false;
             if (npc.homeTileX <= 0 || npc.homeTileY <= 0 || !WorldGen.InWorld(npc.homeTileX, npc.homeTileY)) return false;
@@ -271,65 +260,106 @@ namespace OptimizeAndTool.Content.QoL
             int homeX = npc.homeTileX;
             int homeY = npc.homeTileY;
 
-            // 1. 向下寻找房间实心/平台地面
-            int floorY = homeY;
-            while (floorY < Main.maxTilesY - 20 && !IsSolidOrPlatform(Main.tile[homeX, floorY]))
+            // 1. 调用房间检测获取准确的房间边界与内部图格泛洪映射
+            bool roomValid = WorldGen.StartRoomCheck(homeX, Math.Max(10, homeY - 1));
+            if (!roomValid)
             {
-                floorY++;
+                roomValid = WorldGen.StartRoomCheck(homeX, homeY);
             }
-
-            // 2. 搜索房间范围内的椅子/坐具 (TileID.Sets.CanBeSatOnForNPCs)
-            int searchRadiusX = 14;
-            int searchRadiusYUp = 10;
-            int searchRadiusYDown = 4;
 
             int bestChairX = -1;
             int bestChairY = -1;
-            int minDistance = int.MaxValue;
+            int minChairDist = int.MaxValue;
 
-            for (int x = homeX - searchRadiusX; x <= homeX + searchRadiusX; x++)
+            int bestFloorX = -1;
+            int bestFloorY = -1;
+            int minFloorDist = int.MaxValue;
+
+            if (roomValid && WorldGen.roomX2 >= WorldGen.roomX1 && WorldGen.roomY2 >= WorldGen.roomY1)
             {
-                if (x < 10 || x >= Main.maxTilesX - 10) continue;
-
-                for (int y = floorY + searchRadiusYDown; y >= floorY - searchRadiusYUp; y--)
+                // 在泛洪确定的房间内部搜索椅子与安全地面
+                for (int x = WorldGen.roomX1; x <= WorldGen.roomX2; x++)
                 {
-                    if (y < 10 || y >= Main.maxTilesY - 10) continue;
-
-                    Tile tile = Main.tile[x, y];
-                    if (tile != null && tile.active() && TileID.Sets.CanBeSatOnForNPCs[tile.type])
+                    for (int y = WorldGen.roomY1; y <= WorldGen.roomY2; y++)
                     {
-                        // 人类 NPC 找椅子：检查该椅子是否已被其他人类 NPC 占用
-                        bool isOccupiedByHuman = false;
-                        for (int j = 0; j < Main.maxNPCs; j++)
+                        if (!WorldGen.InWorld(x, y)) continue;
+
+                        // 必须是本房间内部的图格
+                        bool inRoom = WorldGen.Housing_CheckIfInRoom(x, y) || WorldGen.Housing_CheckIfInRoom(x, y - 1);
+                        if (!inRoom) continue;
+
+                        Tile tile = Main.tile[x, y];
+                        if (tile == null) continue;
+
+                        // 搜索椅子/坐具
+                        if (tile.active() && TileID.Sets.CanBeSatOnForNPCs[tile.type])
                         {
-                            NPC other = Main.npc[j];
-                            if (other.active && other.townNPC && other.whoAmI != npc.whoAmI && other.ai[0] == 5f &&
-                                !NPCID.Sets.IsTownPet[other.type] && !NPCID.Sets.IsTownSlime[other.type] && other.type != 637 && other.type != 638 && other.type != 656)
+                            bool isOccupiedByOtherHuman = false;
+                            for (int j = 0; j < Main.maxNPCs; j++)
                             {
-                                Point otherTile = (other.Bottom + Vector2.UnitY * -2f).ToTileCoordinates();
-                                if (Math.Abs(otherTile.X - x) <= 1 && Math.Abs(otherTile.Y - y) <= 2)
+                                NPC other = Main.npc[j];
+                                if (other.active && other.townNPC && other.whoAmI != npc.whoAmI && other.ai[0] == 5f &&
+                                    !NPCID.Sets.IsTownPet[other.type] && !NPCID.Sets.IsTownSlime[other.type] && other.type != 637 && other.type != 638 && other.type != 656)
                                 {
-                                    isOccupiedByHuman = true;
-                                    break;
+                                    Point otherTile = (other.Bottom + Vector2.UnitY * -2f).ToTileCoordinates();
+                                    if (Math.Abs(otherTile.X - x) <= 1 && Math.Abs(otherTile.Y - y) <= 2)
+                                    {
+                                        isOccupiedByOtherHuman = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!isOccupiedByOtherHuman)
+                            {
+                                int dist = Math.Abs(x - homeX) * 2 + Math.Abs(y - homeY);
+                                if (dist < minChairDist)
+                                {
+                                    minChairDist = dist;
+                                    bestChairX = x;
+                                    bestChairY = y;
                                 }
                             }
                         }
 
-                        if (!isOccupiedByHuman)
+                        // 搜索安全落脚地面（该图格为实心/平台，且上方有至少 2 格空间位于房间内）
+                        if (IsSolidOrPlatform(tile) && !tile.inActive())
                         {
-                            int dist = Math.Abs(x - homeX) * 2 + Math.Abs(y - floorY);
-                            if (dist < minDistance)
+                            Tile above1 = Main.tile[x, y - 1];
+                            Tile above2 = Main.tile[x, y - 2];
+                            bool spaceClear = (above1 == null || !above1.active() || !Main.tileSolid[above1.type] || Main.tileSolidTop[above1.type]) &&
+                                              (above2 == null || !above2.active() || !Main.tileSolid[above2.type] || Main.tileSolidTop[above2.type]);
+
+                            if (spaceClear && (WorldGen.Housing_CheckIfInRoom(x, y - 1) || WorldGen.Housing_CheckIfInRoom(x, y - 2)))
                             {
-                                minDistance = dist;
-                                bestChairX = x;
-                                bestChairY = y;
+                                int dist = Math.Abs(x - homeX) + Math.Abs(y - homeY);
+                                if (dist < minFloorDist)
+                                {
+                                    minFloorDist = dist;
+                                    bestFloorX = x;
+                                    bestFloorY = y;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // 3. 处理人类城镇 NPC：传送到椅子就座
+            // 回退后备方案：如果房间检测未搜到地面，向下垂直搜索实心地面
+            if (bestFloorX == -1 || bestFloorY == -1)
+            {
+                bestFloorX = homeX;
+                bestFloorY = homeY;
+                while (bestFloorY < Main.maxTilesY - 20 && !IsSolidOrPlatform(Main.tile[bestFloorX, bestFloorY]))
+                {
+                    bestFloorY++;
+                }
+            }
+
+            // 记录旧位置用于播放瞬移粒子
+            Vector2 oldCenter = npc.Center;
+
+            // 3. 处理人类城镇 NPC：传送到专属房间内的椅子就座
             if (!isPetOrSlime)
             {
                 if (bestChairX != -1 && bestChairY != -1)
@@ -348,18 +378,38 @@ namespace OptimizeAndTool.Content.QoL
                     npc.velocity = Vector2.Zero;
                     npc.localAI[3] = 0f;
                     npc.netUpdate = true;
+
+                    if (Main.netMode == 2)
+                    {
+                        NetMessage.SendData(23, -1, -1, null, npc.whoAmI);
+                    }
+
+                    if (playEffects)
+                    {
+                        SpawnTeleportEffects(oldCenter, npc.Center);
+                    }
                     return true;
                 }
 
                 // 若房间无椅子，回落至房间内部安全地面
                 npc.ai[0] = 0f;
-                npc.Bottom = new Vector2(homeX * 16 + 8, floorY * 16);
+                npc.Bottom = new Vector2(bestFloorX * 16 + 8, bestFloorY * 16);
                 npc.velocity = Vector2.Zero;
                 npc.netUpdate = true;
+
+                if (Main.netMode == 2)
+                {
+                    NetMessage.SendData(23, -1, -1, null, npc.whoAmI);
+                }
+
+                if (playEffects)
+                {
+                    SpawnTeleportEffects(oldCenter, npc.Center);
+                }
                 return true;
             }
 
-            // 4. 处理城镇宠物/史莱姆：绝不抢椅子，依附在房间椅子旁边或房间内部地面上
+            // 4. 处理城镇宠物/史莱姆：不抢椅子，依附在房间椅子旁边或房间安全地面上
             if (bestChairX != -1 && bestChairY != -1)
             {
                 Tile chairTile = Main.tile[bestChairX, bestChairY];
@@ -369,9 +419,10 @@ namespace OptimizeAndTool.Content.QoL
 
                 int chairDirection = (chairTile.frameX != 0) ? 1 : -1;
 
-                // 尝试放在椅子朝向的正前方或后方 1 格（有地面且有墙的位置）
+                // 尝试放在椅子朝向的正前方或后方 1 格
                 int petTileX = bestChairX + (chairDirection == 1 ? 1 : -1);
-                if (Main.tile[petTileX, chairFloorY - 1]?.wall == 0 && Main.tile[bestChairX - (chairDirection == 1 ? 1 : -1), chairFloorY - 1]?.wall > 0)
+                if (WorldGen.InWorld(petTileX, chairFloorY - 1) && Main.tile[petTileX, chairFloorY - 1]?.wall == 0 &&
+                    WorldGen.InWorld(bestChairX - (chairDirection == 1 ? 1 : -1), chairFloorY - 1) && Main.tile[bestChairX - (chairDirection == 1 ? 1 : -1), chairFloorY - 1]?.wall > 0)
                 {
                     petTileX = bestChairX - (chairDirection == 1 ? 1 : -1);
                 }
@@ -382,15 +433,54 @@ namespace OptimizeAndTool.Content.QoL
                 npc.Bottom = new Vector2(petTileX * 16 + 8, chairFloorY * 16);
                 npc.velocity = Vector2.Zero;
                 npc.netUpdate = true;
+
+                if (Main.netMode == 2)
+                {
+                    NetMessage.SendData(23, -1, -1, null, npc.whoAmI);
+                }
+
+                if (playEffects)
+                {
+                    SpawnTeleportEffects(oldCenter, npc.Center);
+                }
                 return true;
             }
 
-            // 若无椅子，宠物放置在房间内部地面
+            // 若无椅子，宠物放置在房间内部安全地面
             npc.ai[0] = 0f;
-            npc.Bottom = new Vector2(homeX * 16 + 8, floorY * 16);
+            npc.Bottom = new Vector2(bestFloorX * 16 + 8, bestFloorY * 16);
             npc.velocity = Vector2.Zero;
             npc.netUpdate = true;
+
+            if (Main.netMode == 2)
+            {
+                NetMessage.SendData(23, -1, -1, null, npc.whoAmI);
+            }
+
+            if (playEffects)
+            {
+                SpawnTeleportEffects(oldCenter, npc.Center);
+            }
             return true;
+        }
+
+        private static void SpawnTeleportEffects(Vector2 fromPos, Vector2 toPos)
+        {
+            if (Main.netMode == 2) return; // 服务器不播放图形粒子
+
+            // 起点粒子
+            for (int i = 0; i < 15; i++)
+            {
+                Dust d = Dust.NewDustDirect(fromPos - new Vector2(16, 24), 32, 48, DustID.JesterSparkleBlue, 0f, 0f, 100, default, 1.2f);
+                d.velocity *= 0.5f;
+            }
+
+            // 终点粒子
+            for (int i = 0; i < 20; i++)
+            {
+                Dust d = Dust.NewDustDirect(toPos - new Vector2(16, 24), 32, 48, DustID.JesterSparkleBlue, 0f, 0f, 100, default, 1.4f);
+                d.velocity *= 0.7f;
+            }
         }
 
         private static bool IsSolidOrPlatform(Tile tile)
@@ -400,6 +490,26 @@ namespace OptimizeAndTool.Content.QoL
                 return !tile.inActive();
             }
             return false;
+        }
+
+        /// <summary>
+        /// 在房屋管理面板插旗或调整 NPC 住房时，拦截 moveRoom 并立即将 NPC 瞬移至新房间就座
+        /// </summary>
+        [HarmonyPatch(typeof(WorldGen), nameof(WorldGen.moveRoom))]
+        [HarmonyPostfix]
+        public static void MoveRoomPostfix(int x, int y, int n)
+        {
+            if (!EnableInstantHousingTeleport.val) return;
+            if (n < 0 || n >= Main.maxNPCs) return;
+
+            NPC npc = Main.npc[n];
+            if (npc != null && npc.active && npc.townNPC && !npc.homeless)
+            {
+                if (TeleportNPCToChairOrHome(npc, playEffects: true))
+                {
+                    SoundEngine.PlaySound(SoundID.Item6, npc.Center);
+                }
+            }
         }
 
         /// <summary>
@@ -416,7 +526,7 @@ namespace OptimizeAndTool.Content.QoL
                 if (npc == null || !npc.active || !npc.townNPC || npc.homeless) continue;
                 if (NPCID.Sets.IsTownPet[npc.type] || NPCID.Sets.IsTownSlime[npc.type] || npc.type == 637 || npc.type == 638 || npc.type == 656) continue;
 
-                if (TeleportNPCToChairOrHome(npc))
+                if (TeleportNPCToChairOrHome(npc, playEffects: true))
                 {
                     count++;
                 }
@@ -429,7 +539,7 @@ namespace OptimizeAndTool.Content.QoL
                 if (npc == null || !npc.active || !npc.townNPC || npc.homeless) continue;
                 if (!NPCID.Sets.IsTownPet[npc.type] && !NPCID.Sets.IsTownSlime[npc.type] && npc.type != 637 && npc.type != 638 && npc.type != 656) continue;
 
-                if (TeleportNPCToChairOrHome(npc))
+                if (TeleportNPCToChairOrHome(npc, playEffects: true))
                 {
                     count++;
                 }
@@ -445,6 +555,7 @@ namespace OptimizeAndTool.Content.QoL
                 Main.NewText("[c/FFA500:当前没有分配了住房且存活的城镇 NPC]");
             }
         }
+
         /// <summary>
         /// 在鼠标悬浮于房屋管理按钮时，右键瞬移全员回家并提供明确 Tooltip 提示
         /// </summary>

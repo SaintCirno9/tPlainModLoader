@@ -124,3 +124,12 @@
 - **打开大背包同步开启物品栏**：保持原有机制，若当前物品栏未开启，打开大背包时自动同步开启物品栏；
 - **关闭物品栏同步关闭大背包**：保持原有机制，当玩家关闭原版物品栏（`!Main.playerInventory`）时，大背包窗口自动同步关闭。
 
+---
+
+## 8. 城镇 NPC 回房机制全面重构与换房即时瞬移
+
+- **房间空间隔离算法 (`TeleportNPCToChairOrHome`)**：改用 `WorldGen.StartRoomCheck` 与 `WorldGen.Housing_CheckIfInRoom` 精准获取目标房屋的几何图格泛洪边界，坐具（椅子/床/沙发/马桶）检测严格限制在当前房间内部，彻底消除多层紧凑公寓中上下层或隔壁房间坐具串联、互相占用的问题；
+- **插旗换房即时瞬移 (`Patch_WorldGen_MoveRoom`)**：在 Harmony 中为 `WorldGen.moveRoom` 挂载 Postfix，开启 `EnableInstantHousingTeleport` 时，玩家在房屋管理界面给 NPC 重新分配房间后，NPC 会伴随传送音效与粒子立即瞬移至新房间坐具上入座；
+- **主循环精简与一键召回**：移除了主循环中的夜间每秒强制坐姿轮询，白天 NPC 保持正常自由活动；右键房屋管理图标或执行 `/townNPCHome` 指令可一键精准召回所有存活 NPC 与宠物；
+- **设置面板与持久化**：在 `SettingUI` 中同步新增 `NPCInstantHousingTeleport` 与 `NPCNightAutoHome` 配置项的保存/读取/重置链路。
+

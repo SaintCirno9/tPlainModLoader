@@ -38,6 +38,8 @@ namespace OptimizeAndTool
             public bool MonsterBanners = true;
             public bool HideEndlessBuffs = false;
 
+            public bool NPCInstantHousingTeleport = true;
+            public bool NPCNightAutoHome = false;
             public bool NPCAutoHouse = true;
             public bool NPCOptimalHappiness = true;
             public bool TravellingMerchantStay = true;
@@ -169,6 +171,8 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableMonsterBanners.val = data.MonsterBanners;
             InfinitePotionAndBuff.HideEndlessBuffs.val = data.HideEndlessBuffs;
 
+            TownNPCOptimization.EnableInstantHousingTeleport.val = data.NPCInstantHousingTeleport;
+            TownNPCOptimization.EnableNightAutoHome.val = data.NPCNightAutoHome;
             TownNPCOptimization.EnableAutoHouse.val = data.NPCAutoHouse;
             TownNPCOptimization.EnableOptimalHappiness.val = data.NPCOptimalHappiness;
             TownNPCOptimization.EnableTravellingMerchantStay.val = data.TravellingMerchantStay;
@@ -268,6 +272,8 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableMonsterBanners.OnValUpdate += _ => NeedSave = true;
             InfinitePotionAndBuff.HideEndlessBuffs.OnValUpdate += _ => NeedSave = true;
 
+            TownNPCOptimization.EnableInstantHousingTeleport.OnValUpdate += _ => NeedSave = true;
+            TownNPCOptimization.EnableNightAutoHome.OnValUpdate += _ => NeedSave = true;
             TownNPCOptimization.EnableAutoHouse.OnValUpdate += _ => NeedSave = true;
             TownNPCOptimization.EnableOptimalHappiness.OnValUpdate += _ => NeedSave = true;
             TownNPCOptimization.EnableTravellingMerchantStay.OnValUpdate += _ => NeedSave = true;
@@ -367,6 +373,8 @@ namespace OptimizeAndTool
                 MonsterBanners = InfinitePotionAndBuff.EnableMonsterBanners.val,
                 HideEndlessBuffs = InfinitePotionAndBuff.HideEndlessBuffs.val,
 
+                NPCInstantHousingTeleport = TownNPCOptimization.EnableInstantHousingTeleport.val,
+                NPCNightAutoHome = TownNPCOptimization.EnableNightAutoHome.val,
                 NPCAutoHouse = TownNPCOptimization.EnableAutoHouse.val,
                 NPCOptimalHappiness = TownNPCOptimization.EnableOptimalHappiness.val,
                 TravellingMerchantStay = TownNPCOptimization.EnableTravellingMerchantStay.val,
@@ -474,6 +482,8 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableMonsterBanners.Reset();
             InfinitePotionAndBuff.HideEndlessBuffs.Reset();
 
+            TownNPCOptimization.EnableInstantHousingTeleport.Reset();
+            TownNPCOptimization.EnableNightAutoHome.Reset();
             TownNPCOptimization.EnableAutoHouse.Reset();
             TownNPCOptimization.EnableOptimalHappiness.Reset();
             TownNPCOptimization.EnableTravellingMerchantStay.Reset();
