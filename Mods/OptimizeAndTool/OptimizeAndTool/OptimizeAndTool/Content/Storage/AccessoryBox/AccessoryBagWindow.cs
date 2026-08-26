@@ -66,11 +66,23 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             }
         }
 
+        private UIElement topToolbar = null;
+
         public AccessoryBagWindow() : base("随身饰品袋", 476, 360)
         {
             instance = this;
 
-            UIElement topToolbar = BuildTopToolbar();
+            // 移除右下角缩放手柄，保持 AccBag 原版紧凑固定尺寸
+            foreach (UIElement el in Elements)
+            {
+                if (el is UIImage img && el != Child)
+                {
+                    RemoveChild(el);
+                    break;
+                }
+            }
+
+            topToolbar = BuildTopToolbar();
             Child.Append(topToolbar);
 
             contentArea = new UIElement();
@@ -81,11 +93,9 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             sidebar = new ModIconSidebar(null);
             sidebar.OnFilterChanged += _ => RebuildSlots();
-            contentArea.Append(sidebar);
 
             scrollbar = new UIScrollbar();
             scrollbar.Height.Set(0, 1);
-            scrollbar.HAlign = 1;
 
             uiList = new UIList();
             uiList.Height.Precent = 1;
@@ -269,7 +279,16 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             // 计算网格与窗口自适应尺寸
             bool showSidebar = sidebar != null && sidebar.HasMultipleMods;
-            sidebar.Width.Set(showSidebar ? 42f : 0f, 0);
+            if (showSidebar)
+            {
+                if (sidebar.Parent != contentArea) contentArea.Append(sidebar);
+                sidebar.Left.Set(0, 0);
+                sidebar.Width.Set(42f, 0);
+            }
+            else
+            {
+                if (sidebar != null && sidebar.Parent == contentArea) contentArea.RemoveChild(sidebar);
+            }
 
             float gridW = SLOTS_PER_ROW * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 436px
             int rowCount = Math.Max(1, (int)Math.Ceiling((double)matchedSlotCount / SLOTS_PER_ROW));
@@ -277,21 +296,25 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             float gridH = visibleRows * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 7 行约 304px
 
             bool needScrollbar = rowCount > MAX_VISIBLE_ROWS;
+            float sidebarOffset = showSidebar ? 46f : 0f;
+
             if (needScrollbar)
             {
                 if (scrollbar.Parent != contentArea) contentArea.Append(scrollbar);
+                scrollbar.Left.Set(sidebarOffset + gridW + 4f, 0);
+                scrollbar.Width.Set(18f, 0);
             }
             else
             {
                 if (scrollbar.Parent == contentArea) contentArea.RemoveChild(scrollbar);
             }
 
-            float sidebarOffset = showSidebar ? 46f : 0f;
             uiList.Left.Set(sidebarOffset, 0);
-            uiList.Width.Set(gridW + (needScrollbar ? 20f : 0f), 0);
+            uiList.Width.Set(gridW, 0);
+            uiList.Height.Set(gridH, 0);
 
-            float totalWinW = sidebarOffset + gridW + (needScrollbar ? 26f : 12f) + 16f;
-            float totalWinH = 34f + gridH + 18f;
+            float totalWinW = sidebarOffset + gridW + (needScrollbar ? 26f : 0f) + 24f;
+            float totalWinH = (topToolbar?.Height.Pixels ?? 22f) + gridH + 34f;
 
             Width.Set(totalWinW, 0);
             Height.Set(totalWinH, 0);
