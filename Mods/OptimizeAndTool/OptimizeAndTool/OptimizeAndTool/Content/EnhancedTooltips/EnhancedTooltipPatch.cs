@@ -51,8 +51,6 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
 
         private static void ApplySetBonusHighlight(Item item, ref int numLines, string[] toolTipLine, Color[] lineColors)
         {
-            if (item.wornArmor) return; // 原版已处理身上穿戴的防具
-
             var sets = ArmorSetBonuses.SetsContaining != null && item.type < ArmorSetBonuses.SetsContaining.Length
                 ? ArmorSetBonuses.SetsContaining[item.type]
                 : null;
@@ -143,7 +141,9 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
             {
                 if (toolTipLine[i] == singleTooltip ||
                     (!string.IsNullOrEmpty(toolTipLine[i]) &&
-                     (toolTipLine[i].StartsWith("套装奖励") || toolTipLine[i].StartsWith("Set Bonus") || toolTipLine[i].Contains(satisfiedSet.Description?.Value ?? ""))))
+                     (toolTipLine[i].StartsWith("套装奖励") || toolTipLine[i].StartsWith("已装备套装奖励") ||
+                      toolTipLine[i].StartsWith("Set Bonus") || toolTipLine[i].StartsWith("Equipped Set Bonus") ||
+                      (!string.IsNullOrEmpty(satisfiedSet.Description?.Value) && toolTipLine[i].Contains(satisfiedSet.Description.Value)))))
                 {
                     toolTipLine[i] = activeTooltip;
                     lineColors[i] = Color.LimeGreen;
