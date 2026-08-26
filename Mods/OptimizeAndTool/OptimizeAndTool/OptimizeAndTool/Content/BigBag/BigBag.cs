@@ -23,6 +23,7 @@ namespace OptimizeAndTool.Content.BigBag
         public static readonly GetSetReset<bool> EnableBigBag = new GetSetReset<bool>(true, true);
         public static readonly GetSetReset<bool> EnableBigBagCraft = new GetSetReset<bool>(true, true);
         public static readonly GetSetReset<bool> AutoStackOnPickup = new GetSetReset<bool>(true, true);
+        public static readonly GetSetReset<bool> PickupOverflowToBigBag = new GetSetReset<bool>(true, true);
         public static readonly GetSetReset<string> HotKey = new GetSetReset<string>("X", "X");
         public static readonly GetSetReset<int> Capacity = new GetSetReset<int>(100, 100);
 
@@ -51,7 +52,8 @@ namespace OptimizeAndTool.Content.BigBag
                 CommandBuild.get1("bigBagCapacity", EnableBigBag, Capacity, new CommandInt()),
                 CommandBuild.get1("bigBagHotKey", EnableBigBag, HotKey, new CommandString()),
                 CommandBuild.get2("bigBagCraft", EnableBigBagCraft),
-                CommandBuild.get2("bigBagAutoStack", AutoStackOnPickup)
+                CommandBuild.get2("bigBagAutoStack", AutoStackOnPickup),
+                CommandBuild.get2("bigBagPickupOverflow", PickupOverflowToBigBag)
             };
         }
 
@@ -62,7 +64,8 @@ namespace OptimizeAndTool.Content.BigBag
                 UIBuild.get2(EnableBigBag, "随身巨大额外背包（已接入统一快捷键系统，可在【设置->控件】中自定义按键）", "Images/Item_4131", "巨大背包"),
                 UIBuild.get1(EnableBigBag, Capacity, int.Parse, "背包容量格数（40~500，缩容时溢出物品自动回收背包）", "Images/Item_87", "背包容量"),
                 UIBuild.get2(EnableBigBagCraft, "巨大背包中的材料参与制作判定与消耗扣除", "Images/Item_346", "背包材料制作"),
-                UIBuild.get2(AutoStackOnPickup, "拾取物品时若巨大背包已有同类物品则自动堆入", "Images/Item_5010", "拾取自动堆叠")
+                UIBuild.get2(AutoStackOnPickup, "拾取物品时若巨大背包已有同类物品则自动堆入", "Images/Item_5010", "拾取自动堆叠"),
+                UIBuild.get2(PickupOverflowToBigBag, "本体背包装满时拾取自动存入巨大背包", "Images/Item_3813", "满包拾取溢出")
             };
         }
 
@@ -337,9 +340,10 @@ namespace OptimizeAndTool.Content.BigBag
         /// <returns>若物品被完全吸收存入大背包返回 true；若部分堆入或未堆入返回 false</returns>
         public static bool TryAutoStackPickup(Item newItem)
         {
-            if (newItem == null || newItem.IsAir || newItem.type <= 0) return false;
+            if (newItem == null || newItem.IsAir || newItem.type <= 0 || newItem.stack <= 0) return false;
             if (!EnableBigBag.val || !AutoStackOnPickup.val) return false;
 
+            Item itemInfo = newItem.Clone();
             int originalStack = newItem.stack;
             int totalStacked = 0;
 
@@ -362,11 +366,117 @@ namespace OptimizeAndTool.Content.BigBag
                 BigBagStorage.SaveNow();
                 // 生成拾取飘字
                 Vector2 pos = Main.LocalPlayer?.Center ?? Vector2.Zero;
-                PopupText.NewText(PopupTextContext.RegularItemPickup, newItem, pos, totalStacked, false, false);
+                PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, totalStacked, false, false);
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
+                NotifySlotsChanged();
             }
 
-            return newItem.stack <= 0;
+            if (newItem.stack <= 0)
+            {
+                newItem.TurnToAir();
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 当本体背包满时，尝试将溢出未拾取的物品存入大背包（先堆叠后空格）
+        /// </summary>
+        /// <returns>若物品被完全存入大背包返回 true；若部分存入或未存入返回 false</returns>
+        public static bool TryOverflowPickup(Item newItem)
+        {
+            if (newItem == null || newItem.IsAir || newItem.type <= 0 || newItem.stack <= 0) return false;
+            if (!EnableBigBag.val || !PickupOverflowToBigBag.val) return false;
+
+            Item itemInfo = newItem.Clone();
+            int originalStack = newItem.stack;
+            int totalPlaced = 0;
+
+            // 1. 若可堆叠，优先寻找已有同类槽位合并
+            if (newItem.maxStack > 1)
+            {
+                for (int i = 0; i < Slots.Length; i++)
+                {
+                    Item slot = Slots[i];
+                    if (slot != null && !slot.IsAir && slot.type == newItem.type && slot.stack < slot.maxStack && Item.CanStack(slot, newItem))
+                    {
+                        int canTake = Math.Min(newItem.stack, slot.maxStack - slot.stack);
+                        slot.stack += canTake;
+                        newItem.stack -= canTake;
+                        totalPlaced += canTake;
+
+                        if (newItem.stack <= 0) break;
+                    }
+                }
+            }
+
+            // 2. 若仍有剩余，放入大背包空格子
+            if (newItem.stack > 0)
+            {
+                for (int i = 0; i < Slots.Length; i++)
+                {
+                    Item slot = Slots[i];
+                    if (slot == null || slot.IsAir)
+                    {
+                        Slots[i] = newItem.Clone();
+                        totalPlaced += newItem.stack;
+                        newItem.stack = 0;
+                        newItem.TurnToAir();
+                        break;
+                    }
+                }
+            }
+
+            if (totalPlaced > 0)
+            {
+                BigBagStorage.SaveNow();
+                // 生成拾取飘字
+                Vector2 pos = Main.LocalPlayer?.Center ?? Vector2.Zero;
+                PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, totalPlaced, false, false);
+                Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
+                NotifySlotsChanged();
+            }
+
+            return newItem.stack <= 0 || newItem.IsAir;
+        }
+
+        /// <summary>
+        /// 检查巨大背包当前是否可接收指定物品（用于掉落物吸附判定 Player.ItemSpace）
+        /// </summary>
+        public static bool CanBigBagAccept(Item newItem)
+        {
+            if (newItem == null || newItem.IsAir || newItem.type <= 0) return false;
+            if (!EnableBigBag.val) return false;
+
+            // 1. 若开启自动堆叠：检查是否可堆入已有槽位
+            if (AutoStackOnPickup.val && newItem.maxStack > 1)
+            {
+                for (int i = 0; i < Slots.Length; i++)
+                {
+                    Item slot = Slots[i];
+                    if (slot != null && !slot.IsAir && slot.type == newItem.type && slot.stack < slot.maxStack && Item.CanStack(slot, newItem))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // 2. 若开启满包溢出：检查是否有同类槽位或空格子
+            if (PickupOverflowToBigBag.val)
+            {
+                for (int i = 0; i < Slots.Length; i++)
+                {
+                    Item slot = Slots[i];
+                    if (slot == null || slot.IsAir) return true;
+                    if (newItem.maxStack > 1 && slot.type == newItem.type && slot.stack < slot.maxStack && Item.CanStack(slot, newItem))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
