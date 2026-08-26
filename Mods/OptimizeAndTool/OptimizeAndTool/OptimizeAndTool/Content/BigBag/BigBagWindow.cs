@@ -20,11 +20,6 @@ namespace OptimizeAndTool.Content.BigBag
         {
             instance = this;
 
-            OnClose += () =>
-            {
-                BigBagStorage.SaveNow();
-            };
-
             OnOpen += () =>
             {
                 if (Main.LocalPlayer != null && BigBagStorage.ActivePlayerName != Main.LocalPlayer.name)

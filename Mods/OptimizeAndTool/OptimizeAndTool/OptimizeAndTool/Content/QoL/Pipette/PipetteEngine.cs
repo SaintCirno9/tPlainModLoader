@@ -207,7 +207,6 @@ namespace OptimizeAndTool.Content.QoL.Pipette
                     player.inventory[carrierSlot] = bigBagItem;
                     BigBag.BigBag.Slots[bIdx] = originalCarrierItem;
 
-                    BigBag.BigBagStorage.SaveNow();
                     BigBag.BigBag.NotifySlotsChanged();
 
                     // 选中主物品栏承载槽位（原版支持直接手持 10~49 格放置物品，快捷栏 0~9 布局 100% 保持不变！）
@@ -284,7 +283,6 @@ namespace OptimizeAndTool.Content.QoL.Pipette
                     BigBag.BigBag.Slots[bigBagSourceSlot] = new Item();
                 }
 
-                BigBag.BigBagStorage.SaveNow();
                 BigBag.BigBag.NotifySlotsChanged();
             }
             catch

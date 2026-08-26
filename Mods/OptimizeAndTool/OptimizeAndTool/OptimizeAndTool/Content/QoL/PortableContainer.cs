@@ -316,22 +316,6 @@ namespace OptimizeAndTool.Content.QoL
     }
 
     /// <summary>
-    /// 制作物品后即时保存巨大背包 Patch
-    /// </summary>
-    [HarmonyPatch(typeof(Main), nameof(Main.CraftItem_GrantItem))]
-    internal static class Patch_PortableContainerSave
-    {
-        [HarmonyPostfix]
-        public static void CraftItem_GrantItemPostfix()
-        {
-            if (BigBagMod.EnableBigBag.val && BigBagMod.EnableBigBagCraft.val)
-            {
-                BigBagStorage.SaveNow();
-            }
-        }
-    }
-
-    /// <summary>
     /// 核心修复：跳过随身便携容器（chest < -1）的世界实体图格距离检测。
     /// 原版在每一帧 Player.Update 会检测 chestX, chestY 处是否存在对应物理图格，
     /// 若未放置图格则会直接强行执行 player.chest = -1 并关闭界面。

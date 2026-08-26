@@ -188,7 +188,6 @@ namespace OptimizeAndTool.Content.BigBag
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                BigBagStorage.SaveNow();
                 OnCapacityChanged?.Invoke();
             }
         }
@@ -219,7 +218,6 @@ namespace OptimizeAndTool.Content.BigBag
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                BigBagStorage.SaveNow();
                 OnCapacityChanged?.Invoke();
             }
         }
@@ -260,7 +258,6 @@ namespace OptimizeAndTool.Content.BigBag
             if (movedAny)
             {
                 Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-                BigBagStorage.SaveNow();
                 OnCapacityChanged?.Invoke();
             }
         }
@@ -317,7 +314,6 @@ namespace OptimizeAndTool.Content.BigBag
             }
 
             Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Grab);
-            BigBagStorage.SaveNow();
             OnCapacityChanged?.Invoke();
         }
 
@@ -363,7 +359,6 @@ namespace OptimizeAndTool.Content.BigBag
 
             if (totalStacked > 0)
             {
-                BigBagStorage.SaveNow();
                 // 生成拾取飘字
                 Vector2 pos = Main.LocalPlayer?.Center ?? Vector2.Zero;
                 PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, totalStacked, false, false);
@@ -430,7 +425,6 @@ namespace OptimizeAndTool.Content.BigBag
 
             if (totalPlaced > 0)
             {
-                BigBagStorage.SaveNow();
                 // 生成拾取飘字
                 Vector2 pos = Main.LocalPlayer?.Center ?? Vector2.Zero;
                 PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, totalPlaced, false, false);
@@ -541,11 +535,6 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            if (transferred && !justCheck)
-            {
-                BigBagStorage.SaveNow();
-            }
-
             return transferred;
         }
         /// <summary>
@@ -581,7 +570,6 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     slots[preferredSlot] = item.Clone();
                     item.TurnToAir();
-                    BigBagStorage.SaveNow();
                     NotifySlotsChanged();
                     return true;
                 }
@@ -599,7 +587,6 @@ namespace OptimizeAndTool.Content.BigBag
                     if (item.stack <= 0)
                     {
                         item.TurnToAir();
-                        BigBagStorage.SaveNow();
                         NotifySlotsChanged();
                         return true;
                     }
@@ -614,7 +601,6 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     slots[i] = item.Clone();
                     item.TurnToAir();
-                    BigBagStorage.SaveNow();
                     NotifySlotsChanged();
                     return true;
                 }

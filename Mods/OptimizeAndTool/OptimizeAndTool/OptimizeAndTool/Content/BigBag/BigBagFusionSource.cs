@@ -27,7 +27,6 @@ namespace OptimizeAndTool.Content.BigBag
 
         public void OnModified(Player player)
         {
-            BigBagStorage.SaveNow();
             BigBag.NotifySlotsChanged();
         }
     }

@@ -459,8 +459,9 @@ namespace OptimizeAndTool.Content.Storage.Core
             {
                 if (scrollbar.Parent != contentArea) contentArea.Append(scrollbar);
                 scrollbar.Left.Set(sidebarOffset + gridW + 4f, 0);
-                scrollbar.Width.Set(18f, 0);
-                scrollbar.Height.Set(gridH, 0);
+                scrollbar.Width.Set(20f, 0);
+                scrollbar.Top.Set(6f, 0);
+                scrollbar.Height.Set(gridH - 12f, 0);
             }
             else
             {
@@ -472,7 +473,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             uiList.Width.Set(gridW, 0);
             uiList.Height.Set(gridH, 0);
 
-            float totalWinW = sidebarOffset + gridW + (needScrollbar ? 26f : 0f) + 24f;
+            float totalWinW = sidebarOffset + gridW + (needScrollbar ? 24f : 0f) + 20f;
             float totalWinH = topOffset + gridH + 44f;
 
             Width.Set(totalWinW, 0);
