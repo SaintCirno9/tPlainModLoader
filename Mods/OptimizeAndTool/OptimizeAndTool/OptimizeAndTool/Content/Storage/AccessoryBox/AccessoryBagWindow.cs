@@ -17,7 +17,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
     /// <summary>
     /// 随身饰品袋 UI 窗口：
-    /// 包含自适应网格、Mod 侧边栏过滤、顶部 6 大快捷功能、平滑滚轮支持
+    /// 精确对齐 AccBag 经典质感与自适应排版，杜绝左右空隙，具备原版物品栏材质与智能侧边栏
     /// 作者: SaintCirno9
     /// </summary>
     public class AccessoryBagWindow : UIWindow
@@ -30,6 +30,12 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public AccessoryBagItem CurrentBag { get; private set; }
 
+        private const int SLOTS_PER_ROW = 10;
+        private const int MAX_VISIBLE_ROWS = 7;
+        private const float SLOT_SIZE = 40f;
+        private const float SLOT_MARGIN = 4f;
+
+        private UIElement contentArea = null;
         private UIBoxWrapPanel wp = null;
         private UIList uiList = null;
         private UIScrollbar scrollbar = null;
@@ -60,51 +66,36 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             }
         }
 
-        public AccessoryBagWindow() : base("随身饰品袋", 520, 380)
+        public AccessoryBagWindow() : base("随身饰品袋", 476, 360)
         {
             instance = this;
 
             UIElement topToolbar = BuildTopToolbar();
             Child.Append(topToolbar);
 
-            UIPanel contentPanel = new UIPanel();
-            contentPanel.Width.Set(0, 1);
-            contentPanel.Height.Set(-topToolbar.Height.Pixels - 4, 1);
-            contentPanel.VAlign = 1;
-            contentPanel.SetPadding(4);
-            contentPanel.BackgroundColor = Color.Transparent;
-            contentPanel.BorderColor = Color.Transparent;
-            Child.Append(contentPanel);
+            contentArea = new UIElement();
+            contentArea.Width.Set(0, 1);
+            contentArea.Height.Set(-topToolbar.Height.Pixels - 6, 1);
+            contentArea.VAlign = 1;
+            Child.Append(contentArea);
 
             sidebar = new ModIconSidebar(null);
             sidebar.OnFilterChanged += _ => RebuildSlots();
-            contentPanel.Append(sidebar);
-
-            UIPanel gridPanel = new UIPanel();
-            gridPanel.Left.Set(50, 0);
-            gridPanel.Width.Set(-50, 1);
-            gridPanel.Height.Set(0, 1);
-            gridPanel.SetPadding(4);
-            gridPanel.BackgroundColor = new Color(20, 25, 45) * 0.7f;
-            gridPanel.BorderColor = new Color(43, 60, 120);
-            contentPanel.Append(gridPanel);
+            contentArea.Append(sidebar);
 
             scrollbar = new UIScrollbar();
-            scrollbar.Height.Set(-8, 1);
+            scrollbar.Height.Set(0, 1);
             scrollbar.HAlign = 1;
-            scrollbar.VAlign = 0.5f;
 
             uiList = new UIList();
-            uiList.Width.Set(-25, 1);
             uiList.Height.Precent = 1;
             uiList.SetScrollbar(scrollbar);
 
-            gridPanel.Append(uiList);
-            gridPanel.Append(scrollbar);
+            contentArea.Append(uiList);
 
             wp = new UIBoxWrapPanel();
-            wp.Width.Set(0, 1);
-            wp.ItemMargin = 4;
+            wp.Width.Set(SLOTS_PER_ROW * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN, 0);
+            wp.ItemMargin = (int)SLOT_MARGIN;
             uiList.Add(wp);
 
             OnClose += () =>
@@ -236,8 +227,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         {
             if (sidebar != null && CurrentBag != null)
             {
-                sidebar = new ModIconSidebar(CurrentBag);
-                sidebar.OnFilterChanged += _ => RebuildSlots();
+                sidebar.SetBag(CurrentBag);
                 sidebar.Rebuild();
             }
             RebuildSlots();
@@ -252,6 +242,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             Item[] inv = CurrentBag.personalInventory;
 
             int filledCount = 0;
+            int matchedSlotCount = 0;
             for (int i = 0; i < inv.Length; i++)
             {
                 Item it = inv[i];
@@ -272,8 +263,38 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 if (pass)
                 {
                     wp.Append(new AccessoryBagSlot(CurrentBag, i));
+                    matchedSlotCount++;
                 }
             }
+
+            // 计算网格与窗口自适应尺寸
+            bool showSidebar = sidebar != null && sidebar.HasMultipleMods;
+            sidebar.Width.Set(showSidebar ? 42f : 0f, 0);
+
+            float gridW = SLOTS_PER_ROW * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 436px
+            int rowCount = Math.Max(1, (int)Math.Ceiling((double)matchedSlotCount / SLOTS_PER_ROW));
+            int visibleRows = Math.Min(rowCount, MAX_VISIBLE_ROWS);
+            float gridH = visibleRows * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 7 行约 304px
+
+            bool needScrollbar = rowCount > MAX_VISIBLE_ROWS;
+            if (needScrollbar)
+            {
+                if (scrollbar.Parent != contentArea) contentArea.Append(scrollbar);
+            }
+            else
+            {
+                if (scrollbar.Parent == contentArea) contentArea.RemoveChild(scrollbar);
+            }
+
+            float sidebarOffset = showSidebar ? 46f : 0f;
+            uiList.Left.Set(sidebarOffset, 0);
+            uiList.Width.Set(gridW + (needScrollbar ? 20f : 0f), 0);
+
+            float totalWinW = sidebarOffset + gridW + (needScrollbar ? 26f : 12f) + 16f;
+            float totalWinH = 34f + gridH + 18f;
+
+            Width.Set(totalWinW, 0);
+            Height.Set(totalWinH, 0);
 
             if (capacityText != null)
             {
@@ -287,7 +308,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 capacityText.TextColor = filledCount >= total ? Color.Gold : Color.LightGray;
             }
 
-            uiList?.Recalculate();
+            Recalculate();
         }
 
         public void DepositAll()

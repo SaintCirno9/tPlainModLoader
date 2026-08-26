@@ -22,24 +22,34 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     {
         public string CurrentFilter { get; private set; } = "All";
         public event Action<string> OnFilterChanged;
+        public bool HasMultipleMods { get; private set; } = false;
 
-        private readonly AccessoryBagItem bag;
+        private AccessoryBagItem bag;
 
         public ModIconSidebar(AccessoryBagItem bag)
         {
             this.bag = bag;
-            Width.Set(46, 0);
+            Width.Set(42, 0);
             Height.Set(0, 1);
-            SetPadding(4);
+            SetPadding(2);
             BackgroundColor = new Color(20, 25, 45) * 0.85f;
             BorderColor = new Color(43, 60, 120);
             OverflowHidden = true;
         }
 
+        public void SetBag(AccessoryBagItem bag)
+        {
+            this.bag = bag;
+        }
+
         public void Rebuild()
         {
             Elements.Clear();
-            if (bag?.personalInventory == null) return;
+            if (bag?.personalInventory == null)
+            {
+                HasMultipleMods = false;
+                return;
+            }
 
             var modNames = new HashSet<string>();
             modNames.Add("All");
@@ -59,6 +69,14 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                         modNames.Add("Terraria");
                     }
                 }
+            }
+
+            // 只有当存在除 All 之外至少 2 种不同来源时才开启侧边栏
+            HasMultipleMods = modNames.Count >= 3;
+            if (!HasMultipleMods)
+            {
+                CurrentFilter = "All";
+                return;
             }
 
             var sortedList = modNames.OrderBy(n => n == "All" ? "0" : (n == "Terraria" ? "1" : n)).ToList();

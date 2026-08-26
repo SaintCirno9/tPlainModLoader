@@ -4,7 +4,6 @@ using System;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
-using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 using Terraria.UI.Chat;
@@ -12,24 +11,36 @@ using Terraria.UI.Chat;
 namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
     /// <summary>
-    /// 饰品袋物品槽位 UI：
-    /// 支持独立眼睛外观显隐、Alt 收藏锁定、Shift 快速退回背包、左键/右键存取与防重复拦截
+    /// 随身饰品袋物品槽位 UI：
+    /// 采用原版官方物品栏材质 (TextureAssets.InventoryBack)、金色收藏底图与 10x10 眼睛角标，
+    /// 具备原版质感、平滑居中渲染与全套快捷存取/防重交互。
     /// 作者: SaintCirno9
     /// </summary>
-    public class AccessoryBagSlot : UIPanel
+    public class AccessoryBagSlot : UIElement
     {
         private readonly AccessoryBagItem bag;
         private readonly int slotIndex;
+        private bool isMouseHovering;
 
         public AccessoryBagSlot(AccessoryBagItem bag, int slotIndex)
         {
             this.bag = bag;
             this.slotIndex = slotIndex;
 
-            Width.Set(44, 0);
-            Height.Set(44, 0);
-            SetPadding(4);
-            BackgroundColor = BorderColor = new Color(33, 43, 79);
+            Width.Set(40f, 0f);
+            Height.Set(40f, 0f);
+        }
+
+        public override void MouseOver(UIMouseEvent evt)
+        {
+            base.MouseOver(evt);
+            isMouseHovering = true;
+        }
+
+        public override void MouseOut(UIMouseEvent evt)
+        {
+            base.MouseOut(evt);
+            isMouseHovering = false;
         }
 
         public override void LeftClick(UIMouseEvent evt)
@@ -40,7 +51,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             Vector2 rel = Main.MouseScreen - new Vector2(dim.X, dim.Y);
 
             // 1. 点击右上角眼睛图标 (14x14 区域) 切换外观可见性
-            if (rel.X > dim.Width - 16f && rel.Y < 16f && bag.hideVisuals != null && slotIndex < bag.hideVisuals.Length)
+            if (rel.X > dim.Width - 14f && rel.Y < 14f && bag.hideVisuals != null && slotIndex < bag.hideVisuals.Length)
             {
                 bag.hideVisuals[slotIndex] = !bag.hideVisuals[slotIndex];
                 SoundEngine.PlaySound(SoundID.MenuTick);
@@ -51,8 +62,8 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             Item item = bag.personalInventory[slotIndex];
             Item mouse = Main.mouseItem;
 
-            // 2. Alt+左键: 收藏 / 取消收藏
-            if (ItemSlot.ControlInUse && !item.IsAir)
+            // 2. Alt/Ctrl+左键: 收藏 / 取消收藏
+            if ((ItemSlot.ControlInUse || ItemSlot.ShiftInUse && Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftAlt)) && item != null && !item.IsAir)
             {
                 item.favorited = !item.favorited;
                 SoundEngine.PlaySound(SoundID.MenuTick);
@@ -77,21 +88,22 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             {
                 if (item == null || item.IsAir) return;
 
-                Main.mouseItem = item;
+                Main.mouseItem = item.Clone();
                 bag.personalInventory[slotIndex] = new Item();
+                SoundEngine.PlaySound(SoundID.Grab);
             }
             else if (item == null || item.IsAir)
             {
                 if (!mouse.accessory && mouse.prefix <= 0 && mouse.defense <= 0)
                 {
-                    // 仅允许放入饰品或带词缀/防御属性的装备
                     if (!mouse.accessory) return;
                 }
 
                 if (CheckDuplicates(mouse, slotIndex)) return;
 
-                bag.personalInventory[slotIndex] = mouse;
+                bag.personalInventory[slotIndex] = mouse.Clone();
                 Main.mouseItem = new Item();
+                SoundEngine.PlaySound(SoundID.Grab);
             }
             else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
             {
@@ -99,17 +111,19 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 item.stack += move;
                 mouse.stack -= move;
                 if (mouse.stack <= 0) Main.mouseItem = new Item();
+                SoundEngine.PlaySound(SoundID.Grab);
             }
             else
             {
                 if (!mouse.accessory) return;
                 if (CheckDuplicates(mouse, slotIndex)) return;
 
-                Main.mouseItem = item;
-                bag.personalInventory[slotIndex] = mouse;
+                Item old = item.Clone();
+                bag.personalInventory[slotIndex] = mouse.Clone();
+                Main.mouseItem = old;
+                SoundEngine.PlaySound(SoundID.Grab);
             }
 
-            SoundEngine.PlaySound(SoundID.Grab);
             bag.TriggerSlotsChanged();
         }
 
@@ -130,6 +144,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 item.stack -= take;
                 if (item.stack <= 0) bag.personalInventory[slotIndex] = new Item();
                 Main.mouseItem = half;
+                SoundEngine.PlaySound(SoundID.Grab);
             }
             else
             {
@@ -142,18 +157,19 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                     one.stack = 1;
                     bag.personalInventory[slotIndex] = one;
                     mouse.stack--;
+                    SoundEngine.PlaySound(SoundID.Grab);
                 }
                 else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
                 {
                     item.stack++;
                     mouse.stack--;
+                    SoundEngine.PlaySound(SoundID.Grab);
                 }
                 else return;
 
                 if (mouse.stack <= 0) Main.mouseItem = new Item();
             }
 
-            SoundEngine.PlaySound(SoundID.Grab);
             bag.TriggerSlotsChanged();
         }
 
@@ -204,37 +220,55 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         {
             base.Update(gameTime);
 
-            if (!IsMouseHovering) return;
+            if (bag?.personalInventory == null || slotIndex < 0 || slotIndex >= bag.personalInventory.Length) return;
 
-            Main.LocalPlayer.mouseInterface = true;
-            if (bag?.personalInventory != null && slotIndex >= 0 && slotIndex < bag.personalInventory.Length)
+            if (Parent != null)
             {
-                Item item = bag.personalInventory[slotIndex];
-                if (item != null && item.type > ItemID.None)
+                CalculatedStyle parentDims = Parent.GetInnerDimensions();
+                Rectangle parentRect = parentDims.ToRectangle();
+                CalculatedStyle slotDims = GetDimensions();
+                Rectangle slotRect = slotDims.ToRectangle();
+                if (!parentRect.Intersects(slotRect))
                 {
-                    ItemSlot.MouseHover(new Item[] { item });
+                    isMouseHovering = false;
+                    return;
+                }
+            }
+
+            if (isMouseHovering)
+            {
+                Main.LocalPlayer.mouseInterface = true;
+                Item item = bag.personalInventory[slotIndex];
+                if (item != null && !item.IsAir)
+                {
+                    Main.HoverItem = item.Clone();
+                    Main.hoverItemName = item.Name;
                 }
             }
         }
 
         protected override void DrawSelf(SpriteBatch sb)
         {
-            base.DrawSelf(sb);
-
             if (bag?.personalInventory == null || slotIndex < 0 || slotIndex >= bag.personalInventory.Length) return;
-            Item item = bag.personalInventory[slotIndex];
 
             CalculatedStyle dim = GetDimensions();
+            Rectangle slotRect = dim.ToRectangle();
 
-            // 1. 收藏金色边框高亮
+            // 1. 绘制原版官方物品栏底图 (TextureAssets.InventoryBack)
+            Texture2D backTex = TextureAssets.InventoryBack.Value;
+            sb.Draw(backTex, slotRect, Color.White);
+
+            Item item = bag.personalInventory[slotIndex];
+
+            // 2. 绘制金色收藏锁定底图 (TextureAssets.InventoryBack19)
             if (item != null && !item.IsAir && item.favorited)
             {
                 Texture2D favTex = TextureAssets.InventoryBack19.Value;
                 Color favCol = Color.Lerp(Main.OurFavoriteColor, Color.White, 0.5f);
-                sb.Draw(favTex, dim.ToRectangle(), favCol);
+                sb.Draw(favTex, slotRect, favCol);
             }
 
-            // 2. 绘制物品图标
+            // 3. 绘制物品贴图 (黄金比例 0.65f 居中等比缩放)
             if (item != null && !item.IsAir && item.type > ItemID.None)
             {
                 if (!TextureAssets.Item[item.type].IsLoaded)
@@ -242,56 +276,65 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                     Main.instance.LoadItem(item.type);
                 }
 
-                Texture2D tex = TextureAssets.Item[item.type].Value;
-                Rectangle frame = Main.itemAnimations[item.type]?.GetFrame(tex) ?? tex.Frame();
-
-                float maxSide = Math.Max(frame.Width, frame.Height);
-                float scale = maxSide > 32f ? 32f / maxSide : 1f;
-
-                Vector2 origin = frame.Size() / 2f;
-                Vector2 pos = new Vector2(dim.X + dim.Width / 2f, dim.Y + dim.Height / 2f);
-
-                Color alpha = item.GetAlpha(Color.White);
-                sb.Draw(tex, pos, frame, alpha, 0f, origin, scale, SpriteEffects.None, 0f);
-
-                if (item.stack > 1)
+                Texture2D itemTex = TextureAssets.Item[item.type].Value;
+                if (itemTex != null && !itemTex.IsDisposed)
                 {
-                    string s = item.stack.ToString();
-                    Vector2 numOrigin = FontAssets.ItemStack.Value.MeasureString(s) * new Vector2(0f, 1f);
-                    Vector2 numPos = new Vector2(dim.X + 4f, dim.Y + dim.Height - 2f);
-                    ChatManager.DrawColorCodedStringWithShadow(
-                        sb,
-                        FontAssets.ItemStack.Value,
-                        s,
-                        numPos,
-                        Color.White,
-                        0f,
-                        numOrigin,
-                        new Vector2(0.75f)
+                    Rectangle frame = Main.itemAnimations[item.type]?.GetFrame(itemTex) ?? itemTex.Bounds;
+                    float maxBound = (float)slotRect.Width * 0.65f;
+                    float scale = 1f;
+                    if ((float)frame.Width > maxBound || (float)frame.Height > maxBound)
+                    {
+                        scale = Math.Min(maxBound / (float)frame.Width, maxBound / (float)frame.Height);
+                    }
+
+                    Vector2 drawSize = new Vector2(frame.Width * scale, frame.Height * scale);
+                    Vector2 drawPos = new Vector2(
+                        slotRect.X + ((float)slotRect.Width - drawSize.X) * 0.5f,
+                        slotRect.Y + ((float)slotRect.Height - drawSize.Y) * 0.5f
                     );
+
+                    Color itemAlpha = item.GetAlpha(Color.White);
+                    sb.Draw(itemTex, drawPos, frame, itemAlpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+
+                    // 堆叠数字
+                    if (item.stack > 1)
+                    {
+                        string stackStr = item.stack.ToString();
+                        ChatManager.DrawColorCodedStringWithShadow(
+                            sb,
+                            FontAssets.ItemStack.Value,
+                            stackStr,
+                            new Vector2(slotRect.X + 2f, slotRect.Y + slotRect.Height - 12f),
+                            Color.White,
+                            0f,
+                            Vector2.Zero,
+                            new Vector2(0.7f)
+                        );
+                    }
                 }
-            }
 
-            // 3. 绘制右上角眼睛外观图标 (绿色开启 / 划线关闭)
-            if (bag.hideVisuals != null && slotIndex < bag.hideVisuals.Length)
-            {
-                bool hidden = bag.hideVisuals[slotIndex];
-                Texture2D eyeTex = hidden ? TextureAssets.InventoryTickOff.Value : TextureAssets.InventoryTickOn.Value;
-                Vector2 eyePos = new Vector2(dim.X + dim.Width - 13f, dim.Y + 3f);
-                Color eyeCol = Color.White * 0.85f;
-
-                Rectangle eyeRect = new Rectangle((int)eyePos.X, (int)eyePos.Y, 12, 12);
-                if (eyeRect.Contains(Main.MouseScreen.ToPoint()))
+                // 4. 绘制右上角 10x10 眼睛显隐角标 (TextureAssets.InventoryTickOn / Off)
+                if (bag.hideVisuals != null && slotIndex < bag.hideVisuals.Length)
                 {
-                    eyeCol = Color.White;
-                }
+                    bool hidden = bag.hideVisuals[slotIndex];
+                    Texture2D eyeTex = hidden ? TextureAssets.InventoryTickOff.Value : TextureAssets.InventoryTickOn.Value;
+                    Vector2 eyePos = new Vector2(slotRect.X + slotRect.Width - 12f, slotRect.Y + 2f);
+                    Color eyeCol = Color.White * 0.7f;
 
-                sb.Draw(eyeTex, eyePos, null, eyeCol, 0f, Vector2.Zero, 0.6f, SpriteEffects.None, 0f);
+                    Rectangle eyeHitRect = new Rectangle((int)eyePos.X, (int)eyePos.Y, 10, 10);
+                    if (eyeHitRect.Contains(Main.MouseScreen.ToPoint()))
+                    {
+                        eyeCol = Color.White;
+                        Main.LocalPlayer.mouseInterface = true;
+                    }
+
+                    sb.Draw(eyeTex, eyePos, null, eyeCol, 0f, Vector2.Zero, 0.6f, SpriteEffects.None, 0f);
+                }
             }
 
-            if (IsMouseHovering && item != null && item.type > ItemID.None)
+            // 5. 悬停光标指示与 Shift 辅助手型
+            if (isMouseHovering && item != null && !item.IsAir)
             {
-                ItemSlot.MouseHover(new Item[] { item });
                 if (ItemSlot.ShiftInUse && !item.favorited)
                 {
                     Main.cursorOverride = 8;
