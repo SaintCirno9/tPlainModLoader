@@ -27,6 +27,8 @@ namespace OptimizeAndTool.Content.Storage.Core
         Potion,
         /// <summary>弹药（箭矢、子弹、火箭、飞镖等）</summary>
         Ammo,
+        /// <summary>鱼饵（各类钓鱼诱饵、昆虫等）</summary>
+        Bait,
         /// <summary>物块与建筑（物块、方块、墙壁、平台等）</summary>
         Tile,
         /// <summary>合成素材（矿石、锭、灵魂、Boss召唤物、各类制作材料等）</summary>
@@ -65,7 +67,13 @@ namespace OptimizeAndTool.Content.Storage.Core
                 return BagItemCategory.Ammo;
             }
 
-            // 3. 武器（带有攻击力且有挥动/使用方式）
+            // 3. 鱼饵（钓鱼诱饵、昆虫等）
+            if (item.bait > 0)
+            {
+                return BagItemCategory.Bait;
+            }
+
+            // 4. 武器（带有攻击力且有挥动/使用方式）
             if ((item.damage > 0 && item.useStyle > 0 && !item.accessory) ||
                 item.melee || item.ranged || item.magic || item.summon)
             {
@@ -132,6 +140,12 @@ namespace OptimizeAndTool.Content.Storage.Core
         {
             if (category == BagItemCategory.All) return true;
             if (item == null || item.IsAir) return false;
+
+            // 针对 Bait 判定
+            if (category == BagItemCategory.Bait && item.bait > 0)
+            {
+                return true;
+            }
 
             // 针对 Material 智能宽泛命中所有纯合成素材
             if (category == BagItemCategory.Material && item.material && !item.accessory && item.damage == 0 && item.pick == 0 && item.axe == 0 && item.hammer == 0)

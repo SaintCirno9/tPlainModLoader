@@ -1,0 +1,7 @@
+{
+  "key": "SaintCirno9.FishingMachine",
+  "version": "1.0.0",
+  "isEnable": true,
+  "dllPath": "FishingMachine.dll",
+  "frontModKeys": []
+}

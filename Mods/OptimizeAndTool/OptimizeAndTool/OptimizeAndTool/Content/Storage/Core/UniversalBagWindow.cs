@@ -274,6 +274,7 @@ namespace OptimizeAndTool.Content.Storage.Core
                 (BagItemCategory.Tool, "工具（镐/斧/锤/钓竿/电线工具）", "Images/Item_3509"),
                 (BagItemCategory.Potion, "药水与食物（治疗/魔力/增益/食物）", "Images/Item_296"),
                 (BagItemCategory.Ammo, "弹药（箭矢/子弹/火箭/飞镖）", "Images/Item_40"),
+                (BagItemCategory.Bait, "鱼饵（各类诱饵/钓鱼昆虫等）", "Images/Item_2676"),
                 (BagItemCategory.Tile, "物块与建筑（方块/墙壁/平台）", "Images/Item_2"),
                 (BagItemCategory.Material, "合成素材（矿石/锭/灵魂/制作材料）", "Images/Item_706"),
                 (BagItemCategory.Other, "杂项与家具（家具/钱币/其他）", "Images/Item_9")

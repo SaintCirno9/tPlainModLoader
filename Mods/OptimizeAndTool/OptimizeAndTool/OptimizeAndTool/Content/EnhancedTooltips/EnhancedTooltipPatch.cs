@@ -47,6 +47,12 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
             {
                 ApplyMoreDataTooltip(item, ref numLines, toolTipLine, lineColors);
             }
+
+            // 5. 钓竿全容器可用鱼饵提示
+            if (item.fishingPole > 0)
+            {
+                ApplyFishingBaitTooltip(item, ref numLines, toolTipLine, lineColors);
+            }
         }
 
         private static void ApplySetBonusHighlight(Item item, ref int numLines, string[] toolTipLine, Color[] lineColors)
@@ -219,6 +225,29 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
                 string wallInfo = item.createWall > -1 ? $"墙壁: {item.createWall}" : "";
                 toolTipLine[numLines] = $"[放置属性] {tileInfo} {wallInfo}".Trim();
                 lineColors[numLines] = DataColor;
+                numLines++;
+            }
+        }
+
+        private static void ApplyFishingBaitTooltip(Item item, ref int numLines, string[] toolTipLine, Color[] lineColors)
+        {
+            if (numLines >= toolTipLine.Length) return;
+
+            Player player = Main.LocalPlayer;
+            if (player == null || !player.active) return;
+
+            if (QoL.Fishing.AutoFishingSupplies.EnableInfiniteBait.val)
+            {
+                toolTipLine[numLines] = "[c/00FFDD:【无限鱼饵】] 当前已激活无限鱼饵模式，垂钓无需消耗鱼饵";
+                lineColors[numLines] = new Color(0, 255, 221);
+                numLines++;
+            }
+            else
+            {
+                int baitCount = QoL.Fishing.AutoFishingSupplies.CountAllBait(player);
+                string color = baitCount > 0 ? "77FFAA" : "FF7777";
+                toolTipLine[numLines] = $"[c/{color}:可用鱼饵总数: {baitCount}] (已检索背包、虚空袋与随身银行)";
+                lineColors[numLines] = baitCount > 0 ? new Color(119, 255, 170) : new Color(255, 119, 119);
                 numLines++;
             }
         }

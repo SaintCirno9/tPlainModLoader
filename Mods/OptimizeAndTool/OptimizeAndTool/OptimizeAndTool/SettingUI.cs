@@ -6,6 +6,7 @@ using OptimizeAndTool.Content.Cheat.QoL;
 using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
+using OptimizeAndTool.Content.QoL.Fishing;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.VeinMining;
 using OptimizeAndTool.Content.ServerList;
@@ -54,6 +55,30 @@ namespace OptimizeAndTool
             public bool NoAnglerCooldown = true;
             public bool QuestFishStack = true;
             public bool NoFishingPenalty = true;
+
+            // 钓鱼增强与 AutoFisher 自动化
+            public bool GuaranteedCrate = false;
+            public bool CrateChanceMultiplierEnabled = false;
+            public int CrateChanceMult = 2;
+            public bool AutoFish = true;
+            public bool InstantBite = false;
+            public bool FishingHoldItemProtect = true;
+            public bool FishInShimmer = true;
+            public bool FishInLavaAnywhere = false;
+            public int MultiFishingLines = 1;
+            public bool EnableMultiFishingLines = false;
+            public bool AutoOpenCrates = false;
+            public bool AutoOpenOysters = true;
+            public bool AutoSellJunkCatches = false;
+            public bool AutoSellAllCatches = false;
+            public bool AutoKillFishingNPC = false;
+            public bool InfiniteBait = false;
+            public bool AutoDrinkFishingBuffs = true;
+            public bool AutoChumBuckets = true;
+            public bool AnglerArmorVanityBonus = true;
+            public bool OnlyPositiveFishingInfluences = true;
+            public bool IgnoreNegativeLuck = true;
+            public bool FishingInfoHUD = true;
 
             // 连锁挖矿
             public bool VeinMining = true;
@@ -191,6 +216,30 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableQuestFishStack.val = data.QuestFishStack;
             AnglerQuestOptimization.EnableNoFishingPenalty.val = data.NoFishingPenalty;
 
+            // 钓鱼与 AutoFisher 自动化
+            FishingCrateModifier.EnableGuaranteedCrate.val = data.GuaranteedCrate;
+            FishingCrateModifier.EnableCrateMultiplier.val = data.CrateChanceMultiplierEnabled;
+            FishingCrateModifier.CrateChanceMultiplier.val = data.CrateChanceMult;
+            AutoFishingSystem.EnableAutoFish.val = data.AutoFish;
+            AutoFishingSystem.EnableInstantBite.val = data.InstantBite;
+            AutoFishingSystem.EnableHoldItemProtection.val = data.FishingHoldItemProtect;
+            AutoFishingSystem.EnableFishInShimmer.val = data.FishInShimmer;
+            AutoFishingSystem.EnableFishInLavaAnywhere.val = data.FishInLavaAnywhere;
+            AutoFishingSystem.EnableOnlyPositiveInfluences.val = data.OnlyPositiveFishingInfluences;
+            AutoFishingSystem.EnableIgnoreNegativeLuck.val = data.IgnoreNegativeLuck;
+            MultipleFishingLines.MultiLineCount.val = data.MultiFishingLines;
+            MultipleFishingLines.EnableMultiLines.val = data.EnableMultiFishingLines;
+            FishingCatchProcessor.EnableAutoOpenCrates.val = data.AutoOpenCrates;
+            FishingCatchProcessor.EnableAutoOpenOysters.val = data.AutoOpenOysters;
+            FishingCatchProcessor.EnableAutoSellJunk.val = data.AutoSellJunkCatches;
+            FishingCatchProcessor.EnableAutoSellAllCatches.val = data.AutoSellAllCatches;
+            FishingCatchProcessor.EnableAutoKillFishingNPC.val = data.AutoKillFishingNPC;
+            AutoFishingSupplies.EnableInfiniteBait.val = data.InfiniteBait;
+            AutoFishingSupplies.EnableAutoDrinkFishingBuffs.val = data.AutoDrinkFishingBuffs;
+            AutoFishingSupplies.EnableAutoChumBuckets.val = data.AutoChumBuckets;
+            AutoFishingSupplies.EnableAnglerArmorVanityBonus.val = data.AnglerArmorVanityBonus;
+            FishingInfoHUD.EnableFishingInfoHUD.val = data.FishingInfoHUD;
+
             // 连锁挖矿
             VeinMiningLogic.Enable.val = data.VeinMining;
             VeinMiningLogic.MaxTiles.val = data.VeinMiningMaxTiles;
@@ -299,6 +348,29 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableQuestFishStack.OnValUpdate += _ => NeedSave = true;
             AnglerQuestOptimization.EnableNoFishingPenalty.OnValUpdate += _ => NeedSave = true;
 
+            FishingCrateModifier.EnableGuaranteedCrate.OnValUpdate += _ => NeedSave = true;
+            FishingCrateModifier.EnableCrateMultiplier.OnValUpdate += _ => NeedSave = true;
+            FishingCrateModifier.CrateChanceMultiplier.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableAutoFish.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableInstantBite.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableHoldItemProtection.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableFishInShimmer.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableFishInLavaAnywhere.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableOnlyPositiveInfluences.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSystem.EnableIgnoreNegativeLuck.OnValUpdate += _ => NeedSave = true;
+            MultipleFishingLines.MultiLineCount.OnValUpdate += _ => NeedSave = true;
+            MultipleFishingLines.EnableMultiLines.OnValUpdate += _ => NeedSave = true;
+            FishingCatchProcessor.EnableAutoOpenCrates.OnValUpdate += _ => NeedSave = true;
+            FishingCatchProcessor.EnableAutoOpenOysters.OnValUpdate += _ => NeedSave = true;
+            FishingCatchProcessor.EnableAutoSellJunk.OnValUpdate += _ => NeedSave = true;
+            FishingCatchProcessor.EnableAutoSellAllCatches.OnValUpdate += _ => NeedSave = true;
+            FishingCatchProcessor.EnableAutoKillFishingNPC.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSupplies.EnableInfiniteBait.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSupplies.EnableAutoDrinkFishingBuffs.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSupplies.EnableAutoChumBuckets.OnValUpdate += _ => NeedSave = true;
+            AutoFishingSupplies.EnableAnglerArmorVanityBonus.OnValUpdate += _ => NeedSave = true;
+            FishingInfoHUD.EnableFishingInfoHUD.OnValUpdate += _ => NeedSave = true;
+
             VeinMiningLogic.Enable.OnValUpdate += _ => NeedSave = true;
             VeinMiningLogic.MaxTiles.OnValUpdate += _ => NeedSave = true;
             VeinMiningLogic.IncludeOres.OnValUpdate += _ => NeedSave = true;
@@ -404,6 +476,29 @@ namespace OptimizeAndTool
                 NoAnglerCooldown = AnglerQuestOptimization.EnableNoAnglerCooldown.val,
                 QuestFishStack = AnglerQuestOptimization.EnableQuestFishStack.val,
                 NoFishingPenalty = AnglerQuestOptimization.EnableNoFishingPenalty.val,
+
+                GuaranteedCrate = FishingCrateModifier.EnableGuaranteedCrate.val,
+                CrateChanceMultiplierEnabled = FishingCrateModifier.EnableCrateMultiplier.val,
+                CrateChanceMult = FishingCrateModifier.CrateChanceMultiplier.val,
+                AutoFish = AutoFishingSystem.EnableAutoFish.val,
+                InstantBite = AutoFishingSystem.EnableInstantBite.val,
+                FishingHoldItemProtect = AutoFishingSystem.EnableHoldItemProtection.val,
+                FishInShimmer = AutoFishingSystem.EnableFishInShimmer.val,
+                FishInLavaAnywhere = AutoFishingSystem.EnableFishInLavaAnywhere.val,
+                OnlyPositiveFishingInfluences = AutoFishingSystem.EnableOnlyPositiveInfluences.val,
+                IgnoreNegativeLuck = AutoFishingSystem.EnableIgnoreNegativeLuck.val,
+                MultiFishingLines = MultipleFishingLines.MultiLineCount.val,
+                EnableMultiFishingLines = MultipleFishingLines.EnableMultiLines.val,
+                AutoOpenCrates = FishingCatchProcessor.EnableAutoOpenCrates.val,
+                AutoOpenOysters = FishingCatchProcessor.EnableAutoOpenOysters.val,
+                AutoSellJunkCatches = FishingCatchProcessor.EnableAutoSellJunk.val,
+                AutoSellAllCatches = FishingCatchProcessor.EnableAutoSellAllCatches.val,
+                AutoKillFishingNPC = FishingCatchProcessor.EnableAutoKillFishingNPC.val,
+                InfiniteBait = AutoFishingSupplies.EnableInfiniteBait.val,
+                AutoDrinkFishingBuffs = AutoFishingSupplies.EnableAutoDrinkFishingBuffs.val,
+                AutoChumBuckets = AutoFishingSupplies.EnableAutoChumBuckets.val,
+                AnglerArmorVanityBonus = AutoFishingSupplies.EnableAnglerArmorVanityBonus.val,
+                FishingInfoHUD = FishingInfoHUD.EnableFishingInfoHUD.val,
 
                 VeinMining = VeinMiningLogic.Enable.val,
                 VeinMiningMaxTiles = VeinMiningLogic.MaxTiles.val,
@@ -518,6 +613,29 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableNoAnglerCooldown.Reset();
             AnglerQuestOptimization.EnableQuestFishStack.Reset();
             AnglerQuestOptimization.EnableNoFishingPenalty.Reset();
+
+            FishingCrateModifier.EnableGuaranteedCrate.Reset();
+            FishingCrateModifier.EnableCrateMultiplier.Reset();
+            FishingCrateModifier.CrateChanceMultiplier.Reset();
+            AutoFishingSystem.EnableAutoFish.Reset();
+            AutoFishingSystem.EnableInstantBite.Reset();
+            AutoFishingSystem.EnableHoldItemProtection.Reset();
+            AutoFishingSystem.EnableFishInShimmer.Reset();
+            AutoFishingSystem.EnableFishInLavaAnywhere.Reset();
+            AutoFishingSystem.EnableOnlyPositiveInfluences.Reset();
+            AutoFishingSystem.EnableIgnoreNegativeLuck.Reset();
+            MultipleFishingLines.MultiLineCount.Reset();
+            MultipleFishingLines.EnableMultiLines.Reset();
+            FishingCatchProcessor.EnableAutoOpenCrates.Reset();
+            FishingCatchProcessor.EnableAutoOpenOysters.Reset();
+            FishingCatchProcessor.EnableAutoSellJunk.Reset();
+            FishingCatchProcessor.EnableAutoSellAllCatches.Reset();
+            FishingCatchProcessor.EnableAutoKillFishingNPC.Reset();
+            AutoFishingSupplies.EnableInfiniteBait.Reset();
+            AutoFishingSupplies.EnableAutoDrinkFishingBuffs.Reset();
+            AutoFishingSupplies.EnableAutoChumBuckets.Reset();
+            AutoFishingSupplies.EnableAnglerArmorVanityBonus.Reset();
+            FishingInfoHUD.EnableFishingInfoHUD.Reset();
 
             VeinMiningLogic.Enable.Reset();
             VeinMiningLogic.MaxTiles.Reset();

@@ -1,10 +1,11 @@
 using CommandHelp;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Content.EnhancedTooltips;
+using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
+using OptimizeAndTool.Content.QoL.Fishing;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.VeinMining;
-using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using System.Collections.Generic;
 using tContentPatch;
@@ -45,6 +46,12 @@ namespace OptimizeAndTool.Content
             cos.AddRange(InfinitePotionAndBuff.GetCO());
             cos.AddRange(TownNPCOptimization.GetCO());
             cos.AddRange(AnglerQuestOptimization.GetCO());
+            cos.AddRange(FishingCrateModifier.GetCO());
+            cos.AddRange(AutoFishingSystem.GetCO());
+            cos.AddRange(MultipleFishingLines.GetCO());
+            cos.AddRange(FishingCatchProcessor.GetCO());
+            cos.AddRange(AutoFishingSupplies.GetCO());
+            cos.AddRange(FishingInfoHUD.GetCO());
 
             // 5. 杂项辅助与调试 (原 SundryTool)
             cos.AddRange(Cheat.Function1.Function.GetCO());
@@ -95,8 +102,14 @@ namespace OptimizeAndTool.Content
             // 6. 城镇 NPC 与渔夫优化
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_267", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "城镇 NPC 与商贩"));
             uis.AddRange(TownNPCOptimization.GetUI());
-            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_2422", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "渔夫任务与钓鱼"));
+            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_2422", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "渔夫任务与钓鱼 QoL"));
             uis.AddRange(AnglerQuestOptimization.GetUI());
+            uis.AddRange(FishingCrateModifier.GetUI());
+            uis.AddRange(AutoFishingSystem.GetUI());
+            uis.AddRange(MultipleFishingLines.GetUI());
+            uis.AddRange(FishingCatchProcessor.GetUI());
+            uis.AddRange(AutoFishingSupplies.GetUI());
+            uis.AddRange(FishingInfoHUD.GetUI());
 
             // 7. 杂项辅助与调试 (原 SundryTool 功能合集)
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_1326", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "杂项辅助 (玩家能力)"));
