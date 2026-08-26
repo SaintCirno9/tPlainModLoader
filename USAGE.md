@@ -1,7 +1,7 @@
 # tPlainModLoader (TPML) 使用与开发手册
 
 > **项目来源**：Fork 自 [github-user-64/tPlainModLoader](https://github.com/github-user-64/tPlainModLoader)  
-> **文档版本**：v2.0　**维护者**：`SaintCirno9`  
+> **文档版本**：v2.1　**维护者**：`SaintCirno9`  
 > **适用环境**：.NET Framework 4.7.2 / Terraria 1.4.4+ & 1.4.5+
 
 ---
@@ -16,9 +16,12 @@
   - [2.1 模组工程结构](#21-模组工程结构)
   - [2.2 模组入口类 (Mod)](#22-模组入口类-mod)
   - [2.3 配置文件格式](#23-配置文件格式)
-  - [2.4 统一按键系统接入 (KeybindLoader)](#24-统一按键系统接入-keybindloader)
-  - [2.5 Prepatcher 自由字段与早期补丁](#25-prepatcher-自由字段与早期补丁)
-  - [2.6 Harmony 运行时补丁规范](#26-harmony-运行时补丁规范)
+  - [2.4 统一日志系统接入 (TPML.Core.Logging)](#24-统一日志系统接入-tpmlcorelogging)
+  - [2.5 统一按键系统接入 (KeybindLoader)](#25-统一按键系统接入-keybindloader)
+  - [2.6 Prepatcher 自由字段与早期补丁](#26-prepatcher-自由字段与早期补丁)
+  - [2.7 Harmony 运行时补丁规范](#27-harmony-运行时补丁规范)
+  - [2.8 统一文本输入框 (UITextBox)](#28-统一文本输入框-uitextbox)
+  - [2.9 模组配置与自动持久化 (ModSetting)](#29-模组配置与自动持久化-modsetting)
 - [三、 构建与部署](#三-构建与部署)
 
 ---
@@ -44,7 +47,8 @@
 - **模组安装**：将模组文件夹放入 `tPlainModLoader/Mods/` 目录下；
 - **启用与禁用**：
   - 启动游戏后，可通过主菜单的模组管理界面进行切换；
-  - 启用状态记录在用户文档目录下的 `Documents/My Games/Terraria/tPlainModLoader/enabled.json` 中。
+  - 启用状态记录在用户文档目录下的 `Documents/My Games/Terraria/tPlainModLoader/enabled.json` 中；
+- **日志查看**：启动与模组运行时日志自动输出至控制台并写入 `tPlainModLoader/tpml.log`（历史日志在启动时自动归档为 `tpml_old.log`）。
 
 ---
 
@@ -77,6 +81,8 @@ YourMod/
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\tPlainModLoader\TPML.Core\TPML.Core.csproj" />
+    <ProjectReference Include="..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" />
     <ProjectReference Include="..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" />
   </ItemGroup>
 
@@ -98,10 +104,10 @@ YourMod/
 ---
 
 ### 2.2 模组入口类 (Mod)
-继承 `tContentPatch.Mod` 并根据需要重写生命周期钩子：
+继承 `TPML.Content.Mod` 并根据需要重写生命周期钩子：
 
 ```csharp
-using tContentPatch;
+using TPML.Content;
 using tContentPatch.Patch;
 
 namespace YourMod
@@ -113,7 +119,8 @@ namespace YourMod
         public override void Load()
         {
             Instance = this;
-            // 模组被实例化时调用
+            // 模组被实例化时调用，Logger 已自动绑定并可用
+            Logger.Info("模组初始化成功");
         }
 
         public override void Loaded()
@@ -131,6 +138,7 @@ namespace YourMod
         public override void Unload()
         {
             // 卸载与清理
+            Logger.Info("模组已卸载");
             Instance = null;
         }
     }
@@ -165,26 +173,70 @@ namespace YourMod
 
 ---
 
-### 2.4 统一按键系统接入 (KeybindLoader)
+### 2.4 统一日志系统接入 (TPML.Core.Logging)
+
+TPML 提供了高性能、线程安全且非阻塞的统一日志架构 `TPML.Core.Logging`：
+
+#### 1. 模组内直接使用 `Logger`
+继承自 `Mod` 的模组类内置了强类型 `ILogger Logger` 属性：
+```csharp
+Logger.Debug("调试级别信息");
+Logger.Info("普通提示信息");
+Logger.Warn("警告信息");
+Logger.Error("业务执行失败", exception);
+Logger.Fatal("致命崩溃异常", exception);
+```
+
+#### 2. 在非 Mod 类或静态工具中获取 Logger
+```csharp
+using TPML.Core.Logging;
+
+public static class MyHelper
+{
+    private static readonly ILogger Logger = LogManager.GetLogger("MyHelper");
+
+    public static void DoWork()
+    {
+        Logger.Info("执行辅助任务...");
+    }
+}
+```
+
+#### 3. 性能诊断计时器 (ScopedTimer)
+```csharp
+using TPML.Core.Diagnostics;
+
+public void HeavyCalculation()
+{
+    // 超过 10ms 时自动以 Warn 级别输出耗时，未超时以 Debug 级别记录
+    using (ScopedTimer.Profile(Logger, "复杂计算任务", warnThresholdMs: 10f))
+    {
+        // 耗时计算逻辑
+    }
+}
+```
+
+---
+
+### 2.5 统一按键系统接入 (KeybindLoader)
 
 TPML 核心提供了原生级快捷键框架，自动集成到游戏原版【控件】设置界面中，并在打字聊天时自动全局静默。
 
 ```csharp
 using Microsoft.Xna.Framework.Input;
 using tContentPatch.Input;
-using Terraria.ModLoader;
 
 public static class MyKeybinds
 {
     public static ModKeybind ToggleKeybind { get; private set; }
 
-    public static void Register(tContentPatch.Mod mod)
+    public static void Register(object mod)
     {
         ToggleKeybind = KeybindLoader.RegisterKeybind(
             mod: mod,
             name: "ToggleFeature",
-            displayName: "开关功能",
-            defaultKey: Keys.V
+            defaultBinding: "V",
+            displayName: "开关功能"
         );
     }
 }
@@ -197,7 +249,7 @@ public static class MyKeybinds
 
 ---
 
-### 2.5 Prepatcher 自由字段与早期补丁
+### 2.6 Prepatcher 自由字段与早期补丁
 
 TPML 内置了基于 `Mono.Cecil` 的 Prepatcher 预修补机制。
 
@@ -243,7 +295,7 @@ public class MyEarlyPatcher : IPrepatcher
 
 ---
 
-### 2.6 Harmony 运行时补丁规范
+### 2.7 Harmony 运行时补丁规范
 
 - **强类型零反射**：由于 TPML 在启动期对 `Terraria.exe` 全量执行了公有化处理，原版所有私有/内部成员均可直接以强类型语法访问，无需使用反射；
 - **引用安全性**：补丁目标方法名推荐使用 `nameof(...)` 进行引用。
@@ -275,12 +327,29 @@ public class MyGameplayPatch : IPatch
 
 ---
 
+### 2.8 统一文本输入框 (UITextBox)
+
+TPML 在 `tContentPatch.Content.UI.UITextBox` 中提供了通用的单行文本输入控件：
+- **IME 输入法**：完整支持中文 Windows IME 拼音合成串内联反馈与闪烁光标；
+- **操作安全隔离**：在获得焦点期间由底层自动接管 `Main.blockInput = true` 与 `PlayerInput.WritingText = true`，彻底消除在输入数字时意外触发原版快捷栏切换（1~9, 0）或移动跑跳的问题；
+- **视口与回车响应**：超长文本平滑水平滚动，支持回车（`OnSubmit`）/失焦即时提交与 Esc 取消。
+
+---
+
+### 2.9 模组配置与自动持久化 (ModSetting)
+
+模组可通过继承 `ModSetting` 实现结构化配置与文件持久化：
+- **自动落盘机制**：配置项变更时仅需设置 `NeedSave = true`；
+- **全生命周期安全网**：框架提供了 `ModSetting.SaveAllDirty()`，在**快速设置菜单关闭 (`UIQuickSetting.Close`)**、**玩家离开世界**、**退回主菜单**以及**进程退出 (`ProcessExit`)** 时全自动执行持久化写盘，确保任何游戏内调参不丢失。
+
+---
+
 ## 三、 构建与部署
 
 仓库配置了全自动热部署流：
 
 ```bash
-# 全量构建解决方案并部署全部组件
+# 全量构建解决方案并部署全部组件 (19 工程静态图并发加速)
 dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph
 
 # 单个模组独立构建与部署

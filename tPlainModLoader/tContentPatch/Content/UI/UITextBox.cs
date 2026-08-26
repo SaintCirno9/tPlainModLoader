@@ -54,6 +54,7 @@ namespace tContentPatch.Content.UI
                 {
                     _justFocused = false;
                     PlayerInput.WritingText = false;
+                    Main.blockInput = false;
                     Main.instance?.HandleIME();
                     if (Main.CurrentInputTextTakerOverride == this)
                     {
@@ -69,6 +70,7 @@ namespace tContentPatch.Content.UI
                 {
                     _justFocused = true;
                     PlayerInput.WritingText = true;
+                    Main.blockInput = true;
                     Main.CurrentInputTextTakerOverride = this;
                     Main.instance?.HandleIME();
                     Main.clrInput();
@@ -157,6 +159,7 @@ namespace tContentPatch.Content.UI
                 }
 
                 PlayerInput.WritingText = true;
+                Main.blockInput = true;
                 Main.CurrentInputTextTakerOverride = this;
                 Main.instance?.HandleIME();
 
@@ -207,6 +210,9 @@ namespace tContentPatch.Content.UI
 
             if (Focus)
             {
+                PlayerInput.WritingText = true;
+                Main.blockInput = true;
+
                 Vector2 imeAnchor = new Vector2(dims.X, dims.Y + dims.Height + 4);
                 Main.instance?.SetIMEPanelAnchor(imeAnchor, 0f);
 

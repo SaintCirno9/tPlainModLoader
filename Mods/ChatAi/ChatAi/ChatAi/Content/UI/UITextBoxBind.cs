@@ -1,4 +1,4 @@
-﻿using ChatAi.Utils;
+using ChatAi.Utils;
 using System;
 using tContentPatch.Content.UI;
 
@@ -9,10 +9,16 @@ namespace ChatAi.Content.UI
         public UITextBoxBind(GetSetReset<T> gsr, Func<string, T> parseTry,
             string text_default = "") : base(text_default)
         {
-            OnLostFocus += () =>
+            Action commitAction = () =>
             {
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(Text))
+                    {
+                        SetUIVal(gsr.val);
+                        return;
+                    }
+
                     T parseV = parseTry(Text);
                     if (parseV == null && gsr == null) return;
                     if (parseV?.Equals(gsr.val) == true) return;
@@ -24,6 +30,9 @@ namespace ChatAi.Content.UI
                     return;
                 }
             };
+
+            OnLostFocus += commitAction;
+            OnSubmit += _ => commitAction();
 
             BindUIAVal.Bind(gsr, this);
         }

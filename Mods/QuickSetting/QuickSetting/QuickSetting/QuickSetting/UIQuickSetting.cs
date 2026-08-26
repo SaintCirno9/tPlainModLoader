@@ -1,7 +1,8 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using tContentPatch;
 using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.GameContent;
@@ -174,6 +175,7 @@ namespace QuickSetting.QuickSetting
         {
             base.Close();
             switchRb = false;
+            ModSetting.SaveAllDirty();
         }
     }
 }

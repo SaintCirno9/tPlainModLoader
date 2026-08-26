@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 using tContentPatch.ModLoad;
@@ -12,10 +12,46 @@ namespace tContentPatch
     /// </summary>
     public abstract class ModSetting
     {
+        static ModSetting()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+            {
+                SaveAllDirty();
+            };
+        }
+
+        /// <summary>
+        /// 全量保存所有被标记为已修改 (NeedSave == true) 的模组设置
+        /// </summary>
+        public static void SaveAllDirty()
+        {
+            var mos = LoaderControl.GetModObjects();
+            if (mos == null) return;
+
+            foreach (var mo in mos)
+            {
+                if (mo?.inheritance_setting == null) continue;
+                foreach (var ms in mo.inheritance_setting)
+                {
+                    if (ms != null && ms.NeedSave)
+                    {
+                        try
+                        {
+                            ms.Save();
+                        }
+                        catch (Exception ex)
+                        {
+                            OutputDebug.OutputException(ex);
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// 需要保存
         /// </summary>
-        public bool NeedSave { get; protected set; } = false;
+        public bool NeedSave { get; set; } = false;
         /// <summary>
         /// 设置项名称
         /// </summary>

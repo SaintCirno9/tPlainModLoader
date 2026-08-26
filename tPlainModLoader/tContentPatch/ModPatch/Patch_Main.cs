@@ -58,12 +58,15 @@ namespace tContentPatch.ModPatch
                 mod.ForTry(item => item.OnEnterWorldPrefix());
                 // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
                 ModItemSidecarEngine.ResetContainers();
+                // 离开世界时自动持久化所有脏模组设置
+                ModSetting.SaveAllDirty();
             }
 
             if (!_UpdatePrefix_gameMenu_old && Main.gameMenu)
             {
                 // 检测到进入主菜单，安全复位所有容器内存驻留状态
                 ModItemSidecarEngine.ResetContainers();
+                ModSetting.SaveAllDirty();
             }
 
             _UpdatePrefix_CanUpdateGameplay_old = Main.CanUpdateGameplay;

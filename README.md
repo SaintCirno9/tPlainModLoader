@@ -10,7 +10,7 @@
 [![Upstream](https://img.shields.io/badge/Fork%20From-github--user--64%2FtPlainModLoader-blueviolet.svg)](https://github.com/github-user-64/tPlainModLoader)
 [![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
 
-> 💡 **项目声明**：本项目 Fork 自 [github-user-64/tPlainModLoader](https://github.com/github-user-64/tPlainModLoader)，并在原版轻量加载器原型的基础上进行了 SDK 风格重构、Publicizer 零反射基础设施、Prepatcher 字段动态注入、原生内容引擎（`TPML.Content`）与丰富实用模组矩阵的深度现代化扩展。
+> 💡 **项目声明**：本项目 Fork 自 [github-user-64/tPlainModLoader](https://github.com/github-user-64/tPlainModLoader)，并在原版轻量加载器原型的基础上进行了 SDK 风格重构、Publicizer 零反射基础设施、Prepatcher 字段动态注入、底层通用核心库（`TPML.Core`）、原生内容引擎（`TPML.Content`）与丰富实用模组矩阵的深度现代化扩展。
 
 </div>
 
@@ -24,6 +24,7 @@
 - **直接运行于原版游戏**：基于官方原版客户端直接启动，保持对原生存档格式（`.plr` / `.wld`）的 100% 纯净兼容；
 - **公有化预处理 (Publicizer)**：启动阶段通过 Mono.Cecil 对游戏程序集进行全量成员公开化，支持开发者以强类型直连访问原版内部字段与方法，享受零反射性能；
 - **Prepatcher 预修补机制**：支持通过 `[PrepatcherField]` 向原生类动态注入实例字段并改写访问器 IL，同时支持 `IPrepatcher` 早期 Cecil 预补丁；
+- **解耦底层核心库 (TPML.Core)**：独立于 XNA/Terraria 游戏上下文的底层基础库，提供企业级高性能日志系统（`ILogger` / `LogManager`、高对比度彩色控制台、后台异步非阻塞磁盘刷盘与日志滚动）以及 `ScopedTimer` 微秒级性能分析诊断器；
 - **原生级统一按键框架 (KeybindLoader)**：模组快捷键自动注入原版控件设置界面与输入配置；
 - **原生内容加载引擎 (TPML.Content)**：标准化物品、配方与系统生命周期注册，支持手持与分帧建造；
 - **4GB 虚拟内存感知 (LargeAddressAware)**：构建流自动注入 LAA 标志，扩展 32 位寻址上限。
@@ -38,7 +39,7 @@
 
 该文档包含：
 1. **玩家指南**：运行环境要求、`launchConfig.json` 路径配置、模组安装与 `enabled.json` 状态管理；
-2. **开发者指南**：模组项目结构、`Mod` 生命周期、`[PrepatcherField]` 字段注入范例、`KeybindLoader` 快捷键接入与 Harmony 补丁编写规范；
+2. **开发者指南**：模组项目结构、`Mod` 生命周期、`TPML.Core.Logging` 日志与诊断接入、`[PrepatcherField]` 字段注入范例、`KeybindLoader` 快捷键接入与 Harmony 补丁编写规范；
 3. **构建与部署**：MSBuild 自动化构建与自动部署命令。
 
 ---
