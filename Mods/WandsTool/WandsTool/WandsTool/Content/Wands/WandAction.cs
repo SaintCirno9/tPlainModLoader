@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Terraria;
 using Terraria.GameContent.UI;
 using Terraria.ID;
+using TPML.Content.Fusion;
 
 namespace WandsTool.Content
 {
@@ -82,6 +83,11 @@ namespace WandsTool.Content
         protected static Queue<tile> wireKill = new Queue<tile>();
         protected static Queue<Projectile> wireLinePlaceAndKill = new Queue<Projectile>();
 
+        // 物料来源追踪：当前 FirstItem_TileOrWall 找到的物品所属 Fusion 源（背包/光标源为 null）
+        private static IFusionItemSource _lastFusionSource = null;
+        // 批量操作期间发生变动的 Fusion 源集合（队列处理完毕后统一 OnModified 持久化，避免高频写盘）
+        private static readonly HashSet<IFusionItemSource> _fusionDirty = new HashSet<IFusionItemSource>();
+
         public static int Count { get; protected set; } = 0;
 
         public static void Clear()
@@ -92,6 +98,8 @@ namespace WandsTool.Content
             wirePlace?.Clear();
             wireKill?.Clear();
             wireLinePlaceAndKill?.Clear();
+            _fusionDirty?.Clear();
+            _lastFusionSource = null;
             Count = 0;
         }
 
@@ -179,6 +187,13 @@ namespace WandsTool.Content
 
             Count = tilePlace.Count + tileKill.Count + liquidQueue.Count + wirePlace.Count + wireKill.Count + wireLinePlaceAndKill.Count;
 
+            // 队列全部处理完毕：统一持久化 Fusion 源变动，并归档当前撤销记录（未实际变化则丢弃）
+            if (Count == 0 && player != null)
+            {
+                FlushFusionDirty(player);
+                WandHistory.CheckFinalize(player);
+            }
+
             if (--updateCount > 0) Update(updateCount);
         }
 
@@ -225,11 +240,7 @@ namespace WandsTool.Content
                 // 成功放置后再扣除物品并同步
                 if (replaced)
                 {
-                    if (item.consumable && ModConfig.IsConsumablesItem())
-                    {
-                        item.stack -= 1;
-                        if (item.stack <= 0) item.TurnToAir();
-                    }
+                    ConsumeMaterial(player, item);
 
                     SetSlopeFor(t.x, t.y, t.bt);
                     action.updateData_placeTile(t.x, t.y, item.placeStyle);
@@ -240,11 +251,7 @@ namespace WandsTool.Content
                 bool v = WorldGen.PlaceTile(t.x, t.y, item.createTile, true, true, player.whoAmI, item.placeStyle);
                 if (v)
                 {
-                    if (item.consumable && ModConfig.IsConsumablesItem())
-                    {
-                        item.stack -= 1;
-                        if (item.stack <= 0) item.TurnToAir();
-                    }
+                    ConsumeMaterial(player, item);
 
                     SetSlopeFor(t.x, t.y, t.bt);
                     action.updateData_placeTile(t.x, t.y, item.placeStyle);
@@ -288,11 +295,7 @@ namespace WandsTool.Content
 
                 if (tile.wall == item.createWall)
                 {
-                    if (item.consumable && ModConfig.IsConsumablesItem())
-                    {
-                        item.stack -= 1;
-                        if (item.stack <= 0) item.TurnToAir();
-                    }
+                    ConsumeMaterial(player, item);
 
                     WorldGen.SquareWallFrame(t.x, t.y, false);
                     action.updateData_placeWall(t.x, t.y);
@@ -303,11 +306,7 @@ namespace WandsTool.Content
                 WorldGen.PlaceWall(t.x, t.y, item.createWall, true);
                 if (tile?.wall == item.createWall)
                 {
-                    if (item.consumable && ModConfig.IsConsumablesItem())
-                    {
-                        item.stack -= 1;
-                        if (item.stack <= 0) item.TurnToAir();
-                    }
+                    ConsumeMaterial(player, item);
 
                     WorldGen.SquareWallFrame(t.x, t.y, false);
                     action.updateData_placeWall(t.x, t.y);
@@ -466,9 +465,9 @@ namespace WandsTool.Content
         }
 
         /// <summary>
-        /// 优先将物品堆叠放入玩家背包，背包满时再实体掉落，避免掉落物风暴
+        /// 优先将物品堆叠放入玩家背包，背包满时优先注入激活的 Fusion 容器（同类堆叠 -> 空格），最后才实体掉落，彻底消除掉落物风暴
         /// </summary>
-        private static void GiveItemToPlayer(Player player, int itemType, int count = 1)
+        public static void GiveItemToPlayer(Player player, int itemType, int count = 1)
         {
             if (player?.inventory == null || count <= 0) return;
 
@@ -502,25 +501,87 @@ namespace WandsTool.Content
                 }
             }
 
-            // 3. 背包全满，掉落物生成
+            // 3. 背包全满时穿透注入激活的 Fusion 容器（猪猪存钱罐、保险箱、虚空袋、护卫熔炉等）
+            if (remaining > 0)
+            {
+                var sources = InventoryFusionManager.GetActiveSources(player);
+                for (int s = 0; s < sources.Count && remaining > 0; s++)
+                {
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
+
+                    bool modified = false;
+
+                    // 3.1 先注入同类堆叠
+                    for (int i = 0; i < slots.Length && remaining > 0; i++)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == itemType && it.stack < it.maxStack)
+                        {
+                            int add = Math.Min(remaining, it.maxStack - it.stack);
+                            it.stack += add;
+                            remaining -= add;
+                            modified = true;
+                        }
+                    }
+
+                    // 3.2 再放入空格
+                    for (int i = 0; i < slots.Length && remaining > 0; i++)
+                    {
+                        Item it = slots[i];
+                        if (it == null || it.IsAir)
+                        {
+                            slots[i] = new Item();
+                            slots[i].SetDefaults(itemType);
+                            int add = Math.Min(remaining, slots[i].maxStack);
+                            slots[i].stack = add;
+                            remaining -= add;
+                            modified = true;
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        try { src.OnModified(player); } catch { }
+                    }
+                }
+            }
+
+            // 4. 主背包与 Fusion 均已满，掉落物生成
             if (remaining > 0)
             {
                 player.QuickSpawnItem(null, itemType, remaining);
             }
         }
 
+        /// <summary>
+        /// 检查背包与激活 Fusion 容器中的液体桶（无底桶不消耗；普通桶扣除并返还空桶）
+        /// </summary>
         private static bool TryConsumeLiquidBucket(Player player, int bucketType, int bottomlessType)
         {
             if (player?.inventory == null) return false;
 
-            // 1. 检查是否存在无底桶（无底桶不消耗数量）
+            // 1. 检查是否存在无底桶（无底桶不消耗数量，背包与 Fusion 容器均可）
             for (int i = 0; i < player.inventory.Length; i++)
             {
                 Item it = player.inventory[i];
                 if (it != null && it.stack > 0 && it.type == bottomlessType) return true;
             }
+            var sources = InventoryFusionManager.GetActiveSources(player);
+            for (int s = 0; s < sources.Count; s++)
+            {
+                var src = sources[s];
+                Item[] slots = src.GetSlots(player);
+                if (slots == null) continue;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item it = slots[i];
+                    if (it != null && !it.IsAir && it.stack > 0 && it.type == bottomlessType) return true;
+                }
+            }
 
-            // 2. 检查普通液体桶并转为空桶存入背包
+            // 2. 检查普通液体桶并转为空桶存入背包（先主背包后 Fusion 容器）
             for (int i = 0; i < player.inventory.Length; i++)
             {
                 Item it = player.inventory[i];
@@ -531,6 +592,25 @@ namespace WandsTool.Content
 
                     GiveItemToPlayer(player, ItemID.EmptyBucket, 1);
                     return true;
+                }
+            }
+            for (int s = 0; s < sources.Count; s++)
+            {
+                var src = sources[s];
+                Item[] slots = src.GetSlots(player);
+                if (slots == null) continue;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    Item it = slots[i];
+                    if (it != null && !it.IsAir && it.stack > 0 && it.type == bucketType)
+                    {
+                        it.stack -= 1;
+                        if (it.stack <= 0) it.TurnToAir();
+                        _fusionDirty.Add(src);
+
+                        GiveItemToPlayer(player, ItemID.EmptyBucket, 1);
+                        return true;
+                    }
                 }
             }
 
@@ -794,22 +874,54 @@ namespace WandsTool.Content
         {
             if (player == null) return null;
 
+            // 0. 光标抓取物最高优先级：背包开启时用鼠标抓起材料直接框选铺设（消耗同步扣除光标堆叠）
+            Item mouse = Main.mouseItem;
+            if (HasItem(mouse))
+            {
+                if (isTile)
+                {
+                    if (mouse.createTile >= 0)
+                    {
+                        _lastFusionSource = null;
+                        return mouse;
+                    }
+                }
+                else
+                {
+                    if (mouse.createWall > 0)
+                    {
+                        _lastFusionSource = null;
+                        return mouse;
+                    }
+                }
+            }
+
+            // 1. 手持物品
             Item item = player.HeldItem;
 
             if (HasItem(item))
             {
                 if (isTile)
                 {
-                    if (item.createTile >= 0) return item;
+                    if (item.createTile >= 0)
+                    {
+                        _lastFusionSource = null;
+                        return item;
+                    }
                 }
                 else
                 {
-                    if (item.createWall > 0) return item;
+                    if (item.createWall > 0)
+                    {
+                        _lastFusionSource = null;
+                        return item;
+                    }
                 }
             }
 
             if (player.inventory == null) return null;
 
+            // 2. 主背包检索
             for (int i = 0; i < player.inventory.Length; ++i)
             {
                 item = player.inventory[i];
@@ -817,15 +929,100 @@ namespace WandsTool.Content
 
                 if (isTile)
                 {
-                    if (item.createTile >= 0) return item;
+                    if (item.createTile >= 0)
+                    {
+                        _lastFusionSource = null;
+                        return item;
+                    }
                 }
                 else
                 {
-                    if (item.createWall > 0) return item;
+                    if (item.createWall > 0)
+                    {
+                        _lastFusionSource = null;
+                        return item;
+                    }
                 }
             }
 
+            // 3. Fusion 容器穿透检索（猪猪存钱罐、保险箱、虚空袋、护卫熔炉及外部容器等）
+            var sources = InventoryFusionManager.GetActiveSources(player);
+            for (int s = 0; s < sources.Count; s++)
+            {
+                var src = sources[s];
+                Item[] slots = src.GetSlots(player);
+                if (slots == null) continue;
+
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    item = slots[i];
+                    if (HasItem(item) != true) continue;
+
+                    if (isTile)
+                    {
+                        if (item.createTile >= 0)
+                        {
+                            _lastFusionSource = src;
+                            return item;
+                        }
+                    }
+                    else
+                    {
+                        if (item.createWall > 0)
+                        {
+                            _lastFusionSource = src;
+                            return item;
+                        }
+                    }
+                }
+            }
+
+            _lastFusionSource = null;
             return null;
+        }
+
+        /// <summary>
+        /// 统一物料消耗入口：扣除物品堆叠、同步 Fusion 源持久化并累计撤销记录
+        /// </summary>
+        private static void ConsumeMaterial(Player player, Item item)
+        {
+            if (item == null || item.stack <= 0) return;
+            if (ModConfig.IsConsumablesItem() == false) return;
+            if (item.consumable == false) return;
+
+            int itemType = item.type;
+            item.stack -= 1;
+            if (item.stack <= 0) item.TurnToAir();
+
+            if (_lastFusionSource != null)
+            {
+                _fusionDirty.Add(_lastFusionSource);
+                _lastFusionSource = null;
+            }
+
+            WandHistory.AccumulateConsume(itemType, 1);
+        }
+
+        /// <summary>
+        /// 对批量操作期间发生变动的 Fusion 源统一触发 OnModified 持久化
+        /// </summary>
+        private static void FlushFusionDirty(Player player)
+        {
+            if (_fusionDirty == null || _fusionDirty.Count == 0) return;
+
+            foreach (var src in _fusionDirty)
+            {
+                if (src == null) continue;
+                try
+                {
+                    src.OnModified(player);
+                }
+                catch
+                {
+                    // 单个源持久化失败不影响其余源
+                }
+            }
+            _fusionDirty.Clear();
         }
 
         private static bool HasItem(Item item)

@@ -60,5 +60,28 @@ namespace WandsTool.Content.Patch
 
             return true;
         }
+
+        /// <summary>
+        /// 拦截原版丢弃物品动作：魔杖模式下防止光标抓取材料框选时误把整组物品扔在地上。
+        /// 背包开启且鼠标悬停 UI 控件上时放行，保证槽位整理/丢弃操作不受影响。
+        /// </summary>
+        [HarmonyPatch(typeof(Player), nameof(Player.DropSelectedItem), new System.Type[] { })]
+        [HarmonyPrefix]
+        public static bool DropSelectedItem_Prefix(Player __instance)
+        {
+            if (__instance.whoAmI == Main.myPlayer && gameMain.Wand_isEnable)
+            {
+                // 背包开启且鼠标落在物品槽等 UI 控件上时，允许原版正常操作（拿取/拆分/丢弃）
+                if (Main.playerInventory && (Main.LocalPlayer.mouseInterface || Main.editChest))
+                {
+                    return true;
+                }
+
+                // 其余世界场景（选区进行中、光标抓物悬空等）一律拦截，杜绝误扔
+                return false;
+            }
+
+            return true;
+        }
     }
 }

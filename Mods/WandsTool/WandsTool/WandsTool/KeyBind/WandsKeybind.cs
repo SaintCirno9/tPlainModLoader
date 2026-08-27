@@ -27,6 +27,11 @@ namespace WandsTool.KeyBind
         public static ModKeybind FlipVertical { get; private set; }
 
         /// <summary>
+        /// 施工一键撤销: 撤销上一次魔杖批量操作（物块/墙/液体），并智能回滚消耗物料
+        /// </summary>
+        public static ModKeybind UndoAction { get; private set; }
+
+        /// <summary>
         /// 显式初始化并向统一系统注册快捷键
         /// </summary>
         public static void Initialize()
@@ -58,6 +63,16 @@ namespace WandsTool.KeyBind
                     name: "FlipVertical",
                     defaultBinding: "V",
                     displayName: "魔杖蓝图: 垂直镜像翻转 (Flip Vertical)"
+                );
+            }
+
+            if (UndoAction == null)
+            {
+                UndoAction = KeybindLoader.RegisterKeybind(
+                    modName: "WandsTool",
+                    name: "UndoAction",
+                    defaultBinding: "U",
+                    displayName: "魔杖施工: 一键撤销 (Undo Last Build)"
                 );
             }
         }

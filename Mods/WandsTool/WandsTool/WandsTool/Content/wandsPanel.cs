@@ -115,10 +115,12 @@ namespace WandsTool.Content
         protected wandsPanel_btn1 btn2_wire_yellow = null;
         protected wandsPanel_btn1 btn2_wire_actuator = null;
 
-        // 子菜单 3：几何形状（直线、空心圆、矩形框选）
+        // 子菜单 3：几何形状（直线、空心圆、实心圆、实心矩形、空心矩形）
         protected wandsPanel_btn1 btn3_line = null;
         protected wandsPanel_btn1 btn3_circular = null;
+        protected wandsPanel_btn1 btn3_filledCircular = null;
         protected wandsPanel_btn1 btn3_rectangle = null;
+        protected wandsPanel_btn1 btn3_hollowRectangle = null;
         // 子菜单 4：方向/坡度
         protected wandsPanel_btn1 btn4_Solid = null;
         protected wandsPanel_btn1 btn4_HalfBlock = null;
@@ -204,7 +206,9 @@ namespace WandsTool.Content
 
             btn3_line = new wandsPanel_btn1(Resources.Images_ShapesLine, "直线");
             btn3_circular = new wandsPanel_btn1(Resources.Images_ShapesCircular, "空心圆/圆周");
-            btn3_rectangle = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "矩形大范围框选");
+            btn3_filledCircular = new wandsPanel_btn1(Resources.Images_ShapesFilledCircular, "实心圆/椭圆填充");
+            btn3_rectangle = new wandsPanel_btn1(Resources.Images_ShapesRectangle, "实心矩形大范围框选");
+            btn3_hollowRectangle = new wandsPanel_btn1(Resources.Images_ShapesHollowRectangle, "空心矩形/房屋边框框架");
             btn4_Solid = new wandsPanel_btn1(Resources.Images_SlopeSolid, "实体方块");
             btn4_HalfBlock = new wandsPanel_btn1(Resources.Images_SlopeHalfBlock, "半砖");
             btn4_SlopeUpLeft = new wandsPanel_btn1(Resources.Images_SlopeUpLeft, "左上斜坡");
@@ -264,7 +268,9 @@ namespace WandsTool.Content
             // 子按钮 3 事件
             btn3_line.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.line;
             btn3_circular.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.circular;
+            btn3_filledCircular.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.filledCircular;
             btn3_rectangle.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.rectangle;
+            btn3_hollowRectangle.OnLeftClick += (e, s) => gameMain.Wand_Shapes = Wands.Shapes.hollowRectangle;
             // 子按钮 4 事件
             btn4_Solid.OnLeftClick += (e, s) => gameMain.Wand_BlockType = WandAction.BlockType.Solid;
             btn4_HalfBlock.OnLeftClick += (e, s) => gameMain.Wand_BlockType = WandAction.BlockType.HalfBlock;
@@ -377,7 +383,9 @@ namespace WandsTool.Content
 
             btns_3.Append(btn3_line);
             btns_3.Append(btn3_circular);
+            btns_3.Append(btn3_filledCircular);
             btns_3.Append(btn3_rectangle);
+            btns_3.Append(btn3_hollowRectangle);
             btns_4.Append(btn4_Solid);
             btns_4.Append(btn4_HalfBlock);
             btns_4.Append(btn4_SlopeUpLeft);
@@ -452,7 +460,9 @@ namespace WandsTool.Content
             {
                 case Wands.Shapes.line: btn3.SetIco(Resources.Images_ShapesLine); break;
                 case Wands.Shapes.circular: btn3.SetIco(Resources.Images_ShapesCircular); break;
+                case Wands.Shapes.filledCircular: btn3.SetIco(Resources.Images_ShapesFilledCircular); break;
                 case Wands.Shapes.rectangle: btn3.SetIco(Resources.Images_ShapesRectangle); break;
+                case Wands.Shapes.hollowRectangle: btn3.SetIco(Resources.Images_ShapesHollowRectangle); break;
                 default: break;
             }
 
@@ -493,7 +503,9 @@ namespace WandsTool.Content
 
             btn3_line.isBack = gameMain.Wand_Shapes == Wands.Shapes.line;
             btn3_circular.isBack = gameMain.Wand_Shapes == Wands.Shapes.circular;
+            btn3_filledCircular.isBack = gameMain.Wand_Shapes == Wands.Shapes.filledCircular;
             btn3_rectangle.isBack = gameMain.Wand_Shapes == Wands.Shapes.rectangle;
+            btn3_hollowRectangle.isBack = gameMain.Wand_Shapes == Wands.Shapes.hollowRectangle;
             btn4_Solid.isBack = gameMain.Wand_BlockType == WandAction.BlockType.Solid;
             btn4_HalfBlock.isBack = gameMain.Wand_BlockType == WandAction.BlockType.HalfBlock;
             btn4_SlopeUpLeft.isBack = gameMain.Wand_BlockType == WandAction.BlockType.SlopeUpLeft;
@@ -550,9 +562,11 @@ namespace WandsTool.Content
             layoutCircle.Invoke(9, 7, btn2_wire_yellow, 96f);
             layoutCircle.Invoke(9, 8, btn2_wire_actuator, 96f);
 
-            layoutCircle.Invoke(3, 0, btn3_line, 96f);
-            layoutCircle.Invoke(3, 1, btn3_circular, 96f);
-            layoutCircle.Invoke(3, 2, btn3_rectangle, 96f);
+            layoutCircle.Invoke(5, 0, btn3_line, 96f);
+            layoutCircle.Invoke(5, 1, btn3_circular, 96f);
+            layoutCircle.Invoke(5, 2, btn3_filledCircular, 96f);
+            layoutCircle.Invoke(5, 3, btn3_rectangle, 96f);
+            layoutCircle.Invoke(5, 4, btn3_hollowRectangle, 96f);
             layoutCircle.Invoke(6, 0, btn4_Solid, 96f);
             layoutCircle.Invoke(6, 1, btn4_HalfBlock, 96f);
             layoutCircle.Invoke(6, 2, btn4_SlopeUpLeft, 96f);

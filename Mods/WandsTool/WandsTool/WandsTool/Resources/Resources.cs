@@ -10,7 +10,9 @@ namespace WandsTool
         public static Texture2D Images_WandCreate = null;
         public static Texture2D Images_ShapesLine = null;
         public static Texture2D Images_ShapesCircular = null;
+        public static Texture2D Images_ShapesFilledCircular = null;
         public static Texture2D Images_ShapesRectangle = null;
+        public static Texture2D Images_ShapesHollowRectangle = null;
         public static Texture2D Images_SlopeSolid = null;
         public static Texture2D Images_SlopeHalfBlock = null;
         public static Texture2D Images_SlopeUpLeft = null;
@@ -29,7 +31,9 @@ namespace WandsTool
             setTexture2D(assembly, "WandsTool.Resources.WandCreate.png", ref Images_WandCreate);
             setTexture2D(assembly, "WandsTool.Resources.ShapesLine.png", ref Images_ShapesLine);
             setTexture2D(assembly, "WandsTool.Resources.ShapesCircular.png", ref Images_ShapesCircular);
+            setTexture2D(assembly, "WandsTool.Resources.ShapesFilledCircular.png", ref Images_ShapesFilledCircular);
             setTexture2D(assembly, "WandsTool.Resources.ShapesRectangle.png", ref Images_ShapesRectangle);
+            setTexture2D(assembly, "WandsTool.Resources.ShapesHollowRectangle.png", ref Images_ShapesHollowRectangle);
             setTexture2D(assembly, "WandsTool.Resources.SlopeSolid.png", ref Images_SlopeSolid);
             setTexture2D(assembly, "WandsTool.Resources.SlopeHalfBlock.png", ref Images_SlopeHalfBlock);
             setTexture2D(assembly, "WandsTool.Resources.SlopeUpLeft.png", ref Images_SlopeUpLeft);

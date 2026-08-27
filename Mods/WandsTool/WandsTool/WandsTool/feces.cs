@@ -4,6 +4,7 @@ using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
+using Terraria.ID;
 using Terraria.UI;
 using WandsTool.Content;
 using WandsTool.KeyBind;
@@ -92,7 +93,6 @@ namespace WandsTool
         }
 
         private static int lastSelectedItem = -1;
-        private static bool lastPlayerInventory = false;
 
         public override void DoUpdateInWorldPostfix()
         {
@@ -106,16 +106,6 @@ namespace WandsTool
                 gameMain.ToggleWand();
             }
 
-            // 监听背包开启/关闭状态切换（QoL：开启或关闭背包时自动退出魔杖模式）
-            if (Main.playerInventory != lastPlayerInventory)
-            {
-                lastPlayerInventory = Main.playerInventory;
-                if (gameMain.Wand_isEnable)
-                {
-                    gameMain.SetWandEnabled(false);
-                }
-            }
-
             if (gameMain.Wand_isEnable)
             {
                 // 监听快捷栏手持物品切换，实时自适应魔棒工作模式
@@ -123,6 +113,25 @@ namespace WandsTool
                 {
                     lastSelectedItem = player.selectedItem;
                     gameMain.AutoAdaptModeToHeldItem(player);
+                }
+
+                // 监听施工一键撤销快捷键（U）
+                if (WandsKeybind.UndoAction?.JustPressed == true)
+                {
+                    int undone = WandHistory.Undo(player);
+                    if (undone == -1)
+                    {
+                        Main.NewText("[魔杖] 没有可撤销的操作", 255, 170, 170);
+                    }
+                    else if (undone == -2)
+                    {
+                        Main.NewText("[魔杖] 上一次操作尚未处理完成，请稍候再撤销", 255, 200, 100);
+                    }
+                    else
+                    {
+                        Terraria.CombatText.NewText(player.getRect(), Microsoft.Xna.Framework.Color.LightBlue, $"已撤销 {undone} 格", true, false);
+                        SoundEngine.PlaySound(SoundID.MenuOpen);
+                    }
                 }
 
                 bool wasSelecting = Wands.Selecting;
@@ -148,6 +157,7 @@ namespace WandsTool
 
                 Wands.Reset();
                 WandAction.Clear();
+                WandHistory.Clear();
                 gameMain.CutSourceRect = null;
                 gameMain.Wand_StructureMode = gameMain.StructureMode.None;
                 wandsPanel.AutoReopenManagerAfterPlacement = false;

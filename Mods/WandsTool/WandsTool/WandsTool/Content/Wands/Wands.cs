@@ -12,7 +12,9 @@ namespace WandsTool.Content
         {
             line,
             circular,
+            filledCircular,
             rectangle,
+            hollowRectangle,
         }
         private static Vector2 position1;
         private static Vector2 position2;
@@ -85,7 +87,8 @@ namespace WandsTool.Content
 
                 if (Main.mouseLeft && Main.mouseLeftRelease)
                 {
-                    if (Main.LocalPlayer.mouseInterface || Main.playerInventory || Main.editChest || Main.editSign || Main.ingameOptionsWindow || Main.drawingPlayerChat) return;
+                    // 背包开启也允许放置（仅拦截真正处于 UI 输入状态的控件悬停）
+                    if (Main.LocalPlayer.mouseInterface || Main.editChest || Main.editSign || Main.ingameOptionsWindow || Main.drawingPlayerChat) return;
 
                     if (Structure.StructureStorage.Clipboard != null)
                     {
@@ -124,7 +127,8 @@ namespace WandsTool.Content
 
             if (Main.mouseLeft == true && Main.mouseLeftRelease == true && Main.mouseRight == false && selecting == false)
             {
-                if (Main.LocalPlayer.mouseInterface == true || Main.playerInventory || Main.editChest || Main.editSign || Main.ingameOptionsWindow || Main.drawingPlayerChat) return;
+                // 背包开启也能在空白世界区域启动框选（鼠标悬停背包 UI 控件时 mouseInterface 为 true 仍会拦截）
+                if (Main.LocalPlayer.mouseInterface == true || Main.editChest || Main.editSign || Main.ingameOptionsWindow || Main.drawingPlayerChat) return;
 
                 selecting = true;
                 position1 = Main.MouseWorld;
@@ -237,6 +241,7 @@ namespace WandsTool.Content
                     // 1. 液体魔杖操作优先
                     if (gameMain.Wand_LiquidMode != gameMain.LiquidMode.None)
                     {
+                        WandHistory.BeginRecord(Main.LocalPlayer, shapes);
                         WandAction.HandleLiquid(shapes, gameMain.Wand_LiquidMode, gameMain.Wand_InfiniteLiquid);
                     }
                     else
@@ -254,6 +259,7 @@ namespace WandsTool.Content
                         // 3. 物块与背景墙操作
                         if (gameMain.Wand_Tile || gameMain.Wand_Wall)
                         {
+                            WandHistory.BeginRecord(Main.LocalPlayer, shapes);
                             if (gameMain.Wand_isPlace)
                             {
                                 WandAction.AddTile(shapes, gameMain.Wand_Tile, gameMain.Wand_Wall, gameMain.Wand_BlockType, gameMain.Wand_BlockReplace);
@@ -302,7 +308,9 @@ namespace WandsTool.Content
             {
                 case Shapes.line: shapes = WandUtils.GetShapes_line(position1, position2); break;
                 case Shapes.circular: shapes = WandUtils.GetShapes_Circular(position1, position2); break;
+                case Shapes.filledCircular: shapes = WandUtils.GetShapes_FilledCircular(position1, position2); break;
                 case Shapes.rectangle: shapes = WandUtils.GetShapes_Rectangle(position1, position2); break;
+                case Shapes.hollowRectangle: shapes = WandUtils.GetShapes_HollowRectangle(position1, position2); break;
                 default: break;
             }
         }
@@ -397,11 +405,16 @@ namespace WandsTool.Content
             int count = shapes?.Count ?? 0;
             Terraria.Utils.DrawBorderString(Main.spriteBatch, $"[{modeName}] {w} x {h} ({count}格)", new Vector2(Main.mouseX, Main.mouseY + 50), borderColor, anchorx: 0.5f, anchory: 0.5f);
 
+            // 拖拽框选阶段渲染半透明材质施工虚影（放置/破坏/液体），置于边框线下方
+            WandPreview.Draw(Main.spriteBatch, shapes);
+
             switch (shapes_s)
             {
                 case Shapes.line: WandUtils.Draw_line(shapes, position1, position2, borderColor, backgroundColor); break;
                 case Shapes.circular: WandUtils.Draw_circular(shapes, position1, position2, borderColor, backgroundColor); break;
+                case Shapes.filledCircular: WandUtils.Draw_filledCircular(shapes, position1, position2, borderColor, backgroundColor); break;
                 case Shapes.rectangle: WandUtils.Draw_rectangle(shapes, position1, position2, borderColor, backgroundColor); break;
+                case Shapes.hollowRectangle: WandUtils.Draw_hollowRectangle(shapes, position1, position2, borderColor, backgroundColor); break;
                 default: break;
             }
         }
@@ -543,11 +556,18 @@ namespace WandsTool.Content
                 textColor = new Color(255, 70, 90);
             }
 
-            // 附加非常规几何形状标注（矩形为默认不标注，其余显示 [线]/[圆]）
+            // 附加非常规几何形状标注（矩形为默认不标注，其余显示形状提示）
             if (gameMain.Wand_StructureMode == gameMain.StructureMode.None)
             {
-                if (gameMain.Wand_Shapes == Shapes.line) text += " [线]";
-                else if (gameMain.Wand_Shapes == Shapes.circular) text += " [圆]";
+                switch (gameMain.Wand_Shapes)
+                {
+                    case Shapes.line: text += " [线]"; break;
+                    case Shapes.circular: text += " [空心圆]"; break;
+                    case Shapes.filledCircular: text += " [实心圆]"; break;
+                    case Shapes.rectangle: text += " [实心矩形]"; break;
+                    case Shapes.hollowRectangle: text += " [空心框]"; break;
+                    default: break;
+                }
             }
 
             // 按照原版光标物品图标规范进行绘制

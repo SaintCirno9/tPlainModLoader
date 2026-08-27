@@ -88,6 +88,48 @@ namespace WandsTool.Content
 
             return points;
         }
+        /// <summary>
+        /// 实心圆/椭圆填充：基于椭圆方程 (x-cx)²/a² + (y-cy)²/b² &lt;= 1 逐行扫描生成点集
+        /// </summary>
+        public static List<Point> GetShapes_FilledCircular(Vector2 startWord, Vector2 endWord)
+        {
+            if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
+            if (startWord == endWord) return new List<Point>() { GetWordPoint(startWord) };
+
+            Point start = GetWordPoint(startWord);
+            Point end = GetWordPoint(endWord);
+
+            int minX = Math.Min(start.X, end.X);
+            int maxX = Math.Max(start.X, end.X);
+            int minY = Math.Min(start.Y, end.Y);
+            int maxY = Math.Max(start.Y, end.Y);
+
+            // 以格坐标中心定义椭圆（半轴以出界顶点为边界）
+            double cx = (minX + maxX + 1) / 2.0;
+            double cy = (minY + maxY + 1) / 2.0;
+            double a = (maxX - minX + 1) / 2.0;
+            double b = (maxY - minY + 1) / 2.0;
+            if (a <= 0) a = 0.5;
+            if (b <= 0) b = 0.5;
+
+            List<Point> points = new List<Point>();
+            for (int y = minY; y <= maxY; y++)
+            {
+                double dy = (y + 0.5 - cy) / b;
+                double dy2 = dy * dy;
+                for (int x = minX; x <= maxX; x++)
+                {
+                    double dx = (x + 0.5 - cx) / a;
+                    if (dx * dx + dy2 <= 1.0)
+                    {
+                        points.Add(new Point(x, y));
+                    }
+                }
+            }
+
+            return points;
+        }
+
         public static List<Point> GetShapes_Rectangle(Vector2 startWord, Vector2 endWord)
         {
             if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
@@ -110,6 +152,41 @@ namespace WandsTool.Content
                 {
                     points.Add(new Point(start.X + x, start.Y + y));
                 }
+            }
+
+            return points;
+        }
+
+        /// <summary>
+        /// 空心矩形/房屋边框：仅提取 minX/maxX 与 minY/maxY 构成的 1 格厚度外框点集
+        /// </summary>
+        public static List<Point> GetShapes_HollowRectangle(Vector2 startWord, Vector2 endWord)
+        {
+            if (startWord.HasNaNs() || endWord.HasNaNs()) return null;
+            if (startWord == endWord) return new List<Point>() { GetWordPoint(startWord) };
+
+            Point start = GetWordPoint(startWord);
+            Point end = GetWordPoint(endWord);
+
+            int minX = Math.Min(start.X, end.X);
+            int maxX = Math.Max(start.X, end.X);
+            int minY = Math.Min(start.Y, end.Y);
+            int maxY = Math.Max(start.Y, end.Y);
+
+            List<Point> points = new List<Point>();
+
+            // 顶部与底部整行
+            for (int x = minX; x <= maxX; x++)
+            {
+                points.Add(new Point(x, minY));
+                if (maxY > minY) points.Add(new Point(x, maxY));
+            }
+
+            // 左右两列（去重顶底行）
+            for (int y = minY + 1; y <= maxY - 1; y++)
+            {
+                points.Add(new Point(minX, y));
+                if (maxX > minX) points.Add(new Point(maxX, y));
             }
 
             return points;
@@ -197,6 +274,16 @@ namespace WandsTool.Content
             Terraria.Utils.DrawLine(Main.spriteBatch, p3Word - Main.screenPosition, p4Word - Main.screenPosition, borderColor, borderColor, 2f);
             Terraria.Utils.DrawLine(Main.spriteBatch, p1Word - Main.screenPosition, p3Word - Main.screenPosition, borderColor, borderColor, 2f);
             Terraria.Utils.DrawLine(Main.spriteBatch, p2Word - Main.screenPosition, p4Word - Main.screenPosition, borderColor, borderColor, 2f);
+        }
+
+        public static void Draw_filledCircular(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
+        {
+            DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
+        }
+
+        public static void Draw_hollowRectangle(List<Point> shapes, Vector2 startWord, Vector2 endWord, Color borderColor, Color backgroundColor)
+        {
+            DrawShapes(shapes, startWord, endWord, borderColor, backgroundColor);
         }
     }
 }
