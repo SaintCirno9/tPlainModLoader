@@ -181,6 +181,9 @@ namespace tPlainModLoader.Prepatcher
             // 3. 织入核心窗口早期黑化补丁（彻底杜绝启动白屏闪烁）
             InjectGameWindowDarkener(terrariaAssembly);
 
+            // 4. 在 ReLogic.Native 初始化前保证游戏窗口具备 IMM 输入上下文
+            InjectImeContextBootstrap(terrariaAssembly);
+
             sw.Stop();
             Logger.Info($"预修补完成 (注入字段: {injectedFieldCount}, 重写访问器: {patchedMethodCount}, 早期补丁: {executedEarlyPatchCount}, 耗时: {sw.ElapsedMilliseconds}ms)");
         }
@@ -216,6 +219,58 @@ namespace tPlainModLoader.Prepatcher
             catch (Exception ex)
             {
                 Logger.Error($"织入 GameWindowDarkener 失败: {ex.Message}", ex);
+            }
+        }
+
+        private static void InjectImeContextBootstrap(AssemblyDefinition terrariaAssembly)
+        {
+            try
+            {
+                TypeDefinition mainType = terrariaAssembly.MainModule.Types.FirstOrDefault(t => t.FullName == "Terraria.Main");
+                MethodDefinition clientInitialize = mainType?.Methods.FirstOrDefault(
+                    m => m.Name == "ClientInitialize" && !m.IsStatic && m.Parameters.Count == 0);
+                if (clientInitialize?.Body == null)
+                {
+                    Logger.Warn("未找到 Terraria.Main.ClientInitialize，跳过 IME 输入上下文预修补");
+                    return;
+                }
+
+                Instruction initializeServicesCall = clientInitialize.Body.Instructions.FirstOrDefault(i =>
+                {
+                    if (i.OpCode != OpCodes.Call && i.OpCode != OpCodes.Callvirt) return false;
+                    if (!(i.Operand is MethodReference method)) return false;
+
+                    return method.Name == "InitializeClientServices" &&
+                           method.Parameters.Count == 1 &&
+                           method.Parameters[0].ParameterType.FullName == typeof(IntPtr).FullName;
+                });
+                if (initializeServicesCall == null)
+                {
+                    Logger.Warn("未找到 Platform.InitializeClientServices(IntPtr)，跳过 IME 输入上下文预修补");
+                    return;
+                }
+
+                MethodInfo ensureMethod = typeof(ImeContextBootstrap).GetMethod(
+                    nameof(ImeContextBootstrap.EnsureAssociated),
+                    BindingFlags.Static | BindingFlags.Public);
+                if (ensureMethod == null)
+                {
+                    Logger.Warn("未找到 ImeContextBootstrap.EnsureAssociated，跳过 IME 输入上下文预修补");
+                    return;
+                }
+
+                MethodReference ensureMethodRef = terrariaAssembly.MainModule.ImportReference(ensureMethod);
+                ILProcessor il = clientInitialize.Body.GetILProcessor();
+
+                // 此处求值栈为 [Platform, HWND]。复制 HWND 给 helper 后保留原调用参数。
+                il.InsertBefore(initializeServicesCall, il.Create(OpCodes.Dup));
+                il.InsertBefore(initializeServicesCall, il.Create(OpCodes.Call, ensureMethodRef));
+
+                Logger.Info("成功在 Platform.InitializeClientServices 前织入 IME 输入上下文恢复");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"织入 IME 输入上下文恢复失败: {ex.Message}", ex);
             }
         }
 

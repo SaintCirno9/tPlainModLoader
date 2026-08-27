@@ -154,3 +154,19 @@
 - `ModFile`、`Resource`、`GameWindowDarkener`、`TCPC/TCPS` 等仍需旧宿主协作的类暂不迁移；
 - 全量解决方案 Release 构建通过，0 警告 0 错误。
 
+---
+
+## 11. Windows IME 故障诊断阶段（2026-08-28）
+
+- `LaunchGame` 已从 `Task.Run` 改为专用 STA 游戏线程，运行日志确认线程为 `STA`，但用户实机复测仍无法触发中文输入法；STA 现定性为已修正的启动语义偏差，不再视为完整根因；
+- 已确认旧 `DrawIME` 补丁当前没有 `NeedIME` 写入者，且原版 `DoDraw` 已绘制 IME 面板；该补丁不参与 Windows 消息接收、IME 初始化或字符提交；
+- Terraria 与 TPML 使用的 `ReLogic.dll`、`ReLogic.Native.dll` 哈希一致，已排除程序集版本漂移；
+- 新增临时 `ImeDiagnostics` Harmony 观察点，记录 `Main.HandleIME`、`PlatformIme.Enable/Disable`、`WindowsIme.PreFilterMessage`、托管/原生启用状态、窗口焦点、IMM 上下文、键盘布局、组合串及 `Main.keyCount`；
+- 诊断只记录、不改写窗口消息；状态变化时写日志，输入期间每 2 秒写一次心跳；
+- 真实键盘日志确认输入框会调用 `WindowsIme.Enable()`，托管 `IsEnabled=true`，但原生 `ImeUi_IsEnabled=false`，窗口没有 HIMC，只收到 ASCII `WM_CHAR`，没有任何 `WM_IME_*` 合成消息；
+- 反汇编确认 `ReLogic.Native.ImeUi_Initialize()` 首次取得空 HIMC 后会设置永久禁用标志，后续托管 `Enable(true)` 也会被强制改为禁用；
+- 新增 `ImeContextBootstrap`，并由 Prepatcher 在 `Main.ClientInitialize()` 的 `Platform.InitializeClientServices(HWND)` 前织入调用：优先恢复线程默认 HIMC，失败时创建并关联新上下文，再由 ReLogic 按原版逻辑接管；
+- 修复版全量 Release 构建通过，20 个项目，0 警告 0 错误，并已自动部署；
+- 第一次真实键盘复测曾确认中文输入恢复。日志显示 `[IME-BOOTSTRAP]` 成功恢复默认 HIMC `0x130055`，输入期 `nativeEnabled=true`、输入法打开、候选框可见，并连续收到 `WM_IME_STARTCOMPOSITION`、带非空组合串的 `WM_IME_COMPOSITION` 与 `WM_IME_ENDCOMPOSITION`；
+- 随后移除 `ImeDiagnostics` Harmony 观察器并重新构建，用户再次启动即复现输入法失效；失败日志仍显示 `[IME-BOOTSTRAP]` 成功关联 HIMC，因此不能再把该观察器视为无行为影响的临时代码；
+- 已恢复此前成功会话中的 `ImeDiagnostics`、`ImeDiagnostics.LogInstalled()` 及全部观察 Hook，Release 全量构建和自动部署通过，等待真实键盘再次复测后继续定位观察器带来的实际差异。

@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Threading;
 using tContentPatch;
 using TPML.Core.Logging;
 
@@ -259,10 +259,11 @@ namespace tPlainModLoader
             Type launchType = GameAssembly.GetType("Terraria.WindowsLaunch");
             MethodInfo launchMethodInfo = launchType.GetMethod("Main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
-            Task task = Task.Run(() =>
+            Thread gameThread = new Thread(() =>
             {
                 try
                 {
+                    Logger.Info($"目标游戏线程单元状态: {Thread.CurrentThread.GetApartmentState()}");
                     launchMethodInfo.Invoke(null, new object[] { new string[0] });
 
                     runExit?.Invoke();
@@ -275,6 +276,9 @@ namespace tPlainModLoader
                     runExit?.Invoke();
                 }
             });
+
+            gameThread.SetApartmentState(ApartmentState.STA);
+            gameThread.Start();
         }
     }
 }
