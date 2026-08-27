@@ -1,44 +1,42 @@
-﻿using System;
-using System.IO;
+using System;
+using TPML.Core.Configuration;
 
 namespace tContentPatch.Utils
 {
-    /// <summary/>
+    /// <summary>
+    /// 配置文件访问器的旧命名空间兼容门面，实现已迁移至 TPML.Core.Configuration.ConfigStore。
+    /// </summary>
     public class ConfigHelp<T>
     {
-        /// <summary/>
-        public T config { get; private set; } = default;
-        private string filePath = null;
+        /// <summary>
+        /// 当前配置对象。
+        /// </summary>
+        public T config => _configStore.Config;
 
-        /// <summary/>
+        private readonly ConfigStore<T> _configStore;
+
+        /// <summary>
+        /// 使用指定配置文件路径创建访问器。
+        /// </summary>
         public ConfigHelp(string filePath)
         {
-            this.filePath = filePath;
+            _configStore = new ConfigStore<T>(filePath);
         }
 
-        /// <summary/>
+        /// <summary>
+        /// 加载配置；文件不存在时用 repair 创建默认值并写入。
+        /// </summary>
         public void UpdateConfig(Func<T> repair = null)
         {
-            try
-            {
-                if (File.Exists(filePath) == false && repair != null)
-                {
-                    MyJson1.Save(repair.Invoke(), filePath);
-                }
-
-                config = MyJson1.Get2<T>(filePath);
-            }
-            catch { }
+            _configStore.UpdateConfig(repair);
         }
 
-        /// <summary/>
+        /// <summary>
+        /// 保存当前配置。
+        /// </summary>
         public void SaveConfig()
         {
-            try
-            {
-                MyJson1.Save(config, filePath);
-            }
-            catch { }
+            _configStore.SaveConfig();
         }
     }
 }

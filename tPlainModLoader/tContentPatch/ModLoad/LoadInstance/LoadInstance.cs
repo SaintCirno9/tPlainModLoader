@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TPML.Content;
 
 namespace tContentPatch.ModLoad
 {
@@ -38,6 +39,7 @@ namespace tContentPatch.ModLoad
                     CheckLoadCancel();
 
                     mo.inheritance_mod = Utils.CreateInstance<Mod>(mo.assembly);
+                    ContentHost.RegisterFromAssembly(mo.assembly);
 
                     CheckLoadCancel();
                     mo.inheritance_setting = Utils.CreateInstance<ModSetting>(mo.assembly);

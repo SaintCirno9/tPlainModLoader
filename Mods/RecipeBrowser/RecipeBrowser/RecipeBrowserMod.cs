@@ -28,37 +28,12 @@ namespace RecipeBrowser
             try
             {
                 Instance = this;
-                ModInstance = new RecipeBrowserMod();
-                ModContent.RegisterMod(ModInstance);
-                ModInstance.Load();
+                // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
+                ModInstance = ContentHost.Find<RecipeBrowserMod>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[RecipeBrowser] Load Error: {ex}");
-            }
-        }
-
-        public override void Loaded()
-        {
-            try
-            {
-                ModInstance?.Loaded();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[RecipeBrowser] Loaded Error: {ex}");
-            }
-        }
-
-        public override void Unload()
-        {
-            try
-            {
-                ModInstance?.Unload();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[RecipeBrowser] Unload Error: {ex}");
             }
         }
     }

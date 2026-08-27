@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using tContentPatch.Patch;
+using TPML.Content;
 
 namespace tContentPatch.ModLoad
 {
@@ -54,9 +55,8 @@ namespace tContentPatch.ModLoad
             {
                 stateText = "清理";
 
-                TPML.Content.Engine.ContentHookDispatcher.Clear();
-                TPML.Content.ItemLoader.Clear();
-                TPML.Content.ModContent.Clear();
+                // 统一卸载并清理 TPML.Content 全部内容生命周期，确保配方与宿主不会残留
+                ContentHost.UnloadAll();
 
                 Content.Network.ModNetworkPacket.Clear();
 

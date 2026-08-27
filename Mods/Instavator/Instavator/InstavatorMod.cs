@@ -2,7 +2,6 @@ using System;
 using Microsoft.Xna.Framework;
 using Terraria;
 using TPML.Content;
-using TPML.Content.Engine;
 using TPML.Core.Logging;
 using Instavator.Content.Logic;
 
@@ -22,33 +21,14 @@ namespace Instavator
             {
                 Logger.Info("===== 开始载入 Instavator Mod =====");
 
-                // 1. 初始化 ContentHookDispatcher（挂钩 SetDefaults, ItemCheck, Tooltips 等）
-                ContentHookDispatcher.Initialize();
-
-                // 2. 实例化并注册 Mod 内容
-                ModInstance = new InstavatorMod();
-                ModContent.RegisterMod(ModInstance);
-                ModInstance.Load();
+                // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
+                ModInstance = TPML.Content.ContentHost.Find<InstavatorMod>();
 
                 Logger.Info("===== 模组物品注册完成 =====");
             }
             catch (Exception ex)
             {
                 Logger.Error("载入异常", ex);
-            }
-        }
-
-        public override void Loaded()
-        {
-            try
-            {
-                // 在所有内容加载完成后由框架统一触发配方构建与注入
-                RecipeLoader.SetupRecipes();
-                Logger.Info($"★ 配方注入流程结束，当前全局配方数: {Recipe.numRecipes}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("配方注入异常", ex);
             }
         }
 

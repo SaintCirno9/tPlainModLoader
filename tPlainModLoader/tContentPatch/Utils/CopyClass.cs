@@ -1,34 +1,18 @@
-﻿using System;
-using System.Reflection;
+using TPML.Core.Reflection;
 
 namespace tContentPatch.Utils
 {
     /// <summary>
-    /// 复制类
+    /// 复制类的旧命名空间兼容门面，实现已迁移至 TPML.Core.Reflection.ObjectCopy。
     /// </summary>
     public static class CopyClass
     {
         /// <summary>
-        /// 复制类中的字段
+        /// 复制目标类型对象中的实例字段。
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
         public static T CopyField<T>(T obj, params object[] args)
         {
-            if (obj == null) return default;
-
-            FieldInfo[] fis = typeof(T).GetFields();
-
-            T robj = (T)Activator.CreateInstance(typeof(T), args);
-
-            foreach (FieldInfo fi in fis)
-            {
-                fi.SetValue(robj, fi.GetValue(obj));
-            }
-
-            return robj;
+            return ObjectCopy.CopyField(obj, args);
         }
     }
 }

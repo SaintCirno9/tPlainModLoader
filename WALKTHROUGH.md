@@ -133,3 +133,24 @@
 - **主循环精简与一键召回**：移除了主循环中的夜间每秒强制坐姿轮询，白天 NPC 保持正常自由活动；右键房屋管理图标或执行 `/townNPCHome` 指令可一键精准召回所有存活 NPC 与宠物；
 - **设置面板与持久化**：在 `SettingUI` 中同步新增 `NPCInstantHousingTeleport` 与 `NPCNightAutoHome` 配置项的保存/读取/重置链路。
 
+---
+
+## 9. 统一 TPML.Content 生命周期与卸载闭环（2026-08-27）
+
+- 新增 `ContentHost`，统一管理 `TPML.Content.Mod` 的注册、`Load`、配方构建与卸载清理；
+- `tContentPatch.LoadInstance` 在加载程序集后自动 `ContentHost.RegisterFromAssembly`，内容模组不再需要各自手工调用 `ContentHookDispatcher.Initialize/RegisterMod/Load`；
+- `tContentPatch.ModLoader` 在所有模组 Load/Loaded 完成后统一调用 `ContentHost.CompleteLoading()`，配方只需构建一次；
+- 模组卸载统一走 `ContentHost.UnloadAll()`：逆序调用内容模组 `Unload`，并清除 Hook、RecipeLoader、ModPlayer 实例、ItemLoader 与 ModContent；
+- 迁移入口：Instavator、FishingMachine、RecipeBrowser、OptimizeAndTool 改为从 `ContentHost.Find<T>()` 获取内容模组实例，保留各自的旧引擎 Harmony/Patch 钩子职责；
+- 全量解决方案 Release 构建通过，0 错误。
+
+---
+
+## 10. 低风险工具下沉 TPML.Core（2026-08-27）
+
+- 将无游戏依赖的 `Json 文件读写`、`字段浅复制`、`配置加载/保存` 从 `tContentPatch.Utils` 下沉到 `TPML.Core`；
+- 新实现：`TPML.Core.Json.JsonHelper`、`TPML.Core.Reflection.ObjectCopy`、`TPML.Core.Configuration.ConfigStore<T>`；
+- `tContentPatch.Utils.MyJson1 / CopyClass / ConfigHelp<T>` 保留为旧命名空间转发门面，旧模组无需改动即可继续编译；
+- `ModFile`、`Resource`、`GameWindowDarkener`、`TCPC/TCPS` 等仍需旧宿主协作的类暂不迁移；
+- 全量解决方案 Release 构建通过，0 警告 0 错误。
+

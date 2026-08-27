@@ -13,7 +13,6 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
-using TPML.Content.Engine;
 using TPML.Core.Logging;
 
 namespace FishingMachine
@@ -48,15 +47,10 @@ namespace FishingMachine
             {
                 Logger.Info("===== 开始载入 FishingMachine 模组 =====");
 
-                // 1. 初始化 Content 钩子系统
-                ContentHookDispatcher.Initialize();
+                // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
+                ModInstance = ContentHost.Find<FishingMachineMod>();
 
-                // 2. 注册模组与物品
-                ModInstance = new FishingMachineMod();
-                ModContent.RegisterMod(ModInstance);
-                ModInstance.Load();
-
-                // 3. 应用 Harmony 补丁
+                // 应用 Harmony 补丁
                 var harmony = new Harmony("SaintCirno9.FishingMachine");
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
 
@@ -65,20 +59,6 @@ namespace FishingMachine
             catch (Exception ex)
             {
                 Logger.Error("FishingMachine 载入失败", ex);
-            }
-        }
-
-        public override void Loaded()
-        {
-            try
-            {
-                // 构建并注入配方
-                RecipeLoader.SetupRecipes();
-                Logger.Info($"★ FishingMachine 配方加载完成，全局配方数: {Recipe.numRecipes}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("FishingMachine 配方注入失败", ex);
             }
         }
     }

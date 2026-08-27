@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
+using TPML.Content;
 
 namespace tContentPatch.ModLoad
 {
@@ -122,6 +123,9 @@ namespace tContentPatch.ModLoad
                     ++progressV;
                 }
             }
+
+            // 所有模组的 Load/Loaded 完成后，统一构建并注入 TPML.Content 配方
+            ContentHost.CompleteLoading();
         }
 
         private void Initialize_SetupDrawInterfaceLayers()

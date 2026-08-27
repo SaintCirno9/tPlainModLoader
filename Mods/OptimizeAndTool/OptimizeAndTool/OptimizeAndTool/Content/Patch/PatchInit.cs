@@ -5,8 +5,6 @@ using OptimizeAndTool.Content.Storage.ItemContainer;
 using tContentPatch;
 using tContentPatch.Patch;
 using TPML.Content;
-using TPML.Content.Engine;
-
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 
 namespace OptimizeAndTool.Content.Patch
@@ -21,29 +19,12 @@ namespace OptimizeAndTool.Content.Patch
         {
             try
             {
-                ContentHookDispatcher.Initialize();
-                if (ContentModInstance == null)
-                {
-                    ContentModInstance = new OptimizeAndToolContentMod();
-                    ModContent.RegisterMod(ContentModInstance);
-                    ContentModInstance.Load();
-                }
+                // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
+                ContentModInstance = ContentHost.Find<OptimizeAndToolContentMod>();
             }
             catch (Exception ex)
             {
                 ModLoader.Log($"[OptimizeAndTool] Content 注册异常: {ex}");
-            }
-        }
-
-        public override void Loaded()
-        {
-            try
-            {
-                RecipeLoader.SetupRecipes();
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[OptimizeAndTool] 配方注册异常: {ex}");
             }
         }
 

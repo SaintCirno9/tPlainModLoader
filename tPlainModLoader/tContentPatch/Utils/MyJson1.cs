@@ -1,109 +1,43 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.IO;
-using System.Reflection;
-using System.Text;
+using TPML.Core.Json;
 
 namespace tContentPatch.Utils
 {
     /// <summary>
-    /// Json的简易操作
+    /// Json 简易操作的旧命名空间兼容门面，实现已迁移至 TPML.Core.Json.JsonHelper。
     /// </summary>
     public static class MyJson1
     {
         /// <summary>
-        /// 获取数据
+        /// 从文件读取并反序列化指定类型对象。
         /// </summary>
-        /// <typeparam name="T">将数据转为该类型的对象</typeparam>
-        /// <param name="FilePath1">文件路径</param>
-        /// <returns>指定类型的对象</returns>
-        /// <exception cref="Exception"></exception>
         public static T Get2<T>(string FilePath1)
         {
-            try
-            {
-                if (!File.Exists(FilePath1)) throw new Exception($"文件不存在:{FilePath1}");
-
-                return JsonConvert.DeserializeObject<T>(File.ReadAllText(FilePath1, Encoding.UTF8));
-            }
-            catch (Exception ex)
-            {
-                MethodBase mb = MethodBase.GetCurrentMethod();
-                throw new Exception($"{mb?.DeclaringType.Name}.{mb?.Name}:{ex.Message}");
-            }
+            return JsonHelper.Get2<T>(FilePath1);
         }
 
         /// <summary>
-        /// 获取数据
+        /// 从文件读取并反序列化指定类型对象。
         /// </summary>
-        /// <param name="FilePath1">文件路径</param>
-        /// <param name="type">数据类型</param>
-        /// <returns>指定类型的对象</returns>
-        /// <exception cref="Exception"></exception>
         public static object Get2(string FilePath1, Type type)
         {
-            try
-            {
-                if (!File.Exists(FilePath1)) throw new Exception($"文件不存在:{FilePath1}");
-
-                return JsonConvert.DeserializeObject(File.ReadAllText(FilePath1, Encoding.UTF8), type);
-            }
-            catch (Exception ex)
-            {
-                MethodBase mb = MethodBase.GetCurrentMethod();
-                throw new Exception($"{mb?.DeclaringType.Name}.{mb?.Name}:{ex.Message}");
-            }
+            return JsonHelper.Get2(FilePath1, type);
         }
 
         /// <summary>
-        /// 保存数据
+        /// 序列化对象并保存到文件。
         /// </summary>
-        /// <param name="val">要保存的对象</param>
-        /// <param name="FilePath1">文件路径</param>
-        /// <param name="indented">缩进</param>
-        /// <exception cref="Exception"></exception>
         public static void Save(object val, string FilePath1, bool indented = false)
         {
-            try
-            {
-                string directory = Path.GetDirectoryName(FilePath1);
-
-                if (!Directory.Exists(directory)) throw new Exception($"目录不存在:{directory}");
-
-                string text = null;
-                if (indented) text = JsonConvert.SerializeObject(val, Formatting.Indented);
-                else text = JsonConvert.SerializeObject(val);
-
-                File.WriteAllText(FilePath1, text, Encoding.UTF8);
-            }
-            catch (Exception ex)
-            {
-                MethodBase mb = MethodBase.GetCurrentMethod();
-                throw new Exception($"{mb?.DeclaringType.Name}.{mb?.Name}:{ex.Message}");
-            }
+            JsonHelper.Save(val, FilePath1, indented);
         }
 
         /// <summary>
-        /// 字符串转对象
+        /// 将字符串反序列化为指定类型对象。
         /// </summary>
-        /// <typeparam name="T">转换到指定类型</typeparam>
-        /// <param name="string1">被转化的字符串</param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
         public static T StringToObject<T>(string string1)
         {
-            try
-            {
-                JObject jObject1 = JObject.Parse(string1.ToString());
-
-                return JsonConvert.DeserializeObject<T>(jObject1.ToString());
-            }
-            catch (Exception ex)
-            {
-                MethodBase mb = MethodBase.GetCurrentMethod();
-                throw new Exception($"{mb?.DeclaringType.Name}.{mb?.Name}:{ex.Message}");
-            }
+            return JsonHelper.StringToObject<T>(string1);
         }
     }
 }
