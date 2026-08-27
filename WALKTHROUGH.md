@@ -173,17 +173,15 @@
 
 ---
 
-## 12. Windows IME 确定性生命周期保障与诊断清理（2026-08-28）
+## 12. Windows IME 极简 Bootstrap 架构与零 Hook 交付（2026-08-28）
 
-- **根因确认与链路闭环**：
-  1. **初始化阶段**：游戏窗口创建初期缺乏 HIMC，`ImeContextBootstrap` 在 `Platform.InitializeClientServices` 前调用，通过 `ImmAssociateContextEx(..., IACE_DEFAULT)` 恢复默认输入上下文，确保 `ReLogic.Native!ImeUi_Initialize` 成功初始化并保存 HIMC；
-  2. **禁用状态机制**：ReLogic 初始化成功后会主动调用 `ImeUi_EnableIme(false)` 解除窗口关联（`ImmAssociateContext(hwnd, NULL)`），这是 ReLogic 的预期行为；
-  3. **启用阶段时序与焦点防失步**：`WindowsIme.OnEnable()` 内部依赖 `_isFocused` 标志，若启动初期窗口消息分发未触发 `WM_SETFOCUS`，`OnEnable` 会直接返回导致 `ImeUi_Enable(true)` 未被调用；
-- **确定性修复实施**：
-  - 新增 `Patch_PlatformIme_Enable` 补丁，在 `PlatformIme.Enable()` 执行前：
-    - 显式通过 `ImeContextBootstrap.EnsureAssociated(hwnd)` 确保游戏窗口具备有效 HIMC；
-    - 显式将 `winIme._isFocused` 置为 `true`，确保 `OnEnable()` 一定触发 `NativeMethods.ImeUi_Enable(true)`；
-    - 在 Postfix 中对 `NativeMethods.ImeUi_IsEnabled()` 进行状态校验与兜底激活；
-  - 彻底删除 570+ 行高频诊断监听与轮询代码（`ImeDiagnostics.cs`），保持运行时纯净与极致性能；
-  - 全量解决方案 Release 构建通过，20 个项目，0 警告 0 错误，并已自动完成热部署。
+- **根因确认与极简架构**：
+  1. **初始化阶段**：官方原版 XNA/WinForms 窗口在创建初期未绑定 IMM 上下文，`ReLogic.Native!ImeUi_Initialize` 读取到空 HIMC 会设置永久失效标记；
+  2. **Prepatcher 早期补齐**：由 Prepatcher 在 `Platform.InitializeClientServices` 之前织入调用 `ImeContextBootstrap.EnsureAssociated(HWND)`，通过 `ImmAssociateContextEx(..., IACE_DEFAULT)` 恢复系统默认上下文，使 `ImeUi_Initialize` 成功初始化并保存原生 HIMC；
+  3. **原生自洽状态机**：ReLogic 原生的 `PlatformIme.Enable/Disable`、`ImeUi_Enable(true/false)` 与 `ImmAssociateContext` 恢复机制本身具备完整自洽的生命周期，无需任何运行时 Harmony Patch 拦截；
+- **清理与交付**：
+  - 移除了全部临时诊断代码（`ImeDiagnostics.cs`，570+ 行）及多余的运行时 IME Patch；
+  - `ImeContextBootstrap.cs` 保持纯粹的 Win32 API 辅助方法，零运行时 Hook 拦截，零侵入；
+  - 全量解决方案 Release 构建通过，20 个项目，0 警告 0 错误，自动热部署完毕。
+
 

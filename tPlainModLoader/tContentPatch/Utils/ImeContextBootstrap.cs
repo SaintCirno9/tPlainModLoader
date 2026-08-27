@@ -1,14 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
-using HarmonyLib;
-using ReLogic.Localization.IME;
-using Terraria;
 using TPML.Core.Logging;
 
 namespace tContentPatch.Utils
 {
     /// <summary>
-    /// 管理游戏窗口的 Windows IMM 输入上下文 (HIMC)，确保 ReLogic 原生输入法生命周期正确激活。
+    /// 在 ReLogic.Native 初始化前保证游戏窗口具备可用的 IMM 输入上下文。
     /// </summary>
     public static class ImeContextBootstrap
     {
@@ -18,7 +15,7 @@ namespace tContentPatch.Utils
 
         /// <summary>
         /// 确保指定窗口句柄具备有效的 IMM 输入上下文。
-        /// 在游戏启动初始化前（Prepatcher 注入）及每次输入法启用前调用。
+        /// 在游戏启动初始化前由 Prepatcher 织入调用。
         /// </summary>
         public static void EnsureAssociated(IntPtr windowHandle)
         {
@@ -32,6 +29,7 @@ namespace tContentPatch.Utils
             if (existingContext != IntPtr.Zero)
             {
                 ImmReleaseContext(windowHandle, existingContext);
+                Logger.Info($"[IME-BOOTSTRAP] 游戏窗口已有输入上下文: hwnd={FormatPointer(windowHandle)}, himc={FormatPointer(existingContext)}");
                 return;
             }
 
@@ -86,63 +84,5 @@ namespace tContentPatch.Utils
 
         [DllImport("imm32.dll")]
         private static extern bool ImmDestroyContext(IntPtr inputContext);
-    }
-
-    /// <summary>
-    /// 在 PlatformIme.Enable 执行前确保窗口 HIMC 与焦点状态就绪，保障 ReLogic.Native 能够成功激活输入法。
-    /// </summary>
-    [HarmonyPatch(typeof(PlatformIme), nameof(PlatformIme.Enable))]
-    internal static class Patch_PlatformIme_Enable
-    {
-        private static readonly ILogger Logger = LogManager.GetLogger("PlatformImePatch");
-
-        [DllImport("ReLogic.Native.dll", EntryPoint = "ImeUi_IsEnabled")]
-        [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool ImeUi_IsEnabled();
-
-        [DllImport("ReLogic.Native.dll", EntryPoint = "ImeUi_Enable")]
-        private static extern void ImeUi_Enable([MarshalAs(UnmanagedType.I1)] bool bEnable);
-
-        [HarmonyPrefix]
-        private static void Prefix(PlatformIme __instance)
-        {
-            try
-            {
-                if (Main.dedServ) return;
-
-                IntPtr hwnd = IntPtr.Zero;
-                if (Main.instance?.Window != null)
-                {
-                    hwnd = Main.instance.Window.Handle;
-                }
-
-                if (hwnd != IntPtr.Zero)
-                {
-                    ImeContextBootstrap.EnsureAssociated(hwnd);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"[IME] PlatformIme.Enable 前置上下文准备异常: {ex.Message}");
-            }
-        }
-
-        [HarmonyPostfix]
-        private static void Postfix(PlatformIme __instance)
-        {
-            try
-            {
-                if (Main.dedServ) return;
-
-                if (!ImeUi_IsEnabled())
-                {
-                    ImeUi_Enable(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"[IME] PlatformIme.Enable 后置状态保障异常: {ex.Message}");
-            }
-        }
     }
 }
