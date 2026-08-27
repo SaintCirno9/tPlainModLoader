@@ -107,19 +107,23 @@ namespace RecipeBrowser
             if (bugNetables == null && allowBugNetables)
             {
                 bugNetables = new Dictionary<int, int>();
-                for (int i = 1; i < ItemID.Count; i++)
+                int maxId = Math.Max((int)ItemID.Count, TPML.Content.ItemLoader.NextItemID);
+                for (int i = 1; i < maxId; i++)
                 {
-                    Item item = ContentSamples.ItemsByType[i];
-                    if (item != null && item.makeNPC > 0) bugNetables[i] = item.makeNPC;
+                    if (ContentSamples.ItemsByType.TryGetValue(i, out var item) && item != null && item.makeNPC > 0)
+                    {
+                        bugNetables[i] = item.makeNPC;
+                    }
                 }
             }
             if (mineables != null || !allowMineables) return;
 
             mineables = new Dictionary<int, List<TileTypeMinPickPair>>();
-            for (int j = 1; j < ItemID.Count; j++)
+            int maxMineableId = Math.Max((int)ItemID.Count, TPML.Content.ItemLoader.NextItemID);
+            for (int j = 1; j < maxMineableId; j++)
             {
-                Item item = ContentSamples.ItemsByType[j];
-                if (item == null || item.createTile <= -1 || (item.createTile < Main.tileFrameImportant.Length && Main.tileFrameImportant[item.createTile]))
+                if (!ContentSamples.ItemsByType.TryGetValue(j, out var item) || item == null) continue;
+                if (item.createTile <= -1 || (item.createTile < Main.tileFrameImportant.Length && Main.tileFrameImportant[item.createTile]))
                 {
                     continue;
                 }

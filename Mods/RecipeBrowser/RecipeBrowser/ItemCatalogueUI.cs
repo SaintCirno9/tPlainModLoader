@@ -190,8 +190,9 @@ namespace RecipeBrowser
 
             if (itemSlots.Count == 0)
             {
-                craftResults = new bool[ItemID.Count];
-                isLoot = new bool[ItemID.Count];
+                int maxItemType = Math.Max((int)ItemID.Count, TPML.Content.ItemLoader.NextItemID);
+                craftResults = new bool[maxItemType];
+                isLoot = new bool[maxItemType];
                 itemSlots.Clear();
 
                 for (int i = 1; i < ItemID.Count; i++)
@@ -204,10 +205,21 @@ namespace RecipeBrowser
                     }
                 }
 
+                foreach (var modItem in TPML.Content.ItemLoader.Items)
+                {
+                    if (modItem == null || modItem.Type <= 0) continue;
+                    Item item = new Item();
+                    item.SetDefaults(modItem.Type);
+                    if (item.type != 0)
+                    {
+                        itemSlots.Add(new UIItemCatalogueItemSlot(item));
+                    }
+                }
+
                 for (int j = 0; j < Recipe.numRecipes; j++)
                 {
                     Recipe r = Main.recipe[j];
-                    if (r?.createItem != null && r.createItem.type < craftResults.Length)
+                    if (r?.createItem != null && r.createItem.type > 0 && r.createItem.type < craftResults.Length)
                     {
                         craftResults[r.createItem.type] = true;
                     }
@@ -276,6 +288,20 @@ namespace RecipeBrowser
                 return false;
             }
 
+            if (RecipeBrowserUI.ModIndex != 0 && RecipeBrowserUI.instance?.mods != null && RecipeBrowserUI.ModIndex < RecipeBrowserUI.instance.mods.Length)
+            {
+                string selectedMod = RecipeBrowserUI.instance.mods[RecipeBrowserUI.ModIndex];
+                if (selectedMod == "Terraria")
+                {
+                    if (slot.item.type >= ItemID.Count) return false;
+                }
+                else
+                {
+                    var modItem = TPML.Content.ItemLoader.GetModItem(slot.item.type);
+                    if (modItem?.Mod?.Name != selectedMod) return false;
+                }
+            }
+
             Category selCat = SharedUI.instance?.SelectedCategory;
             if (selCat != null && !selCat.belongs(slot.item) && !selCat.subCategories.Any(x => x.belongs(slot.item)))
             {
@@ -309,12 +335,22 @@ namespace RecipeBrowser
             if (nameStr.Length > 0)
             {
                 string name = slot.item.Name;
-                string internalName = (slot.item.type > 0 && slot.item.type < ItemID.Count) ? ItemID.Search.GetName(slot.item.type) : "";
                 string localizedName = Lang.GetItemNameValue(slot.item.type);
+                string internalName = (slot.item.type > 0 && slot.item.type < ItemID.Count) 
+                    ? ItemID.Search.GetName(slot.item.type) 
+                    : (TPML.Content.ItemLoader.GetModItem(slot.item.type)?.Name ?? "");
+                string fullName = (slot.item.type >= ItemID.Count) 
+                    ? (TPML.Content.ItemLoader.GetModItem(slot.item.type)?.FullName ?? "") 
+                    : "";
+                string displayName = (slot.item.type >= ItemID.Count) 
+                    ? TPML.Content.ItemLoader.GetDisplayName(slot.item.type) 
+                    : "";
 
                 if (!PinyinHelper.Matches(name, nameStr) &&
                     !PinyinHelper.Matches(localizedName, nameStr) &&
-                    !PinyinHelper.Matches(internalName, nameStr))
+                    !PinyinHelper.Matches(displayName, nameStr) &&
+                    !PinyinHelper.Matches(internalName, nameStr) &&
+                    !PinyinHelper.Matches(fullName, nameStr))
                 {
                     return false;
                 }
@@ -327,7 +363,16 @@ namespace RecipeBrowser
                 {
                     return PinyinHelper.Matches(armorSlot.set.Item4, descStr);
                 }
-                if (slot.item.ToolTip != null && PinyinHelper.Matches(GetTooltipsAsString(slot.item.ToolTip), descStr))
+                string tooltips = GetTooltipsAsString(slot.item.ToolTip);
+                if (slot.item.type >= ItemID.Count)
+                {
+                    string modTip = TPML.Content.ItemLoader.GetTooltip(slot.item.type);
+                    if (!string.IsNullOrEmpty(modTip))
+                    {
+                        tooltips = tooltips + "\n" + modTip;
+                    }
+                }
+                if (!string.IsNullOrEmpty(tooltips) && PinyinHelper.Matches(tooltips, descStr))
                 {
                     return true;
                 }

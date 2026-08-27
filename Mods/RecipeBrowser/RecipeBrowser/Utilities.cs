@@ -149,9 +149,17 @@ namespace RecipeBrowser
 
         internal static void LoadItem(int type)
         {
-            if (type > 0 && type < TextureAssets.Item.Length)
+            if (type <= 0) return;
+            if (type < ItemID.Count)
             {
-                Main.instance.LoadItem(type);
+                if (type < TextureAssets.Item.Length)
+                {
+                    Main.instance.LoadItem(type);
+                }
+            }
+            else
+            {
+                TPML.Content.ItemLoader.EnsureTextureLoaded(type);
             }
         }
 

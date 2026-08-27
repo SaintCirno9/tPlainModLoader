@@ -302,8 +302,38 @@ namespace RecipeBrowser
             catch { }
             unresearchedTex = unresearchedTex ?? matTex;
 
-            Filter modFilter1 = new Filter(RBText("ModFilterByRecipeSourceTooltip"), x => true, modColorableTex);
-            Filter modFilter2 = new Filter(RBText("ModFilterByIngredientTooltip"), x => true, modColorableTex);
+            Filter modFilter1 = new Filter(RBText("ModFilterByRecipeSourceTooltip"), x => true, modColorableTex)
+            {
+                recipeBelongs = (recipe) =>
+                {
+                    if (RecipeBrowserUI.ModIndex == 0 || RecipeBrowserUI.instance?.mods == null || RecipeBrowserUI.ModIndex >= RecipeBrowserUI.instance.mods.Length) return true;
+                    string targetMod = RecipeBrowserUI.instance.mods[RecipeBrowserUI.ModIndex];
+                    if (targetMod == "Terraria")
+                    {
+                        return recipe?.createItem != null && recipe.createItem.type < ItemID.Count;
+                    }
+                    var modItem = TPML.Content.ItemLoader.GetModItem(recipe?.createItem?.type ?? 0);
+                    return modItem?.Mod?.Name == targetMod;
+                }
+            };
+            Filter modFilter2 = new Filter(RBText("ModFilterByIngredientTooltip"), x => true, modColorableTex)
+            {
+                recipeBelongs = (recipe) =>
+                {
+                    if (RecipeBrowserUI.ModIndex == 0 || RecipeBrowserUI.instance?.mods == null || RecipeBrowserUI.ModIndex >= RecipeBrowserUI.instance.mods.Length) return true;
+                    string targetMod = RecipeBrowserUI.instance.mods[RecipeBrowserUI.ModIndex];
+                    if (targetMod == "Terraria")
+                    {
+                        return recipe?.requiredItem != null && recipe.requiredItem.Any(x => x != null && !x.IsAir && x.type < ItemID.Count);
+                    }
+                    return recipe?.requiredItem != null && recipe.requiredItem.Any(x =>
+                    {
+                        if (x == null || x.IsAir || x.type < ItemID.Count) return false;
+                        var modItem = TPML.Content.ItemLoader.GetModItem(x.type);
+                        return modItem?.Mod?.Name == targetMod;
+                    });
+                }
+            };
             modFilter1.button.Color = Color.LightSeaGreen;
             modFilter2.button.Color = Color.Salmon;
 

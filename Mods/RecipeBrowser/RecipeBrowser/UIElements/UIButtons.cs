@@ -76,6 +76,13 @@ namespace RecipeBrowser.UIElements
             }
         }
 
+        public event MouseEvent OnMiddleClick;
+
+        public virtual void MiddleClick(UIMouseEvent evt)
+        {
+            OnMiddleClick?.Invoke(evt, this);
+        }
+
         public override void MouseOver(UIMouseEvent evt)
         {
             base.MouseOver(evt);
@@ -99,7 +106,7 @@ namespace RecipeBrowser.UIElements
             {
                 CalculatedStyle dimensions = GetDimensions();
                 Color disco = new Color(Main.DiscoR, Main.DiscoG, Main.DiscoB);
-                spriteBatch.Draw(textureColorable, dimensions.Position(), disco);
+                spriteBatch.Draw(textureColorable, dimensions.Position(), disco * (IsMouseHovering ? 1f : 0.7f));
                 if (IsMouseHovering && !string.IsNullOrWhiteSpace(hoverText))
                 {
                     UICommon.TooltipMouseText(hoverText);
@@ -109,13 +116,6 @@ namespace RecipeBrowser.UIElements
             {
                 base.DrawSelf(spriteBatch);
             }
-
-            if ((IsMouseHovering || RecipeBrowserUI.modHoverIndex != -1) && texture != null)
-            {
-                CalculatedStyle innerDims = GetInnerDimensions();
-                spriteBatch.Draw(texture, new Vector2(innerDims.X + innerDims.Width / 2 - 40, innerDims.Y - 80), Color.White);
-            }
-            RecipeBrowserUI.modHoverIndex = -1;
         }
     }
 

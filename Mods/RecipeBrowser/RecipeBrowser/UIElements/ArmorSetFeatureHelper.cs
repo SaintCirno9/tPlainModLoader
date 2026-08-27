@@ -32,10 +32,10 @@ namespace RecipeBrowser.UIElements
             List<Item> bodyList = new List<Item>();
             List<Item> legList = new List<Item>();
 
-            for (int i = 1; i < ItemID.Count; i++)
+            int maxId = Math.Max((int)ItemID.Count, TPML.Content.ItemLoader.NextItemID);
+            for (int i = 1; i < maxId; i++)
             {
-                Item item = ContentSamples.ItemsByType[i];
-                if (item == null || item.vanity) continue;
+                if (!ContentSamples.ItemsByType.TryGetValue(i, out Item item) || item == null || item.vanity) continue;
                 if (item.headSlot >= 0) headList.Add(item);
                 if (item.bodySlot >= 0) bodyList.Add(item);
                 if (item.legSlot >= 0) legList.Add(item);

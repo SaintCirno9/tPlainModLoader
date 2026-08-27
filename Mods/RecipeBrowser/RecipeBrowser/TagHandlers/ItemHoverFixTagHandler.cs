@@ -36,16 +36,21 @@ namespace RecipeBrowser.TagHandlers
 
                 if (!justCheckingSize && spriteBatch != null && item != null)
                 {
-                    Main.instance.LoadItem(item.type);
-                    Texture2D tex = TextureAssets.Item[item.type].Value;
-                    Rectangle frame = (Main.itemAnimations[item.type] != null) ? Main.itemAnimations[item.type].GetFrame(tex) : tex.Frame();
+                    Utilities.LoadItem(item.type);
+                    Texture2D tex = (item.type < TextureAssets.Item.Length) ? TextureAssets.Item[item.type]?.Value : null;
+                    if (tex != null)
+                    {
+                        Rectangle frame = (Main.itemAnimations != null && item.type < Main.itemAnimations.Length && Main.itemAnimations[item.type] != null) 
+                            ? Main.itemAnimations[item.type].GetFrame(tex) 
+                            : tex.Frame();
 
-                    float maxDim = Math.Max(frame.Width, frame.Height);
-                    float itemScale = (baseSize - 2f) / maxDim * scale;
-                    Vector2 drawPos = position + new Vector2(baseSize * scale * 0.5f);
-                    Vector2 origin = frame.Size() * 0.5f;
+                        float maxDim = Math.Max(frame.Width, frame.Height);
+                        float itemScale = (baseSize - 2f) / maxDim * scale;
+                        Vector2 drawPos = position + new Vector2(baseSize * scale * 0.5f);
+                        Vector2 origin = frame.Size() * 0.5f;
 
-                    spriteBatch.Draw(tex, drawPos, frame, Color.White, 0f, origin, itemScale, SpriteEffects.None, 0f);
+                        spriteBatch.Draw(tex, drawPos, frame, Color.White, 0f, origin, itemScale, SpriteEffects.None, 0f);
+                    }
 
                     if (item.stack > 1)
                     {

@@ -9,6 +9,7 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
+using Terraria.ID;
 using Terraria.UI;
 
 namespace RecipeBrowser
@@ -79,6 +80,7 @@ namespace RecipeBrowser
             {
                 if (value)
                 {
+                    RefreshModList();
                     Recipe.UpdateRecipeList();
                     if (mainPanel != null)
                     {
@@ -102,6 +104,7 @@ namespace RecipeBrowser
                 }
                 else
                 {
+                    UnblockInput();
                     RemoveChild(mainPanel);
                 }
                 showRecipeBrowser = value;
@@ -131,6 +134,40 @@ namespace RecipeBrowser
         {
             instance = this;
             mods = new string[] { "Terraria" };
+        }
+
+        public void RefreshModList()
+        {
+            var activeMods = new List<string>();
+            foreach (var mod in TPML.Content.ModContent.Mods)
+            {
+                if (mod == null || string.IsNullOrEmpty(mod.Name)) continue;
+                bool hasItems = TPML.Content.ItemLoader.Items.Any(it => it.Mod?.Name == mod.Name);
+                bool hasRecipes = false;
+                for (int i = 0; i < Recipe.numRecipes; i++)
+                {
+                    var r = Main.recipe[i];
+                    if (r?.createItem != null && r.createItem.type >= ItemID.Count)
+                    {
+                        var modItem = TPML.Content.ItemLoader.GetModItem(r.createItem.type);
+                        if (modItem?.Mod?.Name == mod.Name)
+                        {
+                            hasRecipes = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasItems || hasRecipes)
+                {
+                    activeMods.Add(mod.Name);
+                }
+            }
+            mods = new[] { "Terraria" }.Concat(activeMods.Distinct()).ToArray();
+            if (modIndex >= mods.Length)
+            {
+                ModIndex = 0;
+            }
+            UpdateModFilterUI();
         }
 
         public override void OnInitialize()
@@ -221,6 +258,16 @@ namespace RecipeBrowser
             rightTab.Height.Set(22f, 0f);
             rightTab.BackgroundColor = Color.DarkRed * 0.5f;
 
+            Texture2D modTex = RBTextures.FilterMod ?? TextureAssets.MagicPixel.Value;
+            Texture2D modColorableTex = RBTextures.FilterModColorable ?? modTex;
+            modFilterButton = new UIHoverImageButtonMod(modTex, modColorableTex, RBText("ModFilter") + ": " + RBText("All"));
+            modFilterButton.Left.Set(-56f, 1f);
+            modFilterButton.VAlign = 0.5f;
+            modFilterButton.OnLeftClick += (evt, el) => ModFilterButton_OnClick(evt, el);
+            modFilterButton.OnRightClick += (evt, el) => ModFilterButton_OnRightClick(evt, el);
+            modFilterButton.OnMiddleClick += (evt, el) => ModFilterButton_OnMiddleClick(evt, el);
+            rightTab.Append(modFilterButton);
+
             Texture2D closeTex = RBTextures.CloseButton;
             closeButton = new UIHoverImageButton(closeTex, RBText("Close"));
             closeButton.OnLeftClick += (evt, el) => CloseButtonClicked(evt, el);
@@ -229,6 +276,7 @@ namespace RecipeBrowser
             rightTab.Append(closeButton);
             mainPanel.Append(rightTab);
 
+            RefreshModList();
             tabController.SetPanel(0);
 
             favoritePanel = new UIDragablePanel();
@@ -294,6 +342,7 @@ namespace RecipeBrowser
 
         internal void CloseButtonClicked(UIMouseEvent evt, UIElement listeningElement)
         {
+            UnblockInput();
             instance.ShowRecipeBrowser = !instance.ShowRecipeBrowser;
             recipeCatalogueUI.CloseButtonClicked();
             bestiaryUI.CloseButtonClicked();
@@ -303,6 +352,81 @@ namespace RecipeBrowser
         {
             instance.ForceHideFavoritePanel = true;
             instance.ShowFavoritePanel = false;
+        }
+
+        private void ModFilterButton_OnClick(UIMouseEvent evt, UIElement listeningElement)
+        {
+            if (mods == null || mods.Length == 0) return;
+
+            if (IsInputBlocked)
+            {
+                UnblockInput();
+                return;
+            }
+
+            CalculatedStyle btnDims = listeningElement.GetDimensions();
+            float dropdownWidth = 220f;
+            float dropdownHeight = Math.Min(320f, mods.Length * 28f + 16f);
+
+            ModFilterDropdown = new ModFilterDropdown(mods, (i) => i == 0 ? "全部 (All / Terraria)" : mods[i], ModIndex, (selIdx) =>
+            {
+                ModIndex = selIdx;
+                UpdateModFilterUI();
+                UnblockInput();
+            });
+
+            ModFilterDropdown.Width.Set(dropdownWidth, 0f);
+            ModFilterDropdown.Height.Set(dropdownHeight, 0f);
+
+            float leftPos = Math.Max(10f, btnDims.X + btnDims.Width - dropdownWidth);
+            float topPos = btnDims.Y + btnDims.Height + 4f;
+            if (topPos + dropdownHeight > Main.screenHeight)
+            {
+                topPos = Math.Max(10f, btnDims.Y - dropdownHeight - 4f);
+            }
+
+            ModFilterDropdown.Left.Set(leftPos, 0f);
+            ModFilterDropdown.Top.Set(topPos, 0f);
+
+            BlockInput(ModFilterDropdown);
+        }
+
+        private void ModFilterButton_OnRightClick(UIMouseEvent evt, UIElement listeningElement)
+        {
+            if (IsInputBlocked)
+            {
+                UnblockInput();
+            }
+            ChangeModIndex(false);
+        }
+
+        private void ModFilterButton_OnMiddleClick(UIMouseEvent evt, UIElement listeningElement)
+        {
+            if (IsInputBlocked)
+            {
+                UnblockInput();
+            }
+            ModIndex = 0;
+            UpdateModFilterUI();
+        }
+
+        private void ChangeModIndex(bool increment)
+        {
+            if (mods == null || mods.Length == 0) return;
+            ModIndex = increment ? (ModIndex + 1) % mods.Length : (ModIndex + mods.Length - 1) % mods.Length;
+            UpdateModFilterUI();
+        }
+
+        public void UpdateModFilterUI()
+        {
+            if (modFilterButton != null)
+            {
+                string modName = (ModIndex == 0 || mods == null || ModIndex >= mods.Length) ? RBText("All") : mods[ModIndex];
+                modFilterButton.hoverText = RBText("ModFilter") + ": " + modName;
+            }
+            if (SharedUI.instance != null) SharedUI.instance.updateNeeded = true;
+            if (RecipeCatalogueUI.instance != null) RecipeCatalogueUI.instance.updateNeeded = true;
+            if (ItemCatalogueUI.instance != null) ItemCatalogueUI.instance.updateNeeded = true;
         }
 
         internal void FavoriteChange(int index, bool favorite)

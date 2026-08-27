@@ -502,12 +502,22 @@ namespace RecipeBrowser
             if (filterName.Length > 0)
             {
                 string name = recipe.createItem.Name;
-                string internalName = (recipe.createItem.type > 0 && recipe.createItem.type < ItemID.Count) ? ItemID.Search.GetName(recipe.createItem.type) : "";
                 string localizedName = Lang.GetItemNameValue(recipe.createItem.type);
+                string internalName = (recipe.createItem.type > 0 && recipe.createItem.type < ItemID.Count) 
+                    ? ItemID.Search.GetName(recipe.createItem.type) 
+                    : (TPML.Content.ItemLoader.GetModItem(recipe.createItem.type)?.Name ?? "");
+                string fullName = (recipe.createItem.type >= ItemID.Count) 
+                    ? (TPML.Content.ItemLoader.GetModItem(recipe.createItem.type)?.FullName ?? "") 
+                    : "";
+                string displayName = (recipe.createItem.type >= ItemID.Count) 
+                    ? TPML.Content.ItemLoader.GetDisplayName(recipe.createItem.type) 
+                    : "";
 
                 if (!PinyinHelper.Matches(name, filterName) &&
                     !PinyinHelper.Matches(localizedName, filterName) &&
-                    !PinyinHelper.Matches(internalName, filterName))
+                    !PinyinHelper.Matches(displayName, filterName) &&
+                    !PinyinHelper.Matches(internalName, filterName) &&
+                    !PinyinHelper.Matches(fullName, filterName))
                 {
                     return false;
                 }
@@ -517,7 +527,15 @@ namespace RecipeBrowser
             if (filterDesc.Length > 0)
             {
                 string tooltips = GetTooltipsAsString(recipe.createItem.ToolTip);
-                if (!PinyinHelper.Matches(tooltips, filterDesc))
+                if (recipe.createItem.type >= ItemID.Count)
+                {
+                    string modTip = TPML.Content.ItemLoader.GetTooltip(recipe.createItem.type);
+                    if (!string.IsNullOrEmpty(modTip))
+                    {
+                        tooltips = tooltips + "\n" + modTip;
+                    }
+                }
+                if (string.IsNullOrEmpty(tooltips) || !PinyinHelper.Matches(tooltips, filterDesc))
                 {
                     return false;
                 }
