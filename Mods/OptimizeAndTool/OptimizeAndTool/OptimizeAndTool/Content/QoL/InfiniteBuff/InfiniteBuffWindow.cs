@@ -267,7 +267,9 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
                 summaryText.TextColor = totalActive > 0 ? Color.LightSkyBlue : Color.OrangeRed;
             }
 
+            wrapPanel.Width.Precent = 1;
             wrapPanel.Recalculate();
+            scrollViewer.List?.Recalculate();
         }
 
         private bool MatchesSearch(int buffType)

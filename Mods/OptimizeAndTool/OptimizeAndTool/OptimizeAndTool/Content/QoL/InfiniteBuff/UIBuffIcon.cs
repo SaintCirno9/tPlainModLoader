@@ -32,7 +32,11 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
 
             if (starTexture == null)
             {
-                starTexture = Main.Assets.Request<Texture2D>("Images/UI/Bestiary/Icon_Rank_Light", AssetRequestMode.ImmediateLoad);
+                try
+                {
+                    starTexture = Main.Assets.Request<Texture2D>("Images/UI/Bestiary/Icon_Rank_Light", AssetRequestMode.ImmediateLoad);
+                }
+                catch { }
             }
         }
 
