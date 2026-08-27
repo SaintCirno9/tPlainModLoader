@@ -98,6 +98,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             topControls.Append(row2);
 
             UIStackPanel btnStack = new UIStackPanel();
+            btnStack.Width.Set(0, 1);
             btnStack.Height.Set(26, 0);
             btnStack.VAlign = 0.5f;
             btnStack.Horizontal = true;
@@ -132,6 +133,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             btnToggleHideBuffs.OnLeftClick += (evt, el) =>
             {
                 InfinitePotionAndBuff.HideEndlessBuffs.val = !InfinitePotionAndBuff.HideEndlessBuffs.val;
+                SettingUI_player.SaveSetting();
                 btnToggleHideBuffs.SetText(GetHideBuffsButtonText());
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };

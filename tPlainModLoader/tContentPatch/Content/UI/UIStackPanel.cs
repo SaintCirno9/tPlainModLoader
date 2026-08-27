@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 
 namespace tContentPatch.Content.UI
 {
@@ -35,6 +35,7 @@ namespace tContentPatch.Content.UI
                 }
 
                 v += ItemMargin;
+                i.Recalculate();
             }
         }
 
