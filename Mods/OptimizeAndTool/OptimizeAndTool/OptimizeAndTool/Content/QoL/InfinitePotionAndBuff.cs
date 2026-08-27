@@ -314,10 +314,15 @@ namespace OptimizeAndTool.Content.QoL
                     ActiveInfiniteBuffs.Add(foodToApply);
                 }
 
-                // 清理被禁用的食物 Buff
-                if (foodCounts[3] >= threshold && InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) __instance.ClearBuff(BuffID.WellFed3);
-                if (foodCounts[2] >= threshold && InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) __instance.ClearBuff(BuffID.WellFed2);
-                if (foodCounts[1] >= threshold && InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) __instance.ClearBuff(BuffID.WellFed);
+                // 仅清理无尽系统赋予的极短时间(<=2帧)食物 Buff，保留玩家正常进食获得的 Buff
+                int[] foods = { BuffID.WellFed, BuffID.WellFed2, BuffID.WellFed3 };
+                foreach (int f in foods)
+                {
+                    if (InfiniteBuffStorage.Blacklist.Contains(f))
+                    {
+                        ClearShortLivedBuff(__instance, f);
+                    }
+                }
 
                 foreach (KeyValuePair<int, int> kvp in potionCounts)
                 {
@@ -330,13 +335,13 @@ namespace OptimizeAndTool.Content.QoL
                         }
                         else
                         {
-                            __instance.ClearBuff(kvp.Key);
+                            ClearShortLivedBuff(__instance, kvp.Key);
                         }
                     }
                 }
             }
 
-            // 交互类增益站生效与黑名单清理
+            // 交互类增益站生效与黑名单停止赋予
             if (EnableBuffStations.val)
             {
                 foreach (int stationBuff in carriedInteractiveStations)
@@ -348,11 +353,11 @@ namespace OptimizeAndTool.Content.QoL
                     }
                     else
                     {
-                        __instance.ClearBuff(stationBuff);
+                        ClearShortLivedBuff(__instance, stationBuff);
                     }
                 }
 
-                // 场景光环增益记录入 ActiveInfiniteBuffs 或从黑名单中清除
+                // 场景光环增益记录入 ActiveInfiniteBuffs
                 foreach (int sceneBuff in carriedSceneStations)
                 {
                     if (!InfiniteBuffStorage.Blacklist.Contains(sceneBuff))
@@ -361,12 +366,12 @@ namespace OptimizeAndTool.Content.QoL
                     }
                     else
                     {
-                        __instance.ClearBuff(sceneBuff);
+                        ClearShortLivedBuff(__instance, sceneBuff);
                     }
                 }
             }
 
-            // 随身旗帜在生效时记录入 ActiveInfiniteBuffs 或从黑名单清除
+            // 随身旗帜在生效时记录入 ActiveInfiniteBuffs
             if (EnableMonsterBanners.val && carriedMonsterBanner)
             {
                 if (!InfiniteBuffStorage.Blacklist.Contains(BuffID.MonsterBanner))
@@ -376,7 +381,7 @@ namespace OptimizeAndTool.Content.QoL
                 }
                 else
                 {
-                    __instance.ClearBuff(BuffID.MonsterBanner);
+                    ClearShortLivedBuff(__instance, BuffID.MonsterBanner);
                 }
             }
         }
@@ -522,6 +527,20 @@ namespace OptimizeAndTool.Content.QoL
             else if (item.type == ItemID.ShadowCandle || item.createTile == TileID.ShadowCandle)
             {
                 carriedSceneStations.Add(BuffID.ShadowCandle);
+            }
+        }
+
+        private static void ClearShortLivedBuff(Player player, int buffType)
+        {
+            if (player?.buffType == null || player.buffTime == null) return;
+
+            for (int i = 0; i < player.buffType.Length; i++)
+            {
+                if (player.buffType[i] == buffType && player.buffTime[i] <= 2)
+                {
+                    player.DelBuff(i);
+                    break;
+                }
             }
         }
 
