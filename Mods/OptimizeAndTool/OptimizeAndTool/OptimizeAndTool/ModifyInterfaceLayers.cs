@@ -6,6 +6,7 @@ using OptimizeAndTool.Content.BigBag;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using OptimizeAndTool.Content.Creative;
 using OptimizeAndTool.Content.QoL.Pipette;
+using OptimizeAndTool.Content.QoL.InfiniteBuff;
 using tContentPatch;
 using tContentPatch.Content.UI;
 using Terraria;
@@ -41,6 +42,7 @@ namespace OptimizeAndTool
             TPML.Content.Fusion.InventoryFusionManager.RegisterSource(new AccessoryBagFusionSource());
             CreativeInventoryKeybind.Initialize();
             PipetteKeybind.Register();
+            InfiniteBuffKeybind.Initialize();
         }
 
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
@@ -96,6 +98,7 @@ namespace OptimizeAndTool
             {
                 if (bigBagWindow?.IsOpen == true) bigBagWindow.Close();
                 if (AccessoryBagWindow.IsOpen) AccessoryBagWindow.Instance.Close();
+                if (InfiniteBuffWindow.IsWindowOpen) InfiniteBuffWindow.Instance.Close();
                 return;
             }
 
@@ -132,6 +135,11 @@ namespace OptimizeAndTool
             {
                 CreativeInventory.SwitchOpenOrClose();
             }
+
+            if (InfiniteBuffKeybind.ToggleKeybind?.JustPressed == true)
+            {
+                InfiniteBuffWindow.Instance.Toggle();
+            }
         }
 
         public override void DrawMenuPrefix(GameTime gameTime)
@@ -152,6 +160,9 @@ namespace OptimizeAndTool
 
         public static bool BannerChestIsOpen => Content.Storage.ItemContainer.BannerChestWindow.IsOpen;
         public static bool BannerChestIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.BannerChestWindow.Instance);
+
+        public static bool InfiniteBuffIsOpen => InfiniteBuffWindow.IsWindowOpen;
+        public static bool InfiniteBuffIsHovering => IsHoveringWindow(InfiniteBuffWindow.Instance);
 
         /// <summary>
         /// 判定光标是否悬停在指定自定义窗口内（结合 IsMouseHovering 与 16px 边框容差，确保滑条与外沿判定 100% 覆盖）

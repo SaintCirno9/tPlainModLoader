@@ -7,12 +7,14 @@ using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Fishing;
+using OptimizeAndTool.Content.QoL.InfiniteBuff;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.VeinMining;
 using OptimizeAndTool.Content.ServerList;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
+using System.Collections.Generic;
 using tContentPatch;
 using Terraria.UI;
 
@@ -157,6 +159,10 @@ namespace OptimizeAndTool
             // 基础作弊 (Cheat.Function1)
             public bool NoDead = false;
             public bool ManaMax = false;
+
+            // 无限 Buff 偏好设置 (全局配置)
+            public List<int> InfiniteBuffBlacklist = new List<int>();
+            public List<int> InfiniteBuffFavorites = new List<int>();
         }
 
         public override string Name => "设置";
@@ -204,6 +210,7 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableBuffStations.val = data.BuffStations;
             InfinitePotionAndBuff.EnableMonsterBanners.val = data.MonsterBanners;
             InfinitePotionAndBuff.HideEndlessBuffs.val = data.HideEndlessBuffs;
+            InfiniteBuffStorage.LoadFromConfig(data.InfiniteBuffBlacklist, data.InfiniteBuffFavorites);
 
             TownNPCOptimization.EnableInstantHousingTeleport.val = data.NPCInstantHousingTeleport;
             TownNPCOptimization.EnableNightAutoHome.val = data.NPCNightAutoHome;
@@ -574,7 +581,11 @@ namespace OptimizeAndTool
 
                 // 基础作弊
                 NoDead = Content.Cheat.Function1.Function.noDead.val,
-                ManaMax = Content.Cheat.Function1.Function.manaMax.val
+                ManaMax = Content.Cheat.Function1.Function.manaMax.val,
+
+                // 无限 Buff 偏好设置
+                InfiniteBuffBlacklist = InfiniteBuffStorage.ExportBlacklist(),
+                InfiniteBuffFavorites = InfiniteBuffStorage.ExportFavorites()
             };
         }
 
