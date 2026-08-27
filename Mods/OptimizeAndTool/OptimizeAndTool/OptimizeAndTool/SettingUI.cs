@@ -137,6 +137,7 @@ namespace OptimizeAndTool
             public bool PylonUnlimitedPlacement = true;
             public bool PylonFreeTeleport = true;
             public bool InstantRecall = true;
+            public bool AltRightClickTeleport = true;
             public bool QuickRespawn = true;
             public int QuickRespawnFrames = 90;
             public bool AutoResummonMinions = true;
@@ -302,6 +303,7 @@ namespace OptimizeAndTool
             QoLValSet.pylonUnlimitedPlacement.val = data.PylonUnlimitedPlacement;
             QoLValSet.pylonFreeTeleport.val = data.PylonFreeTeleport;
             QoLValSet.instantRecall.val = data.InstantRecall;
+            QoLValSet.altRightClickTeleport.val = data.AltRightClickTeleport;
             QoLValSet.quickRespawn.val = data.QuickRespawn;
             QoLValSet.quickRespawnFrames.val = data.QuickRespawnFrames;
             QoLValSet.autoResummonMinions.val = data.AutoResummonMinions;
@@ -426,6 +428,7 @@ namespace OptimizeAndTool
             QoLValSet.pylonUnlimitedPlacement.OnValUpdate += _ => NeedSave = true;
             QoLValSet.pylonFreeTeleport.OnValUpdate += _ => NeedSave = true;
             QoLValSet.instantRecall.OnValUpdate += _ => NeedSave = true;
+            QoLValSet.altRightClickTeleport.OnValUpdate += _ => NeedSave = true;
             QoLValSet.quickRespawn.OnValUpdate += _ => NeedSave = true;
             QoLValSet.quickRespawnFrames.OnValUpdate += _ => NeedSave = true;
             QoLValSet.autoResummonMinions.OnValUpdate += _ => NeedSave = true;
@@ -560,6 +563,7 @@ namespace OptimizeAndTool
                 PylonUnlimitedPlacement = QoLValSet.pylonUnlimitedPlacement.val,
                 PylonFreeTeleport = QoLValSet.pylonFreeTeleport.val,
                 InstantRecall = QoLValSet.instantRecall.val,
+                AltRightClickTeleport = QoLValSet.altRightClickTeleport.val,
                 QuickRespawn = QoLValSet.quickRespawn.val,
                 QuickRespawnFrames = QoLValSet.quickRespawnFrames.val,
                 AutoResummonMinions = QoLValSet.autoResummonMinions.val,
@@ -693,6 +697,7 @@ namespace OptimizeAndTool
             QoLValSet.pylonUnlimitedPlacement.Reset();
             QoLValSet.pylonFreeTeleport.Reset();
             QoLValSet.instantRecall.Reset();
+            QoLValSet.altRightClickTeleport.Reset();
             QoLValSet.quickRespawn.Reset();
             QoLValSet.quickRespawnFrames.Reset();
             QoLValSet.autoResummonMinions.Reset();

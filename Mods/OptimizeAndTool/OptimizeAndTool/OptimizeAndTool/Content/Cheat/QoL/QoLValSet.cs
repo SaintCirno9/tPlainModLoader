@@ -17,8 +17,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         public static GetSetReset<bool> pylonUnlimitedPlacement = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> pylonFreeTeleport = new GetSetReset<bool>(true, true);
 
-        // 2. 魔镜 / 回程药水瞬传
+        // 2. 瞬传与微距传送
         public static GetSetReset<bool> instantRecall = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> altRightClickTeleport = new GetSetReset<bool>(true, true);
 
         // 3. 脱战 1.5s 快速复活 & 复活自动召回仆从
         public static GetSetReset<bool> quickRespawn = new GetSetReset<bool>(true, true);
@@ -102,6 +103,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 CommandBuild.get2("pylonUnlimitedPlacement", pylonUnlimitedPlacement),
                 CommandBuild.get2("pylonFreeTeleport", pylonFreeTeleport),
                 CommandBuild.get2("instantRecall", instantRecall),
+                CommandBuild.get2("altRightClickTeleport", altRightClickTeleport),
                 CommandBuild.get1("quickRespawn", quickRespawn, quickRespawnFrames, new CommandInt()),
                 CommandBuild.get2("autoResummonMinions", autoResummonMinions),
                 CommandBuild.get2("herbFastGrow", herbFastGrow),
@@ -150,8 +152,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 UIBuild.get2(pylonUnlimitedPlacement, "解除单世界同类型晶塔只能放置一个的限制", "Images/Item_4875", "晶塔无放置上限"),
                 UIBuild.get2(pylonFreeTeleport, "全图晶塔传送无视危险、无视群落、无需靠近晶塔、无需周围有NPC", "Images/Item_4875", "晶塔无限制全图传送"),
 
-                // 瞬传
+                // 瞬传与微距传送
                 UIBuild.get2(instantRecall, "消除魔镜/冰雪镜/手机/海螺/回程药水等施法前摇延迟，点击瞬间传送", "Images/Item_50", "魔镜/回程药水瞬传"),
+                UIBuild.get2(altRightClickTeleport, "在游戏世界中按住 Alt 并右击鼠标，瞬移至光标位置（自动智能吸附空位，便于钻入狭窄小角落）", "Images/Item_1326", "Alt+右键微距传送"),
 
                 // 复活 & 仆从
                 UIBuild.get1(quickRespawn, quickRespawnFrames, int.Parse, "场上无存活Boss时的复活帧数(60帧=1秒，默认90帧=1.5s)<int>", "Images/Buff_48", "脱战极速复活"),
