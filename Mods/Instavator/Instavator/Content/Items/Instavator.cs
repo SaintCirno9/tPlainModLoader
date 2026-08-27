@@ -53,7 +53,19 @@ namespace Instavator.Content.Items
             if (player.whoAmI == Main.myPlayer)
             {
                 Vector2 target = Main.MouseWorld;
-                InstavatorShaftBuilder.BuildFullInstavator(player, target);
+                if (InstavatorShaftBuilder.TryStartFullInstavator(player, target))
+                {
+                    if (Item.consumable)
+                    {
+                        Item.stack--;
+                        if (Item.stack <= 0)
+                        {
+                            Item.TurnToAir();
+                        }
+                    }
+                    return true;
+                }
+                return false;
             }
             return true;
         }
