@@ -261,6 +261,7 @@ namespace WandsTool.Content
                             else
                             {
                                 WandAction.DelTile(shapes, gameMain.Wand_Tile, gameMain.Wand_Wall, gameMain.Wand_CollectDrops);
+                                Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
                             }
                         }
 

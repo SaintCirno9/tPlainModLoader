@@ -283,6 +283,17 @@ namespace WandsTool.Content
                 Wand_LiquidMode = LiquidMode.None;
                 return;
             }
+
+            // 6. 武器类手持物品 -> 破坏模式（快捷大范围破坏/挖矿）
+            if (item.damage > 0)
+            {
+                Wand_isPlace = false;
+                Wand_Tile = true;
+                Wand_Wall = false;
+                Wand_LiquidMode = LiquidMode.None;
+                Wand_ToolMode = 0;
+                return;
+            }
         }
     }
 }
