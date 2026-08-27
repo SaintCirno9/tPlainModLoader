@@ -2,7 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 using HarmonyLib;
 using ReLogic.Localization.IME;
-using ReLogic.Localization.IME.Windows;
 using Terraria;
 using TPML.Core.Logging;
 
@@ -97,6 +96,13 @@ namespace tContentPatch.Utils
     {
         private static readonly ILogger Logger = LogManager.GetLogger("PlatformImePatch");
 
+        [DllImport("ReLogic.Native.dll", EntryPoint = "ImeUi_IsEnabled")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool ImeUi_IsEnabled();
+
+        [DllImport("ReLogic.Native.dll", EntryPoint = "ImeUi_Enable")]
+        private static extern void ImeUi_Enable([MarshalAs(UnmanagedType.I1)] bool bEnable);
+
         [HarmonyPrefix]
         private static void Prefix(PlatformIme __instance)
         {
@@ -105,13 +111,7 @@ namespace tContentPatch.Utils
                 if (Main.dedServ) return;
 
                 IntPtr hwnd = IntPtr.Zero;
-                if (__instance is WindowsIme winIme)
-                {
-                    hwnd = winIme._windowHandle;
-                    winIme._isFocused = true;
-                }
-
-                if (hwnd == IntPtr.Zero && Main.instance?.Window != null)
+                if (Main.instance?.Window != null)
                 {
                     hwnd = Main.instance.Window.Handle;
                 }
@@ -134,9 +134,9 @@ namespace tContentPatch.Utils
             {
                 if (Main.dedServ) return;
 
-                if (__instance is WindowsIme && !NativeMethods.ImeUi_IsEnabled())
+                if (!ImeUi_IsEnabled())
                 {
-                    NativeMethods.ImeUi_Enable(true);
+                    ImeUi_Enable(true);
                 }
             }
             catch (Exception ex)
