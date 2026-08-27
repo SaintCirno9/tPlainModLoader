@@ -1,4 +1,5 @@
 using CommandHelp;
+using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -41,9 +42,30 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         public static GetSetReset<bool> markPlanteraBulb = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markSwordShrine = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markBeeHive = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markTempleAltar = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markShimmer = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markPyramid = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> markTempleAltar = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markFloatingIsland = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markLivingTree = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markDungeon = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markUnderworld = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markMiniBiomes = new GetSetReset<bool>(true, true);
+
+        public static void SetAllStructureMarkers(bool enabled)
+        {
+            markStructuresOnMap.val = enabled;
+            markPlanteraBulb.val = enabled;
+            markSwordShrine.val = enabled;
+            markBeeHive.val = enabled;
+            markTempleAltar.val = enabled;
+            markShimmer.val = enabled;
+            markPyramid.val = enabled;
+            markFloatingIsland.val = enabled;
+            markLivingTree.val = enabled;
+            markDungeon.val = enabled;
+            markUnderworld.val = enabled;
+            markMiniBiomes.val = enabled;
+        }
 
         public static List<CommandObject> GetCO()
         {
@@ -66,9 +88,14 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 CommandBuild.get2("markPlanteraBulb", markPlanteraBulb),
                 CommandBuild.get2("markSwordShrine", markSwordShrine),
                 CommandBuild.get2("markBeeHive", markBeeHive),
+                CommandBuild.get2("markTempleAltar", markTempleAltar),
                 CommandBuild.get2("markShimmer", markShimmer),
                 CommandBuild.get2("markPyramid", markPyramid),
-                CommandBuild.get2("markTempleAltar", markTempleAltar),
+                CommandBuild.get2("markFloatingIsland", markFloatingIsland),
+                CommandBuild.get2("markLivingTree", markLivingTree),
+                CommandBuild.get2("markDungeon", markDungeon),
+                CommandBuild.get2("markUnderworld", markUnderworld),
+                CommandBuild.get2("markMiniBiomes", markMiniBiomes),
             };
 
             return cos;
@@ -100,17 +127,28 @@ namespace OptimizeAndTool.Content.Cheat.QoL
 
                 // 防爆炸
                 UIBuild.get2(antiGriefExplosions, "拦截小丑、机械骷髅王炸弹、陷阱爆炸物及非玩家敌怪爆炸破坏地图方块", "Images/Item_166", "防敌怪爆炸物破坏地形"),
-
-                // 结构标记
-                UIBuild.get2(markStructuresOnMap, "在全图与小地图上高亮标记世界关键结构", "Images/Item_5358", "地图标记关键结构"),
-                UIBuild.get4("重新扫描", () => StructureMarker.TriggerRescan(), "立即遍历世界方块重新扫描关键结构位置", "Images/Item_5358", "重新扫描世界结构"),
-                UIBuild.get2(markPlanteraBulb, "小地图标记世纪之花花苞坐标", "Images/Item_1157", "标记: 世纪之花花苞"),
-                UIBuild.get2(markSwordShrine, "小地图标记附魔剑冢坐标", "Images/Item_72", "标记: 附魔剑冢"),
-                UIBuild.get2(markBeeHive, "小地图标记蜂巢与幼虫坐标", "Images/Item_1133", "标记: 蜂巢幼虫"),
-                UIBuild.get2(markShimmer, "小地图标记以太微光湖坐标", "Images/Item_5334", "标记: 以太微光湖"),
-                UIBuild.get2(markPyramid, "小地图标记沙漠金字塔坐标", "Images/Item_857", "标记: 沙漠金字塔"),
-                UIBuild.get2(markTempleAltar, "小地图标记丛林神庙石巨人祭坛坐标", "Images/Item_1293", "标记: 神庙石巨人祭坛"),
             };
+
+            // 结构标记折叠面板
+            UIDrawer structureDrawer = new UIDrawer("Images/Item_5358", "地图标记关键结构 (展开/折叠)");
+            structureDrawer.Add(UIBuild.get2(markStructuresOnMap, "在全图与小地图上高亮标记世界关键结构", "Images/Item_5358", "总开关: 地图标记关键结构"));
+            structureDrawer.Add(UIBuild.get4("全部开启", () => SetAllStructureMarkers(true), "一键开启所有关键结构小地图标记", "Images/Item_5358", "一键全部开启"));
+            structureDrawer.Add(UIBuild.get4("全部关闭", () => SetAllStructureMarkers(false), "一键关闭所有关键结构小地图标记", "Images/Item_5358", "一键全部关闭"));
+            structureDrawer.Add(UIBuild.get4("重新扫描", () => StructureMarker.TriggerRescan(), "立即遍历世界方块重新扫描关键结构位置", "Images/Item_5358", "重新扫描世界结构"));
+
+            structureDrawer.Add(UIBuild.get2(markPlanteraBulb, "小地图标记世纪之花花苞坐标", "Images/Item_3324", "标记: 世纪之花花苞"));
+            structureDrawer.Add(UIBuild.get2(markSwordShrine, "小地图标记附魔剑冢坐标", "Images/Item_72", "标记: 附魔剑冢"));
+            structureDrawer.Add(UIBuild.get2(markBeeHive, "小地图标记蜂巢与幼虫坐标", "Images/Item_1133", "标记: 蜂巢幼虫"));
+            structureDrawer.Add(UIBuild.get2(markTempleAltar, "小地图标记丛林神庙石巨人祭坛坐标", "Images/Item_1293", "标记: 神庙石巨人祭坛"));
+            structureDrawer.Add(UIBuild.get2(markShimmer, "小地图标记以太微光湖坐标", "Images/Item_5334", "标记: 以太微光湖"));
+            structureDrawer.Add(UIBuild.get2(markPyramid, "小地图标记沙漠金字塔坐标", "Images/Item_857", "标记: 沙漠金字塔"));
+            structureDrawer.Add(UIBuild.get2(markFloatingIsland, "小地图标记空岛天域建筑与高空天湖坐标", "Images/Item_831", "标记: 空岛与天湖"));
+            structureDrawer.Add(UIBuild.get2(markLivingTree, "小地图标记巨型生命树与树根宝箱坐标", "Images/Item_832", "标记: 巨型生命树"));
+            structureDrawer.Add(UIBuild.get2(markDungeon, "小地图标记地牢地表主入口与地牢五大环境神器宝箱坐标", "Images/Item_1531", "标记: 地牢与环境宝箱"));
+            structureDrawer.Add(UIBuild.get2(markUnderworld, "小地图标记地狱废墟与暗影宝箱坐标", "Images/Item_329", "标记: 地狱暗影宝藏"));
+            structureDrawer.Add(UIBuild.get2(markMiniBiomes, "小地图标记地下蛛巢、大理石洞与花岗岩洞坐标", "Images/Item_939", "标记: 蛛巢/大理石/花岗岩洞"));
+
+            uis.Add(structureDrawer);
 
             return uis;
         }
