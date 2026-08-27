@@ -111,7 +111,6 @@ namespace tContentPatch
 
             gamePatch = new AddPatch(patchId_tContentPatch);
             gamePatch.AllPatch();
-            ImeDiagnostics.LogInstalled();
 
             typePatch = new ModPatch.TypePatch();
             typePatch.AddPatch(new ModPatch.Patch_Main());

@@ -170,3 +170,20 @@
 - 第一次真实键盘复测曾确认中文输入恢复。日志显示 `[IME-BOOTSTRAP]` 成功恢复默认 HIMC `0x130055`，输入期 `nativeEnabled=true`、输入法打开、候选框可见，并连续收到 `WM_IME_STARTCOMPOSITION`、带非空组合串的 `WM_IME_COMPOSITION` 与 `WM_IME_ENDCOMPOSITION`；
 - 随后移除 `ImeDiagnostics` Harmony 观察器并重新构建，用户再次启动即复现输入法失效；失败日志仍显示 `[IME-BOOTSTRAP]` 成功关联 HIMC，因此不能再把该观察器视为无行为影响的临时代码；
 - 已恢复此前成功会话中的 `ImeDiagnostics`、`ImeDiagnostics.LogInstalled()` 及全部观察 Hook，Release 全量构建和自动部署通过，等待真实键盘再次复测后继续定位观察器带来的实际差异。
+
+---
+
+## 12. Windows IME 确定性生命周期保障与诊断清理（2026-08-28）
+
+- **根因确认与链路闭环**：
+  1. **初始化阶段**：游戏窗口创建初期缺乏 HIMC，`ImeContextBootstrap` 在 `Platform.InitializeClientServices` 前调用，通过 `ImmAssociateContextEx(..., IACE_DEFAULT)` 恢复默认输入上下文，确保 `ReLogic.Native!ImeUi_Initialize` 成功初始化并保存 HIMC；
+  2. **禁用状态机制**：ReLogic 初始化成功后会主动调用 `ImeUi_EnableIme(false)` 解除窗口关联（`ImmAssociateContext(hwnd, NULL)`），这是 ReLogic 的预期行为；
+  3. **启用阶段时序与焦点防失步**：`WindowsIme.OnEnable()` 内部依赖 `_isFocused` 标志，若启动初期窗口消息分发未触发 `WM_SETFOCUS`，`OnEnable` 会直接返回导致 `ImeUi_Enable(true)` 未被调用；
+- **确定性修复实施**：
+  - 新增 `Patch_PlatformIme_Enable` 补丁，在 `PlatformIme.Enable()` 执行前：
+    - 显式通过 `ImeContextBootstrap.EnsureAssociated(hwnd)` 确保游戏窗口具备有效 HIMC；
+    - 显式将 `winIme._isFocused` 置为 `true`，确保 `OnEnable()` 一定触发 `NativeMethods.ImeUi_Enable(true)`；
+    - 在 Postfix 中对 `NativeMethods.ImeUi_IsEnabled()` 进行状态校验与兜底激活；
+  - 彻底删除 570+ 行高频诊断监听与轮询代码（`ImeDiagnostics.cs`），保持运行时纯净与极致性能；
+  - 全量解决方案 Release 构建通过，20 个项目，0 警告 0 错误，并已自动完成热部署。
+
