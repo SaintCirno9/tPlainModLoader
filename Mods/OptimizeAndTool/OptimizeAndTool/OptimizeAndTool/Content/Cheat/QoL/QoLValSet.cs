@@ -37,19 +37,34 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         // 5. 防非玩家爆炸物破坏地形
         public static GetSetReset<bool> antiGriefExplosions = new GetSetReset<bool>(true, true);
 
-        // 6. 关键结构小地图标记
+        // 6. 关键结构与世界标记
         public static GetSetReset<bool> markStructuresOnMap = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markPlanteraBulb = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markSwordShrine = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markBeeHive = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markTempleAltar = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markTempleDoor = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markEvilAltars = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markEvilOrbsHearts = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markShimmer = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markPyramid = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markFloatingIsland = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> markLivingTree = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markDungeon = new GetSetReset<bool>(true, true);
-        public static GetSetReset<bool> markUnderworld = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markDungeonWaterBolt = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> markMiniBiomes = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markMushroomBiome = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markAntlionHive = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markMossCaves = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markMeteorite = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markTrapsExplosives = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markTrappedNPCs = new GetSetReset<bool>(true, true);
+
+        // 7. 全量宝箱雷达标记
+        public static GetSetReset<bool> markChestsAll = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markChestsShowEmpty = new GetSetReset<bool>(false, false);
+        public static GetSetReset<bool> markChestsSurfaceUnderground = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markChestsShadowBiome = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> markChestsTrapped = new GetSetReset<bool>(true, true);
 
         public static void SetAllStructureMarkers(bool enabled)
         {
@@ -58,13 +73,26 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             markSwordShrine.val = enabled;
             markBeeHive.val = enabled;
             markTempleAltar.val = enabled;
+            markTempleDoor.val = enabled;
+            markEvilAltars.val = enabled;
+            markEvilOrbsHearts.val = enabled;
             markShimmer.val = enabled;
             markPyramid.val = enabled;
             markFloatingIsland.val = enabled;
-            markLivingTree.val = enabled;
             markDungeon.val = enabled;
-            markUnderworld.val = enabled;
+            markDungeonWaterBolt.val = enabled;
             markMiniBiomes.val = enabled;
+            markMushroomBiome.val = enabled;
+            markAntlionHive.val = enabled;
+            markMossCaves.val = enabled;
+            markMeteorite.val = enabled;
+            markTrapsExplosives.val = enabled;
+            markTrappedNPCs.val = enabled;
+
+            markChestsAll.val = enabled;
+            markChestsSurfaceUnderground.val = enabled;
+            markChestsShadowBiome.val = enabled;
+            markChestsTrapped.val = enabled;
         }
 
         public static List<CommandObject> GetCO()
@@ -89,13 +117,26 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 CommandBuild.get2("markSwordShrine", markSwordShrine),
                 CommandBuild.get2("markBeeHive", markBeeHive),
                 CommandBuild.get2("markTempleAltar", markTempleAltar),
+                CommandBuild.get2("markTempleDoor", markTempleDoor),
+                CommandBuild.get2("markEvilAltars", markEvilAltars),
+                CommandBuild.get2("markEvilOrbsHearts", markEvilOrbsHearts),
                 CommandBuild.get2("markShimmer", markShimmer),
                 CommandBuild.get2("markPyramid", markPyramid),
                 CommandBuild.get2("markFloatingIsland", markFloatingIsland),
-                CommandBuild.get2("markLivingTree", markLivingTree),
                 CommandBuild.get2("markDungeon", markDungeon),
-                CommandBuild.get2("markUnderworld", markUnderworld),
+                CommandBuild.get2("markDungeonWaterBolt", markDungeonWaterBolt),
                 CommandBuild.get2("markMiniBiomes", markMiniBiomes),
+                CommandBuild.get2("markMushroomBiome", markMushroomBiome),
+                CommandBuild.get2("markAntlionHive", markAntlionHive),
+                CommandBuild.get2("markMossCaves", markMossCaves),
+                CommandBuild.get2("markMeteorite", markMeteorite),
+                CommandBuild.get2("markTrapsExplosives", markTrapsExplosives),
+                CommandBuild.get2("markTrappedNPCs", markTrappedNPCs),
+                CommandBuild.get2("markChestsAll", markChestsAll),
+                CommandBuild.get2("markChestsShowEmpty", markChestsShowEmpty),
+                CommandBuild.get2("markChestsSurfaceUnderground", markChestsSurfaceUnderground),
+                CommandBuild.get2("markChestsShadowBiome", markChestsShadowBiome),
+                CommandBuild.get2("markChestsTrapped", markChestsTrapped),
             };
 
             return cos;
@@ -129,24 +170,48 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 UIBuild.get2(antiGriefExplosions, "拦截小丑、机械骷髅王炸弹、陷阱爆炸物及非玩家敌怪爆炸破坏地图方块", "Images/Item_166", "防敌怪爆炸物破坏地形"),
             };
 
-            // 结构标记折叠面板
-            UIDrawer structureDrawer = new UIDrawer("Images/Item_5358", "地图标记关键结构 (展开/折叠)");
-            structureDrawer.Add(UIBuild.get2(markStructuresOnMap, "在全图与小地图上高亮标记世界关键结构", "Images/Item_5358", "总开关: 地图标记关键结构"));
-            structureDrawer.Add(UIBuild.get4("全部开启", () => SetAllStructureMarkers(true), "一键开启所有关键结构小地图标记", "Images/Item_5358", "一键全部开启"));
-            structureDrawer.Add(UIBuild.get4("全部关闭", () => SetAllStructureMarkers(false), "一键关闭所有关键结构小地图标记", "Images/Item_5358", "一键全部关闭"));
-            structureDrawer.Add(UIBuild.get4("重新扫描", () => StructureMarker.TriggerRescan(), "立即遍历世界方块重新扫描关键结构位置", "Images/Item_5358", "重新扫描世界结构"));
+            // 结构与宝箱标记总抽屉
+            UIDrawer structureDrawer = new UIDrawer("Images/Item_5358", "地图标记关键结构与宝箱雷达 (展开/折叠)");
+            structureDrawer.Add(UIBuild.get2(markStructuresOnMap, "在全图与小地图上高亮标记世界关键结构与宝箱雷达", "Images/Item_5358", "总开关: 地图标记关键结构与宝箱"));
+            structureDrawer.Add(UIBuild.get4("全部开启", () => SetAllStructureMarkers(true), "一键开启所有关键结构与宝箱标记", "Images/Item_5358", "一键全部开启"));
+            structureDrawer.Add(UIBuild.get4("全部关闭", () => SetAllStructureMarkers(false), "一键关闭所有关键结构与宝箱标记", "Images/Item_5358", "一键全部关闭"));
+            structureDrawer.Add(UIBuild.get4("重新扫描", () => StructureMarker.TriggerRescan(), "立即遍历世界方块与宝箱重新扫描位置", "Images/Item_5358", "重新扫描世界结构与宝箱"));
 
-            structureDrawer.Add(UIBuild.get2(markPlanteraBulb, "小地图标记世纪之花花苞坐标", "Images/Item_3324", "标记: 世纪之花花苞"));
-            structureDrawer.Add(UIBuild.get2(markSwordShrine, "小地图标记附魔剑冢坐标", "Images/Item_72", "标记: 附魔剑冢"));
-            structureDrawer.Add(UIBuild.get2(markBeeHive, "小地图标记蜂巢与幼虫坐标", "Images/Item_1133", "标记: 蜂巢幼虫"));
-            structureDrawer.Add(UIBuild.get2(markTempleAltar, "小地图标记丛林神庙石巨人祭坛坐标", "Images/Item_1293", "标记: 神庙石巨人祭坛"));
-            structureDrawer.Add(UIBuild.get2(markShimmer, "小地图标记以太微光湖坐标", "Images/Item_5334", "标记: 以太微光湖"));
-            structureDrawer.Add(UIBuild.get2(markPyramid, "小地图标记沙漠金字塔坐标", "Images/Item_857", "标记: 沙漠金字塔"));
-            structureDrawer.Add(UIBuild.get2(markFloatingIsland, "小地图标记空岛天域建筑与高空天湖坐标", "Images/Item_831", "标记: 空岛与天湖"));
-            structureDrawer.Add(UIBuild.get2(markLivingTree, "小地图标记巨型生命树与树根宝箱坐标", "Images/Item_832", "标记: 巨型生命树"));
-            structureDrawer.Add(UIBuild.get2(markDungeon, "小地图标记地牢地表主入口与地牢五大环境神器宝箱坐标", "Images/Item_1531", "标记: 地牢与环境宝箱"));
-            structureDrawer.Add(UIBuild.get2(markUnderworld, "小地图标记地狱废墟与暗影宝箱坐标", "Images/Item_329", "标记: 地狱暗影宝藏"));
-            structureDrawer.Add(UIBuild.get2(markMiniBiomes, "小地图标记地下蛛巢、大理石洞与花岗岩洞坐标", "Images/Item_939", "标记: 蛛巢/大理石/花岗岩洞"));
+            // 1. 全量宝箱雷达子分组
+            UIDrawer chestDrawer = new UIDrawer("Images/Item_48", "全量宝箱雷达 (展开/折叠)");
+            chestDrawer.Add(UIBuild.get2(markChestsAll, "地图标记所有宝箱总开关（悬停可查看箱内战利品清单）", "Images/Item_48", "总开关: 宝箱雷达"));
+            chestDrawer.Add(UIBuild.get2(markChestsShowEmpty, "是否标记已被清空的空宝箱（关闭后仅显示有物品的箱子）", "Images/Item_48", "显示已清空的空宝箱"));
+            chestDrawer.Add(UIBuild.get2(markChestsSurfaceUnderground, "小地图标记地表与地下常规宝箱（木箱/黄金箱/冰雪/常春藤/水箱/沙岩等）", "Images/Item_306", "标记: 常规地表与地下宝箱"));
+            chestDrawer.Add(UIBuild.get2(markChestsShadowBiome, "小地图标记特殊与环境宝箱（地狱暗影箱/神庙箱/地牢五大环境神器箱/沙漠神器箱）", "Images/Item_327", "标记: 环境神器与暗影宝箱"));
+            chestDrawer.Add(UIBuild.get2(markChestsTrapped, "小地图标记伪装陷阱宝箱与致命死人宝箱（红框高亮警示）", "Images/Item_4712", "标记: 陷阱与死人宝箱"));
+            structureDrawer.Add(chestDrawer);
+
+            // 2. 世界关键遗迹与生态子分组
+            UIDrawer biomeDrawer = new UIDrawer("Images/Item_5334", "世界遗迹与微群落 (展开/折叠)");
+            biomeDrawer.Add(UIBuild.get2(markPlanteraBulb, "小地图标记世纪之花花苞坐标", "Images/Item_3324", "标记: 世纪之花花苞"));
+            biomeDrawer.Add(UIBuild.get2(markSwordShrine, "小地图标记附魔剑冢坐标", "Images/Item_72", "标记: 附魔剑冢"));
+            biomeDrawer.Add(UIBuild.get2(markBeeHive, "小地图标记蜂巢与幼虫坐标", "Images/Item_1133", "标记: 蜂巢幼虫"));
+            biomeDrawer.Add(UIBuild.get2(markTempleAltar, "小地图标记丛林神庙石巨人祭坛坐标", "Images/Item_1293", "标记: 神庙石巨人祭坛"));
+            biomeDrawer.Add(UIBuild.get2(markTempleDoor, "小地图标记丛林神庙大门入口坐标", "Images/Item_1153", "标记: 丛林神庙大门"));
+            biomeDrawer.Add(UIBuild.get2(markShimmer, "小地图标记以太微光湖坐标", "Images/Item_5334", "标记: 以太微光湖"));
+            biomeDrawer.Add(UIBuild.get2(markPyramid, "小地图标记沙漠金字塔坐标", "Images/Item_857", "标记: 沙漠金字塔"));
+            biomeDrawer.Add(UIBuild.get2(markFloatingIsland, "小地图标记空岛天域建筑与高空天湖坐标", "Images/Item_831", "标记: 空岛与天湖"));
+            biomeDrawer.Add(UIBuild.get2(markDungeon, "小地图标记地牢地表主入口坐标", "Images/Item_1531", "标记: 地牢主入口"));
+            biomeDrawer.Add(UIBuild.get2(markDungeonWaterBolt, "小地图标记地牢书架上的《水之书》法术藏书", "Images/Item_165", "标记: 地牢《水之书》"));
+            biomeDrawer.Add(UIBuild.get2(markMiniBiomes, "小地图标记地下蛛巢、大理石洞与花岗岩洞坐标", "Images/Item_939", "标记: 蛛巢/大理石/花岗岩洞"));
+            biomeDrawer.Add(UIBuild.get2(markMushroomBiome, "小地图标记地下发光蘑菇地群落", "Images/Item_183", "标记: 地下发光蘑菇地"));
+            biomeDrawer.Add(UIBuild.get2(markAntlionHive, "小地图标记地下沙漠蚁穴核心群落", "Images/Item_323", "标记: 地下沙漠蚁穴"));
+            biomeDrawer.Add(UIBuild.get2(markMossCaves, "小地图标记地下发光苔藓洞群落", "Images/Item_4387", "标记: 地下发光苔藓洞"));
+            biomeDrawer.Add(UIBuild.get2(markMeteorite, "小地图标记陨石撞击坑坐标", "Images/Item_117", "标记: 陨石撞击坑"));
+            structureDrawer.Add(biomeDrawer);
+
+            // 3. 邪恶核心、危险机关与受困NPC
+            UIDrawer dangerDrawer = new UIDrawer("Images/Item_26", "邪恶核心/机关/受困NPC (展开/折叠)");
+            dangerDrawer.Add(UIBuild.get2(markEvilAltars, "小地图标记恶魔祭坛与猩红祭坛坐标", "Images/Item_26", "标记: 恶魔/猩红祭坛"));
+            dangerDrawer.Add(UIBuild.get2(markEvilOrbsHearts, "小地图标记暗影珠与猩红之心坐标", "Images/Item_29", "标记: 暗影珠/猩红之心"));
+            dangerDrawer.Add(UIBuild.get2(markTrapsExplosives, "小地图标记地下炸药陷阱与致命机关", "Images/Item_166", "标记: 炸药与致命机关"));
+            dangerDrawer.Add(UIBuild.get2(markTrappedNPCs, "小地图实时动态追踪受困NPC（哥布林/机械师/巫师/税收官/酒馆老板/发型师/高尔夫/迷失女孩/老人/信徒）", "Images/Item_267", "标记: 受困与特殊NPC实时追踪"));
+            structureDrawer.Add(dangerDrawer);
 
             uis.Add(structureDrawer);
 
@@ -154,3 +219,4 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         }
     }
 }
+
