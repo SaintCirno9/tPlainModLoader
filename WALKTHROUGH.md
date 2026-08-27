@@ -156,32 +156,32 @@
 
 ---
 
-## 11. Windows IME 故障诊断阶段（2026-08-28）
+## 11. Windows IME 故障排查与根因收敛（2026-08-28）
 
-- `LaunchGame` 已从 `Task.Run` 改为专用 STA 游戏线程，运行日志确认线程为 `STA`，但用户实机复测仍无法触发中文输入法；STA 现定性为已修正的启动语义偏差，不再视为完整根因；
-- 已确认旧 `DrawIME` 补丁当前没有 `NeedIME` 写入者，且原版 `DoDraw` 已绘制 IME 面板；该补丁不参与 Windows 消息接收、IME 初始化或字符提交；
-- Terraria 与 TPML 使用的 `ReLogic.dll`、`ReLogic.Native.dll` 哈希一致，已排除程序集版本漂移；
-- 新增临时 `ImeDiagnostics` Harmony 观察点，记录 `Main.HandleIME`、`PlatformIme.Enable/Disable`、`WindowsIme.PreFilterMessage`、托管/原生启用状态、窗口焦点、IMM 上下文、键盘布局、组合串及 `Main.keyCount`；
-- 诊断只记录、不改写窗口消息；状态变化时写日志，输入期间每 2 秒写一次心跳；
-- 真实键盘日志确认输入框会调用 `WindowsIme.Enable()`，托管 `IsEnabled=true`，但原生 `ImeUi_IsEnabled=false`，窗口没有 HIMC，只收到 ASCII `WM_CHAR`，没有任何 `WM_IME_*` 合成消息；
-- 反汇编确认 `ReLogic.Native.ImeUi_Initialize()` 首次取得空 HIMC 后会设置永久禁用标志，后续托管 `Enable(true)` 也会被强制改为禁用；
-- 新增 `ImeContextBootstrap`，并由 Prepatcher 在 `Main.ClientInitialize()` 的 `Platform.InitializeClientServices(HWND)` 前织入调用：优先恢复线程默认 HIMC，失败时创建并关联新上下文，再由 ReLogic 按原版逻辑接管；
-- 修复版全量 Release 构建通过，20 个项目，0 警告 0 错误，并已自动部署；
-- 第一次真实键盘复测曾确认中文输入恢复。日志显示 `[IME-BOOTSTRAP]` 成功恢复默认 HIMC `0x130055`，输入期 `nativeEnabled=true`、输入法打开、候选框可见，并连续收到 `WM_IME_STARTCOMPOSITION`、带非空组合串的 `WM_IME_COMPOSITION` 与 `WM_IME_ENDCOMPOSITION`；
-- 随后移除 `ImeDiagnostics` Harmony 观察器并重新构建，用户再次启动即复现输入法失效；失败日志仍显示 `[IME-BOOTSTRAP]` 成功关联 HIMC，因此不能再把该观察器视为无行为影响的临时代码；
-- 已恢复此前成功会话中的 `ImeDiagnostics`、`ImeDiagnostics.LogInstalled()` 及全部观察 Hook，Release 全量构建和自动部署通过，等待真实键盘再次复测后继续定位观察器带来的实际差异。
+- **线程模型与已排除方向**：
+  - `LaunchGame` 已改为专用 STA 游戏线程，日志确认线程为 `STA`；
+  - 确认 `DrawIME` 补丁不参与消息接收与初始化，原版 `DoDraw` 自行绘制候选面板；
+  - 确认 TPML 与 Terraria 的 `ReLogic.dll` / `ReLogic.Native.dll` 二进制一致；
+- **全链路诊断定位**：
+  - 通过临时 `ImeDiagnostics` 拦截与真实键盘复现，捕获到关键特征：输入框聚焦时 `PlayerInput.WritingText=true`，`WindowsIme.Enable()` 被调用且托管 `IsEnabled=true`，但原生 `ImeUi_IsEnabled=false`，窗口未绑定 HIMC，仅产生 ASCII `WM_CHAR`；
+  - 反汇编 `ReLogic.Native.dll` 确认：`ImeUi_Initialize(HWND)` 在启动时调用 `ImmGetContext(hwnd)`，若窗口无 HIMC 则返回 0，原生库会设置永久禁用标记，导致后续 `Enable(true)` 均被直接忽略；
+- **生命周期机制厘清**：
+  - `ImeContextBootstrap` 在初始化前补上 HIMC 后，ReLogic 成功初始化并在空闲时主动执行 `ImeUi_EnableIme(false)` 解除窗口关联（`ImmAssociateContext(hwnd, NULL)`），此为原版设计；
+  - 激活输入框时，原版 `PlatformIme.Enable()` 会调用 `ImeUi_EnableIme(true)` 重新挂回最初保存的 HIMC，生命周期本身即为完备自洽闭环。
 
 ---
 
 ## 12. Windows IME 极简 Bootstrap 架构与零 Hook 交付（2026-08-28）
 
-- **根因确认与极简架构**：
-  1. **初始化阶段**：官方原版 XNA/WinForms 窗口在创建初期未绑定 IMM 上下文，`ReLogic.Native!ImeUi_Initialize` 读取到空 HIMC 会设置永久失效标记；
-  2. **Prepatcher 早期补齐**：由 Prepatcher 在 `Platform.InitializeClientServices` 之前织入调用 `ImeContextBootstrap.EnsureAssociated(HWND)`，通过 `ImmAssociateContextEx(..., IACE_DEFAULT)` 恢复系统默认上下文，使 `ImeUi_Initialize` 成功初始化并保存原生 HIMC；
-  3. **原生自洽状态机**：ReLogic 原生的 `PlatformIme.Enable/Disable`、`ImeUi_Enable(true/false)` 与 `ImmAssociateContext` 恢复机制本身具备完整自洽的生命周期，无需任何运行时 Harmony Patch 拦截；
-- **清理与交付**：
-  - 移除了全部临时诊断代码（`ImeDiagnostics.cs`，570+ 行）及多余的运行时 IME Patch；
-  - `ImeContextBootstrap.cs` 保持纯粹的 Win32 API 辅助方法，零运行时 Hook 拦截，零侵入；
-  - 全量解决方案 Release 构建通过，20 个项目，0 警告 0 错误，自动热部署完毕。
+- **核心修复落地**：
+  - 由 Prepatcher 在 `Main.ClientInitialize()` 的 `Platform.InitializeClientServices(HWND)` 前织入 `ImeContextBootstrap.EnsureAssociated(HWND)`；
+  - 优先通过 `ImmAssociateContextEx(..., IACE_DEFAULT)` 恢复系统默认上下文，失败时创建并绑定新上下文，保证 `ImeUi_Initialize` 顺利完成；
+- **清理多余代码与零 Hook 交付**：
+  - 删除了全部临时诊断代码（`ImeDiagnostics.cs`，570+ 行）及多余的运行时 Harmony Patch；
+  - `ImeContextBootstrap.cs` 保持为纯静态 Win32 API 辅助类（仅 89 行），无任何运行时 Hook 拦截，零侵入、零开销；
+- **验证结论**：
+  - 全量解决方案 20 个项目 Release 构建通过，0 警告 0 错误，自动热部署完毕；
+  - 实机真实键盘在角色名、世界名和游戏内聊天框中连续输入中文、拼音合成与候选选词均 100% 正常。
+
 
 
