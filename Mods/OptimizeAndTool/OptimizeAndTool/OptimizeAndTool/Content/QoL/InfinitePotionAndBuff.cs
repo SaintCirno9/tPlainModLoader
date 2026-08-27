@@ -57,10 +57,6 @@ namespace OptimizeAndTool.Content.QoL
         private const int ScanIntervalTicks = 15;
         private static int scanCooldown = 0;
 
-        // 本轮 SceneMetrics.Scan 的归属玩家 ID（原版由 Player.UpdateBuffs 内部发起扫描），消费一次即复位 -1；
-        // 服务端为每个活跃玩家的 UpdateBuffs 顺序执行 Scan，据此可将随身注入按人精准归档
-        private static int sceneScanSourcePlayerId = -1;
-
         public static List<CommandObject> GetCO()
         {
             return new List<CommandObject>
@@ -122,23 +118,18 @@ namespace OptimizeAndTool.Content.QoL
 
         /// <summary>
         /// 在场景指标扫描完毕后注入随身旗帜与场景光环，彻底根除 Buff 闪烁问题；
-        /// 联机下按“本次扫描归属玩家”精准注入：本地玩家全套生效，其它玩家仅注入区域型标记
+        /// 确保怪物旗帜与场景增益站 100% 精准写入当前 SceneMetrics
         /// </summary>
         [HarmonyPatch(typeof(SceneMetrics), nameof(SceneMetrics.Scan))]
         [HarmonyPostfix]
-        public static void SceneMetricsScanPostfix(SceneMetrics __instance)
+        public static void SceneMetricsScanPostfix(SceneMetrics __instance, SceneMetricsScanSettings settings)
         {
-            if (__instance == null || sceneScanSourcePlayerId < 0 || sceneScanSourcePlayerId >= Main.player.Length) return;
-
-            Player player = Main.player[sceneScanSourcePlayerId];
-            sceneScanSourcePlayerId = -1; // 消费一次即失效，避免污染非玩家上下文（如菜单期）的扫描
-
-            if (player == null || !player.active) return;
+            if (__instance == null) return;
             if (!EnableMonsterBanners.val && !EnableBuffStations.val) return;
 
-            // 本地玩家的扫描携带全套功能；其它玩家（含服务端远程玩家）仅注入区域型标记——
-            // 这类指标在各自 Scan 后立刻写入该玩家的 Zone/HasGardenGnomeNearby 字段并按人归档，
-            // 不存在跨玩家互相覆盖；而旗帜伤害/增益站依赖共享 Metrics 全局读取，多人混扫会串味，保持单机语义
+            Player player = settings.PerspectivePlayer ?? (Main.netMode != 2 ? Main.LocalPlayer : null);
+            if (player == null || !player.active) return;
+
             bool isLocalScan = Main.netMode != 2 && player.whoAmI == Main.myPlayer;
 
             ScanSceneContainerItems(__instance, player.inventory, isLocalScan);
@@ -335,11 +326,6 @@ namespace OptimizeAndTool.Content.QoL
         public static void UpdateBuffsPrefix(Player __instance)
         {
             if (__instance == null || !__instance.active) return;
-
-            // 先记录扫描归属玩家再分流：原版 Scan 发生在本方法体内的原始逻辑中，
-            // 服务端也会对每个远程玩家执行 UpdateBuffs->Scan，此处捕获保证联机下注入者身份正确
-            sceneScanSourcePlayerId = __instance.whoAmI;
-
             if (__instance.whoAmI != Main.myPlayer) return;
 
             UpdateAvailableBuffs(__instance);
