@@ -169,6 +169,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             {
                 if (Main.LocalPlayer != null)
                 {
+                    InfinitePotionAndBuff.ResetScanCache(); // 绕过扫描节流，确保开窗即用最新数据重建列表
                     InfinitePotionAndBuff.UpdateAvailableBuffs(Main.LocalPlayer);
                 }
                 InfiniteBuffStorage.OnDataChanged += Rebuild;
