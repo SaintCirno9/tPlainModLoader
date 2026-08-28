@@ -4,128 +4,223 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RecipeBrowser.Common;
 using ReLogic.Graphics;
-using Terraria;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
-using Terraria.UI.Chat;
 
 namespace RecipeBrowser.UIElements
 {
-    public class ModFilterDropdownRow : UIElement
+    public sealed class ModFilterDropdown : UIPanel
     {
-        private readonly int _modIndex;
-        private readonly string _displayText;
-        private readonly string _fullText;
-        private readonly bool _selected;
-        private readonly Action<int> _onSelect;
-
-        public ModFilterDropdownRow(int modIndex, string displayText, bool selected, Action<int> onSelect)
+        private sealed class ModFilterDropdownRow : UIPanel
         {
-            _modIndex = modIndex;
-            _displayText = displayText;
-            _fullText = displayText;
-            _selected = selected;
-            _onSelect = onSelect;
+            private const float TextScale = 0.85f;
+            private readonly string _fullText;
+            private readonly UIText _label;
+            private bool _selected;
+            private bool _hasComputedTruncation;
+            private bool _isTruncated;
+            internal int Index { get; }
 
-            Height.Set(24f, 0f);
-            Width.Set(0f, 1f);
-
-            // 超长模组名二分截断为省略号（对齐原版 ComputeTruncationOnce），悬停显示全文
-            string truncated = displayText;
-            try
+            internal ModFilterDropdownRow(int index, string displayText, bool selected, Action<int> onSelect)
             {
-                const float maxTextWidth = 196f;
-                DynamicSpriteFont font = FontAssets.MouseText.Value;
-                float fullWidth = ChatManager.GetStringSize(font, displayText, Vector2.One, -1f).X * 0.85f;
-                if (fullWidth > maxTextWidth)
+                _fullText = displayText;
+                _selected = selected;
+                Index = index;
+
+                Width.Set(0f, 1f);
+                Height.Set(30f, 0f);
+
+                _label = new UIText(displayText, TextScale, false)
                 {
-                    int cut = displayText.Length;
-                    while (cut > 1 && ChatManager.GetStringSize(font, displayText.Substring(0, cut) + "…", Vector2.One, -1f).X * 0.85f > maxTextWidth)
+                    VAlign = 0.5f
+                };
+                Append(_label);
+
+                OnLeftClick += (evt, el) =>
+                {
+                    onSelect?.Invoke(Index);
+                };
+
+                OnMouseOver += (evt, el) =>
+                {
+                    if (!_selected)
                     {
-                        cut--;
+                        BackgroundColor = Color.DarkRed * 0.3f;
+                        BorderColor = Color.DarkRed * 0.3f;
                     }
-                    truncated = displayText.Substring(0, cut) + "…";
+                };
+
+                OnMouseOut += (evt, el) =>
+                {
+                    Refresh();
+                };
+
+                Refresh();
+            }
+
+            internal void SetSelected(bool selected)
+            {
+                _selected = selected;
+                Refresh();
+            }
+
+            protected override void DrawSelf(SpriteBatch spriteBatch)
+            {
+                base.DrawSelf(spriteBatch);
+                if (!_hasComputedTruncation)
+                {
+                    ComputeTruncationOnce();
+                    _hasComputedTruncation = true;
                 }
-            }
-            catch { }
-
-            UIText text = new UIText(truncated, 0.85f);
-            text.Left.Set(8f, 0f);
-            text.VAlign = 0.5f;
-            Append(text);
-        }
-
-        public override void LeftClick(UIMouseEvent evt)
-        {
-            base.LeftClick(evt);
-            _onSelect?.Invoke(_modIndex);
-        }
-
-        protected override void DrawSelf(SpriteBatch spriteBatch)
-        {
-            base.DrawSelf(spriteBatch);
-            CalculatedStyle dimensions = GetDimensions();
-            if (_selected)
-            {
-                spriteBatch.Draw(Terraria.GameContent.TextureAssets.MagicPixel.Value, dimensions.ToRectangle(), Color.LightSeaGreen * 0.4f);
-            }
-            if (IsMouseHovering)
-            {
-                spriteBatch.Draw(Terraria.GameContent.TextureAssets.MagicPixel.Value, dimensions.ToRectangle(), Color.White * 0.2f);
-                if (_displayText != _fullText || _displayText.Length > 0)
+                if (_isTruncated && IsMouseHovering)
                 {
                     UICommon.TooltipMouseText(_fullText);
                 }
+                if (IsMouseHovering)
+                {
+                    RecipeBrowserUI.modHoverIndex = Index;
+                    RecipeBrowserUI.instance?.UpdateModHoverImage();
+                }
+            }
+
+            private void Refresh()
+            {
+                BackgroundColor = _selected ? Color.DarkRed : Color.Transparent;
+                BorderColor = _selected ? Color.DarkRed : Color.Transparent;
+            }
+
+            private void ComputeTruncationOnce()
+            {
+                float width = GetInnerDimensions().Width;
+                if (width <= 0f)
+                {
+                    _label.SetText(string.Empty);
+                    _isTruncated = true;
+                    return;
+                }
+                DynamicSpriteFont font = FontAssets.MouseText.Value;
+                float targetWidth = width / TextScale;
+                if (font.MeasureString(_fullText).X <= targetWidth)
+                {
+                    _label.SetText(_fullText);
+                    _isTruncated = false;
+                    return;
+                }
+                float ellipsisWidth = font.MeasureString("...").X;
+                if (ellipsisWidth > targetWidth)
+                {
+                    _label.SetText(string.Empty);
+                    _isTruncated = true;
+                    return;
+                }
+                int low = 0;
+                int high = _fullText.Length;
+                while (low < high)
+                {
+                    int mid = (low + high + 1) >> 1;
+                    if (font.MeasureString(_fullText.Substring(0, mid)).X + ellipsisWidth <= targetWidth)
+                    {
+                        low = mid;
+                    }
+                    else
+                    {
+                        high = mid - 1;
+                    }
+                }
+                _label.SetText(_fullText.Substring(0, low) + "...");
+                _isTruncated = true;
             }
         }
-    }
 
-    public class ModFilterDropdown : UIPanel
-    {
         private readonly string[] _mods;
         private readonly Func<int, string> _getDisplayName;
-        private readonly Action<int> _onSelect;
         private readonly List<ModFilterDropdownRow> _rows = new List<ModFilterDropdownRow>();
 
-        public ModFilterDropdown(string[] mods, Func<int, string> getDisplayName, int selectedIndex, Action<int> onSelect)
-        {
-            _mods = mods;
-            _getDisplayName = getDisplayName;
-            _onSelect = onSelect;
+        public event EventHandler<int> SelectedIndexChanged;
 
-            SetPadding(4f);
-            BackgroundColor = new Color(23, 25, 48, 245);
-            BorderColor = new Color(73, 94, 171);
+        public ModFilterDropdown(string[] mods, int selectedIndex, Func<int, string> getDisplayName)
+        {
+            _mods = mods ?? Array.Empty<string>();
+            _getDisplayName = getDisplayName ?? (i => string.Empty);
+
+            Width.Set(300f, 0f);
+            Height.Set(-50f, 1f);
+            Top.Set(20f, 0f);
+            Left.Set(-300f, 1f);
+            SetPadding(6f);
+            BackgroundColor = Color.DarkRed;
 
             BuildContent(selectedIndex);
         }
 
+        public void SelectIndex(int index)
+        {
+            if (_rows.Count != 0)
+            {
+                int clamped = Math.Max(0, Math.Min(index, _rows.Count - 1));
+                OnRowSelected(clamped);
+            }
+        }
+
         private void BuildContent(int selectedIndex)
         {
+            UIPanel innerPanel = new UIPanel();
+            innerPanel.Width.Set(0f, 1f);
+            innerPanel.Height.Set(0f, 1f);
+            innerPanel.Top.Set(0f, 0f);
+            innerPanel.BackgroundColor = new Color(200, 50, 50, 255);
+            innerPanel.SetPadding(6f);
+            Append(innerPanel);
+
             UIList list = new UIList();
             list.Width.Set(0f, 1f);
             list.Height.Set(0f, 1f);
-            list.ListPadding = 2f;
-            Append(list);
+            list.ListPadding = 4f;
+            innerPanel.Append(list);
 
-            if (_mods.Length > 8)
-            {
-                InvisibleFixedUIScrollbar scrollbar = new InvisibleFixedUIScrollbar(RecipeBrowserUI.instance.userInterface);
-                scrollbar.Height.Set(-8f, 1f);
-                scrollbar.Top.Set(4f, 0f);
-                scrollbar.HAlign = 1f;
-                list.SetScrollbar(scrollbar);
-                Append(scrollbar);
-            }
+            InvisibleFixedUIScrollbar scrollbar = new InvisibleFixedUIScrollbar(RecipeBrowserUI.instance.userInterface);
+            scrollbar.Height.Set(-12f, 1f);
+            scrollbar.Top.Set(6f, 0f);
+            scrollbar.HAlign = 1f;
+            list.SetScrollbar(scrollbar);
+            Append(scrollbar);
 
             for (int i = 0; i < _mods.Length; i++)
             {
                 string displayText = _getDisplayName(i);
-                ModFilterDropdownRow row = new ModFilterDropdownRow(i, displayText, selectedIndex == i, _onSelect);
+                ModFilterDropdownRow row = new ModFilterDropdownRow(i, displayText, selectedIndex == i, OnRowSelected);
                 _rows.Add(row);
                 list.Add(row);
             }
+
+            if (_rows.Count > 1)
+            {
+                _rows[_rows.Count - 1].MarginBottom = -list.ListPadding;
+            }
+
+            UIImage topCover = new UIImage(TextureAssets.MagicPixel)
+            {
+                IgnoresMouseInteraction = true,
+                Color = BackgroundColor,
+                ScaleToFit = true
+            };
+            topCover.Top.Set(-6f, 0f);
+            topCover.Left.Set(-69f, 1f);
+            topCover.Width.Set(63f, 0f);
+            topCover.Height.Set(2f, 0f);
+            Append(topCover);
+
+            OnRowSelected(selectedIndex);
+        }
+
+        private void OnRowSelected(int index)
+        {
+            for (int i = 0; i < _rows.Count; i++)
+            {
+                _rows[i].SetSelected(i == index);
+            }
+            SelectedIndexChanged?.Invoke(this, index);
         }
     }
 }

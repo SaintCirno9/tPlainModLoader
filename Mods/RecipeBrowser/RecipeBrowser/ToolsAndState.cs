@@ -9,52 +9,10 @@ namespace RecipeBrowser
     public class UIModState : UIState
     {
         internal UserInterface userInterface;
-        private UIElement blockInputElement;
 
         public UIModState(UserInterface userInterface)
         {
             this.userInterface = userInterface;
-        }
-
-        public bool IsInputBlocked => blockInputElement != null && blockInputElement.Parent != null;
-
-        public void BlockInput(UIElement dialog)
-        {
-            if (blockInputElement != null)
-            {
-                RemoveChild(blockInputElement);
-                blockInputElement = null;
-            }
-
-            blockInputElement = new UIElement();
-            blockInputElement.Width.Set(0f, 1f);
-            blockInputElement.Height.Set(0f, 1f);
-            blockInputElement.OnLeftClick += (evt, el) =>
-            {
-                if (evt.Target == blockInputElement)
-                {
-                    UnblockInput();
-                }
-            };
-            blockInputElement.OnRightClick += (evt, el) =>
-            {
-                if (evt.Target == blockInputElement)
-                {
-                    UnblockInput();
-                }
-            };
-
-            blockInputElement.Append(dialog);
-            Append(blockInputElement);
-        }
-
-        public void UnblockInput()
-        {
-            if (blockInputElement != null)
-            {
-                RemoveChild(blockInputElement);
-                blockInputElement = null;
-            }
         }
 
         public void ReverseChildren()

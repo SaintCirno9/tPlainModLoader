@@ -33,9 +33,8 @@ namespace RecipeBrowser
         internal UIHoverImageButton closeFavoritePanelButton;
         internal UIHoverImageButton closeButton;
         internal UIHoverImageButtonMod modFilterButton;
-
-
-
+        private BlockInputElement blockInput;
+        private UIElement activeDialog;
         internal RecipeCatalogueUI recipeCatalogueUI;
         internal CraftUI craftUI;
         internal ItemCatalogueUI itemCatalogueUI;
@@ -169,6 +168,7 @@ namespace RecipeBrowser
             {
                 ModIndex = 0;
             }
+            ModFilterDropdown = null;
             UpdateModFilterUI();
         }
 
@@ -356,59 +356,78 @@ namespace RecipeBrowser
             instance.ShowFavoritePanel = false;
         }
 
+        public string GetDisplayName(int index)
+        {
+            if (index != 0 && mods != null && index < mods.Length)
+            {
+                var mod = TPML.Content.ModContent.Mods.FirstOrDefault(m => m != null && m.Name == mods[index]);
+                return mod?.DisplayName ?? mods[index];
+            }
+            return RBText("All");
+        }
+
+        internal void BlockInput(UIElement dialog)
+        {
+            if (mainPanel == null) return;
+            blockInput = new BlockInputElement(mainPanel, 20);
+            blockInput.OnLeftMouseDown += (evt, el) => UnblockInput(evt, el);
+            mainPanel.Append(blockInput);
+            mainPanel.Append(activeDialog = dialog);
+        }
+
+        internal void UnblockInput(UIMouseEvent evt = null, UIElement listeningElement = null)
+        {
+            if (blockInput != null)
+            {
+                blockInput.Remove();
+                blockInput = null;
+            }
+            if (activeDialog != null)
+            {
+                activeDialog.Remove();
+                activeDialog = null;
+            }
+            modHoverIndex = -1;
+            UpdateModHoverImage();
+        }
+
         private void ModFilterButton_OnClick(UIMouseEvent evt, UIElement listeningElement)
         {
             if (mods == null || mods.Length == 0) return;
+            if (listeningElement?.Parent?.Parent == null) return;
 
-            if (IsInputBlocked)
+            if (ModFilterDropdown == null)
             {
-                UnblockInput();
-                return;
+                ModFilterDropdown = new ModFilterDropdown(mods, ModIndex, GetDisplayName);
+                ModFilterDropdown.SelectedIndexChanged += (sender, selectedIndex) =>
+                {
+                    ModIndex = selectedIndex;
+                    UpdateModFilterUI();
+                    UnblockInput(evt, listeningElement);
+                };
             }
 
-            CalculatedStyle btnDims = listeningElement.GetDimensions();
-            float dropdownWidth = 220f;
-            float dropdownHeight = Math.Min(320f, mods.Length * 28f + 16f);
-
-            ModFilterDropdown = new ModFilterDropdown(mods, (i) => i == 0 ? "全部 (All / Terraria)" : mods[i], ModIndex, (selIdx) =>
+            if (ModFilterDropdown.Parent == null)
             {
-                ModIndex = selIdx;
-                UpdateModFilterUI();
-                UnblockInput();
-            });
-
-            ModFilterDropdown.Width.Set(dropdownWidth, 0f);
-            ModFilterDropdown.Height.Set(dropdownHeight, 0f);
-
-            float leftPos = Math.Max(10f, btnDims.X + btnDims.Width - dropdownWidth);
-            float topPos = btnDims.Y + btnDims.Height + 4f;
-            if (topPos + dropdownHeight > Main.screenHeight)
-            {
-                topPos = Math.Max(10f, btnDims.Y - dropdownHeight - 4f);
+                BlockInput(ModFilterDropdown);
             }
-
-            ModFilterDropdown.Left.Set(leftPos, 0f);
-            ModFilterDropdown.Top.Set(topPos, 0f);
-
-            BlockInput(ModFilterDropdown);
+            else
+            {
+                UnblockInput(evt, listeningElement);
+            }
         }
 
         private void ModFilterButton_OnRightClick(UIMouseEvent evt, UIElement listeningElement)
         {
-            if (IsInputBlocked)
-            {
-                UnblockInput();
-            }
             ChangeModIndex(false);
+            ModFilterDropdown?.SelectIndex(ModIndex);
+            UpdateModFilterUI();
         }
 
         private void ModFilterButton_OnMiddleClick(UIMouseEvent evt, UIElement listeningElement)
         {
-            if (IsInputBlocked)
-            {
-                UnblockInput();
-            }
             ModIndex = 0;
+            ModFilterDropdown?.SelectIndex(ModIndex);
             UpdateModFilterUI();
         }
 
@@ -416,33 +435,42 @@ namespace RecipeBrowser
         {
             if (mods == null || mods.Length == 0) return;
             ModIndex = increment ? (ModIndex + 1) % mods.Length : (ModIndex + mods.Length - 1) % mods.Length;
-            UpdateModFilterUI();
         }
 
         public void UpdateModFilterUI()
         {
             if (modFilterButton != null)
             {
-                string modName = (ModIndex == 0 || mods == null || ModIndex >= mods.Length) ? RBText("All") : mods[ModIndex];
-                modFilterButton.hoverText = RBText("ModFilter") + ": " + modName;
+                modFilterButton.hoverText = RBText("ModFilter") + ": " + GetDisplayName(ModIndex);
             }
+            UpdateModHoverImage();
+            AllUpdateNeeded();
+        }
+
+        internal void AllUpdateNeeded()
+        {
             if (SharedUI.instance != null) SharedUI.instance.updateNeeded = true;
             if (RecipeCatalogueUI.instance != null) RecipeCatalogueUI.instance.updateNeeded = true;
             if (ItemCatalogueUI.instance != null) ItemCatalogueUI.instance.updateNeeded = true;
+            if (BestiaryUI.instance != null) BestiaryUI.instance.updateNeeded = true;
         }
 
         /// <summary>
-        /// 刷新 Mod 过滤按钮图标为当前模组的 icon.png（对齐原版 UpdateModHoverImage）
+        /// 刷新 Mod 过滤按钮图标为当前悬停/选中模组的 icon.png（对齐原版 UpdateModHoverImage）
         /// </summary>
-        private void UpdateModHoverImage()
+        internal void UpdateModHoverImage()
         {
             if (modFilterButton == null) return;
+            int num = modHoverIndex > -1 ? modHoverIndex : ModIndex;
+            if (num == modIndexPrevious) return;
+            modIndexPrevious = num;
+
             Texture2D iconTex = null;
-            if (ModIndex > 0 && mods != null && ModIndex < mods.Length)
+            if (num > 0 && mods != null && num < mods.Length)
             {
                 try
                 {
-                    var mod = TPML.Content.ModContent.Mods.FirstOrDefault(m => m != null && m.Name == mods[ModIndex]);
+                    var mod = TPML.Content.ModContent.Mods.FirstOrDefault(m => m != null && m.Name == mods[num]);
                     if (mod != null)
                     {
                         byte[] bytes = mod.GetFileBytes("icon.png");
@@ -450,7 +478,15 @@ namespace RecipeBrowser
                         {
                             using (var ms = new MemoryStream(bytes))
                             {
-                                iconTex = Texture2D.FromStream(Main.graphics.GraphicsDevice, ms);
+                                Texture2D val = Texture2D.FromStream(Main.graphics.GraphicsDevice, ms);
+                                if (val.Width == 80 && val.Height == 80)
+                                {
+                                    iconTex = val;
+                                }
+                                else
+                                {
+                                    iconTex = val;
+                                }
                             }
                         }
                     }
