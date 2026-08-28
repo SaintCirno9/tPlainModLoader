@@ -41,6 +41,7 @@ namespace OptimizeAndTool.Content
             cos.AddRange(VeinMiningLogic.GetCO());
             cos.AddRange(PipetteEngine.GetCO());
             cos.AddRange(ItemMaxStackPatch.GetCO());
+            cos.AddRange(UncapMaxLifePatch.GetCO());
             cos.AddRange(PortableCraftingStation.GetCO());
             cos.AddRange(PortableContainer.GetCO());
             cos.AddRange(InfinitePotionAndBuff.GetCO());
@@ -92,6 +93,7 @@ namespace OptimizeAndTool.Content
             // 4. 背包与便携制作
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_361", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "便携制作与堆叠"));
             uis.AddRange(ItemMaxStackPatch.GetUI());
+            uis.AddRange(UncapMaxLifePatch.GetUI());
             uis.AddRange(PortableCraftingStation.GetUI());
             uis.AddRange(PortableContainer.GetUI());
 
