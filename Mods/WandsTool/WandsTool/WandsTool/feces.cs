@@ -7,6 +7,7 @@ using Terraria.Audio;
 using Terraria.ID;
 using Terraria.UI;
 using WandsTool.Content;
+using WandsTool.Content.Structure;
 using WandsTool.KeyBind;
 
 namespace WandsTool
@@ -70,6 +71,9 @@ namespace WandsTool
                             UI?.Draw(Main.spriteBatch, Main.gameTimeCache);
                         }
 
+                        // 蓝图库卡片悬浮材料清单（自判定 hover 存活，未悬停时不绘制任何内容）
+                        WandsTool.Content.Structure.StructureMaterialSummary.DrawOverlay(Main.spriteBatch);
+
                         return true;
                     },
                     InterfaceScaleType.UI));
@@ -82,6 +86,7 @@ namespace WandsTool
             {
                 gameMain.Wand_isEnable = false;
                 UI?.Close();
+                StructurePlacement.Abort();
                 return;
             }
 
@@ -108,29 +113,36 @@ namespace WandsTool
 
             if (gameMain.Wand_isEnable)
             {
-                // 监听快捷栏手持物品切换，实时自适应魔棒工作模式
-                if (player.selectedItem != lastSelectedItem)
+                // 监听快捷栏手持物品切换，实时自适应魔棒工作模式（放置作业进行中不切换，防止协程中途改模式）
+                if (player.selectedItem != lastSelectedItem && !StructurePlacement.IsPlacing)
                 {
                     lastSelectedItem = player.selectedItem;
                     gameMain.AutoAdaptModeToHeldItem(player);
                 }
 
-                // 监听施工一键撤销快捷键（U）
+                // 监听施工一键撤销快捷键（U）（放置作业进行中封锁，防止撤销写格与协程写格交错）
                 if (WandsKeybind.UndoAction?.JustPressed == true)
                 {
-                    int undone = WandHistory.Undo(player);
-                    if (undone == -1)
+                    if (StructurePlacement.IsPlacing)
                     {
-                        Main.NewText("[魔杖] 没有可撤销的操作", 255, 170, 170);
-                    }
-                    else if (undone == -2)
-                    {
-                        Main.NewText("[魔杖] 上一次操作尚未处理完成，请稍候再撤销", 255, 200, 100);
+                        Main.NewText("[魔杖] 蓝图放置进行中，暂不能撤销", 255, 200, 100);
                     }
                     else
                     {
-                        Terraria.CombatText.NewText(player.getRect(), Microsoft.Xna.Framework.Color.LightBlue, $"已撤销 {undone} 格", true, false);
-                        SoundEngine.PlaySound(SoundID.MenuOpen);
+                        int undone = WandHistory.Undo(player);
+                        if (undone == -1)
+                        {
+                            Main.NewText("[魔杖] 没有可撤销的操作", 255, 170, 170);
+                        }
+                        else if (undone == -2)
+                        {
+                            Main.NewText("[魔杖] 上一次操作尚未处理完成，请稍候再撤销", 255, 200, 100);
+                        }
+                        else
+                        {
+                            Terraria.CombatText.NewText(player.getRect(), Microsoft.Xna.Framework.Color.LightBlue, $"已撤销 {undone} 格", true, false);
+                            SoundEngine.PlaySound(SoundID.MenuOpen);
+                        }
                     }
                 }
 
@@ -138,15 +150,22 @@ namespace WandsTool
                 Wands.Update();
                 WandAction.Update();
 
+                // 驱动蓝图分帧放置协程
+                StructurePlacement.Update();
+
                 if (Main.mouseRight && Main.mouseRightRelease)
                 {
-                    if (!wasSelecting && !Wands.Selecting)
+                    // 放置作业进行中：不弹出轮盘也不吞 release 标志，放行原版右键交互与 UI 点击
+                    if (!StructurePlacement.IsPlacing)
                     {
-                        UI?.Toggle();
-                    }
-                    else
-                    {
-                        Main.mouseRightRelease = false;
+                        if (!wasSelecting && !Wands.Selecting)
+                        {
+                            UI?.Toggle();
+                        }
+                        else
+                        {
+                            Main.mouseRightRelease = false;
+                        }
                     }
                 }
             }
@@ -158,6 +177,11 @@ namespace WandsTool
                 Wands.Reset();
                 WandAction.Clear();
                 WandHistory.Clear();
+                if (StructurePlacement.IsPlacing)
+                {
+                    Terraria.CombatText.NewText(player.getRect(), Microsoft.Xna.Framework.Color.Orange, "放置已中止", true, false);
+                }
+                StructurePlacement.Abort();
                 gameMain.CutSourceRect = null;
                 gameMain.Wand_StructureMode = gameMain.StructureMode.None;
                 wandsPanel.AutoReopenManagerAfterPlacement = false;

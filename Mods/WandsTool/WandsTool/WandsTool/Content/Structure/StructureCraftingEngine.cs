@@ -36,6 +36,9 @@ namespace WandsTool.Content.Structure
             /// <summary>不可行时的缺失详细说明</summary>
             public List<string> MissingMessages = new List<string>();
 
+            /// <summary>不可行时缺失的物品 ID 集合（供虚影缺料标红等按物品判定使用）</summary>
+            public HashSet<int> MissingItemIds = new HashSet<int>();
+
             public bool HasCrafting => CraftedCounts.Count > 0;
         }
 
@@ -129,6 +132,7 @@ namespace WandsTool.Content.Structure
                     {
                         string name = Lang.GetItemNameValue(kvp.Key);
                         plan.MissingMessages.Add($"{name} (缺 {kvp.Value})");
+                        plan.MissingItemIds.Add(kvp.Key);
                     }
                     plan.IsPossible = false;
                     return plan;
@@ -147,6 +151,7 @@ namespace WandsTool.Content.Structure
                         // 无制作配方
                         string name = Lang.GetItemNameValue(targetItem);
                         plan.MissingMessages.Add($"{name} (缺 {targetNeeded}，且无制作配方)");
+                        plan.MissingItemIds.Add(targetItem);
                         continue;
                     }
 
@@ -157,6 +162,7 @@ namespace WandsTool.Content.Structure
                     {
                         string name = Lang.GetItemNameValue(targetItem);
                         plan.MissingMessages.Add($"{name} (缺 {targetNeeded}，原材料不足)");
+                        plan.MissingItemIds.Add(targetItem);
                     }
                 }
 

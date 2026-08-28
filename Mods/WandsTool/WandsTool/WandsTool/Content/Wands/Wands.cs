@@ -32,7 +32,7 @@ namespace WandsTool.Content
         public static void Update()
         {
             // 蓝图放置模式快捷键检测（已接入统一 ModKeybind 系统，支持原版设置改键并自动静默输入）
-            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste && Structure.StructureStorage.Clipboard != null)
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste && Structure.StructureStorage.Clipboard != null && !Structure.StructurePlacement.IsPlacing)
             {
                 if (WandsTool.KeyBind.WandsKeybind.FlipHorizontal?.JustPressed == true)
                 {
@@ -60,6 +60,13 @@ namespace WandsTool.Content
             // 1. 蓝图粘贴模式处理
             if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste)
             {
+                // 放置作业进行中：忽略粘贴与取消输入，但不吞鼠标 release 标志，
+                // 保证背包/合成/装备栏等原版 Draw 阶段 UI 的点击不受影响
+                if (Structure.StructurePlacement.IsPlacing)
+                {
+                    return;
+                }
+
                 if (Main.mouseRight && Main.mouseRightRelease)
                 {
                     bool wasCut = gameMain.CutSourceRect.HasValue;
@@ -92,12 +99,20 @@ namespace WandsTool.Content
 
                     if (Structure.StructureStorage.Clipboard != null)
                     {
-                        bool placed = Structure.StructurePlacement.Place(Structure.StructureStorage.Clipboard, Main.MouseWorld.ToTileCoordinates(), Main.LocalPlayer, gameMain.Wand_StructureOverwrite);
-                        if (placed && wandsPanel.AutoReopenManagerAfterPlacement)
-                        {
-                            wandsPanel.AutoReopenManagerAfterPlacement = false;
-                            wandsPanel.OpenBlueprintManager();
-                        }
+                        // 发起分帧放置：材料校验与扣除同步完成，落格主体跨帧执行，完成后回调重开蓝图管理器
+                        bool accepted = Structure.StructurePlacement.BeginPlace(
+                            Structure.StructureStorage.Clipboard,
+                            Main.MouseWorld.ToTileCoordinates(),
+                            Main.LocalPlayer,
+                            gameMain.Wand_StructureOverwrite,
+                            () =>
+                            {
+                                if (wandsPanel.AutoReopenManagerAfterPlacement)
+                                {
+                                    wandsPanel.AutoReopenManagerAfterPlacement = false;
+                                    wandsPanel.OpenBlueprintManager();
+                                }
+                            });
                     }
                     Main.mouseLeftRelease = false;
                     return;
@@ -317,8 +332,12 @@ namespace WandsTool.Content
 
         public static void Draw()
         {
-            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste)
+            // 蓝图放置分帧作业进度提示（含完成后驻留反馈）
+            Structure.StructurePlacement.DrawProgress();
+
+            if (gameMain.Wand_StructureMode == gameMain.StructureMode.Paste && !Structure.StructurePlacement.IsPlacing)
             {
+                // 放置作业进行中不再绘制跟随鼠标的虚影（实际放置已在别处落地，虚影会误导落点）
                 Structure.StructurePreview.Draw(Main.spriteBatch);
             }
 

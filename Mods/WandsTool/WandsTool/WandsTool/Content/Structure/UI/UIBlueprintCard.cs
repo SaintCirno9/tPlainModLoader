@@ -17,6 +17,8 @@ namespace WandsTool.Content.Structure.UI
         private string filePath;
         private Action onReloadNeeded;
         private string currentTitleText;
+        private StructureData _loadedData = null;
+        private bool _isEditing = false;
 
         public UIBlueprintCard(string file, Action onReload)
         {
@@ -38,16 +40,18 @@ namespace WandsTool.Content.Structure.UI
         private void RenderNormalView()
         {
             RemoveAllChildren();
+            _isEditing = false;
 
             string fileName = Path.GetFileName(filePath);
             currentTitleText = Path.GetFileNameWithoutExtension(filePath);
             string timeText = File.GetLastWriteTime(filePath).ToString("yyyy-MM-dd HH:mm");
 
-            // 尝试读取第一层 JSON 元数据以显示尺寸
+            // 尝试读取第一层 JSON 元数据以显示尺寸（引用保留供悬浮材料清单复用，避免额外 IO）
             string sizeInfo = "";
             try
             {
                 StructureData quickData = StructureStorage.Load(filePath);
+                _loadedData = quickData;
                 if (quickData != null)
                 {
                     if (!string.IsNullOrEmpty(quickData.Name)) currentTitleText = quickData.Name;
@@ -165,6 +169,7 @@ namespace WandsTool.Content.Structure.UI
         private void RenderEditView()
         {
             RemoveAllChildren();
+            _isEditing = true;
 
             // 1. 输入框
             tContentPatch.Content.UI.UITextBox txtName = new tContentPatch.Content.UI.UITextBox("输入新名称...")
@@ -251,6 +256,12 @@ namespace WandsTool.Content.Structure.UI
             {
                 BackgroundColor = new Color(45, 60, 100) * 0.95f;
                 BorderColor = Color.Gold * 0.8f;
+
+                // 悬停时通知材料清单悬浮面板（重命名编辑态不触发）
+                if (!_isEditing && _loadedData != null)
+                {
+                    StructureMaterialSummary.NotifyHover(_loadedData);
+                }
             }
             else
             {

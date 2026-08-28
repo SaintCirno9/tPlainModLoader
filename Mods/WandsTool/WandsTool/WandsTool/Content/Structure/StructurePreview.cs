@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using Terraria;
 using Terraria.GameContent;
+using Terraria.ID;
+using Terraria.ObjectData;
 using Terraria.UI;
 
 namespace WandsTool.Content.Structure
@@ -26,6 +28,10 @@ namespace WandsTool.Content.Structure
             Point mouseTile = Main.MouseWorld.ToTileCoordinates();
             int startX = mouseTile.X - data.OriginX;
             int startY = mouseTile.Y - data.OriginY;
+
+            // 缺料掩码（与材料计划缓存同频刷新，仅计划失败时非空）
+            TryGetPlan(data, mouseTile);
+            bool[,] missingMask = _missingMask;
 
             Vector2 screenPos = new Vector2(startX * 16, startY * 16) - Main.screenPosition;
             int pixelWidth = data.Width * 16;
@@ -63,7 +69,10 @@ namespace WandsTool.Content.Structure
                                 32, 32
                             );
 
-                            Color wallCol = Color.White * 0.55f;
+                            // 缺料格子以红色调渲染（含促动未激活的半透明态）
+                            Color wallCol = (missingMask != null && missingMask[x, y])
+                                ? new Color(255, 80, 80) * 0.55f
+                                : Color.White * 0.55f;
                             sb.Draw(wallTex, drawPos - new Vector2(8, 8), src, wallCol);
                         }
                     }
@@ -93,7 +102,16 @@ namespace WandsTool.Content.Structure
                             int safeY = Math.Max(0, Math.Min(frameY, tileTex.Height - 16));
                             Rectangle tileSrc = new Rectangle(safeX, safeY, 16, 16);
 
-                            Color tileCol = snap.InActive ? Color.White * 0.35f : Color.White * 0.70f;
+                            // 缺料格子以红色调渲染，其余保持原半透明材质
+                            Color tileCol;
+                            if (missingMask != null && missingMask[x, y])
+                            {
+                                tileCol = snap.InActive ? new Color(255, 80, 80) * 0.45f : new Color(255, 80, 80) * 0.75f;
+                            }
+                            else
+                            {
+                                tileCol = snap.InActive ? Color.White * 0.35f : Color.White * 0.70f;
+                            }
 
                             // 1. 平台（Platforms）专属虚影渲染（区分顶部平台、下移半砖平台与楼梯平台）
                             if (snap.TileType == Terraria.ID.TileID.Platforms ||
@@ -211,11 +229,181 @@ namespace WandsTool.Content.Structure
         }
         private static int _lastInvHash = -1;
         private static StructureData _lastData = null;
+        private static bool _lastConsume = false;
         private static bool _lastAutoCraft = false;
         private static bool _lastReqStation = false;
         private static bool _lastOverwrite = true;
         private static Point _lastMouseTile = Point.Zero;
         private static StructureCraftingEngine.CraftingPlan _cachedPlan = null;
+        private static bool[,] _missingMask = null;
+
+        /// <summary>
+        /// 获取（或按缓存键重建）当前蓝图的材料计划与缺料掩码；免消耗模式返回 null。
+        /// 缓存键：蓝图引用 + 背包指纹 + 配置开关 + 鼠标落点格（决定世界差量免除结果）。
+        /// </summary>
+        private static StructureCraftingEngine.CraftingPlan TryGetPlan(StructureData data, Point mouseTile)
+        {
+            Player player = Main.LocalPlayer;
+            if (data == null || player == null) return null;
+
+            // 剪切搬家零消耗：不构建计划与缺料掩码（避免整幅虚影误报标红与无效计算）
+            if (gameMain.CutSourceRect.HasValue)
+            {
+                _cachedPlan = null;
+                _missingMask = null;
+                return null;
+            }
+
+            bool overwrite = gameMain.Wand_StructureOverwrite;
+            bool consume = gameMain.Wand_StructureConsumeMaterials && ModConfig.IsConsumablesItem();
+            if (!consume)
+            {
+                _cachedPlan = null;
+                _missingMask = null;
+                return null;
+            }
+
+            bool autoCraft = gameMain.Wand_StructureAutoCraft && ModConfig.IsAutoCraftMaterials();
+            bool reqStation = gameMain.Wand_StructureAutoCraftRequireStation && ModConfig.IsAutoCraftRequireStation();
+            int invHash = StructureCraftingEngine.GetInventoryHash(player);
+
+            if (_cachedPlan == null || _lastInvHash != invHash || _lastData != data || _lastConsume != consume
+                || _lastAutoCraft != autoCraft || _lastReqStation != reqStation || _lastOverwrite != overwrite || _lastMouseTile != mouseTile)
+            {
+                _cachedPlan = StructureCraftingEngine.BuildPlan(data, player, autoCraft, reqStation, mouseTile, overwrite);
+                _lastInvHash = invHash;
+                _lastData = data;
+                _lastConsume = consume;
+                _lastAutoCraft = autoCraft;
+                _lastReqStation = reqStation;
+                _lastOverwrite = overwrite;
+                _lastMouseTile = mouseTile;
+                _missingMask = BuildMissingMask(data, mouseTile, overwrite, _cachedPlan);
+            }
+            return _cachedPlan;
+        }
+
+        /// <summary>
+        /// 逐格构建缺料掩码：按 GetRequiredItems 同款差量/锚点规则判定每格所需物品是否命中计划缺失集合。
+        /// 仅当计划失败且缺失集合非空时返回非 null；多格家具缺料时整件标红。
+        /// </summary>
+        private static bool[,] BuildMissingMask(StructureData data, Point mouseTile, bool overwrite, StructureCraftingEngine.CraftingPlan plan)
+        {
+            if (plan == null || plan.IsPossible || plan.MissingItemIds.Count == 0) return null;
+
+            int w = data.Width;
+            int h = data.Height;
+            bool[,] mask = new bool[w, h];
+            bool[,] counted = new bool[w, h];
+            int startX = mouseTile.X - data.OriginX;
+            int startY = mouseTile.Y - data.OriginY;
+            HashSet<int> missing = plan.MissingItemIds;
+
+            for (int x = 0; x < w; x++)
+            {
+                for (int y = 0; y < h; y++)
+                {
+                    TileSnapshot snap = data.Tiles[x, y];
+                    int wx = startX + x;
+                    int wy = startY + y;
+                    bool inWorldBounds = wx >= 0 && wx < Main.maxTilesX && wy >= 0 && wy < Main.maxTilesY;
+                    Tile worldTile = inWorldBounds ? Main.tile[wx, wy] : null;
+
+                    // 1. 背景墙：与 GetRequiredItems 相同的差量免除规则
+                    if (snap.HasWall)
+                    {
+                        bool wallAlreadySame = worldTile != null && worldTile.wall == snap.WallType;
+                        if (!wallAlreadySame && (overwrite || worldTile == null || worldTile.wall == 0))
+                        {
+                            int wallItem = StructureData.GetWallItemId(snap.WallType);
+                            if (wallItem > 0 && missing.Contains(wallItem)) mask[x, y] = true;
+                        }
+                    }
+
+                    // 2. 物块与家具：锚点定料，多格整件展开
+                    if (snap.HasTile && !counted[x, y])
+                    {
+                        bool isSame = inWorldBounds && StructureData.IsTileIdentical(worldTile, snap);
+                        if (isSame)
+                        {
+                            // 世界上已有相同物块/家具，整件标记为已处理
+                            MarkCounted(counted, data, x, y, snap.TileType);
+                            continue;
+                        }
+
+                        // 非覆盖模式下若世界该处已被其他物块占据，跳过
+                        if (!overwrite && worldTile != null && worldTile.active())
+                        {
+                            counted[x, y] = true;
+                            continue;
+                        }
+
+                        TileObjectData od = TileObjectData.GetTileData(snap.TileType, 0);
+                        if (od != null && (od.Width > 1 || od.Height > 1))
+                        {
+                            MarkCounted(counted, data, x, y, snap.TileType);
+                            int tileItem = StructureData.GetTileItemId(snap.TileType, snap.TileFrameX, snap.TileFrameY);
+                            if (tileItem > 0 && missing.Contains(tileItem))
+                            {
+                                for (int dx = 0; dx < od.Width && x + dx < w; dx++)
+                                {
+                                    for (int dy = 0; dy < od.Height && y + dy < h; dy++)
+                                    {
+                                        mask[x + dx, y + dy] = true;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            counted[x, y] = true;
+                            int tileItem = StructureData.GetTileItemId(snap.TileType, snap.TileFrameX, snap.TileFrameY);
+                            if (tileItem > 0 && missing.Contains(tileItem)) mask[x, y] = true;
+                        }
+                    }
+
+                    // 3. 电线与促动器
+                    if (missing.Contains(ItemID.Wire))
+                    {
+                        if ((snap.RedWire && (worldTile == null || !worldTile.wire())) ||
+                            (snap.GreenWire && (worldTile == null || !worldTile.wire3())) ||
+                            (snap.BlueWire && (worldTile == null || !worldTile.wire2())) ||
+                            (snap.YellowWire && (worldTile == null || !worldTile.wire4())))
+                        {
+                            mask[x, y] = true;
+                        }
+                    }
+                    if (snap.Actuator && (worldTile == null || !worldTile.actuator()) && missing.Contains(ItemID.Actuator))
+                    {
+                        mask[x, y] = true;
+                    }
+                }
+            }
+
+            return mask;
+        }
+
+        /// <summary>标记多格家具在掩码计数中的全部覆盖格（锚点展开规则与 GetRequiredItems 一致）</summary>
+        private static void MarkCounted(bool[,] counted, StructureData data, int x, int y, int tileType)
+        {
+            int w = data.Width;
+            int h = data.Height;
+            TileObjectData od = TileObjectData.GetTileData(tileType, 0);
+            if (od != null && (od.Width > 1 || od.Height > 1))
+            {
+                for (int dx = 0; dx < od.Width && x + dx < w; dx++)
+                {
+                    for (int dy = 0; dy < od.Height && y + dy < h; dy++)
+                    {
+                        counted[x + dx, y + dy] = true;
+                    }
+                }
+            }
+            else
+            {
+                counted[x, y] = true;
+            }
+        }
 
         private static void DrawMaterialTooltip(StructureData data)
         {
@@ -253,22 +441,8 @@ namespace WandsTool.Content.Structure
                 Dictionary<int, int> req = data.GetRequiredItems(mouseTile, overwrite);
                 Player player = Main.LocalPlayer;
 
-                StructureCraftingEngine.CraftingPlan plan = null;
-                if (consume)
-                {
-                    int invHash = StructureCraftingEngine.GetInventoryHash(player);
-                    if (_cachedPlan == null || _lastInvHash != invHash || _lastData != data || _lastAutoCraft != autoCraft || _lastReqStation != reqStation || _lastOverwrite != overwrite || _lastMouseTile != mouseTile)
-                    {
-                        _cachedPlan = StructureCraftingEngine.BuildPlan(data, player, autoCraft, reqStation, mouseTile, overwrite);
-                        _lastInvHash = invHash;
-                        _lastData = data;
-                        _lastAutoCraft = autoCraft;
-                        _lastReqStation = reqStation;
-                        _lastOverwrite = overwrite;
-                        _lastMouseTile = mouseTile;
-                    }
-                    plan = _cachedPlan;
-                }
+                StructureCraftingEngine.CraftingPlan plan = TryGetPlan(data, mouseTile);
+
                 int lineCount = 0;
                 foreach (var kvp in req)
                 {
