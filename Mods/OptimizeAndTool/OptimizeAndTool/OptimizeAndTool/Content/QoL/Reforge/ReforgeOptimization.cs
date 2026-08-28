@@ -332,11 +332,11 @@ namespace OptimizeAndTool.Content.QoL.Reforge
             Rectangle panelRect = new Rectangle(startX - 6, startY - 24, totalW + 12, totalH + 30);
             DrawPanel(spriteBatch, panelRect, new Color(16, 20, 36, 225), new Color(50, 68, 120, 220), 2);
 
-            // 绘制顶部标题
+            // 绘制顶部标题（支持 [c/RRGGBB:text] 颜色代码解析）
             string headerText = SelectedPrefixId > 0
                 ? $"目标: [c/FFD700:{Lang.prefix[SelectedPrefixId].Value}] (点击重铸锤自动重铸)"
                 : "选择目标前缀 (点击选定 / 点击重铸锤自动)";
-            Terraria.Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.MouseText.Value, headerText, startX, startY - 20, Color.White, Color.Black, Vector2.Zero, 0.75f);
+            ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.MouseText.Value, headerText, new Vector2(startX, startY - 20), Color.White, 0f, Vector2.Zero, new Vector2(0.75f));
 
             PrefixOption hoveredOpt = null;
             Rectangle hoveredBtnRect = Rectangle.Empty;
