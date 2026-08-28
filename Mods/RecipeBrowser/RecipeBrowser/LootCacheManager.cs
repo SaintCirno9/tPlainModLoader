@@ -8,6 +8,52 @@ namespace RecipeBrowser
 {
     internal static class LootCacheManager
     {
+        /// <summary>
+        /// 物品 → 掉率信息缓存（含全局掉落；替代 tML 的 ItemDropDatabase.GetRulesForItemID，供掉落查看器使用）
+        /// </summary>
+        internal static Dictionary<int, List<DropRateInfo>> itemDrops;
+
+        internal static void EnsureItemDropRates()
+        {
+            if (itemDrops != null) return;
+            itemDrops = new Dictionary<int, List<DropRateInfo>>();
+            try
+            {
+                if (Main.ItemDropsDB == null) return;
+
+                for (int i = -65; i < NPCID.Count; i++)
+                {
+                    if (i == 0) continue;
+                    try
+                    {
+                        List<IItemDropRule> rules = Main.ItemDropsDB.GetRulesForNPCID(i, true);
+                        if (rules == null || rules.Count == 0) continue;
+
+                        List<DropRateInfo> list = new List<DropRateInfo>();
+                        DropRateInfoChainFeed feed = new DropRateInfoChainFeed(1f);
+                        foreach (IItemDropRule rule in rules)
+                        {
+                            try { rule?.ReportDroprates(list, feed); } catch { }
+                        }
+                        foreach (DropRateInfo d in list)
+                        {
+                            if (d.itemId <= 0) continue;
+                            if (!itemDrops.TryGetValue(d.itemId, out var l))
+                            {
+                                itemDrops[d.itemId] = l = new List<DropRateInfo>();
+                            }
+                            l.Add(d);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RecipeBrowser] LootCacheManager.EnsureItemDropRates Error: {ex}");
+            }
+        }
+
         internal static void Setup()
         {
             try

@@ -50,6 +50,7 @@ namespace RecipeBrowser
         internal List<int> craftingTiles;
         internal bool updateNeeded;
         internal int slowUpdateNeeded;
+        internal int resultCount;
 
         internal int Tile
         {
@@ -95,6 +96,19 @@ namespace RecipeBrowser
             queryItem.Top.Set(4f, 0f);
             queryItem.emptyHintText = RBText("EmptyQuerySlotHint");
             mainPanel.Append(queryItem);
+
+            // 查询历史前进/后退按钮（对齐原版）
+            UISilentImageButton historyBackButton = new UISilentImageButton(RBTextures.HistoryBack, RBText("HistoryBackwardTooltip"));
+            historyBackButton.Left.Set(10f, 0f);
+            historyBackButton.Top.Set(46f, 0f);
+            historyBackButton.OnLeftClick += (evt, el) => (queryItem as UIRecipeCatalogueQueryItemSlot)?.GoBackInHistory();
+            mainPanel.Append(historyBackButton);
+
+            UISilentImageButton historyForwardButton = new UISilentImageButton(RBTextures.HistoryForward, RBText("HistoryForwardTooltip"));
+            historyForwardButton.Left.Set(34f, 0f);
+            historyForwardButton.Top.Set(46f, 0f);
+            historyForwardButton.OnLeftClick += (evt, el) => (queryItem as UIRecipeCatalogueQueryItemSlot)?.GoForwardInHistory();
+            mainPanel.Append(historyForwardButton);
 
             RadioButtonGroup = new UIRadioButtonGroup();
             RadioButtonGroup.Left.Pixels = 60f;
@@ -371,6 +385,7 @@ namespace RecipeBrowser
                 using (RBProfiler.Step("FilterAllRecipes (PassRecipeFilters)"))
                 {
                     recipeGrid.Clear();
+                    resultCount = 0;
                     for (int rIndex = 0; rIndex < Recipe.numRecipes; rIndex++)
                     {
                         Recipe r = Main.recipe[rIndex];
@@ -383,6 +398,7 @@ namespace RecipeBrowser
                         }
                         recipeGrid._items.Add(slot);
                         recipeGrid._innerList.Append(slot);
+                        resultCount++;
                     }
                 }
 
@@ -432,6 +448,28 @@ namespace RecipeBrowser
         {
             if (recipe == null || recipe.createItem == null) return false;
 
+            // Mod 过滤主开关（对齐原版）：选中某模组时，仅当循环过滤器开启时按 recipeBelongs 判定，否则结果物品必须属于该模组
+            if (RecipeBrowserUI.ModIndex != 0 && RecipeBrowserUI.instance?.mods != null && RecipeBrowserUI.ModIndex < RecipeBrowserUI.instance.mods.Length)
+            {
+                if (SharedUI.instance?.ModFilterByFilter == null || !SharedUI.instance.ModFilterByFilter.button.selected)
+                {
+                    string targetMod = RecipeBrowserUI.instance.mods[RecipeBrowserUI.ModIndex];
+                    if (targetMod == "Terraria")
+                    {
+                        if (recipe.createItem.type >= ItemID.Count) return false;
+                    }
+                    else
+                    {
+                        var modItem = TPML.Content.ItemLoader.GetModItem(recipe.createItem.type);
+                        if (modItem?.Mod?.Name != targetMod) return false;
+                    }
+                }
+                else if (SharedUI.instance.ModFilterByFilter.recipeBelongs != null && !SharedUI.instance.ModFilterByFilter.recipeBelongs(recipe))
+                {
+                    return false;
+                }
+            }
+
             if (NearbyIngredientsRadioButton.Selected && !PassNearbyChestFilter(recipe))
             {
                 return false;
@@ -473,6 +511,8 @@ namespace RecipeBrowser
             {
                 foreach (var filter in SharedUI.instance.availableFilters)
                 {
+                    // 注：原版有"未勾选 DisabledFilter 时隐藏禁用配方"逻辑，依赖 tML 的 Recipe.Disabled 扩展属性；
+                    // TPML 原版 Recipe 无 Disabled 概念（无禁用配方数据源），该过滤在 TPML 生态下无意义，故省略。
                     if (!filter.button.selected) continue;
                     if (!filter.belongs(recipe.createItem)) return false;
                     if (filter.recipeBelongs != null && !filter.recipeBelongs(recipe)) return false;
@@ -714,6 +754,13 @@ namespace RecipeBrowser
 
         private void ValidateItemFilter()
         {
+            // 搜索防呆（对齐原版）：结果为空时回退删除最后一个输入字符
+            if (itemNameFilter == null || itemNameFilter.currentString.Length == 0 || resultCount != 0)
+            {
+                updateNeeded = true;
+                return;
+            }
+            itemNameFilter.SetText(itemNameFilter.currentString.Substring(0, itemNameFilter.currentString.Length - 1));
             updateNeeded = true;
         }
 

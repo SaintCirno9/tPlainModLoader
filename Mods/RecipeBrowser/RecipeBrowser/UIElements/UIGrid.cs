@@ -198,6 +198,7 @@ namespace RecipeBrowser.UIElements
             {
                 _innerList.Top.Set(-_scrollbar.GetValue(), 0f);
             }
+            // 注：原版 LockVanillaMouseScroll 为 tML 扩展，TPML 原版 PlayerInput 无此 API
             Recalculate();
         }
 

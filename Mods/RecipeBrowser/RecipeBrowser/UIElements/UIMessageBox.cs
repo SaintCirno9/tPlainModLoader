@@ -92,6 +92,7 @@ namespace RecipeBrowser.UIElements
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             base.DrawSelf(spriteBatch);
+            // 注：原版 LockVanillaMouseScroll 为 tML 扩展，TPML 原版 PlayerInput 无此 API
             Recalculate();
         }
 

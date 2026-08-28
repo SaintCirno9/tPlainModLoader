@@ -21,7 +21,8 @@ namespace RecipeBrowser
         public bool ShowAllNPCs { get; set; } = false;
         public bool AutomaticallyHideWhenItemSlotClicked { get; set; } = false;
         public bool SaveLastSelectedRecipe { get; set; } = false;
-        public bool OnlyShowFavoritedWhileInInventory { get; set; } = false;
+        // 对齐原版默认值：收藏面板默认仅在背包打开时显示
+        public bool OnlyShowFavoritedWhileInInventory { get; set; } = true;
         public bool EnableProfiler { get; set; } = false;
 
         public Vector2 RecipeBrowserPosition { get; set; } = new Vector2(-1, -1);

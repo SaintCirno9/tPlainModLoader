@@ -38,6 +38,7 @@ namespace RecipeBrowser
         internal List<UIItemCatalogueItemSlot> itemSlots;
         internal bool[] craftResults;
         internal bool[] isLoot;
+        internal int itemResultCount;
         internal List<UIElement> additionalDragTargets;
         internal UICheckbox CraftedRadioButton;
         internal UICheckbox LootRadioButton;
@@ -155,6 +156,11 @@ namespace RecipeBrowser
         {
             if (x is UIPanel) return -1;
             if (y is UIPanel) return 1;
+            // Armor Sets 槽位按套装总防御排序（对齐原版）
+            if (x is UIArmorSetCatalogueItemSlot a1 && y is UIArmorSetCatalogueItemSlot a2)
+            {
+                return a1.set.Item5.CompareTo(a2.set.Item5);
+            }
             if (x is UIItemCatalogueItemSlot s1 && y is UIItemCatalogueItemSlot s2)
             {
                 if (SharedUI.instance?.SelectedSort != null)
@@ -168,6 +174,13 @@ namespace RecipeBrowser
 
         private void ValidateItemFilter()
         {
+            // 搜索防呆（对齐原版）：结果为空时回退删除最后一个输入字符
+            if (itemNameFilter == null || itemNameFilter.currentString.Length == 0 || itemResultCount != 0)
+            {
+                updateNeeded = true;
+                return;
+            }
+            itemNameFilter.SetText(itemNameFilter.currentString.Substring(0, itemNameFilter.currentString.Length - 1));
             updateNeeded = true;
         }
 
@@ -187,6 +200,7 @@ namespace RecipeBrowser
             if (!updateNeeded) return;
             updateNeeded = false;
             slowUpdateNeeded = 0;
+            itemResultCount = 0;
 
             if (itemSlots.Count == 0)
             {
@@ -245,12 +259,27 @@ namespace RecipeBrowser
             itemGrid.Clear();
             List<UIItemCatalogueItemSlot> list = itemSlots;
 
+            // Armor Sets 分类：用套装槽位列表填充 + 附加控制面板（对齐原版）
+            if (SharedUI.instance?.SelectedCategory != null && SharedUI.instance.SelectedCategory.name == ArmorSetFeatureHelper.ArmorSetsInternalName)
+            {
+                if (ArmorSetFeatureHelper.armorSetSlots == null)
+                {
+                    ArmorSetFeatureHelper.GetArmorSets();
+                }
+                if (ArmorSetFeatureHelper.armorSetSlots != null)
+                {
+                    list = ArmorSetFeatureHelper.armorSetSlots.Cast<UIItemCatalogueItemSlot>().ToList();
+                }
+                ArmorSetFeatureHelper.AppendSpecialUI(itemGrid);
+            }
+
             foreach (var slot in list)
             {
                 if (PassItemFilters(slot))
                 {
                     itemGrid._items.Add(slot);
                     itemGrid._innerList.Append(slot);
+                    itemResultCount++;
                 }
             }
             itemGrid.UpdateOrder();
@@ -411,7 +440,56 @@ namespace RecipeBrowser
         internal void PopulateItemDropViewerPanel(int type)
         {
             itemDropViewerGrid.Clear();
-            ToggleItemDropViewer(false);
+
+            // TPML 原版 API 无 ItemDropDatabase.GetRulesForItemID（tML 扩展），
+            // 改用 LootCacheManager 遍历 NPC 规则构建的"物品→掉率"缓存（含全局掉落）
+            List<DropRateInfo> drops = new List<DropRateInfo>();
+            try
+            {
+                LootCacheManager.EnsureItemDropRates();
+                if (LootCacheManager.itemDrops != null && LootCacheManager.itemDrops.TryGetValue(type, out var list) && list != null)
+                {
+                    drops = list;
+                }
+            }
+            catch { }
+
+            ToggleItemDropViewer(drops.Count > 0);
+            if (drops.Count == 0) return;
+
+            int expectedValue = 0;
+            UIText expectedText = new UIText(RBText("ExpectedValue", "ItemCatalogueUI", "?"), 1f, false);
+            expectedText.SetPadding(6f);
+            itemDropViewerGrid.Add(expectedText);
+
+            foreach (DropRateInfo drop in drops)
+            {
+                // 触发原版掉落条目的静态资源加载（对齐原版行为）
+                new ItemDropBestiaryInfoElement(drop);
+                bool show = SharedUI.ShouldShowItemDrop(drop);
+                UIBestiaryInfoItemLine line = new UIBestiaryInfoItemLine(drop, new BestiaryUICollectionInfo
+                {
+                    UnlockState = BestiaryEntryUnlockState.CanShowDropsWithDropRates_4,
+                    OwnerEntry = null
+                }, 1f);
+                if (!show)
+                {
+                    line.BackgroundColor = Color.Red;
+                }
+                else if (ContentSamples.ItemsByType.TryGetValue(drop.itemId, out var valueItem) && valueItem != null)
+                {
+                    expectedValue += (int)((drop.stackMin + drop.stackMax) / 2f * drop.dropRate * valueItem.value * 0.2f);
+                }
+                itemDropViewerGrid.Add(line);
+            }
+
+            if (expectedValue > 1000000)
+            {
+                expectedValue -= expectedValue % 100;
+            }
+            expectedText.SetText(RBText("ExpectedValue", "ItemCatalogueUI", CraftPath.BuyItemNode.GetTotalCostAsTags(expectedValue)));
+            itemDropViewerGrid.UpdateOrder();
+            itemDropViewerGrid._innerList.Recalculate();
         }
     }
 }

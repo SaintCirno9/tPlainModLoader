@@ -170,5 +170,86 @@ namespace RecipeBrowser
                 Main.instance.LoadNPC(type);
             }
         }
+
+        /// <summary>
+        /// CPU 像素缩放（最近邻，保持透明通道），替代原版 GPU RenderTarget 缩放——
+        /// 遵循 UI 绘制期间禁止嵌套 RenderTarget 的稳定性原则
+        /// </summary>
+        internal static Texture2D ResizeImage(Texture2D source, int width, int height)
+        {
+            if (source == null || Main.graphics?.GraphicsDevice == null) return TextureAssets.MagicPixel?.Value;
+            if (source.Width == width && source.Height == height) return source;
+
+            try
+            {
+                Color[] src = new Color[source.Width * source.Height];
+                source.GetData(src);
+                Color[] dst = new Color[width * height];
+                for (int y = 0; y < height; y++)
+                {
+                    int srcY = y * source.Height / height;
+                    if (srcY >= source.Height) srcY = source.Height - 1;
+                    for (int x = 0; x < width; x++)
+                    {
+                        int srcX = x * source.Width / width;
+                        if (srcX >= source.Width) srcX = source.Width - 1;
+                        dst[y * width + x] = src[srcY * source.Width + srcX];
+                    }
+                }
+                Texture2D result = new Texture2D(Main.instance.GraphicsDevice, width, height);
+                result.SetData(dst);
+                return result;
+            }
+            catch
+            {
+                return TextureAssets.MagicPixel?.Value;
+            }
+        }
+
+        /// <summary>
+        /// CPU 多纹理水平并排合成并缩放到目标尺寸（原版 StackResizeImage 的等价实现）
+        /// </summary>
+        internal static Texture2D StackResizeImage(Texture2D[] sources, int width, int height)
+        {
+            if (sources == null || sources.Length == 0 || Main.graphics?.GraphicsDevice == null) return TextureAssets.MagicPixel?.Value;
+            try
+            {
+                int count = sources.Length;
+                int slice = Math.Max(1, width / count);
+                Color[] dst = new Color[width * height];
+                for (int i = 0; i < count; i++)
+                {
+                    Texture2D src = sources[i];
+                    if (src == null) continue;
+                    int srcW = src.Width;
+                    int srcH = src.Height;
+                    if (srcW <= 0 || srcH <= 0) continue;
+                    Color[] srcPixels = new Color[srcW * srcH];
+                    src.GetData(srcPixels);
+
+                    int startX = i * slice;
+                    int endX = Math.Min(width, startX + slice);
+                    for (int y = 0; y < height; y++)
+                    {
+                        int srcY = y * srcH / height;
+                        if (srcY >= srcH) srcY = srcH - 1;
+                        for (int x = startX; x < endX; x++)
+                        {
+                            int localX = x - startX;
+                            int srcX = localX * srcW / slice;
+                            if (srcX >= srcW) srcX = srcW - 1;
+                            dst[y * width + x] = srcPixels[srcY * srcW + srcX];
+                        }
+                    }
+                }
+                Texture2D result = new Texture2D(Main.instance.GraphicsDevice, width, height);
+                result.SetData(dst);
+                return result;
+            }
+            catch
+            {
+                return TextureAssets.MagicPixel?.Value;
+            }
+        }
     }
 }

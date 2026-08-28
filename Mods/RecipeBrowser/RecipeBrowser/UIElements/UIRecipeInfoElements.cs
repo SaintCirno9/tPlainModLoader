@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -183,34 +184,103 @@ namespace RecipeBrowser.UIElements
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
+            if (CraftUI.instance?.recipeResultItemSlot?.item != null && CraftUI.instance.recipeResultItemSlot.item.IsAir)
+            {
+                return;
+            }
+
             CalculatedStyle dimensions = GetDimensions();
             Vector2 drawPos = new Vector2(dimensions.X, dimensions.Y);
+            float x = drawPos.X;
+            float y = drawPos.Y;
 
-            int count = (tiles != null ? tiles.Count : 0) + (needWater ? 1 : 0) + (needHoney ? 1 : 0) + (needLava ? 1 : 0);
-            if (count == 0)
+            // 条件文本（TPML 原版 Recipe 无 tML 的 Conditions 列表，用 needXxx 布尔手动构建，对齐 UIRecipeInfo 的展示方式）
+            StringBuilder sb = new StringBuilder();
+            bool comma = false;
+            if (recipe != null)
+            {
+                if (recipe.needWater)
+                {
+                    string water = Language.GetTextValue("LegacyInterface.53");
+                    if (string.IsNullOrEmpty(water) || water == "LegacyInterface.53") water = "水";
+                    DoChatTag(sb, comma, Main.LocalPlayer.adjWaterSource, water);
+                    comma = true;
+                }
+                if (recipe.needHoney)
+                {
+                    string honey = Language.GetTextValue("LegacyInterface.58");
+                    if (string.IsNullOrEmpty(honey) || honey == "LegacyInterface.58") honey = "蜂蜜";
+                    DoChatTag(sb, comma, Main.LocalPlayer.adjHoney, honey);
+                    comma = true;
+                }
+                if (recipe.needLava)
+                {
+                    string lava = Language.GetTextValue("LegacyInterface.56");
+                    if (string.IsNullOrEmpty(lava) || lava == "LegacyInterface.56") lava = "熔岩";
+                    DoChatTag(sb, comma, Main.LocalPlayer.adjLava, lava);
+                    comma = true;
+                }
+            }
+            string conditionText = sb.ToString();
+            float textWidth = conditionText.Length > 0 ? ChatManager.GetStringSize(FontAssets.MouseText.Value, conditionText, Vector2.One, -1f).X : 0f;
+            if (textWidth > 0f)
+            {
+                ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.MouseText.Value, conditionText, new Vector2(x - textWidth, y), Color.White, 0f, Vector2.Zero, Vector2.One, -1f, 2f);
+            }
+            textWidth += 2f;
+
+            int num = 0;
+            if (tiles != null)
+            {
+                foreach (int tileId in tiles)
+                {
+                    if (tileId < 0) continue;
+                    Texture2D tex = Utilities.GetTileImage(tileId);
+                    if (tex == null) continue;
+                    num++;
+                    float scale = 1f;
+                    const float maxDim = 22f;
+                    if (tex.Width > maxDim || tex.Height > maxDim)
+                    {
+                        scale = (tex.Width <= tex.Height) ? (maxDim / tex.Height) : (maxDim / tex.Width);
+                    }
+                    Vector2 iconPos = new Vector2(x - textWidth - num * 24 + 11f, y + 11f);
+                    spriteBatch.Draw(tex, iconPos, null, Color.White, 0f, new Vector2(tex.Width, tex.Height) * 0.5f, scale, SpriteEffects.None, 0f);
+
+                    // ✓/X/? 三态（对齐原版：临近工作台 ✓、已见过 X、未见 ?）
+                    bool adj = Main.LocalPlayer.adjTile != null && tileId < Main.LocalPlayer.adjTile.Length && Main.LocalPlayer.adjTile[tileId];
+                    bool seen = RecipeBrowserPlayer.seenTiles != null && tileId < RecipeBrowserPlayer.seenTiles.Length && RecipeBrowserPlayer.seenTiles[tileId];
+                    string marker = adj ? "✓" : (seen ? "X" : "?");
+                    Color markerColor = adj ? Utilities.yesColor : (seen ? Utilities.maybeColor : Utilities.noColor);
+                    ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.ItemStack.Value, marker,
+                        new Vector2(x - textWidth - num * 24, y) + new Vector2(14f, 10f), markerColor, 0f, Vector2.Zero, new Vector2(0.7f), -1f, 2f);
+
+                    Rectangle hoverRect = new Rectangle((int)(x - textWidth - num * 24), (int)y, 22, 22);
+                    if (hoverRect.Contains(Utils.ToPoint(Main.MouseScreen)))
+                    {
+                        string tileName = Utilities.GetTileName(tileId);
+                        string status = adj ? "" : (seen ? RBLanguage.GetText("CraftUI", "Missing") : RBLanguage.GetText("CraftUI", "Unseen"));
+                        UICommon.TooltipMouseText($"[c/{Utils.Hex3(markerColor)}:{status}{tileName}]");
+                    }
+                }
+            }
+
+            // 徒手（无工作台）
+            if (num == 0 && (tiles == null || tiles.Count == 0 || tiles.All(t => t < 0)))
             {
                 Texture2D byHand = RBTextures.TileByHand ?? TextureAssets.MagicPixel.Value;
-                spriteBatch.Draw(byHand, drawPos, Color.White);
+                spriteBatch.Draw(byHand, new Vector2(x - textWidth - 12f, y), Color.White);
                 if (IsMouseHovering)
                 {
                     UICommon.TooltipMouseText(RBLanguage.GetText("RecipeCatalogueUI", "ByHand"));
                 }
             }
-            else
-            {
-                if (tiles != null && tiles.Count > 0)
-                {
-                    Texture2D tex = Utilities.GetTileImage(tiles[0]);
-                    if (tex != null)
-                    {
-                        spriteBatch.Draw(tex, drawPos, Color.White);
-                        if (IsMouseHovering)
-                        {
-                            UICommon.TooltipMouseText(Recipe.GetRequiredTileName(tiles[0]));
-                        }
-                    }
-                }
-            }
+        }
+
+        private void DoChatTag(StringBuilder sb, bool comma, bool state, string text)
+        {
+            sb.Append(comma ? ", " : "");
+            sb.Append($"[c/{Utils.Hex3(state ? Utilities.yesColor : Utilities.noColor)}:{text}]");
         }
     }
 }

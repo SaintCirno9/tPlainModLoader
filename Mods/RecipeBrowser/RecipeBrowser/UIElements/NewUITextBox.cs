@@ -129,6 +129,7 @@ namespace RecipeBrowser.UIElements
             {
                 PlayerInput.WritingText = true;
                 Main.instance.HandleIME();
+                // 注：原版 DrawWindowsIMEPanel 为 tML 扩展，TPML 原版 Main 无此 API；HandleIME 已处理输入法文本
                 string inputText = Main.GetInputText(currentString, false);
                 if (!inputText.Equals(currentString))
                 {

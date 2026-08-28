@@ -44,7 +44,8 @@ namespace RecipeBrowser
                     {
                         try
                         {
-                            // 箭头追踪
+                            // 箭头追踪（对齐原版 HandleArrow）
+                            RecipeBrowserUI.instance?.HandleArrow();
                         }
                         catch { }
                         return true;

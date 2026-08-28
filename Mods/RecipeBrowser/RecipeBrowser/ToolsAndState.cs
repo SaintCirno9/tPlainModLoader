@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.UI;
 
@@ -76,6 +77,26 @@ namespace RecipeBrowser
         }
 
         internal virtual void Initialize()
+        {
+        }
+
+        /// <summary>客户端初始化（对齐原版 Tool.ClientInitialize，默认空实现）</summary>
+        internal virtual void ClientInitialize()
+        {
+        }
+
+        /// <summary>内容加载后回调（对齐原版 Tool.PostSetupContent，默认空实现）</summary>
+        internal virtual void PostSetupContent()
+        {
+        }
+
+        /// <summary>开关状态变化（对齐原版 Tool.Toggled，默认空实现）</summary>
+        internal virtual void Toggled()
+        {
+        }
+
+        /// <summary>绘制开关辅助（对齐原版 Tool.DrawUpdateToggle，默认空实现）</summary>
+        internal virtual void DrawUpdateToggle(SpriteBatch spriteBatch, bool active)
         {
         }
 

@@ -72,11 +72,6 @@ namespace RecipeBrowser.UIElements
             {
                 if (Main.keyState.IsKeyDown(Main.FavoriteKey))
                 {
-                    favorited = !favorited;
-                    RecipeBrowserUI.instance.FavoriteChange(index, favorited);
-                }
-                else
-                {
                     if (Main.drawingPlayerChat)
                     {
                         StringBuilder sb = new StringBuilder();
@@ -93,25 +88,28 @@ namespace RecipeBrowser.UIElements
                     }
                     else
                     {
-                        using (RBProfiler.Step("RecipeCatalogueUI.SetRecipe"))
-                        {
-                            RecipeCatalogueUI.instance.SetRecipe(index);
-                        }
+                        RecipeBrowserUI.instance.FavoriteChange(index, !favorited);
                     }
                 }
-
-                if (Main.playerInventory)
+                else
                 {
-                    using (RBProfiler.Step("Sync focusRecipe"))
+                    using (RBProfiler.Step("RecipeCatalogueUI.SetRecipe"))
                     {
-                        for (int i = 0; i < Main.numAvailableRecipes; i++)
-                        {
-                            if (index == Main.availableRecipe[i])
-                            {
-                                Main.focusRecipe = i;
-                                break;
-                            }
-                        }
+                        RecipeCatalogueUI.instance.SetRecipe(index);
+                    }
+                    RecipeCatalogueUI.instance.queryLootItem = Main.recipe[index].createItem;
+                    RecipeCatalogueUI.instance.updateNeeded = true;
+                }
+
+                // 对齐原版：点击可合成配方时聚焦原版制作面板
+                // 注：原版还设置 Main.recFastScroll（tML 字段），TPML 原版 Main 无此字段，仅保留 playerInventory/focusRecipe
+                for (int i = 0; i < Main.numAvailableRecipes; i++)
+                {
+                    if (index == Main.availableRecipe[i])
+                    {
+                        Main.playerInventory = true;
+                        Main.focusRecipe = i;
+                        break;
                     }
                 }
             }
@@ -123,16 +121,21 @@ namespace RecipeBrowser.UIElements
             {
                 if (!Main.keyState.IsKeyDown(Main.FavoriteKey))
                 {
-                    RecipeBrowserUI.instance.tabController.SetPanel(1);
-                    CraftUI.instance.SetRecipe(index);
+                    RecipeCatalogueUI.instance.itemDescriptionFilter?.SetText("");
+                    RecipeCatalogueUI.instance.itemNameFilter?.SetText("");
+                    RecipeCatalogueUI.instance.queryItem.ReplaceWithFake(item.type);
                 }
             }
         }
 
         public override void RightClick(UIMouseEvent evt)
         {
-            favorited = !favorited;
-            RecipeBrowserUI.instance.FavoriteChange(index, favorited);
+            base.RightClick(evt);
+            RecipeCatalogueUI.instance.SetRecipe(index);
+            RecipeCatalogueUI.instance.queryLootItem = Main.recipe[index].createItem;
+            RecipeCatalogueUI.instance.updateNeeded = true;
+            RecipeBrowserUI.instance.tabController.SetPanel(1);
+            CraftUI.instance.SetRecipe(index);
         }
 
         public override int CompareTo(object obj)
@@ -146,16 +149,15 @@ namespace RecipeBrowser.UIElements
         public int CompareToIgnoreIndex(UIRecipeSlot other)
         {
             if (other == null) return 1;
-            int num = (other.favorited ? 1 : 0) - (favorited ? 1 : 0);
-            if (num != 0) return num;
-            int num2 = (other.recentlyDiscovered ? 1 : 0) - (recentlyDiscovered ? 1 : 0);
-            if (num2 != 0) return num2;
-            int num3 = (other.AbleToCraft() ? 1 : 0) - (AbleToCraft() ? 1 : 0);
-            if (num3 != 0) return num3;
-            if (RecipePath.extendedCraft)
+            if (favorited && !other.favorited) return -1;
+            if (!favorited && other.favorited) return 1;
+            if (recentlyDiscovered && !other.recentlyDiscovered) return -1;
+            if (!recentlyDiscovered && other.recentlyDiscovered) return 1;
+            if (favorited && other.favorited)
             {
-                int num4 = (other.AbleToCraftExtended() ? 1 : 0) - (AbleToCraftExtended() ? 1 : 0);
-                if (num4 != 0) return num4;
+                // 对齐原版：收藏配方按收藏顺序排序
+                return RecipeBrowserUI.instance.localPlayerFavoritedRecipes.IndexOf(index)
+                    .CompareTo(RecipeBrowserUI.instance.localPlayerFavoritedRecipes.IndexOf(other.index));
             }
             return 0;
         }
@@ -223,28 +225,56 @@ namespace RecipeBrowser.UIElements
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            Texture2D backTex = TextureAssets.InventoryBack.Value;
-            if (selected) backTex = selectedBackgroundTexture ?? backTex;
-            else if (favorited) backTex = favoritedBackgroundTexture ?? backTex;
-            else if (AbleToCraft()) backTex = ableToCraftBackgroundTexture ?? backTex;
-            else if (RecipePath.extendedCraft && AbleToCraftExtended()) backTex = ableToCraftExtendedBackgroundTexture ?? backTex;
-
-            CalculatedStyle dimensions = GetDimensions();
-            spriteBatch.Draw(backTex, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-
-            DrawItem(spriteBatch, item, dimensions.Position(), scale);
+            if (RecipePath.extendedCraft) craftPathNeeded = true;
 
             if (IsMouseHovering)
             {
-                Main.hoverItemName = item.HoverName;
-                Main.HoverItem = item.Clone();
+                // 收藏键悬停时切换光标（对齐原版），并上报悬停配方索引
+                if (Main.keyState.IsKeyDown(Main.FavoriteKey))
+                {
+                    Main.cursorOverride = Main.drawingPlayerChat ? 2 : 3;
+                }
+                if (RecipeCatalogueUI.instance != null)
+                {
+                    RecipeCatalogueUI.instance.hoveredIndex = index;
+                }
+            }
+
+            // 背景优先级链（对齐原版）：默认 → 扩展可合成 → 直接可合成 → 新发现
+            BackgroundTexture = TextureAssets.InventoryBack.Value;
+            if ((craftPathCalculated || craftPathsCalculated) && craftPaths != null && craftPaths.Count > 0)
+            {
+                BackgroundTexture = ableToCraftExtendedBackgroundTexture ?? BackgroundTexture;
+            }
+            if (AbleToCraft())
+            {
+                BackgroundTexture = ableToCraftBackgroundTexture ?? BackgroundTexture;
+            }
+            if (recentlyDiscovered)
+            {
+                BackgroundTexture = TextureAssets.InventoryBack8?.Value ?? BackgroundTexture;
+            }
+
+            base.DrawSelf(spriteBatch);
+        }
+
+        internal override void DrawAdditionalOverlays(SpriteBatch spriteBatch, Vector2 position, float scale)
+        {
+            base.DrawAdditionalOverlays(spriteBatch, position, scale);
+            if (favorited && favoritedBackgroundTexture != null)
+            {
+                spriteBatch.Draw(favoritedBackgroundTexture, position, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            }
+            if (selected && selectedBackgroundTexture != null)
+            {
+                spriteBatch.Draw(selectedBackgroundTexture, position, null, Color.White * Main.essScale, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
         }
     }
 
     public class UIMockRecipeSlot : UIItemSlot
     {
-        public static Texture2D ableToCraftBackgroundTexture;
+        public static Texture2D ableToCraftBackgroundTexture => RBTextures.AbleToCraftBackground;
         private UIRecipeSlot slot;
 
         public UIMockRecipeSlot(UIRecipeSlot slot, float scale = 0.75f) : base(slot.item, scale)
@@ -255,18 +285,65 @@ namespace RecipeBrowser.UIElements
         public override void LeftClick(UIMouseEvent evt)
         {
             slot.LeftClick(evt);
+            if (Main.keyState.IsKeyDown(Main.FavoriteKey))
+            {
+                return;
+            }
+            if ((slot.craftPathCalculated || slot.craftPathsCalculated) && slot.craftPaths != null && slot.craftPaths.Count > 0)
+            {
+                RecipeBrowserUI.instance.tabController.SetPanel(1);
+                CraftUI.instance.SetRecipe(slot.index);
+                if (!RecipeBrowserUI.instance.ShowRecipeBrowser)
+                {
+                    RecipeBrowserUI.instance.ShowRecipeBrowser = true;
+                }
+                return;
+            }
+            RecipeBrowserUI.instance.tabController.SetPanel(0);
+            RecipeCatalogueUI.instance.recipeGrid.Goto(el => el as UIRecipeSlot == slot, center: true);
+            if (!RecipeBrowserUI.instance.ShowRecipeBrowser)
+            {
+                RecipeBrowserUI.instance.ShowRecipeBrowser = true;
+            }
         }
 
         public override void RightClick(UIMouseEvent evt)
         {
-            slot.RightClick(evt);
+            RecipeBrowserUI.instance.ShowRecipeBrowser = false;
+        }
+
+        internal override void DrawAdditionalOverlays(SpriteBatch spriteBatch, Vector2 position, float scale)
+        {
+            bool favorited = slot.favorited;
+            slot.favorited = false;
+            slot.DrawAdditionalOverlays(spriteBatch, position, scale);
+            slot.favorited = favorited;
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            Texture2D backTex = TextureAssets.InventoryBack.Value;
-            if (slot.AbleToCraft()) backTex = ableToCraftBackgroundTexture ?? backTex;
-            else if (RecipePath.extendedCraft && slot.AbleToCraftExtended()) backTex = UIRecipeSlot.ableToCraftExtendedBackgroundTexture ?? backTex;
+            if (IsMouseHovering && Main.keyState.IsKeyDown(Main.FavoriteKey))
+            {
+                Main.cursorOverride = Main.drawingPlayerChat ? 2 : 3;
+            }
+            if (RecipePath.extendedCraft)
+            {
+                slot.CraftPathNeeded();
+            }
+
+            Texture2D backTex = TextureAssets.InventoryBack11?.Value ?? TextureAssets.InventoryBack.Value;
+            if ((slot.craftPathCalculated || slot.craftPathsCalculated) && slot.craftPaths != null && slot.craftPaths.Count > 0)
+            {
+                backTex = UIRecipeSlot.ableToCraftExtendedBackgroundTexture ?? backTex;
+            }
+            for (int i = 0; i < Main.numAvailableRecipes; i++)
+            {
+                if (slot.index == Main.availableRecipe[i])
+                {
+                    backTex = ableToCraftBackgroundTexture ?? backTex;
+                    break;
+                }
+            }
 
             CalculatedStyle dimensions = GetDimensions();
             spriteBatch.Draw(backTex, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
@@ -445,10 +522,22 @@ namespace RecipeBrowser.UIElements
             bool flag = AbleToCraft();
             CalculatedStyle dimensions = GetDimensions();
             Vector2 position = new Vector2(dimensions.X, dimensions.Y);
-            spriteBatch.Draw(TextureAssets.Reforge[(!flag) ? 1 : 0].Value, position, Color.White);
-            if (IsMouseHovering)
+            // 对齐原版：悬停且可合成时用高亮帧，0.75 缩放绘制
+            spriteBatch.Draw(TextureAssets.Reforge[(IsMouseHovering && flag) ? 1 : 0].Value, position, null, Color.White, 0f, Vector2.Zero, 0.75f, SpriteEffects.None, 0f);
+            // ✓/X 状态字（对齐原版）
+            ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.ItemStack.Value, flag ? "✓" : "X", position + new Vector2(14f, 10f), flag ? Utilities.yesColor : Color.LightSalmon, 0f, Vector2.Zero, new Vector2(0.7f), -1f, 2f);
+            if (IsMouseHovering && flag)
             {
-                Main.hoverItemName = flag ? RBLanguage.GetText("CraftUI", "Craft") : RBLanguage.GetText("CraftUI", "CannotCraft");
+                UICommon.TooltipMouseText(RBLanguage.GetText("CraftUI", "Craft"));
+            }
+        }
+
+        public override void MouseOver(UIMouseEvent evt)
+        {
+            base.MouseOver(evt);
+            if (AbleToCraft())
+            {
+                SoundEngine.PlaySound(SoundID.MenuTick);
             }
         }
 

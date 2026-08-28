@@ -105,6 +105,19 @@ namespace RecipeBrowser
         {
             seenTiles = _seenTiles;
 
+            // 背包扫描：登记已有物品对应的工作台为已见（对齐原版 OnEnterWorld 逐个 ItemReceived）
+            if (RecipeBrowserUI.instance != null)
+            {
+                for (int i = 0; i < 58; i++)
+                {
+                    Item invItem = Player.inventory[i];
+                    if (invItem != null && !invItem.IsAir)
+                    {
+                        RecipeBrowserUI.instance.ItemReceived(invItem);
+                    }
+                }
+            }
+
             int centerTileX = (int)(Player.Center.X / 16f);
             int centerTileY = (int)(Player.Center.Y / 16f);
 
@@ -161,6 +174,16 @@ namespace RecipeBrowser
                     RecipeCatalogueUI.instance?.InvalidateExtendedCraft();
                 }
             }
+        }
+
+        public override bool OnPickup(Item item)
+        {
+            // 拾取物品 → 实时登记已见工作台（对齐原版 RecipeBrowserGlobalItem.OnPickup 语义）
+            if (item != null && Player != null && Player.whoAmI == Main.myPlayer)
+            {
+                RecipeBrowserUI.instance?.ItemReceived(item);
+            }
+            return true;
         }
 
         public override void ProcessTriggers(TriggersSet triggersSet)

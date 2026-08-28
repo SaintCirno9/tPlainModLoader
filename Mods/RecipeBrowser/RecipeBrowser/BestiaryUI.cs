@@ -254,6 +254,12 @@ namespace RecipeBrowser
 
         private bool PassNPCFilters(UINPCSlot slot)
         {
+            // Mod 过滤（对齐原版）：TPML 生态无模组 NPC，选中非 Terraria 模组时图鉴为空
+            if (RecipeBrowserUI.ModIndex != 0 && RecipeBrowserUI.instance?.mods != null && RecipeBrowserUI.ModIndex < RecipeBrowserUI.instance.mods.Length)
+            {
+                string selectedMod = RecipeBrowserUI.instance.mods[RecipeBrowserUI.ModIndex];
+                if (selectedMod != "Terraria") return false;
+            }
             if (EncounteredRadioButton.Selected && (EncounteredRadioButtonIsUnencountered == RecipePath.NPCUnlocked(slot.npc.netID)))
             {
                 return false;

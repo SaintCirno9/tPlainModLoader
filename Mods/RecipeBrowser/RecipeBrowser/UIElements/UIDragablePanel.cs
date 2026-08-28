@@ -77,6 +77,21 @@ namespace RecipeBrowser.UIElements
             {
                 dragging = false;
                 resizeing = false;
+
+                // 收藏面板位置持久化（对齐原版 DragEnd）
+                if (RecipeBrowserUI.instance != null && this == RecipeBrowserUI.instance.favoritePanel)
+                {
+                    try
+                    {
+                        var config = RecipeBrowserClientConfig.Instance;
+                        if (config != null)
+                        {
+                            config.FavoritedRecipePanelPosition = new Vector2(Left.Pixels, Top.Pixels);
+                            RecipeBrowserClientConfig.SaveConfig();
+                        }
+                    }
+                    catch { }
+                }
             }
         }
 

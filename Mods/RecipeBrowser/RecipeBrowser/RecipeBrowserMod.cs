@@ -111,6 +111,42 @@ namespace RecipeBrowser
         {
         }
 
+        /// <summary>
+        /// 跨模组扩展 API（对齐原版 Call("AddItemCategory"/"AddItemFilter")）：
+        /// 其他 TPML 模组可向合成表/物品图鉴注册自定义分类与过滤器
+        /// 参数：name(string), parent(string, 可空), icon(Texture2D, 可空), belongs(Predicate&lt;Item&gt;)
+        /// </summary>
+        public static object Call(string message, params object[] args)
+        {
+            try
+            {
+                if (Main.dedServ || args == null || args.Length < 4) return "Failure";
+                string name = args[0] as string;
+                string parent = args[1] as string;
+                Texture2D icon = args[2] as Texture2D;
+                Predicate<Item> belongs = args[3] as Predicate<Item>;
+                if (string.IsNullOrEmpty(name) || belongs == null) return "Failure";
+
+                if (message == "AddItemCategory")
+                {
+                    Instance?.modCategories.Add(new ModCategory(name, parent, icon, belongs));
+                    SharedUI.instance?.SetupAgain();
+                    return "Success";
+                }
+                if (message == "AddItemFilter")
+                {
+                    Instance?.modFilters.Add(new ModCategory(name, parent, icon, belongs));
+                    SharedUI.instance?.SetupAgain();
+                    return "Success";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RecipeBrowser] Call Error: {ex}");
+            }
+            return "Failure";
+        }
+
         public override void Unload()
         {
             concurrentTaskHandlerToken?.Cancel();
@@ -130,9 +166,16 @@ namespace RecipeBrowser
             SharedUI.instance = null;
             LootCache.instance = null;
 
+            // 清理静态纹理/缓存（对齐原版 Unload 的逐项置空）
+            try { RecipeBrowser.Common.RBTextures.Clear(); } catch { }
+            try { RecipeBrowser.UIElements.UIItemSlot.hoveredItem = null; } catch { }
+            try { RecipeBrowser.UIElements.UIRecipeSlot.availableRecipesCache = null; } catch { }
+            try { RecipeBrowser.Utilities.tileTextures?.Clear(); } catch { }
+            try { LootCacheManager.itemDrops = null; } catch { }
+            try { RecipeBrowser.UIElements.ArmorSetFeatureHelper.Unload(); } catch { }
+
             RecipePath.Refresh(true);
             RecipeBrowserPlayer.seenTiles = null;
-            ArmorSetFeatureHelper.Unload();
         }
 
         public async Task ConcurrentTaskHandler()

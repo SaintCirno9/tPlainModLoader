@@ -134,3 +134,79 @@ uv run python Scripts/test_tpml_recipe_browser.py
 | **Phase 8.5** | 实机读取 `tpml.log` 运行日志，断言 0 绘制异常、0 裁剪异常、0 Present 崩溃且实时记录完整 | **PASS (100%)** |
 | **Phase 9** | 安全退出测试世界，确认玩家世界存档 100% 原始未被写盘污染 | **PASS (100%)** |
 
+---
+
+## 6. 原版差距补完（2025-06 全量对齐）
+
+基于与原版 `RecipeBrowser v0.12`（`TModSource/RecipeBrowser/v0.12/Source`）的逐层对比（4 个子代理 + 人工抽查），完成以下补完。构建验证：`RecipeBrowser.csproj -c Release` **0 警告 0 错误**，自动部署至游戏 Mods 目录。
+
+### 6.1 批次 1：数据正确性（P0）
+
+| 项 | 改动文件 | 内容 |
+| :--- | :--- | :--- |
+| CraftPath 库存感知 | `CraftPath.cs` | 恢复原版五分支决策（JourneyDuplicate / HaveItem / HaveItem+Unfulfilled / HaveItems 分摊 / Unfulfilled）；恢复 `ConsumeResources`/`UnConsumeResources` 消耗回退体系；`Push`/`Pop` 完整维护树结构与库存视图 |
+| 环检测语义修复 | `CraftPath.cs` | `CheckParentsForRecipeLoopViaIngredients` 只移除祖先 `createItem.type`（不再误删可行原料路径） |
+| 空结果语义 | `RecipePath.cs` | 恢复原版"无解返回空列表"（删除移植版塞入根路径的兜底） |
+| Mod 过滤主开关 | `RecipeCatalogueUI.cs` | `PassRecipeFilters` 补 `ModIndex != 0` 判定（结果物品/原料须属于选中模组，Terraria 分支按 `type < ItemID.Count`） |
+| 图鉴 Mod 过滤框架 | `BestiaryUI.cs` | `PassNPCFilters` 补 ModIndex 过滤（TPML 无模组 NPC，非 Terraria 时为空） |
+
+### 6.2 批次 2：核心功能（P0-P1）
+
+| 项 | 改动文件 | 内容 |
+| :--- | :--- | :--- |
+| 物品掉落查看器 | `ItemCatalogueUI.cs`、`SharedUI.cs`、`LootCacheManager.cs` | 恢复掉落面板：`LootCacheManager` 新增"物品→掉率"缓存（遍历 `GetRulesForNPCID` 聚合，替代 tML 的 `GetRulesForItemID`）；逐条 `UIBestiaryInfoItemLine`（条件不满足涂红）+ ExpectedValue 金币合计；`SharedUI.ShouldShowItemDrop` |
+| 分类体系补全 | `SharedUI.cs`、`Utilities.cs` | 恢复 6 全局排序（含 CreativeSort，用原版 `ContentSamples.ItemCreativeSortingId`）；完整分类树（Weapons 8 子类 / Tools 3 / Armor Sets / Armor 3 / Tiles 11 / Walls / Accessories-Wings / Ammo / Potions 4 / Expert / Pets / Mounts / Hooks / Dyes / Consumables / Grab Bags / Fishing 4 / Extractinator / Other）+ 专属排序（Damage/PickPower/Wings×3/GrappleRange 等）+ 专属过滤（Ammo/弹药循环、Vanity/ArmorOnly 互斥、Solid/NonSolid 互斥）；恢复 `modCategories`/`modFilters` 消费循环；`Utilities` 补 CPU 版 `ResizeImage`/`StackResizeImage` |
+| 查询历史导航 | `UIQuerySlots.cs`、`RecipeCatalogueUI.cs` | 恢复 `history`/`AddToHistory`/`GoBackInHistory`/`GoForwardInHistory` + 面板历史前进/后退按钮（复用 `HistoryBack`/`HistoryForward` 贴图与本地化键） |
+| Armor Sets 接线 | `ArmorSetFeatureHelper.cs`、`ItemCatalogueUI.cs` | 名称前缀匹配 + 两件套组合（三件套/身腿/头身/头腿去重）；`armorSetSlots` + `AppendSpecialUI`（4 复选框控制面板）；`ItemCatalogueUI.Update` 在 Armor Sets 分类填充套装槽位；`ItemGridSort` 按套装总防御排序 |
+
+### 6.3 批次 3：标签处理器（P1）
+
+| 项 | 改动文件 | 内容 |
+| :--- | :--- | :--- |
+| ItemHoverFix 双语法 | `TagHandlers/ItemHoverFixTagHandler.cs` | 原版 options 语法（`d`/`o`/`c`/`t`/`s`/`x`/`p`）+ 移植版冒号语法向后兼容；`GenerateTag` 输出原版格式；稀有度着色、完整 tooltip 悬停、`type<=0` 回退文本 |
+| ImageTagHandler | `TagHandlers/ImageTagHandler.cs` | 恢复 `t`（tooltip）/`s`（scale）/`v`（vOffset）选项、资源容错回退纯文本、悬停提示 |
+| NPCTagHandler | `TagHandlers/NPCTagHandler.cs` | 恢复 `head` 选项 + 身体贴图动画帧、范围校验、NPC 染色、`npcArrow` 箭头追踪与点击 Ping |
+| LinkTagHandler | `TagHandlers/LinkTagHandler.cs` | `GenerateTag` 参数顺序对齐原版（url, text）、悬停显示 url |
+
+### 6.4 批次 4：UI 交互对齐（P1）
+
+| 项 | 改动文件 | 内容 |
+| :--- | :--- | :--- |
+| UIRecipeSlot 交互 | `UIElements/UIRecipeSlots.cs` | 右键→打开制作页并设配方、双击→清过滤器+查询、左键补 `queryLootItem`/`playerInventory`/`focusRecipe`；悬停上报 `hoveredIndex`、收藏键光标覆盖、新发现背景；收藏按收藏顺序排序 |
+| UIMockRecipeSlot | `UIElements/UIRecipeSlots.cs` | `ableToCraftBackgroundTexture` 懒加载；左键按 craftPaths 跳制作页/Goto 定位；右键关闭浏览器；收藏键光标 |
+| UICraftButton | `UIElements/UIRecipeSlots.cs` | 纹理帧序修复（悬停且可合成→高亮帧）+ ✓/X 状态字 + 悬停 MenuTick |
+| 查询槽 | `UIElements/UIQuerySlots.cs` | `ReplaceWithFake` 归还物品本体（保留词缀）；恢复 `CanonicalItemType` 配方组映射表 |
+| 配方信息三态 | `UIElements/UIRecipeInfoElements.cs` | `UIRecipeInfoRightAligned` 恢复 ✓/X/? 三态 + Missing/Unseen 悬停 + 水/蜜/岩浆条件文本 |
+
+### 6.5 批次 5：细节打磨（P2）
+
+| 项 | 改动文件 | 内容 |
+| :--- | :--- | :--- |
+| Mod 图标 | `RecipeBrowserUI.cs` | `UpdateModHoverImage`：读取模组 `icon.png` 作过滤按钮图标（`mod.GetFileBytes`） |
+| Mod 下拉截断 | `UIElements/ModFilterDropdown.cs` | 超长模组名二分截断省略号 + 悬停全文 |
+| 收藏面板 | `RecipeBrowserUI.cs`、`UIDragablePanel.cs` | 关闭按钮热键提示（当前绑定键）；收藏面板位置拖拽持久化 |
+| 主面板钳制 | `RecipeBrowserUI.cs` | 面板不拖出屏幕 |
+| 搜索防呆 | `RecipeCatalogueUI.cs`、`ItemCatalogueUI.cs` | 结果为空时回退删除末字符 |
+| Unload 清理 | `RecipeBrowserMod.cs` | `RBTextures.Clear()`、`UIItemSlot.hoveredItem`、`availableRecipesCache`、`tileTextures` 等静态清理 |
+| 配置默认值 | `RecipeBrowserClientConfig.cs` | `OnlyShowFavoritedWhileInInventory` 默认改回 `true`（对齐原版） |
+| 箭头追踪 | `RecipeBrowserUI.cs`、`RecipeBrowserPatchMain.cs`、`NPCTagHandler.cs` | `HandleArrow` 实现并接入 Arrow 层 |
+| 拾取发现 | `RecipeBrowserPlayer.cs` | `OnPickup` + 进世界背包扫描 → `ItemReceived`（对齐 GlobalItem.OnPickup 语义） |
+| Call API | `RecipeBrowserMod.cs`、`SharedUI.cs` | `AddItemCategory`/`AddItemFilter` 跨模组注册入口 + `SetupAgain()` 重建 |
+| Tool 虚方法 | `ToolsAndState.cs` | 补 `ClientInitialize`/`PostSetupContent`/`Toggled`/`DrawUpdateToggle` |
+
+### 6.6 框架边界（TPML 无对应能力，记录为已知限制）
+
+| 原版能力 | 处理 |
+| :--- | :--- |
+| 多人网络同步（收藏共享/宝箱请求/他人收藏面板） | 用户确认跳过；预留字段与注释（`ModNetPacket` 结构已调研可用） |
+| ItemChecklist 集成（未获得/新物品筛选） | TPML 生态无此模组，省略；`foundItems`/`newestItem` 保留为预留字段 |
+| 模组 NPC（ModNPC/NPCLoader） | TPML 框架无，LootCache 与图鉴保持原版 NPC 边界 |
+| `Recipe.Disabled`（禁用配方） | TPML 原版 Recipe 无此字段，Disabled 过滤无数据源 |
+| Boss Summons 分类 / ProgressionOrder | 依赖 tML `SortingPriorityBossSpawns`，省略 |
+| Master 分类 | 依赖 tML `Item.master`，省略 |
+| Grab Bags 精确谓词 / ExpectedValue 排序 | 依赖 tML `GetRulesForItemID`，用 BossBag/钓鱼箱近似 |
+| 多工作台配方（requiredTile 集合） | TPML `RecipeLoader` 模型为单 int，按第一个台座处理 |
+| `DrawWindowsIMEPanel` / `LockVanillaMouseScroll` / `OpenToURL` / `CursorTextures` / `recFastScroll` | tML 扩展 API，TPML 原版无，已适配或省略 |
+| `Player.setBonus`（套装验证） | tML 扩展，Armor Sets 用名称前缀匹配 + 两件套近似 |
+| `PlayerDisconnect` / `ModifyDrawInfo` | TPML ModPlayer 无对应钩子，省略 |
+

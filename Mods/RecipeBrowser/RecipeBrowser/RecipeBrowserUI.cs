@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -121,6 +122,7 @@ namespace RecipeBrowser
                 modIndex = value;
                 SharedUI.instance?.ModFilterByFilter?.FormatText(instance?.mods != null && modIndex < instance.mods.Length ? instance.mods[modIndex] : "");
                 if (SharedUI.instance != null) SharedUI.instance.updateNeeded = true;
+                instance?.UpdateModHoverImage();
             }
         }
 
@@ -429,6 +431,35 @@ namespace RecipeBrowser
             if (ItemCatalogueUI.instance != null) ItemCatalogueUI.instance.updateNeeded = true;
         }
 
+        /// <summary>
+        /// 刷新 Mod 过滤按钮图标为当前模组的 icon.png（对齐原版 UpdateModHoverImage）
+        /// </summary>
+        private void UpdateModHoverImage()
+        {
+            if (modFilterButton == null) return;
+            Texture2D iconTex = null;
+            if (ModIndex > 0 && mods != null && ModIndex < mods.Length)
+            {
+                try
+                {
+                    var mod = TPML.Content.ModContent.Mods.FirstOrDefault(m => m != null && m.Name == mods[ModIndex]);
+                    if (mod != null)
+                    {
+                        byte[] bytes = mod.GetFileBytes("icon.png");
+                        if (bytes != null && bytes.Length > 0 && Main.graphics?.GraphicsDevice != null)
+                        {
+                            using (var ms = new MemoryStream(bytes))
+                            {
+                                iconTex = Texture2D.FromStream(Main.graphics.GraphicsDevice, ms);
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+            modFilterButton.SetImage(iconTex ?? RBTextures.FilterMod);
+        }
+
         internal void FavoriteChange(int index, bool favorite)
         {
             if (RecipeCatalogueUI.instance?.recipeSlots != null && index < RecipeCatalogueUI.instance.recipeSlots.Count)
@@ -486,6 +517,14 @@ namespace RecipeBrowser
 
             favoritePanel.RemoveAllChildren();
             favoritePanel.Append(HideUnlessInventoryToggle);
+
+            // 关闭按钮热键提示（对齐原版：动态显示当前绑定键）
+            if (closeFavoritePanelButton != null)
+            {
+                string hotkey = RecipeBrowserMod.ToggleFavoritedPanelHotKey?.DefaultBinding;
+                closeFavoritePanelButton.hoverText = RBLanguage.GetText("FavoritedUI", "Close") +
+                    (string.IsNullOrEmpty(hotkey) ? "" : $" ({hotkey})");
+            }
             favoritePanel.Append(closeFavoritePanelButton);
 
             UIGrid favGrid = new UIGrid();
@@ -549,6 +588,51 @@ namespace RecipeBrowser
             itemCatalogueUI?.Update();
             bestiaryUI?.Update();
             UpdateFavoritedPanel();
+
+            // 主面板边界钳制（对齐原版：面板不允许拖出屏幕外）
+            if (mainPanel != null && ShowRecipeBrowser)
+            {
+                CalculatedStyle dims = mainPanel.GetDimensions();
+                float panelLeft = Math.Max(0f, Math.Min(dims.X, Main.screenWidth - dims.Width));
+                float panelTop = Math.Max(0f, Math.Min(dims.Y, Main.screenHeight - dims.Height));
+                if (Math.Abs(panelLeft - dims.X) > 0.5f || Math.Abs(panelTop - dims.Y) > 0.5f)
+                {
+                    mainPanel.Left.Set(panelLeft, 0f);
+                    mainPanel.Top.Set(panelTop, 0f);
+                    mainPanel.Recalculate();
+                }
+            }
+        }
+
+        /// <summary>
+        /// NPC 箭头追踪绘制（对齐原版 HandleArrow）：悬停 [npc] 标签后绘制指向 NPC 的箭头
+        /// </summary>
+        internal void HandleArrow()
+        {
+            if (npcArrow == -1) return;
+            if (npcArrow < 0 || npcArrow >= Main.npc.Length || Main.npc[npcArrow] == null || !Main.npc[npcArrow].active)
+            {
+                npcArrow = -1;
+                return;
+            }
+
+            NPC npc = Main.npc[npcArrow];
+            if (npc.Center.X < Main.screenPosition.X - 100 || npc.Center.X > Main.screenPosition.X + Main.screenWidth + 100 ||
+                npc.Center.Y < Main.screenPosition.Y - 100 || npc.Center.Y > Main.screenPosition.Y + Main.screenHeight + 100)
+            {
+                Vector2 dir = npc.Center - Main.screenPosition;
+                float angle = (float)Math.Atan2(dir.Y, dir.X);
+                // 注：原版用 tML 的 TextureAssets.Cursor；TPML 用内置方向箭头贴图
+                Texture2D arrowTex = RBTextures.MoreUp ?? TextureAssets.MagicPixel.Value;
+                Vector2 center = new Vector2(Main.screenWidth, Main.screenHeight) / 2f;
+                float dist = Math.Min(Main.screenWidth, Main.screenHeight) * 0.35f;
+                Vector2 pos = center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * dist;
+                Main.spriteBatch.Draw(arrowTex, pos, null, Color.White, angle + (float)Math.PI / 2f, new Vector2(arrowTex.Width / 2f, arrowTex.Height / 2f), 1f, SpriteEffects.None, 0f);
+            }
+            else
+            {
+                npcArrow = -1;
+            }
         }
 
         internal void ItemReceived(Item item)
