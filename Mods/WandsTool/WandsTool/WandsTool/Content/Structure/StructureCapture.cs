@@ -40,7 +40,25 @@ namespace WandsTool.Content.Structure
                     int worldY = minY + y;
 
                     Tile tile = Main.tile[worldX, worldY];
-                    structure.Tiles[x, y] = TileSnapshot.FromTile(tile);
+                    TileSnapshot snap = TileSnapshot.FromTile(tile);
+
+                    // 若为打开的门（TileID 11），自动在门轴处规范化为标准闭门（TileID 10），门扇展开区域还原为空气
+                    if (tile != null && tile.active() && tile.type == Terraria.ID.TileID.OpenDoor)
+                    {
+                        if (TPML.Content.Core.TileItemResolver.NormalizeOpenDoor(tile, out short normType, out short normFrameX, out short normFrameY, out bool isHinge))
+                        {
+                            snap.TileType = normType;
+                            snap.TileFrameX = normFrameX;
+                            snap.TileFrameY = normFrameY;
+                            if (normType < 0)
+                            {
+                                snap.TileColor = 0;
+                                snap.Slope = 0;
+                            }
+                        }
+                    }
+
+                    structure.Tiles[x, y] = snap;
 
                     // 抓取标牌文本
                     if (tile != null && tile.active() && Main.tileSign[tile.type])

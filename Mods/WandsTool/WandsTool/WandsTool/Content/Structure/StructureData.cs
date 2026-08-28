@@ -206,10 +206,6 @@ namespace WandsTool.Content.Structure
             return wallFrameY;
         }
 
-        // 缓存图格/墙壁到物品ID的映射，极大提高统计与放置性能
-        private static readonly Dictionary<int, int> TileItemCache = new Dictionary<int, int>();
-        private static readonly Dictionary<int, int> WallItemCache = new Dictionary<int, int>();
-
         /// <summary>
         /// 检查当前世界图格与蓝图切片是否已具有相同的内容（相同物块类型或相同家具样式）
         /// </summary>
@@ -222,9 +218,20 @@ namespace WandsTool.Content.Structure
             }
 
             if (!worldTile.active()) return false;
+
+            // 门类特殊比对：开门与关门之间若为同种木质/金属风格的门，视为相同门类
+            bool isSnapDoor = snap.TileType == TileID.ClosedDoor || snap.TileType == TileID.OpenDoor;
+            bool isWorldDoor = worldTile.type == TileID.ClosedDoor || worldTile.type == TileID.OpenDoor;
+            if (isSnapDoor && isWorldDoor)
+            {
+                int worldStyle = GetTileStyle(worldTile.type, worldTile.frameX, worldTile.frameY);
+                int snapStyle = GetTileStyle(snap.TileType, snap.TileFrameX, snap.TileFrameY);
+                return worldStyle == snapStyle;
+            }
+
             if (worldTile.type != snap.TileType) return false;
 
-            // 如果是家具或带 Style 的物块（如椅子、床、桌子、箱子、门、火把等）
+            // 如果是家具或带 Style 的物块（如椅子、床、桌子、箱子、火把等）
             if (Main.tileFrameImportant[snap.TileType])
             {
                 // 平台
@@ -362,124 +369,23 @@ namespace WandsTool.Content.Structure
         /// </summary>
         public static int GetTileStyle(int tileType, int frameX, int frameY)
         {
-            if (tileType == TileID.Platforms)
-            {
-                return frameY / 18;
-            }
-
-            TileObjectData data = TileObjectData.GetTileData(tileType, 0);
-            if (data == null) return 0;
-
-            int fullWidth = data.CoordinateFullWidth > 0 ? data.CoordinateFullWidth : 18;
-            int fullHeight = data.CoordinateFullHeight > 0 ? data.CoordinateFullHeight : 18;
-
-            int col = frameX / fullWidth;
-            int row = frameY / fullHeight;
-
-            int wrapLimit = data.StyleWrapLimit > 0 ? data.StyleWrapLimit : 1;
-            int rawStyle = (!data.StyleHorizontal) ? (col * wrapLimit + row) : (row * wrapLimit + col);
-            int multiplier = data.StyleMultiplier > 0 ? data.StyleMultiplier : 1;
-
-            return rawStyle / multiplier;
+            return TPML.Content.Core.TileItemResolver.CalculateTileStyle(tileType, frameX, frameY);
         }
 
         /// <summary>
-        /// 根据图格类型与切片帧坐标，精确解析对应的放置物品 ID（支持不同木质/金属风格的家具精准匹配）
+        /// 根据图格类型与切片帧坐标，精确解析对应的放置物品 ID（支持不同木质/金属风格的家具精准匹配与开门反查）
         /// </summary>
         public static int GetTileItemId(int tileType, int frameX = 0, int frameY = 0)
         {
-            int style = GetTileStyle(tileType, frameX, frameY);
-            int key = (tileType << 16) | (style & 0xFFFF);
-            if (TileItemCache.TryGetValue(key, out int cached)) return cached;
-
-            // 1. 优先精确匹配：createTile == tileType 且 placeStyle == style
-            if (ContentSamples.ItemsByType != null)
-            {
-                foreach (var kvp in ContentSamples.ItemsByType)
-                {
-                    Item it = kvp.Value;
-                    if (it != null && it.createTile == tileType && it.placeStyle == style)
-                    {
-                        TileItemCache[key] = it.type;
-                        return it.type;
-                    }
-                }
-            }
-
-            for (int i = 1; i < ItemID.Count; i++)
-            {
-                Item item = ContentSamples.ItemsByType != null && ContentSamples.ItemsByType.TryGetValue(i, out var it) ? it : null;
-                if (item == null)
-                {
-                    item = new Item();
-                    item.SetDefaults(i);
-                }
-                if (item.createTile == tileType && item.placeStyle == style)
-                {
-                    TileItemCache[key] = item.type;
-                    return item.type;
-                }
-            }
-
-            // 2. 降级宽容匹配：匹配任意 createTile == tileType 的物品
-            if (ContentSamples.ItemsByType != null)
-            {
-                foreach (var kvp in ContentSamples.ItemsByType)
-                {
-                    Item it = kvp.Value;
-                    if (it != null && it.createTile == tileType)
-                    {
-                        TileItemCache[key] = it.type;
-                        return it.type;
-                    }
-                }
-            }
-
-            for (int i = 1; i < ItemID.Count; i++)
-            {
-                Item item = new Item();
-                item.SetDefaults(i);
-                if (item.createTile == tileType)
-                {
-                    TileItemCache[key] = item.type;
-                    return item.type;
-                }
-            }
-
-            TileItemCache[key] = 0;
-            return 0;
+            return TPML.Content.Core.TileItemResolver.GetTileItemId(tileType, frameX, frameY);
         }
 
+        /// <summary>
+        /// 根据背景墙类型解析对应的放置物品 ID
+        /// </summary>
         public static int GetWallItemId(int wallType)
         {
-            if (WallItemCache.TryGetValue(wallType, out int cached)) return cached;
-
-            if (ContentSamples.ItemsByType != null)
-            {
-                foreach (var kvp in ContentSamples.ItemsByType)
-                {
-                    Item it = kvp.Value;
-                    if (it != null && it.createWall == wallType)
-                    {
-                        WallItemCache[wallType] = it.type;
-                        return it.type;
-                    }
-                }
-            }
-
-            for (int i = 1; i < ItemID.Count; i++)
-            {
-                Item item = new Item();
-                item.SetDefaults(i);
-                if (item.createWall == wallType)
-                {
-                    WallItemCache[wallType] = item.type;
-                    return item.type;
-                }
-            }
-
-            WallItemCache[wallType] = 0;
-            return 0;
+            return TPML.Content.Core.TileItemResolver.GetWallItemId(wallType);
         }
     }
 }
