@@ -14,6 +14,11 @@
     <!-- 构建加速优化 -->
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <EnableSourceLink>false</EnableSourceLink>
+
+    <!-- C# 语言版本：全仓库统一提升至 C# 14（当前 SDK 10 编译器最高正式级别）。
+         net472 下编译期特性（record/init/required/主构造函数/集合表达式等）可直接使用；
+         依赖新版 CLR 的特性（默认接口实现、接口静态抽象成员等）编译器会直接报错拦截 -->
+    <LangVersion>14.0</LangVersion>
   </PropertyGroup>
 
   <!-- 全局引入 Krafs.Publicizer，自动将 Terraria 与 ReLogic 的 internal/private 成员公开给编译器，提供 100% 强类型智能提示与零反射访问 -->
@@ -21,5 +26,12 @@
     <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="all" />
     <Publicize Include="Terraria" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
     <Publicize Include="ReLogic" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
+  </ItemGroup>
+
+  <!-- 全局注入 C# 现代语法 polyfill（IsExternalInit / RequiredMemberAttribute / CompilerFeatureRequiredAttribute），
+       为 net472 补齐 record/init/required 所需的编译器辅助类型；每个程序集编译一份 internal 副本，
+       声明处与跨程序集使用（对象初始化器）均可用。仅作用于 SDK 风格工程，详见 Polyfills.cs -->
+  <ItemGroup Condition="'$(UsingMicrosoftNETSdk)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills.cs" Link="Polyfills.cs" />
   </ItemGroup>
 </Project>
