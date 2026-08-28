@@ -331,12 +331,12 @@ namespace OptimizeAndTool.Content.Storage.Core
                 (BagItemCategory.Ammo, "弹药（箭矢/子弹/火箭/飞镖）", "Images/Item_40"),
                 (BagItemCategory.Bait, "鱼饵（各类诱饵/钓鱼昆虫等）", "Images/Item_2676"),
                 (BagItemCategory.Tile, "物块与建筑（方块/墙壁/平台）", "Images/Item_2"),
-                (BagItemCategory.Furniture, "家具与装饰（桌椅床门/箱子/挂画/雕像）", "Images/Item_362"),
-                (BagItemCategory.GrabBag, "摸彩与宝匣（Boss宝藏袋/钓鱼宝匣/礼包）", "Images/Item_2334"),
+                (BagItemCategory.Furniture, "家具与装饰（桌椅床门/箱子/挂画）", "Images/Item_362"),
+                (BagItemCategory.Statue, "雕像（怪物/掉落/文字/功能/装饰雕像）", "Images/Item_473"),
                 (BagItemCategory.Summon, "召唤物与信物（Boss召唤物/天界符/事件信物）", "Images/Item_3601"),
                 (BagItemCategory.Light, "光源与照明（火把/荧光棒/提灯/蜡烛）", "Images/Item_8"),
                 (BagItemCategory.Material, "合成素材（矿石/锭/灵魂/制作材料）", "Images/Item_706"),
-                (BagItemCategory.Misc, "杂项与钱币（钱币/杂物/其他）", "Images/Item_73")
+                (BagItemCategory.Misc, "杂项与消耗（钱币/宝藏袋/宝匣/礼包/其他）", "Images/Item_73")
             };
 
             for (int i = 0; i < categories.Length; i++)
