@@ -272,5 +272,99 @@ namespace TPML.Content.Fusion
         }
 
         #endregion
+
+        #region 7. 原版制作系统（Recipe 统计与 CraftingRequests 扣料）外部融合源支持
+
+        /// <summary>
+        /// 拦截制作系统材料收集：将所有激活的外部融合源（如饰品袋、大背包等）中的未收藏材料累加进 Recipe._ownedItems，并重新计算配方组
+        /// </summary>
+        [HarmonyPatch(typeof(Recipe), nameof(Recipe.CollectItemsToCraftWithFrom))]
+        [HarmonyPostfix]
+        private static void CollectItemsToCraftWithFromPostfix(Player player)
+        {
+            if (!ShouldFusion(player)) return;
+
+            // 将所有外部融合源的未收藏物品累加进 _ownedItems
+            InventoryFusionManager.CollectUnfavoritedItems(player, (type, stack) =>
+            {
+                if (Recipe._ownedItems.TryGetValue(type, out int existing))
+                {
+                    Recipe._ownedItems[type] = existing + stack;
+                }
+                else
+                {
+                    Recipe._ownedItems[type] = stack;
+                }
+            });
+
+            // 重新刷新配方组统计（确保木材、铁锭等 RecipeGroup 能识别外部源材料）
+            Recipe.AddFakeCountsForItemGroups();
+        }
+
+        /// <summary>
+        /// 拦截本地可制作判定：当背包+箱子材料不足而加上外部融合源满足时，允许本地直接合成
+        /// </summary>
+        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.CanCraftLocally))]
+        [HarmonyPostfix]
+        private static void CanCraftLocallyPostfix(Recipe.RequiredItemEntry req, List<Chest> chests, ref bool __result)
+        {
+            if (__result) return;
+            if (!ShouldFusion(Main.LocalPlayer)) return;
+
+            int externalCount = req.IsRecipeGroup
+                ? InventoryFusionManager.CountUnfavoritedMatching(Main.LocalPlayer, req.Matches, req.stack)
+                : InventoryFusionManager.CountUnfavoritedItem(Main.LocalPlayer, req.itemIdOrRecipeGroup, req.stack);
+
+            if (externalCount <= 0) return;
+
+            int current = CraftingRequests.CountMatches(req, Main.LocalPlayer.inventory, 58);
+            if (chests != null)
+            {
+                for (int i = 0; i < chests.Count; i++)
+                {
+                    Chest chest = chests[i];
+                    if (chest != null && CraftingRequests.IsLocallyAccessible(chest))
+                    {
+                        current += CraftingRequests.CountMatches(req, chest.item, chest.maxItems);
+                    }
+                }
+            }
+
+            if (current + externalCount >= req.stack)
+            {
+                __result = true;
+            }
+        }
+
+        /// <summary>
+        /// 拦截制作消耗扣料：原版背包与箱子扣除后若仍有剩余需求，从外部融合源按优先级扣除未收藏材料
+        /// </summary>
+        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.Consume))]
+        [HarmonyPostfix]
+        private static void ConsumePostfix(Recipe.RequiredItemEntry req, List<Chest> chests, List<Item> consumedItems, bool fromChests, ref int __result)
+        {
+            if (__result <= 0) return;
+            if (!ShouldFusion(Main.LocalPlayer)) return;
+
+            int needed = __result;
+            int taken = req.IsRecipeGroup
+                ? InventoryFusionManager.ConsumeUnfavoritedMatching(Main.LocalPlayer, req.Matches, needed)
+                : InventoryFusionManager.ConsumeUnfavoritedItem(Main.LocalPlayer, req.itemIdOrRecipeGroup, needed);
+
+            __result -= taken;
+        }
+
+        /// <summary>
+        /// 拦截制作完成触发：制作完成后统一触发激活数据源持久化通知
+        /// </summary>
+        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.CraftItem))]
+        [HarmonyPostfix]
+        private static void CraftItemPostfix()
+        {
+            if (!ShouldFusion(Main.LocalPlayer)) return;
+            InventoryFusionManager.NotifyAllActiveModified(Main.LocalPlayer);
+        }
+
+        #endregion
     }
 }

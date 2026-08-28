@@ -13,6 +13,8 @@ namespace OptimizeAndTool.Content.BigBag
 
         public int Priority => 100;
 
+        public bool AllowCrafting => BigBag.EnableBigBagCraft.val;
+
         public bool IsActive(Player player)
         {
             if (!BigBag.EnableBigBag.val) return false;

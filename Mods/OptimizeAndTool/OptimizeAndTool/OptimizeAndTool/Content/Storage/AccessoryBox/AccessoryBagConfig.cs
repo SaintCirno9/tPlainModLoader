@@ -16,6 +16,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     public static class AccessoryBagConfig
     {
         public static GetSetReset<bool> EnablePassive = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> EnableAccessoryBagCraft = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> PreventBagDuplicates = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> PreventPlayerBagDuplicates = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableMaxDuplicateAccessory = new GetSetReset<bool>(false, false);
@@ -35,6 +36,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             return new List<CommandObject>
             {
                 CommandBuild.get2("accessoryBagPassive", EnablePassive),
+                CommandBuild.get2("accessoryBagCraft", EnableAccessoryBagCraft),
                 CommandBuild.get2("accessoryBagArmorSets", EnableArmorSetBonuses),
                 CommandBuild.get2("accessoryBagHighlightSets", HighlightActiveSetBonusTooltips),
                 CommandBuild.get2("accessoryBagPreventBagDup", PreventBagDuplicates),
@@ -53,6 +55,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             return new List<UIElement>
             {
                 UIBuild.get2(EnablePassive, "饰品袋属性生效：袋内饰品与装备属性无需穿在身上直接生效", "Images/Item_158", "饰品袋属性生效"),
+                UIBuild.get2(EnableAccessoryBagCraft, "饰品袋材料制作：饰品袋内的未收藏物品直接参与工作台配方合成与自动扣料", "Images/Item_346", "饰品袋材料制作"),
                 UIBuild.get2(EnableArmorSetBonuses, "装备套装加成：当饰品袋中凑齐整套防具时，自动激活套装奖励（支持多套装共存）", "Images/Item_2763", "装备套装加成"),
                 UIBuild.get2(HighlightActiveSetBonusTooltips, "套装提示点亮：当饰品袋满足套装时，防具提示信息自动点亮为原版已激活样式", "Images/Item_2764", "套装提示点亮"),
                 UIBuild.get2(PreventBagDuplicates, "包内防重复：禁止在同一个饰品袋中放入同种饰品或装备", "Images/UI/InfoIcon_0", "包内防重复"),

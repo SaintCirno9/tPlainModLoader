@@ -219,6 +219,103 @@ namespace TPML.Content.Fusion
             }
         }
 
+        /// <summary>
+        /// 收集所有激活且允许参与制作的外部物品源中的未收藏物品（用于原版制作系统 Recipe._ownedItems 统计）
+        /// </summary>
+        public static void CollectUnfavoritedItems(Player player, Action<int, int> onAdd)
+        {
+            if (onAdd == null) return;
+
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.CollectUnfavoritedItems"))
+            {
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
+                {
+                    var src = sources[s];
+                    if (!src.AllowCrafting) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.stack > 0 && !it.favorited)
+                        {
+                            onAdd(it.type, it.stack);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 统计所有激活且允许制作的外部物品源中未被收藏（!favorited）的指定类型物品总数
+        /// </summary>
+        public static int CountUnfavoritedItem(Player player, int type, int stopCountingAt = 0)
+        {
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.CountUnfavoritedItem"))
+            {
+                int total = 0;
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
+                {
+                    var src = sources[s];
+                    if (!src.AllowCrafting) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == type && it.stack > 0 && !it.favorited)
+                        {
+                            total += it.stack;
+                            if (stopCountingAt > 0 && total >= stopCountingAt)
+                            {
+                                return total;
+                            }
+                        }
+                    }
+                }
+                return total;
+            }
+        }
+
+        /// <summary>
+        /// 统计所有激活且允许制作的外部物品源中未被收藏（!favorited）且满足匹配条件的物品总数（如配方组匹配）
+        /// </summary>
+        public static int CountUnfavoritedMatching(Player player, Func<int, bool> typePredicate, int stopCountingAt = 0)
+        {
+            if (typePredicate == null) return 0;
+
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.CountUnfavoritedMatching"))
+            {
+                int total = 0;
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
+                {
+                    var src = sources[s];
+                    if (!src.AllowCrafting) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.stack > 0 && !it.favorited && typePredicate(it.type))
+                        {
+                            total += it.stack;
+                            if (stopCountingAt > 0 && total >= stopCountingAt)
+                            {
+                                return total;
+                            }
+                        }
+                    }
+                }
+                return total;
+            }
+        }
+
         #endregion
 
         #region 聚合消耗
@@ -266,6 +363,127 @@ namespace TPML.Content.Fusion
                     }
                 }
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 从外部物品源中消耗指定数量的未收藏物品（用于制作系统）
+        /// </summary>
+        /// <param name="player">目标玩家实体</param>
+        /// <param name="type">物品类型 ID</param>
+        /// <param name="amount">需消耗的数量</param>
+        /// <param name="reverseOrder">是否逆序遍历消耗</param>
+        /// <returns>实际扣除的物品数量</returns>
+        public static int ConsumeUnfavoritedItem(Player player, int type, int amount, bool reverseOrder = false)
+        {
+            if (amount <= 0) return 0;
+
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.ConsumeUnfavoritedItem"))
+            {
+                int remaining = amount;
+                var sources = GetActiveSources(player);
+                int srcStart = reverseOrder ? sources.Count - 1 : 0;
+                int srcEnd = reverseOrder ? -1 : sources.Count;
+                int srcStep = reverseOrder ? -1 : 1;
+
+                for (int s = srcStart; s != srcEnd; s += srcStep)
+                {
+                    var src = sources[s];
+                    if (!src.AllowCrafting) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
+
+                    bool modified = false;
+                    int start = reverseOrder ? slots.Length - 1 : 0;
+                    int end = reverseOrder ? -1 : slots.Length;
+                    int step = reverseOrder ? -1 : 1;
+
+                    for (int i = start; i != end; i += step)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == type && it.stack > 0 && !it.favorited)
+                        {
+                            int take = Math.Min(it.stack, remaining);
+                            it.stack -= take;
+                            remaining -= take;
+                            modified = true;
+
+                            if (it.stack <= 0)
+                            {
+                                slots[i] = new Item();
+                            }
+
+                            if (remaining <= 0) break;
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        src.OnModified(player);
+                    }
+
+                    if (remaining <= 0) break;
+                }
+
+                return amount - remaining;
+            }
+        }
+
+        /// <summary>
+        /// 从外部物品源中根据类型匹配器（如配方组）消耗指定数量的未收藏物品（用于制作系统）
+        /// </summary>
+        public static int ConsumeUnfavoritedMatching(Player player, Func<int, bool> typePredicate, int amount, bool reverseOrder = false)
+        {
+            if (amount <= 0 || typePredicate == null) return 0;
+
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.ConsumeUnfavoritedMatching"))
+            {
+                int remaining = amount;
+                var sources = GetActiveSources(player);
+                int srcStart = reverseOrder ? sources.Count - 1 : 0;
+                int srcEnd = reverseOrder ? -1 : sources.Count;
+                int srcStep = reverseOrder ? -1 : 1;
+
+                for (int s = srcStart; s != srcEnd; s += srcStep)
+                {
+                    var src = sources[s];
+                    if (!src.AllowCrafting) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
+
+                    bool modified = false;
+                    int start = reverseOrder ? slots.Length - 1 : 0;
+                    int end = reverseOrder ? -1 : slots.Length;
+                    int step = reverseOrder ? -1 : 1;
+
+                    for (int i = start; i != end; i += step)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.stack > 0 && !it.favorited && typePredicate(it.type))
+                        {
+                            int take = Math.Min(it.stack, remaining);
+                            it.stack -= take;
+                            remaining -= take;
+                            modified = true;
+
+                            if (it.stack <= 0)
+                            {
+                                slots[i] = new Item();
+                            }
+
+                            if (remaining <= 0) break;
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        src.OnModified(player);
+                    }
+
+                    if (remaining <= 0) break;
+                }
+
+                return amount - remaining;
             }
         }
 

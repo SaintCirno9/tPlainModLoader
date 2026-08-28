@@ -37,6 +37,11 @@ namespace TPML.Content.Fusion
         Item[] GetSlots(Player player);
 
         /// <summary>
+        /// 该数据源中的物品是否允许参与制作系统（配方可用统计与合成扣料）
+        /// </summary>
+        bool AllowCrafting { get; }
+
+        /// <summary>
         /// 当该数据源中的物品发生变动/消耗时的回调（用于触发写盘持久化与 UI 刷新）
         /// </summary>
         /// <param name="player">目标玩家实体</param>

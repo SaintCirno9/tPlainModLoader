@@ -15,6 +15,8 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public int Priority => 90;
 
+        public bool AllowCrafting => AccessoryBagConfig.EnableAccessoryBagCraft.val;
+
         public bool IsActive(Player player)
         {
             if (player == null || !player.active || player.whoAmI != Main.myPlayer) return false;
