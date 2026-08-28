@@ -87,6 +87,20 @@ namespace OptimizeAndTool
                         return true;
                     },
                     InterfaceScaleType.UI));
+
+                // 重铸前缀优化 UI 绘制层
+                gameInterfaceLayers.Insert(invIndex + 2, new LegacyGameInterfaceLayer(
+                    "StaticTile.OptimizeAndTool: Reforge UI Layer",
+                    () =>
+                    {
+                        try
+                        {
+                            Content.QoL.Reforge.ReforgeOptimization.DrawReforgeUI(Main.spriteBatch);
+                        }
+                        catch { }
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
             }
         }
 

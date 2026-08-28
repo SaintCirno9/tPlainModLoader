@@ -5,6 +5,7 @@ using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Fishing;
 using OptimizeAndTool.Content.QoL.Pipette;
+using OptimizeAndTool.Content.QoL.Reforge;
 using OptimizeAndTool.Content.QoL.VeinMining;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using System.Collections.Generic;
@@ -46,6 +47,7 @@ namespace OptimizeAndTool.Content
             cos.AddRange(PortableContainer.GetCO());
             cos.AddRange(InfinitePotionAndBuff.GetCO());
             cos.AddRange(TownNPCOptimization.GetCO());
+            cos.AddRange(ReforgeOptimization.GetCO());
             cos.AddRange(AnglerQuestOptimization.GetCO());
             cos.AddRange(FishingCrateModifier.GetCO());
             cos.AddRange(AutoFishingSystem.GetCO());
@@ -104,6 +106,7 @@ namespace OptimizeAndTool.Content
             // 6. 城镇 NPC 与渔夫优化
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_267", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "城镇 NPC 与商贩"));
             uis.AddRange(TownNPCOptimization.GetUI());
+            uis.AddRange(ReforgeOptimization.GetUI());
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_2422", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "渔夫任务与钓鱼 QoL"));
             uis.AddRange(AnglerQuestOptimization.GetUI());
             uis.AddRange(FishingCrateModifier.GetUI());

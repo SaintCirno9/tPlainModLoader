@@ -9,6 +9,7 @@ using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Fishing;
 using OptimizeAndTool.Content.QoL.InfiniteBuff;
 using OptimizeAndTool.Content.QoL.Pipette;
+using OptimizeAndTool.Content.QoL.Reforge;
 using OptimizeAndTool.Content.QoL.VeinMining;
 using OptimizeAndTool.Content.ServerList;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
@@ -53,6 +54,7 @@ namespace OptimizeAndTool
             public bool NPCOptimalHappiness = true;
             public bool TravellingMerchantStay = true;
             public bool QuickNurse = true;
+            public bool ReforgeOptimization = true;
 
             public bool NoAnglerCooldown = true;
             public bool QuestFishStack = true;
@@ -219,6 +221,7 @@ namespace OptimizeAndTool
             TownNPCOptimization.EnableOptimalHappiness.val = data.NPCOptimalHappiness;
             TownNPCOptimization.EnableTravellingMerchantStay.val = data.TravellingMerchantStay;
             TownNPCOptimization.EnableQuickNurse.val = data.QuickNurse;
+            ReforgeOptimization.Enable.val = data.ReforgeOptimization;
 
             AnglerQuestOptimization.EnableNoAnglerCooldown.val = data.NoAnglerCooldown;
             AnglerQuestOptimization.EnableQuestFishStack.val = data.QuestFishStack;
@@ -352,6 +355,7 @@ namespace OptimizeAndTool
             TownNPCOptimization.EnableOptimalHappiness.OnValUpdate += _ => NeedSave = true;
             TownNPCOptimization.EnableTravellingMerchantStay.OnValUpdate += _ => NeedSave = true;
             TownNPCOptimization.EnableQuickNurse.OnValUpdate += _ => NeedSave = true;
+            ReforgeOptimization.Enable.OnValUpdate += _ => NeedSave = true;
 
             AnglerQuestOptimization.EnableNoAnglerCooldown.OnValUpdate += _ => NeedSave = true;
             AnglerQuestOptimization.EnableQuestFishStack.OnValUpdate += _ => NeedSave = true;
@@ -482,6 +486,7 @@ namespace OptimizeAndTool
                 NPCOptimalHappiness = TownNPCOptimization.EnableOptimalHappiness.val,
                 TravellingMerchantStay = TownNPCOptimization.EnableTravellingMerchantStay.val,
                 QuickNurse = TownNPCOptimization.EnableQuickNurse.val,
+                ReforgeOptimization = ReforgeOptimization.Enable.val,
 
                 NoAnglerCooldown = AnglerQuestOptimization.EnableNoAnglerCooldown.val,
                 QuestFishStack = AnglerQuestOptimization.EnableQuestFishStack.val,
@@ -624,6 +629,7 @@ namespace OptimizeAndTool
             TownNPCOptimization.EnableOptimalHappiness.Reset();
             TownNPCOptimization.EnableTravellingMerchantStay.Reset();
             TownNPCOptimization.EnableQuickNurse.Reset();
+            ReforgeOptimization.Enable.Reset();
 
             AnglerQuestOptimization.EnableNoAnglerCooldown.Reset();
             AnglerQuestOptimization.EnableQuestFishStack.Reset();
