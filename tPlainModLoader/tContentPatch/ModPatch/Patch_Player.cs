@@ -1,9 +1,16 @@
 using HarmonyLib;
+using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.DataStructures;
+using Terraria.ID;
 using Terraria.IO;
 using Terraria.Localization;
+using Terraria.WorldBuilding;
+using TPML.Content;
 using TPML.Content.IO;
+using TPML.Core.Logging;
 
 namespace tContentPatch.ModPatch
 {
@@ -95,6 +102,90 @@ namespace tContentPatch.ModPatch
         internal static bool CanDropTombstone(Player __instance, long coinsOwned, NetworkText deathText, int hitDirection)
         {
             return mod.ForTry(item => item.CanDropTombstone(__instance, coinsOwned, deathText, hitDirection));
+        }
+
+        [HarmonyPatch(nameof(Player.AdjTiles))]
+        [HarmonyPrefix]
+        public static bool AdjTilesPrefix(Player __instance)
+        {
+            if (__instance == null) return false;
+
+            try
+            {
+                if (__instance.adjTile == null || __instance.adjTile.Length < 693)
+                {
+                    LogManager.GetLogger("PlayerPatch").Warn($"[AdjTiles 诊断] 玩家 {__instance.name}(#{__instance.whoAmI}) 的 adjTile 为 null 或长度不足，正在自动补充初始化...");
+                    __instance.adjTile = new bool[693];
+                }
+
+                Array.Clear(__instance.adjTile, 0, __instance.adjTile.Length);
+                __instance.oldAdjWaterSource = __instance.adjWaterSource;
+                __instance.adjWaterSource = false;
+                __instance.oldAdjHoney = __instance.adjHoney;
+                __instance.adjHoney = false;
+                __instance.oldAdjLava = __instance.adjLava;
+                __instance.adjLava = false;
+                __instance.alchemyTable = false;
+
+                if (Main.tile == null)
+                {
+                    LogManager.GetLogger("PlayerPatch").Warn($"[AdjTiles 诊断] Main.tile 当前为 null（处于世界加载/过渡态），已安全跳过图格扫描。");
+                    return false;
+                }
+
+                Rectangle tileRegion = TileReachCheckSettings.Simple.GetTileRegion(__instance, __instance.ateArtisanBread ? 4 : 0);
+                tileRegion = WorldUtils.ClampToWorld(tileRegion);
+
+                int nullTileCount = 0;
+                for (int x = tileRegion.Left; x <= tileRegion.Right; x++)
+                {
+                    for (int y = tileRegion.Top; y <= tileRegion.Bottom; y++)
+                    {
+                        if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY) continue;
+                        Tile tile = Main.tile[x, y];
+                        if (tile == null)
+                        {
+                            nullTileCount++;
+                            continue;
+                        }
+
+                        if (tile.active())
+                        {
+                            __instance.SafeSetAdjTileWithEquivalents(tile.type);
+                            if (TileID.Sets.CountsAsWaterForCrafting != null &&
+                                tile.type < TileID.Sets.CountsAsWaterForCrafting.Length &&
+                                TileID.Sets.CountsAsWaterForCrafting[tile.type])
+                            {
+                                __instance.adjWaterSource = true;
+                            }
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 0)
+                        {
+                            __instance.adjWaterSource = true;
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 2)
+                        {
+                            __instance.adjHoney = true;
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 1)
+                        {
+                            __instance.adjLava = true;
+                        }
+                    }
+                }
+
+                if (nullTileCount > 0)
+                {
+                    LogManager.GetLogger("PlayerPatch").Warn($"[AdjTiles 诊断] 在玩家周围扫描区域 ({tileRegion.Left},{tileRegion.Top})-({tileRegion.Right},{tileRegion.Bottom}) 发现 {nullTileCount} 个 null 空图格对象，已安全忽略防止闪退。");
+                }
+
+                return false; // 安全接管，阻止原版易崩代码执行
+            }
+            catch (System.Exception ex)
+            {
+                LogManager.GetLogger("PlayerPatch").Error($"[AdjTiles 诊断] AdjTilesPrefix 发生异常，已拦截防止崩溃", ex);
+                return false;
+            }
         }
     }
 

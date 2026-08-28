@@ -53,7 +53,14 @@ namespace RecipeBrowser
         {
             if (!AdjTilesActive && RecipeCatalogueUI.instance != null && RecipePath.extendedCraft)
             {
-                RecipeCatalogueUI.instance.InvalidateExtendedCraft();
+                try
+                {
+                    RecipeCatalogueUI.instance.InvalidateExtendedCraft();
+                }
+                catch
+                {
+                    // 防御性保护
+                }
             }
         }
 
@@ -70,36 +77,41 @@ namespace RecipeBrowser
         {
             try
             {
-                if (__instance == Main.LocalPlayer && !Main.playerInventory && RecipeBrowserUI.instance != null && RecipeBrowserUI.instance.ShowRecipeBrowser)
+                Player localPlayer = Main.LocalPlayer;
+                if (__instance != null && __instance == localPlayer && localPlayer?.adjTile != null && !Main.playerInventory && RecipeBrowserUI.instance != null && RecipeBrowserUI.instance.ShowRecipeBrowser)
                 {
-                    if (oldAdjTile == null || oldAdjTile.Length != Main.LocalPlayer.adjTile.Length)
+                    if (oldAdjTile == null || oldAdjTile.Length != localPlayer.adjTile.Length)
                     {
-                        oldAdjTile = new bool[Main.LocalPlayer.adjTile.Length];
-                        for (int i = 0; i < oldAdjTile.Length; i++) oldAdjTile[i] = Main.LocalPlayer.adjTile[i];
-                        oldAdjWater = Main.LocalPlayer.adjWaterSource;
-                        oldAdjHoney = Main.LocalPlayer.adjHoney;
-                        oldAdjLava = Main.LocalPlayer.adjLava;
+                        oldAdjTile = new bool[localPlayer.adjTile.Length];
+                        for (int i = 0; i < oldAdjTile.Length; i++) oldAdjTile[i] = localPlayer.adjTile[i];
+                        oldAdjWater = localPlayer.adjWaterSource;
+                        oldAdjHoney = localPlayer.adjHoney;
+                        oldAdjLava = localPlayer.adjLava;
                         return;
                     }
 
                     bool changed = false;
                     for (int i = 0; i < oldAdjTile.Length; i++)
                     {
-                        if (oldAdjTile[i] != Main.LocalPlayer.adjTile[i])
+                        if (oldAdjTile[i] != localPlayer.adjTile[i])
                         {
                             changed = true;
-                            oldAdjTile[i] = Main.LocalPlayer.adjTile[i];
+                            oldAdjTile[i] = localPlayer.adjTile[i];
                         }
                     }
-                    if (oldAdjWater != Main.LocalPlayer.adjWaterSource) { changed = true; oldAdjWater = Main.LocalPlayer.adjWaterSource; }
-                    if (oldAdjHoney != Main.LocalPlayer.adjHoney) { changed = true; oldAdjHoney = Main.LocalPlayer.adjHoney; }
-                    if (oldAdjLava != Main.LocalPlayer.adjLava) { changed = true; oldAdjLava = Main.LocalPlayer.adjLava; }
+                    if (oldAdjWater != localPlayer.adjWaterSource) { changed = true; oldAdjWater = localPlayer.adjWaterSource; }
+                    if (oldAdjHoney != localPlayer.adjHoney) { changed = true; oldAdjHoney = localPlayer.adjHoney; }
+                    if (oldAdjLava != localPlayer.adjLava) { changed = true; oldAdjLava = localPlayer.adjLava; }
 
                     if (changed)
                     {
                         Recipe.UpdateRecipeList();
                     }
                 }
+            }
+            catch
+            {
+                // 防御性保护：避免配方列表刷新异常影响游戏主循环
             }
             finally
             {

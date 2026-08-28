@@ -2,10 +2,12 @@ using CommandHelp;
 using HarmonyLib;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
+using System;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Content;
 using TPML.Content.Fusion;
 
 namespace OptimizeAndTool.Content.QoL
@@ -36,38 +38,117 @@ namespace OptimizeAndTool.Content.QoL
             };
         }
 
-        private static int scanTimer = 0;
+        private static int scanTimer = 15;
+        private static bool[] cachedAdjTile = new bool[TileID.Count];
+        private static bool cachedAdjWaterSource = false;
+        private static bool cachedAdjLava = false;
+        private static bool cachedAdjHoney = false;
+        private static bool cachedAlchemyTable = false;
 
         [HarmonyPatch(nameof(Player.AdjTiles))]
         [HarmonyPostfix]
         public static void AdjTilesPostfix(Player __instance)
         {
-            if (__instance == null || !Enable.val) return;
+            if (__instance == null || !Enable.val || __instance.adjTile == null) return;
 
-            // 节流：AdjTiles 每帧被调用，全量扫描（背包+4 银行+全部融合源）按 15 tick（1/4 秒）执行一次
-            if (++scanTimer < 15) return;
-            scanTimer = 0;
+            try
+            {
+                // 1. 周期性扫描（每 15 tick 扫描一次背包与外部容器，更新缓存）
+                if (++scanTimer >= 15)
+                {
+                    scanTimer = 0;
+                    UpdateCachedAdjTiles(__instance);
+                }
+
+                // 2. 每一帧原版清空后，都把缓存的随身制作站状态快速合并给玩家（确保每帧稳定生效，彻底消除合成列表闪烁）
+                ApplyCachedAdjTiles(__instance);
+            }
+            catch
+            {
+                // 防御性保护：避免制作站扫描异常中断游戏更新循环
+            }
+        }
+
+        private static void UpdateCachedAdjTiles(Player player)
+        {
+            if (player == null) return;
+
+            if (cachedAdjTile == null || cachedAdjTile.Length != TileID.Count)
+            {
+                cachedAdjTile = new bool[TileID.Count];
+            }
+            Array.Clear(cachedAdjTile, 0, cachedAdjTile.Length);
+            cachedAdjWaterSource = false;
+            cachedAdjLava = false;
+            cachedAdjHoney = false;
+            cachedAlchemyTable = false;
 
             // 1. 扫描原版玩家主背包与四箱便携收纳（猪猪/保险箱/护卫熔炉/虚空袋）
-            ScanContainer(__instance, __instance.inventory);
-            if (__instance.bank?.item != null) ScanContainer(__instance, __instance.bank.item);
-            if (__instance.bank2?.item != null) ScanContainer(__instance, __instance.bank2.item);
-            if (__instance.bank3?.item != null) ScanContainer(__instance, __instance.bank3.item);
-            if (__instance.bank4?.item != null) ScanContainer(__instance, __instance.bank4.item);
+            ScanContainer(player.inventory);
+            if (player.bank?.item != null) ScanContainer(player.bank.item);
+            if (player.bank2?.item != null) ScanContainer(player.bank2.item);
+            if (player.bank3?.item != null) ScanContainer(player.bank3.item);
+            if (player.bank4?.item != null) ScanContainer(player.bank4.item);
 
             // 2. 扫描框架级所有已激活外部融合源（如大背包等）中的制作站与水源环境
-            var sources = InventoryFusionManager.GetActiveSources(__instance);
-            for (int s = 0; s < sources.Count; s++)
+            var sources = InventoryFusionManager.GetActiveSources(player);
+            if (sources != null)
             {
-                Item[] slots = sources[s].GetSlots(__instance);
-                if (slots != null && slots.Length > 0)
+                for (int s = 0; s < sources.Count; s++)
                 {
-                    ScanContainer(__instance, slots);
+                    var src = sources[s];
+                    if (src == null) continue;
+                    Item[] slots = src.GetSlots(player);
+                    if (slots != null && slots.Length > 0)
+                    {
+                        ScanContainer(slots);
+                    }
                 }
             }
         }
 
-        private static void ScanContainer(Player player, Item[] items)
+        private static void ApplyCachedAdjTiles(Player player)
+        {
+            if (player?.adjTile == null || cachedAdjTile == null) return;
+
+            int len = Math.Min(player.adjTile.Length, cachedAdjTile.Length);
+            for (int i = 0; i < len; i++)
+            {
+                if (cachedAdjTile[i])
+                {
+                    player.adjTile[i] = true;
+                }
+            }
+            if (cachedAdjWaterSource) player.adjWaterSource = true;
+            if (cachedAdjLava) player.adjLava = true;
+            if (cachedAdjHoney) player.adjHoney = true;
+            if (cachedAlchemyTable) player.alchemyTable = true;
+        }
+
+        private static void SetCachedTile(int tile)
+        {
+            if (cachedAdjTile == null || tile < 0 || tile >= cachedAdjTile.Length) return;
+            cachedAdjTile[tile] = true;
+
+            if (tile == 355 || tile == 699)
+            {
+                cachedAlchemyTable = true;
+            }
+
+            if (Recipe.TileCountsAs != null && tile < Recipe.TileCountsAs.Length)
+            {
+                var list = Recipe.TileCountsAs[tile];
+                if (list != null)
+                {
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        SetCachedTile(list[i]);
+                    }
+                }
+            }
+        }
+
+        private static void ScanContainer(Item[] items)
         {
             if (items == null) return;
 
@@ -80,57 +161,53 @@ namespace OptimizeAndTool.Content.QoL
                 if (item.createTile >= 0)
                 {
                     int tile = item.createTile;
-                    if (tile < player.adjTile.Length)
-                    {
-                        player.SetAdjTile(tile);
+                    SetCachedTile(tile);
 
-                        // 原版水源环境家具识别 (如水槽/水泉等)
-                        if (tile < TileID.Sets.CountsAsWaterForCrafting.Length && TileID.Sets.CountsAsWaterForCrafting[tile])
-                        {
-                            player.adjWaterSource = true;
-                        }
+                    // 原版水源环境家具识别 (如水槽/水泉等)
+                    if (TileID.Sets.CountsAsWaterForCrafting != null &&
+                        tile < TileID.Sets.CountsAsWaterForCrafting.Length &&
+                        TileID.Sets.CountsAsWaterForCrafting[tile])
+                    {
+                        cachedAdjWaterSource = true;
                     }
 
                     // 高阶制作站向下兼任与特殊制作环境拓展
                     switch (tile)
                     {
                         case TileID.LivingLoom: // 生命木织机 (304) -> 兼任普通织布机 (86 Loom) 与基础工作台 (18 WorkBenches)
-                            player.SetAdjTile(TileID.Loom);
-                            player.SetAdjTile(TileID.WorkBenches);
+                            SetCachedTile(TileID.Loom);
+                            SetCachedTile(TileID.WorkBenches);
                             break;
 
                         case TileID.AlchemyTable: // 炼金桌 -> 瓶子 + 炼金减免
-                            player.adjTile[TileID.Bottles] = true;
-                            player.alchemyTable = true;
+                            if (TileID.Bottles < cachedAdjTile.Length) cachedAdjTile[TileID.Bottles] = true;
+                            cachedAlchemyTable = true;
                             break;
 
                         case TileID.Hellforge: // 地狱熔炉 -> 普通熔炉
-                            player.SetAdjTile(TileID.Furnaces);
+                            SetCachedTile(TileID.Furnaces);
                             break;
 
                         case TileID.AdamantiteForge: // 精金/钛金熔炉 -> 地狱熔炉 + 普通熔炉
-                            player.SetAdjTile(TileID.Hellforge);
-                            player.SetAdjTile(TileID.Furnaces);
+                            SetCachedTile(TileID.Hellforge);
+                            SetCachedTile(TileID.Furnaces);
                             break;
 
                         case TileID.MythrilAnvil: // 秘银/山铜砧 -> 铁砧
-                            player.SetAdjTile(TileID.Anvils);
+                            SetCachedTile(TileID.Anvils);
                             break;
 
                         case TileID.HeavyWorkBench: // 重型工作台 -> 基础工作台
-                            player.SetAdjTile(TileID.WorkBenches);
+                            SetCachedTile(TileID.WorkBenches);
                             break;
 
                         case TileID.Sinks: // 水槽 -> 水源环境
-                            player.adjWaterSource = true;
+                            cachedAdjWaterSource = true;
                             break;
 
                         case TileID.Bottles: // 瓶子/玻璃杯
-                            player.adjTile[TileID.Bottles] = true;
-                            break;
-
                         case TileID.TeaKettle: // 茶壶
-                            player.adjTile[TileID.Bottles] = true;
+                            if (TileID.Bottles < cachedAdjTile.Length) cachedAdjTile[TileID.Bottles] = true;
                             break;
                     }
                 }
@@ -140,31 +217,31 @@ namespace OptimizeAndTool.Content.QoL
                 {
                     case ItemID.WaterBucket:
                     case ItemID.BottomlessBucket:
-                        player.adjWaterSource = true;
+                        cachedAdjWaterSource = true;
                         break;
 
                     case ItemID.LavaBucket:
                     case ItemID.BottomlessLavaBucket:
-                        player.adjLava = true;
+                        cachedAdjLava = true;
                         break;
 
                     case ItemID.HoneyBucket:
                     case ItemID.BottomlessHoneyBucket:
-                        player.adjHoney = true;
+                        cachedAdjHoney = true;
                         break;
 
                     case ItemID.BottledWater:
-                        player.adjWaterSource = true;
-                        player.adjTile[TileID.Bottles] = true;
+                        cachedAdjWaterSource = true;
+                        if (TileID.Bottles < cachedAdjTile.Length) cachedAdjTile[TileID.Bottles] = true;
                         break;
 
                     case ItemID.BottledHoney:
-                        player.adjHoney = true;
-                        player.adjTile[TileID.Bottles] = true;
+                        cachedAdjHoney = true;
+                        if (TileID.Bottles < cachedAdjTile.Length) cachedAdjTile[TileID.Bottles] = true;
                         break;
 
                     case ItemID.Bottle:
-                        player.adjTile[TileID.Bottles] = true;
+                        if (TileID.Bottles < cachedAdjTile.Length) cachedAdjTile[TileID.Bottles] = true;
                         break;
                 }
             }

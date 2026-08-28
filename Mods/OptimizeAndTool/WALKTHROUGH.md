@@ -174,9 +174,10 @@
 | Bug#10 | 快乐报告硬编码中文，非中文环境显示中文 | 仅 `GameCulture.CultureName.Chinese` 活跃时覆写 |
 | Bug#11 | Pipette `ReturnBigBagItemToStorage` 空 catch 吞异常 | 补 `TPML.Core.Logging` 错误日志 |
 | Bug#12 | FishingInfoHUD 浮标选取逻辑 `p.wet` 判断失效（第一个活跃浮标恒被选中） | 两遍扫描：优先入水浮标，无则取第一个 |
-| Bug#15 | PortableCraftingStation `AdjTilesPostfix` 每帧全量扫描背包+4 银行+全部融合源 | 15 tick（1/4 秒）节流 |
+| Bug#15 | PortableCraftingStation `AdjTilesPostfix` 节流导致制作列表闪烁 | 重构为"15 tick 周期性全量扫描更新缓存 + 逐帧常驻快速合并"机制，制作站状态每帧稳定生效，根除 Crafting UI 闪烁 |
 | Bug#17 | InfiniteBuffWindow `OnOpen` 每次 `+= Rebuild` 重复订阅事件 | 先 `-=` 再 `+=` |
 | Bug#13 | Buff tooltip 完全替换原版重绘（版本升级漂移风险） | **评估保留**：当前逐行比对一致、功能正常，重构为叠加渲染属高风险改动，收益低 |
 | Bug#14 | 房屋面板右上角右键消费区域可能与列表交互冲突 | **评估保留**：该区域（EquipPage==1 + screenWidth-70 顶部）本就专属房屋管理按钮，原版列表条目不在此区域 |
+| Bug#19 | 天顶世界/颠倒世界图格 null 引发 `Player.AdjTiles` 空指针异常并中断主更新循环（导致开背包无法移动、吸钱币停滞、开闭设置崩溃） | `Patch_Player.AdjTilesPrefix` 框架级全量安全接管与诊断探针，引入 `PlayerAdjTileExtensions` 安全扩展方法，彻底杜绝 NRE 崩溃 |
 
-**验证**：子工程与全量 sln 构建均 **0 警告 0 错误**，自动热部署成功。
+**验证**：子工程与全量 sln 构建均 **0 警告 0 错误**，自动热部署成功。实机验证制作界面稳定无频闪，天顶世界背包移动与图格扫描完全正常。

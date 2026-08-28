@@ -2,9 +2,11 @@ using CommandHelp;
 using HarmonyLib;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
+using System;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL
 {
@@ -45,20 +47,30 @@ namespace OptimizeAndTool.Content.QoL
         [HarmonyPostfix]
         internal static void Postfix(Player __instance)
         {
-            if (!TeamShare.EnableShareCraftingStation.val) return;
+            if (__instance == null || !TeamShare.EnableShareCraftingStation.val) return;
             if (__instance.team <= 0) return;
-            for (int i = 0; i < Main.maxPlayers; i++)
+
+            try
             {
-                Player teammate = Main.player[i];
-                if (teammate == null || teammate == __instance || !teammate.active || teammate.dead) continue;
-                if (teammate.team != __instance.team) continue;
-                for (int t = 0; t < __instance.adjTile.Length; t++)
+                for (int i = 0; i < Main.maxPlayers; i++)
                 {
-                    if (teammate.adjTile[t])
+                    Player teammate = Main.player[i];
+                    if (teammate == null || teammate == __instance || !teammate.active || teammate.dead || teammate.adjTile == null) continue;
+                    if (teammate.team != __instance.team) continue;
+
+                    int len = Math.Min(__instance.adjTile?.Length ?? 0, teammate.adjTile.Length);
+                    for (int t = 0; t < len; t++)
                     {
-                        __instance.adjTile[t] = true;
+                        if (teammate.SafeGetAdjTile(t))
+                        {
+                            __instance.SafeSetAdjTile(t, true);
+                        }
                     }
                 }
+            }
+            catch
+            {
+                // 防御性保护：避免队伍共享计算异常中断游戏循环
             }
         }
     }
