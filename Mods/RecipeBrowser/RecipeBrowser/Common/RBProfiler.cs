@@ -4,18 +4,19 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Terraria;
+using TPML.Core.Diagnostics;
 using TPML.Core.Logging;
 
 namespace RecipeBrowser.Common
 {
     /// <summary>
-    /// RecipeBrowser 专用轻量级性能剖析器 (Profiler)
+    /// RecipeBrowser 专用轻量级性能剖析器 (Profiler)，已接入 TPML 统一性能剖析引擎
     /// 作者: SaintCirno9
     /// </summary>
     public static class RBProfiler
     {
         private static readonly ILogger Logger = LogManager.GetLogger("RecipeBrowser.Profiler");
-        public static bool Enabled => RecipeBrowserClientConfig.Instance != null && RecipeBrowserClientConfig.Instance.EnableProfiler;
+        public static bool Enabled => (RecipeBrowserClientConfig.Instance != null && RecipeBrowserClientConfig.Instance.EnableProfiler) || PerformanceProfiler.IsEnabled;
         public static float LogThresholdMs = 2.0f; // 超过 2ms 的操作打印警告
 
         internal class Section
@@ -45,15 +46,21 @@ namespace RecipeBrowser.Common
                 if (section != null)
                 {
                     section.Sw.Stop();
+                    long ticks = section.Sw.ElapsedTicks;
+                    if (PerformanceProfiler.IsEnabled)
+                    {
+                        PerformanceProfiler.Record("RecipeBrowser", section.Name, ticks);
+                    }
+
                     if (section.Parent != null)
                     {
                         currentSection = section.Parent;
                     }
                     else
                     {
-                        // 根节点结束，输出报表
+                        // 根节点结束，输出报表（仅在独立 RBProfiler 开启且超过阈值时）
                         float totalMs = (float)section.Sw.Elapsed.TotalMilliseconds;
-                        if (totalMs >= LogThresholdMs)
+                        if (RecipeBrowserClientConfig.Instance != null && RecipeBrowserClientConfig.Instance.EnableProfiler && totalMs >= LogThresholdMs)
                         {
                             DumpReport(section);
                         }

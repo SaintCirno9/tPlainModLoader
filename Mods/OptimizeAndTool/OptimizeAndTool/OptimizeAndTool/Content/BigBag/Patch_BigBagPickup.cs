@@ -1,6 +1,7 @@
 using HarmonyLib;
 using OptimizeAndTool.Content.Storage.ItemContainer;
 using Terraria;
+using TPML.Core.Diagnostics;
 
 namespace OptimizeAndTool.Content.BigBag
 {
@@ -22,11 +23,14 @@ namespace OptimizeAndTool.Content.BigBag
             // 1. 若开启「拾取自动堆叠」：大背包已有同类物品优先堆入（钱币除外，钱币优先走原生专用槽）
             if (BigBag.AutoStackOnPickup.val && !newItem.IsACoin)
             {
-                bool fullyStacked = BigBag.TryAutoStackPickup(newItem);
-                if (fullyStacked)
+                using (PerformanceProfiler.Measure("OptimizeAndTool", "BigBag.AutoStackPickup"))
                 {
-                    __result = new Item();
-                    return false;
+                    bool fullyStacked = BigBag.TryAutoStackPickup(newItem);
+                    if (fullyStacked)
+                    {
+                        __result = new Item();
+                        return false;
+                    }
                 }
             }
 
@@ -43,10 +47,13 @@ namespace OptimizeAndTool.Content.BigBag
 
             // 2. 原版 GetItem 执行完毕后，若仍有未装入本体背包的剩余物品，且开启了「满包拾取溢出」：
             // 尝试将剩余物品溢出存入巨大背包（包含钱币/弹药等全品类）
-            bool fullyPlaced = BigBag.TryOverflowPickup(__result);
-            if (fullyPlaced)
+            using (PerformanceProfiler.Measure("OptimizeAndTool", "BigBag.OverflowPickup"))
             {
-                __result = new Item();
+                bool fullyPlaced = BigBag.TryOverflowPickup(__result);
+                if (fullyPlaced)
+                {
+                    __result = new Item();
+                }
             }
         }
     }

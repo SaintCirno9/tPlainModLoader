@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using System;
 using System.Collections.Generic;
 
@@ -12,12 +12,67 @@ namespace tContentPatch.Command
         /// <param name="command"></param>
         public static void Run(string command)
         {
+            if (string.IsNullOrWhiteSpace(command)) return;
+
+            string cmd = command.Trim();
+            if (cmd.StartsWith("/") || cmd.StartsWith("."))
+            {
+                cmd = cmd.Substring(1).Trim();
+            }
+
             List<CommandObject> cos = GetCos();
 
-            string msg = Utils.CommandRun(command, cos);
+            string msg = Utils.CommandRun(cmd, cos);
             if (msg == null) return;
             
             ContentPatch.PrintTry(msg);
+        }
+
+        /// <summary>
+        /// 尝试识别并运行指令。若首个关键词匹配已知根指令则执行并返回 true，否则返回 false。
+        /// </summary>
+        public static bool TryRun(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return false;
+
+            string cmd = command.Trim();
+            if (cmd.StartsWith("/") || cmd.StartsWith("."))
+            {
+                cmd = cmd.Substring(1).Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(cmd)) return false;
+
+            List<CommandObject> cos = GetCos();
+            string firstToken = cmd.Split(' ')[0];
+
+            bool isKnown = false;
+            foreach (var co in cos)
+            {
+                if (co != null && string.Equals(co.Text, firstToken, StringComparison.OrdinalIgnoreCase))
+                {
+                    isKnown = true;
+                    break;
+                }
+            }
+
+            if (!isKnown) return false;
+
+            string msg = Utils.CommandRun(cmd, cos);
+            if (msg != null)
+            {
+                ContentPatch.PrintTry(msg);
+                try
+                {
+                    if (Terraria.Main.netMode == 0 || Terraria.Main.netMode == 1)
+                    {
+                        Terraria.Main.NewText(msg, 255, 100, 100);
+                    }
+                }
+                catch { }
+            }
+
+            return true;
         }
 
         public static List<CommandObject> GetCos()
@@ -46,6 +101,7 @@ namespace tContentPatch.Command
             console.SubCommand.Add(Utils.GetCO_OutputCOList(console.SubCommand));
 
             cos.Add(console);
+            cos.Add(ProfileCommand.CreateCommand());
 
             return cos;
         }

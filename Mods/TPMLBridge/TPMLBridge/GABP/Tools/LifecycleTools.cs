@@ -379,7 +379,8 @@ namespace TPMLBridge.GABP.Tools
             }
 
             Console.WriteLine($"[TPMLBridge Command] {command}");
-            return new { success = true, command, message = "指令已发送" };
+            tContentPatch.ContentPatch.RunCommand(command);
+            return new { success = true, command, message = "指令已执行" };
         }
     }
 }

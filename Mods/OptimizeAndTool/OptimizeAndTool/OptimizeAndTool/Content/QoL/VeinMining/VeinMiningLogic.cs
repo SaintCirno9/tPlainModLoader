@@ -8,6 +8,7 @@ using Terraria.UI;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
+using TPML.Core.Diagnostics;
 
 namespace OptimizeAndTool.Content.QoL.VeinMining
 {
@@ -55,8 +56,10 @@ namespace OptimizeAndTool.Content.QoL.VeinMining
             IsExecuting = true;
             try
             {
-                Queue<Point> queue = new Queue<Point>();
-                HashSet<long> visited = new HashSet<long>();
+                using (PerformanceProfiler.Measure("OptimizeAndTool", "VeinMining.StartMining"))
+                {
+                    Queue<Point> queue = new Queue<Point>();
+                    HashSet<long> visited = new HashSet<long>();
 
                 visited.Add(((long)startX << 32) | (uint)startY);
                 EnqueueNeighbors(startX, startY, queue, visited);
@@ -89,6 +92,7 @@ namespace OptimizeAndTool.Content.QoL.VeinMining
                     {
                         EnqueueNeighbors(cx, cy, queue, visited);
                     }
+                }
                 }
             }
             finally

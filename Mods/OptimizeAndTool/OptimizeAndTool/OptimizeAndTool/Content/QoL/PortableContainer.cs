@@ -14,6 +14,7 @@ using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.UI;
 using Terraria.UI.Gamepad;
+using TPML.Core.Diagnostics;
 
 namespace OptimizeAndTool.Content.QoL
 {
@@ -299,18 +300,21 @@ namespace OptimizeAndTool.Content.QoL
         {
             if (player == null) return;
 
-            if (PortableContainer.EnableContainerCraft.val)
+            using (PerformanceProfiler.Measure("OptimizeAndTool", "PortableContainer.CraftCollection"))
             {
-                PortableContainer.AddBankToRecipe(player.bank);
-                PortableContainer.AddBankToRecipe(player.bank2);
-                PortableContainer.AddBankToRecipe(player.bank3);
-                PortableContainer.AddBankToRecipe(player.bank4);
-            }
+                if (PortableContainer.EnableContainerCraft.val)
+                {
+                    PortableContainer.AddBankToRecipe(player.bank);
+                    PortableContainer.AddBankToRecipe(player.bank2);
+                    PortableContainer.AddBankToRecipe(player.bank3);
+                    PortableContainer.AddBankToRecipe(player.bank4);
+                }
 
-            // 巨大额外背包（随身 Chest 包装）的材料独立判定纳入
-            if (BigBagMod.EnableBigBag.val && BigBagMod.EnableBigBagCraft.val)
-            {
-                PortableContainer.AddBankToRecipe(BigBagMod.BagChest);
+                // 巨大额外背包（随身 Chest 包装）的材料独立判定纳入
+                if (BigBagMod.EnableBigBag.val && BigBagMod.EnableBigBagCraft.val)
+                {
+                    PortableContainer.AddBankToRecipe(BigBagMod.BagChest);
+                }
             }
         }
     }

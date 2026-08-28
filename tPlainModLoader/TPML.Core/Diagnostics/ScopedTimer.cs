@@ -22,10 +22,20 @@ namespace TPML.Core.Diagnostics
             _stopwatch = Stopwatch.StartNew();
         }
 
+        public static ScopedTimer Profile(ILogger logger, string operationName, float warnThresholdMs = 0f)
+        {
+            return new ScopedTimer(operationName, logger, LogLevel.Debug);
+        }
+
         public void Dispose()
         {
             _stopwatch.Stop();
-            _logger.Log(_level, $"{_operationName} 完成，耗时: {_stopwatch.ElapsedMilliseconds}ms ({_stopwatch.ElapsedTicks} ticks)");
+            long ticks = _stopwatch.ElapsedTicks;
+            if (PerformanceProfiler.IsEnabled)
+            {
+                PerformanceProfiler.Record("ScopedTimer", _operationName, ticks);
+            }
+            _logger.Log(_level, $"{_operationName} 完成，耗时: {_stopwatch.ElapsedMilliseconds}ms ({ticks} ticks)");
         }
     }
 }

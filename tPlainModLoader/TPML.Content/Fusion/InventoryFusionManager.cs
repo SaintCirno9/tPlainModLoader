@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
+using TPML.Core.Diagnostics;
 
 namespace TPML.Content.Fusion
 {
@@ -83,23 +84,26 @@ namespace TPML.Content.Fusion
         /// </summary>
         public static bool HasItem(Player player, int type)
         {
-            var sources = GetActiveSources(player);
-            for (int s = 0; s < sources.Count; s++)
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.HasItem"))
             {
-                var src = sources[s];
-                Item[] slots = src.GetSlots(player);
-                if (slots == null) continue;
-
-                for (int i = 0; i < slots.Length; i++)
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
                 {
-                    Item it = slots[i];
-                    if (it != null && !it.IsAir && it.type == type && it.stack > 0)
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
                     {
-                        return true;
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == type && it.stack > 0)
+                        {
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
-            return false;
         }
 
         /// <summary>
@@ -107,28 +111,31 @@ namespace TPML.Content.Fusion
         /// </summary>
         public static int CountItem(Player player, int type, int stopCountingAt = 0)
         {
-            int total = 0;
-            var sources = GetActiveSources(player);
-            for (int s = 0; s < sources.Count; s++)
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.CountItem"))
             {
-                var src = sources[s];
-                Item[] slots = src.GetSlots(player);
-                if (slots == null) continue;
-
-                for (int i = 0; i < slots.Length; i++)
+                int total = 0;
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
                 {
-                    Item it = slots[i];
-                    if (it != null && !it.IsAir && it.type == type && it.stack > 0)
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
                     {
-                        total += it.stack;
-                        if (stopCountingAt > 0 && total >= stopCountingAt)
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == type && it.stack > 0)
                         {
-                            return total;
+                            total += it.stack;
+                            if (stopCountingAt > 0 && total >= stopCountingAt)
+                            {
+                                return total;
+                            }
                         }
                     }
                 }
+                return total;
             }
-            return total;
         }
 
         /// <summary>
@@ -189,24 +196,27 @@ namespace TPML.Content.Fusion
             matchedSource = null;
             if (predicate == null) return null;
 
-            var sources = GetActiveSources(player);
-            for (int s = 0; s < sources.Count; s++)
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.FindMatchingItem"))
             {
-                var src = sources[s];
-                Item[] slots = src.GetSlots(player);
-                if (slots == null) continue;
-
-                for (int i = 0; i < slots.Length; i++)
+                var sources = GetActiveSources(player);
+                for (int s = 0; s < sources.Count; s++)
                 {
-                    Item it = slots[i];
-                    if (it != null && !it.IsAir && it.stack > 0 && predicate(it))
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null) continue;
+
+                    for (int i = 0; i < slots.Length; i++)
                     {
-                        matchedSource = src;
-                        return it;
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.stack > 0 && predicate(it))
+                        {
+                            matchedSource = src;
+                            return it;
+                        }
                     }
                 }
+                return null;
             }
-            return null;
         }
 
         #endregion
@@ -222,38 +232,41 @@ namespace TPML.Content.Fusion
         /// <returns>若成功扣除则返回 true</returns>
         public static bool ConsumeItem(Player player, int type, bool reverseOrder = false)
         {
-            var sources = GetActiveSources(player);
-            int srcStart = reverseOrder ? sources.Count - 1 : 0;
-            int srcEnd = reverseOrder ? -1 : sources.Count;
-            int srcStep = reverseOrder ? -1 : 1;
-
-            for (int s = srcStart; s != srcEnd; s += srcStep)
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.ConsumeItem"))
             {
-                var src = sources[s];
-                Item[] slots = src.GetSlots(player);
-                if (slots == null || slots.Length == 0) continue;
+                var sources = GetActiveSources(player);
+                int srcStart = reverseOrder ? sources.Count - 1 : 0;
+                int srcEnd = reverseOrder ? -1 : sources.Count;
+                int srcStep = reverseOrder ? -1 : 1;
 
-                int start = reverseOrder ? slots.Length - 1 : 0;
-                int end = reverseOrder ? -1 : slots.Length;
-                int step = reverseOrder ? -1 : 1;
-
-                for (int i = start; i != end; i += step)
+                for (int s = srcStart; s != srcEnd; s += srcStep)
                 {
-                    Item it = slots[i];
-                    if (it != null && !it.IsAir && it.type == type && it.stack > 0)
-                    {
-                        it.stack--;
-                        if (it.stack <= 0)
-                        {
-                            slots[i] = new Item();
-                        }
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
 
-                        src.OnModified(player);
-                        return true;
+                    int start = reverseOrder ? slots.Length - 1 : 0;
+                    int end = reverseOrder ? -1 : slots.Length;
+                    int step = reverseOrder ? -1 : 1;
+
+                    for (int i = start; i != end; i += step)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.type == type && it.stack > 0)
+                        {
+                            it.stack--;
+                            if (it.stack <= 0)
+                            {
+                                slots[i] = new Item();
+                            }
+
+                            src.OnModified(player);
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
-            return false;
         }
 
         /// <summary>
@@ -263,38 +276,41 @@ namespace TPML.Content.Fusion
         {
             if (predicate == null) return false;
 
-            var sources = GetActiveSources(player);
-            int srcStart = reverseOrder ? sources.Count - 1 : 0;
-            int srcEnd = reverseOrder ? -1 : sources.Count;
-            int srcStep = reverseOrder ? -1 : 1;
-
-            for (int s = srcStart; s != srcEnd; s += srcStep)
+            using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.ConsumeMatchingItem"))
             {
-                var src = sources[s];
-                Item[] slots = src.GetSlots(player);
-                if (slots == null || slots.Length == 0) continue;
+                var sources = GetActiveSources(player);
+                int srcStart = reverseOrder ? sources.Count - 1 : 0;
+                int srcEnd = reverseOrder ? -1 : sources.Count;
+                int srcStep = reverseOrder ? -1 : 1;
 
-                int start = reverseOrder ? slots.Length - 1 : 0;
-                int end = reverseOrder ? -1 : slots.Length;
-                int step = reverseOrder ? -1 : 1;
-
-                for (int i = start; i != end; i += step)
+                for (int s = srcStart; s != srcEnd; s += srcStep)
                 {
-                    Item it = slots[i];
-                    if (it != null && !it.IsAir && it.stack > 0 && predicate(it))
-                    {
-                        it.stack--;
-                        if (it.stack <= 0)
-                        {
-                            slots[i] = new Item();
-                        }
+                    var src = sources[s];
+                    Item[] slots = src.GetSlots(player);
+                    if (slots == null || slots.Length == 0) continue;
 
-                        src.OnModified(player);
-                        return true;
+                    int start = reverseOrder ? slots.Length - 1 : 0;
+                    int end = reverseOrder ? -1 : slots.Length;
+                    int step = reverseOrder ? -1 : 1;
+
+                    for (int i = start; i != end; i += step)
+                    {
+                        Item it = slots[i];
+                        if (it != null && !it.IsAir && it.stack > 0 && predicate(it))
+                        {
+                            it.stack--;
+                            if (it.stack <= 0)
+                            {
+                                slots[i] = new Item();
+                            }
+
+                            src.OnModified(player);
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
-            return false;
         }
 
         /// <summary>

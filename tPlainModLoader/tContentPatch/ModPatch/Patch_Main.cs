@@ -10,6 +10,7 @@ using Terraria.GameInput;
 using Terraria.IO;
 using Terraria.UI;
 using TPML.Content.IO;
+using TPML.Core.Diagnostics;
 
 namespace tContentPatch.ModPatch
 {
@@ -28,9 +29,28 @@ namespace tContentPatch.ModPatch
         {
             try
             {
+                float delta = gameTime != null ? (float)gameTime.ElapsedGameTime.TotalSeconds : 1f / 60f;
+                PerformanceProfiler.Update(delta);
+
                 UpdatePrefix_CanUpdateGameplay();
 
-                mod.ForTry(item => item.UpdatePrefix(gameTime));
+                if (PerformanceProfiler.IsEnabled)
+                {
+                    for (int i = 0; i < mod.Count; i++)
+                    {
+                        var item = mod[i];
+                        if (item == null) continue;
+                        using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePrefix"))
+                        {
+                            try { item.UpdatePrefix(gameTime); }
+                            catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
+                        }
+                    }
+                }
+                else
+                {
+                    mod.ForTry(item => item.UpdatePrefix(gameTime));
+                }
             }
             catch (Exception ex)
             {
@@ -77,7 +97,23 @@ namespace tContentPatch.ModPatch
         [HarmonyPostfix]
         public static void UpdatePostfix(GameTime gameTime)
         {
-            mod.ForTry(item => item.UpdatePostfix(gameTime));
+            if (PerformanceProfiler.IsEnabled)
+            {
+                for (int i = 0; i < mod.Count; i++)
+                {
+                    var item = mod[i];
+                    if (item == null) continue;
+                    using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePostfix"))
+                    {
+                        try { item.UpdatePostfix(gameTime); }
+                        catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
+                    }
+                }
+            }
+            else
+            {
+                mod.ForTry(item => item.UpdatePostfix(gameTime));
+            }
         }
 
         [HarmonyPatch("SetupDrawInterfaceLayers")]
@@ -88,7 +124,23 @@ namespace tContentPatch.ModPatch
             {
                 List<GameInterfaceLayer> gameInterfaceLayers = Main.instance._gameInterfaceLayers;
 
-                mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
+                if (PerformanceProfiler.IsEnabled)
+                {
+                    for (int i = 0; i < mod.Count; i++)
+                    {
+                        var item = mod[i];
+                        if (item == null) continue;
+                        using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".SetupDrawInterfaceLayers"))
+                        {
+                            try { item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers); }
+                            catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
+                        }
+                    }
+                }
+                else
+                {
+                    mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
+                }
             }
             catch (Exception ex)
             {

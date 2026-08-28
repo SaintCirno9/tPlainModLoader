@@ -10,6 +10,7 @@ using Terraria.GameContent.Items;
 using Terraria.GameInput;
 using Terraria.UI;
 using TPML.Content.UI;
+using TPML.Core.Diagnostics;
 
 namespace TPML.Content.Engine
 {
@@ -332,7 +333,17 @@ namespace TPML.Content.Engine
             {
                 var mp = ActiveModPlayers[idx];
                 mp.Player = __instance;
-                mp.PreUpdate();
+                if (PerformanceProfiler.IsEnabled)
+                {
+                    using (PerformanceProfiler.Measure(mp.Mod?.Name ?? mp.GetType().Assembly.GetName().Name, mp.GetType().Name + ".PreUpdate"))
+                    {
+                        mp.PreUpdate();
+                    }
+                }
+                else
+                {
+                    mp.PreUpdate();
+                }
             }
         }
 
@@ -355,7 +366,17 @@ namespace TPML.Content.Engine
             {
                 var mp = ActiveModPlayers[idx];
                 mp.Player = __instance;
-                mp.PostUpdate();
+                if (PerformanceProfiler.IsEnabled)
+                {
+                    using (PerformanceProfiler.Measure(mp.Mod?.Name ?? mp.GetType().Assembly.GetName().Name, mp.GetType().Name + ".PostUpdate"))
+                    {
+                        mp.PostUpdate();
+                    }
+                }
+                else
+                {
+                    mp.PostUpdate();
+                }
             }
         }
 
@@ -432,8 +453,19 @@ namespace TPML.Content.Engine
                 var sys = ActiveModSystems[idx];
                 try
                 {
-                    sys.UpdateUI(gt);
-                    sys.PostUpdateEverything();
+                    if (PerformanceProfiler.IsEnabled)
+                    {
+                        using (PerformanceProfiler.Measure(sys.Mod?.Name ?? sys.GetType().Assembly.GetName().Name, sys.GetType().Name + ".UpdateUI"))
+                        {
+                            sys.UpdateUI(gt);
+                            sys.PostUpdateEverything();
+                        }
+                    }
+                    else
+                    {
+                        sys.UpdateUI(gt);
+                        sys.PostUpdateEverything();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -714,6 +746,13 @@ namespace TPML.Content.Engine
             {
                 if (_drawSelfMethod != null)
                 {
+                    if (PerformanceProfiler.IsEnabled)
+                    {
+                        using (PerformanceProfiler.Measure("UILayers", _inner.Name))
+                        {
+                            return (bool)_drawSelfMethod.Invoke(_inner, null);
+                        }
+                    }
                     return (bool)_drawSelfMethod.Invoke(_inner, null);
                 }
                 return true;

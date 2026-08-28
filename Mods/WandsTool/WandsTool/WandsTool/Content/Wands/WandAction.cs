@@ -5,6 +5,7 @@ using Terraria;
 using Terraria.GameContent.UI;
 using Terraria.ID;
 using TPML.Content.Fusion;
+using TPML.Core.Diagnostics;
 
 namespace WandsTool.Content
 {
@@ -105,96 +106,99 @@ namespace WandsTool.Content
 
         public static void Update(int updateCount = -1)
         {
-            if (gameMain.Wand_UpdateCount < 1) gameMain.Wand_UpdateCount = 1;
-            if (updateCount < 1) updateCount = gameMain.Wand_UpdateCount;
-
-            if (tilePlace == null) tilePlace = new Queue<tile>();
-            if (tileKill == null) tileKill = new Queue<tile>();
-            if (liquidQueue == null) liquidQueue = new Queue<liquidTile>();
-            if (wirePlace == null) wirePlace = new Queue<tile>();
-            if (wireKill == null) wireKill = new Queue<tile>();
-            if (wireLinePlaceAndKill == null) wireLinePlaceAndKill = new Queue<Projectile>();
-
-            int batchSize = Math.Max(gameMain.Wand_BatchSize, 1);
-            Player player = Main.LocalPlayer;
-
-            // 1. 批量处理放置与替换
-            if (tilePlace.Count > 0 && player != null)
+            using (PerformanceProfiler.Measure("WandsTool", "WandAction.Update"))
             {
-                int processCount = Math.Min(batchSize, tilePlace.Count);
-                for (int i = 0; i < processCount; i++)
+                if (gameMain.Wand_UpdateCount < 1) gameMain.Wand_UpdateCount = 1;
+                if (updateCount < 1) updateCount = gameMain.Wand_UpdateCount;
+
+                if (tilePlace == null) tilePlace = new Queue<tile>();
+                if (tileKill == null) tileKill = new Queue<tile>();
+                if (liquidQueue == null) liquidQueue = new Queue<liquidTile>();
+                if (wirePlace == null) wirePlace = new Queue<tile>();
+                if (wireKill == null) wireKill = new Queue<tile>();
+                if (wireLinePlaceAndKill == null) wireLinePlaceAndKill = new Queue<Projectile>();
+
+                int batchSize = Math.Max(gameMain.Wand_BatchSize, 1);
+                Player player = Main.LocalPlayer;
+
+                // 1. 批量处理放置与替换
+                if (tilePlace.Count > 0 && player != null)
                 {
-                    tile t = tilePlace.Dequeue();
-                    if (t.isTile) placeTile(t, player);
-                    if (t.isWall) placeWall(t, player);
+                    int processCount = Math.Min(batchSize, tilePlace.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        tile t = tilePlace.Dequeue();
+                        if (t.isTile) placeTile(t, player);
+                        if (t.isWall) placeWall(t, player);
+                    }
                 }
-            }
 
-            // 2. 批量处理破坏/星爆
-            if (tileKill.Count > 0)
-            {
-                int processCount = Math.Min(batchSize, tileKill.Count);
-                for (int i = 0; i < processCount; i++)
+                // 2. 批量处理破坏/星爆
+                if (tileKill.Count > 0)
                 {
-                    tile t = tileKill.Dequeue();
-                    killTile(t, player);
+                    int processCount = Math.Min(batchSize, tileKill.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        tile t = tileKill.Dequeue();
+                        killTile(t, player);
+                    }
                 }
-            }
 
-            // 3. 批量处理液体操作
-            if (liquidQueue.Count > 0)
-            {
-                int processCount = Math.Min(batchSize, liquidQueue.Count);
-                for (int i = 0; i < processCount; i++)
+                // 3. 批量处理液体操作
+                if (liquidQueue.Count > 0)
                 {
-                    liquidTile lt = liquidQueue.Dequeue();
-                    processLiquid(lt, player);
+                    int processCount = Math.Min(batchSize, liquidQueue.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        liquidTile lt = liquidQueue.Dequeue();
+                        processLiquid(lt, player);
+                    }
                 }
-            }
 
-            // 4. 电线放置
-            if (wirePlace.Count > 0)
-            {
-                int processCount = Math.Min(batchSize, wirePlace.Count);
-                for (int i = 0; i < processCount; i++)
+                // 4. 电线放置
+                if (wirePlace.Count > 0)
                 {
-                    tile t = wirePlace.Dequeue();
-                    placeWire(t);
+                    int processCount = Math.Min(batchSize, wirePlace.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        tile t = wirePlace.Dequeue();
+                        placeWire(t);
+                    }
                 }
-            }
 
-            // 5. 电线拆除
-            if (wireKill.Count > 0)
-            {
-                int processCount = Math.Min(batchSize, wireKill.Count);
-                for (int i = 0; i < processCount; i++)
+                // 5. 电线拆除
+                if (wireKill.Count > 0)
                 {
-                    tile t = wireKill.Dequeue();
-                    killWire(t);
+                    int processCount = Math.Min(batchSize, wireKill.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        tile t = wireKill.Dequeue();
+                        killWire(t);
+                    }
                 }
-            }
 
-            // 6. 批量电线连接操作
-            if (wireLinePlaceAndKill.Count > 0 && player != null)
-            {
-                int processCount = Math.Min(batchSize, wireLinePlaceAndKill.Count);
-                for (int i = 0; i < processCount; i++)
+                // 6. 批量电线连接操作
+                if (wireLinePlaceAndKill.Count > 0 && player != null)
                 {
-                    Projectile p = wireLinePlaceAndKill.Dequeue();
-                    wireLineAction(p, player);
+                    int processCount = Math.Min(batchSize, wireLinePlaceAndKill.Count);
+                    for (int i = 0; i < processCount; i++)
+                    {
+                        Projectile p = wireLinePlaceAndKill.Dequeue();
+                        wireLineAction(p, player);
+                    }
                 }
+
+                Count = tilePlace.Count + tileKill.Count + liquidQueue.Count + wirePlace.Count + wireKill.Count + wireLinePlaceAndKill.Count;
+
+                // 队列全部处理完毕：统一持久化 Fusion 源变动，并归档当前撤销记录（未实际变化则丢弃）
+                if (Count == 0 && player != null)
+                {
+                    FlushFusionDirty(player);
+                    WandHistory.CheckFinalize(player);
+                }
+
+                if (--updateCount > 0) Update(updateCount);
             }
-
-            Count = tilePlace.Count + tileKill.Count + liquidQueue.Count + wirePlace.Count + wireKill.Count + wireLinePlaceAndKill.Count;
-
-            // 队列全部处理完毕：统一持久化 Fusion 源变动，并归档当前撤销记录（未实际变化则丢弃）
-            if (Count == 0 && player != null)
-            {
-                FlushFusionDirty(player);
-                WandHistory.CheckFinalize(player);
-            }
-
-            if (--updateCount > 0) Update(updateCount);
         }
 
         private static void placeTile(tile t, Player player)
