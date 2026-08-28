@@ -4,6 +4,7 @@ using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Fishing;
+using OptimizeAndTool.Content.QoL.GuaranteedDrop;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.Reforge;
 using OptimizeAndTool.Content.QoL.VeinMining;
@@ -55,6 +56,23 @@ namespace OptimizeAndTool.Content
             cos.AddRange(FishingCatchProcessor.GetCO());
             cos.AddRange(AutoFishingSupplies.GetCO());
             cos.AddRange(FishingInfoHUD.GetCO());
+            cos.AddRange(NoConsumeItems.GetCO());
+            cos.AddRange(GuaranteedDropSystem.GetCO());
+            cos.AddRange(BannerAndBestiary.GetCO());
+            cos.AddRange(SlimeAndLava.GetCO());
+            cos.AddRange(DeathAndDamage.GetCO());
+            cos.AddRange(FasterExtractinator.GetCO());
+            cos.AddRange(EcoGrowth.GetCO());
+            cos.AddRange(Economy.GetCO());
+            cos.AddRange(KeepBuffsOnDeath.GetCO());
+            cos.AddRange(ExpertDebuffTime.GetCO());
+            cos.AddRange(TownNPCSpawnSpeed.GetCO());
+            cos.AddRange(NoBiomeSpread.GetCO());
+            cos.AddRange(NoConditionTeamTP.GetCO());
+            cos.AddRange(BedRules.GetCO());
+            cos.AddRange(PylonRules.GetCO());
+            cos.AddRange(KeepRunningWhenUnfocused.GetCO());
+            cos.AddRange(TeamShare.GetCO());
 
             // 5. 杂项辅助与调试 (原 SundryTool)
             cos.AddRange(Cheat.Function1.Function.GetCO());
@@ -115,6 +133,32 @@ namespace OptimizeAndTool.Content
             uis.AddRange(FishingCatchProcessor.GetUI());
             uis.AddRange(AutoFishingSupplies.GetUI());
             uis.AddRange(FishingInfoHUD.GetUI());
+
+            // 4.5 消耗、掉落与死亡规则
+            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_6", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "消耗、掉落与死亡规则"));
+            uis.AddRange(NoConsumeItems.GetUI());
+            uis.AddRange(GuaranteedDropSystem.GetUI());
+            uis.AddRange(BannerAndBestiary.GetUI());
+            uis.AddRange(SlimeAndLava.GetUI());
+            uis.AddRange(DeathAndDamage.GetUI());
+            uis.AddRange(FasterExtractinator.GetUI());
+
+            // 4.6 生态、经济与传送规则
+            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_27", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "生态、经济与传送规则"));
+            uis.AddRange(EcoGrowth.GetUI());
+            uis.AddRange(Economy.GetUI());
+            uis.AddRange(KeepBuffsOnDeath.GetUI());
+            uis.AddRange(ExpertDebuffTime.GetUI());
+            uis.AddRange(TownNPCSpawnSpeed.GetUI());
+            uis.AddRange(NoBiomeSpread.GetUI());
+            uis.AddRange(NoConditionTeamTP.GetUI());
+
+            // 4.7 床、晶塔与多人协作
+            uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_2129", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "床、晶塔与多人协作"));
+            uis.AddRange(BedRules.GetUI());
+            uis.AddRange(PylonRules.GetUI());
+            uis.AddRange(KeepRunningWhenUnfocused.GetUI());
+            uis.AddRange(TeamShare.GetUI());
 
             // 7. 杂项辅助与调试 (原 SundryTool 功能合集)
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_1326", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "杂项辅助 (玩家能力)"));

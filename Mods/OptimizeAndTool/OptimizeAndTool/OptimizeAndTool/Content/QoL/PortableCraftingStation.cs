@@ -36,11 +36,17 @@ namespace OptimizeAndTool.Content.QoL
             };
         }
 
+        private static int scanTimer = 0;
+
         [HarmonyPatch(nameof(Player.AdjTiles))]
         [HarmonyPostfix]
         public static void AdjTilesPostfix(Player __instance)
         {
             if (__instance == null || !Enable.val) return;
+
+            // 节流：AdjTiles 每帧被调用，全量扫描（背包+4 银行+全部融合源）按 15 tick（1/4 秒）执行一次
+            if (++scanTimer < 15) return;
+            scanTimer = 0;
 
             // 1. 扫描原版玩家主背包与四箱便携收纳（猪猪/保险箱/护卫熔炉/虚空袋）
             ScanContainer(__instance, __instance.inventory);

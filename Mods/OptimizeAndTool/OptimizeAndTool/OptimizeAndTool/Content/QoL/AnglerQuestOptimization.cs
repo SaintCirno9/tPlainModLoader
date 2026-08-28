@@ -28,7 +28,8 @@ namespace OptimizeAndTool.Content.QoL
     [HarmonyPatch]
     internal class AnglerQuestOptimization
     {
-        public static GetSetReset<bool> EnableNoAnglerCooldown = new GetSetReset<bool>(true, true);
+        // 默认关闭：无冷却 + 任务鱼可堆叠组合默认开启会形成无限交付刷奖励
+        public static GetSetReset<bool> EnableNoAnglerCooldown = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> EnableQuestFishStack = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableNoFishingPenalty = new GetSetReset<bool>(true, true);
 

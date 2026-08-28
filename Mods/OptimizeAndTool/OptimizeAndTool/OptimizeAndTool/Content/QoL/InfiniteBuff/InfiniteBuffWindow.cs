@@ -172,6 +172,8 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
                     InfinitePotionAndBuff.ResetScanCache(); // 绕过扫描节流，确保开窗即用最新数据重建列表
                     InfinitePotionAndBuff.UpdateAvailableBuffs(Main.LocalPlayer);
                 }
+                // 先取消再订阅，避免反复开关窗口导致事件重复订阅、OnDataChanged 触发多次 Rebuild
+                InfiniteBuffStorage.OnDataChanged -= Rebuild;
                 InfiniteBuffStorage.OnDataChanged += Rebuild;
                 if (btnToggleHideBuffs != null)
                 {

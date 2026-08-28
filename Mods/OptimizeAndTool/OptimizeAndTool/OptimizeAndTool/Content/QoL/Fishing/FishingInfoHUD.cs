@@ -57,6 +57,7 @@ namespace OptimizeAndTool.Content.QoL.Fishing
 
             Projectile bobber = null;
             int activeBobberCount = 0;
+            // 第一遍：优先选取已入水的浮标（此时才能读取水体信息）
             for (int i = 0; i < Main.maxProjectiles; i++)
             {
                 Projectile p = Main.projectile[i];
@@ -67,9 +68,18 @@ namespace OptimizeAndTool.Content.QoL.Fishing
                     {
                         bobber = p;
                     }
-                    else if (bobber == null)
+                }
+            }
+            // 第二遍：无入水浮标时退而取第一个活跃浮标
+            if (bobber == null)
+            {
+                for (int i = 0; i < Main.maxProjectiles; i++)
+                {
+                    Projectile p = Main.projectile[i];
+                    if (p.active && p.owner == player.whoAmI && p.bobber)
                     {
                         bobber = p;
+                        break;
                     }
                 }
             }

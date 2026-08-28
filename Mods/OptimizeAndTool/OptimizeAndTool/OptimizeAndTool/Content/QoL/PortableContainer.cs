@@ -209,7 +209,9 @@ namespace OptimizeAndTool.Content.QoL
             {
                 if (split[i] > 0)
                 {
-                    int maxStack = 9999;
+                    // 原版钱币 maxStack 恒为 100（Item.cs case 71-74），且 ItemMaxStackPatch 明确排除钱币，
+                    // 不能用 9999 计算槽位，否则 ≥101 铂金会写入非法堆叠（101/100）。
+                    int maxStack = 100;
                     slotsNeeded += (int)Math.Ceiling((double)split[i] / maxStack);
                 }
             }
@@ -249,7 +251,7 @@ namespace OptimizeAndTool.Content.QoL
 
                 while (count > 0)
                 {
-                    int stackToPut = Math.Min(count, 9999);
+                    int stackToPut = Math.Min(count, 100); // 钱币 maxStack 恒 100，避免非法堆叠
                     count -= stackToPut;
 
                     int targetSlot = -1;

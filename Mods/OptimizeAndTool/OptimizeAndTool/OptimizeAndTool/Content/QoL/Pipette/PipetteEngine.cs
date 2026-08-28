@@ -285,8 +285,9 @@ namespace OptimizeAndTool.Content.QoL.Pipette
 
                 BigBag.BigBag.NotifySlotsChanged();
             }
-            catch
+            catch (System.Exception ex)
             {
+                TPML.Core.Logging.LogManager.GetLogger("OptimizeAndTool").Error("吸管归还大背包物品异常", ex);
             }
             finally
             {

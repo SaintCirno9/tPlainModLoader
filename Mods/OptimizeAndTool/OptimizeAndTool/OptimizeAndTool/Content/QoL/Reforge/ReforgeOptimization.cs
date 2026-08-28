@@ -549,7 +549,6 @@ namespace OptimizeAndTool.Content.QoL.Reforge
         {
             if (item == null || item.IsAir || targetPrefix <= 0) return;
 
-            long singleCost = GetSingleReforgeCost(item, Main.LocalPlayer);
             int rolls = 0;
             bool reachedTarget = false;
             bool outOfMoney = false;
@@ -561,7 +560,9 @@ namespace OptimizeAndTool.Content.QoL.Reforge
                 // 仅从第 2 次开始需要手动调用 BuyItem 扣费。
                 if (rolls > 0)
                 {
-                    if (!Main.LocalPlayer.BuyItem(singleCost))
+                    // 费用必须按当前物品价值逐次重算（前缀变化会改变 value，与原版点击行为一致）
+                    long cost = GetSingleReforgeCost(item, Main.LocalPlayer);
+                    if (!Main.LocalPlayer.BuyItem(cost))
                     {
                         outOfMoney = true;
                         break;

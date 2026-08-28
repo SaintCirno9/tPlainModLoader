@@ -13,6 +13,7 @@ using Terraria.DataStructures;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.UI;
 namespace OptimizeAndTool.Content.QoL
 {
@@ -34,7 +35,8 @@ namespace OptimizeAndTool.Content.QoL
         public static GetSetReset<bool> EnableInfiniteNPCReach = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableInstantHousingTeleport = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableNightAutoHome = new GetSetReset<bool>(false, false);
-        public static GetSetReset<bool> EnableAutoHouse = new GetSetReset<bool>(true, true);
+        // 默认关闭：开启会跳过 NPC 解锁前置（无条件置位 saved* 标记，含发型师/高尔夫等救援条件）
+        public static GetSetReset<bool> EnableAutoHouse = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> EnableOptimalHappiness = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableTravellingMerchantStay = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableQuickNurse = new GetSetReset<bool>(true, true);
@@ -165,8 +167,7 @@ namespace OptimizeAndTool.Content.QoL
                         NPC.savedTaxCollector = true;
                     }
                     if (NPC.downedBoss2) NPC.savedBartender = true;
-                    NPC.savedStylist = true;
-                    if (NPC.downedBoss2) NPC.savedBartender = true;
+                    // 注：以下三个为无条件解锁（跳过发型师/高尔夫/渔夫的救援与生成前置），属本功能的设计意图
                     NPC.savedStylist = true;
                     NPC.savedGolfer = true;
                     NPC.savedAngler = true;
@@ -225,7 +226,11 @@ namespace OptimizeAndTool.Content.QoL
             if (EnableOptimalHappiness.val)
             {
                 __result.PriceAdjustment = 0.75f;
-                __result.HappinessReport = "我在这里过得非常舒心！所有商品都享有最大优惠折扣！";
+                // 快乐报告文案仅在中文环境覆写，其他语言保留原版报告
+                if (GameCulture.FromCultureName(GameCulture.CultureName.Chinese).IsActive)
+                {
+                    __result.HappinessReport = "我在这里过得非常舒心！所有商品都享有最大优惠折扣！";
+                }
             }
         }
 

@@ -40,6 +40,8 @@ namespace OptimizeAndTool.Content.QoL.Fishing
             public int OriginalShoot;
             public int OriginalHoldStyle;
             public bool IsFaked;
+            /// <summary>被伪装篡改的 Item 引用（恢复时直接对引用操作，避免切换手持槽位后写错格）</summary>
+            public Item FakedItem;
         }
 
         public static List<CommandObject> GetCO()
@@ -113,6 +115,7 @@ namespace OptimizeAndTool.Content.QoL.Fishing
                         __state.OriginalPole = held.fishingPole;
                         __state.OriginalShoot = held.shoot;
                         __state.OriginalHoldStyle = held.holdStyle;
+                        __state.FakedItem = held;
                         held.fishingPole = 1;
                         held.shoot = __instance.type;
                         held.holdStyle = 1;
@@ -152,11 +155,12 @@ namespace OptimizeAndTool.Content.QoL.Fishing
                 player.selectedItemState.selected = __state.OriginalSelected;
             }
 
-            if (__state.IsFaked && player.inventory[player.selectedItem] != null)
+            // 直接对 Prefix 记录的被篡改 Item 引用恢复，避免 prefix 与 postfix 之间切换手持槽位写错格
+            if (__state.IsFaked && __state.FakedItem != null)
             {
-                player.inventory[player.selectedItem].fishingPole = __state.OriginalPole;
-                player.inventory[player.selectedItem].shoot = __state.OriginalShoot;
-                player.inventory[player.selectedItem].holdStyle = __state.OriginalHoldStyle;
+                __state.FakedItem.fishingPole = __state.OriginalPole;
+                __state.FakedItem.shoot = __state.OriginalShoot;
+                __state.FakedItem.holdStyle = __state.OriginalHoldStyle;
             }
 
             if (EnableFishInShimmer.val)
@@ -170,9 +174,9 @@ namespace OptimizeAndTool.Content.QoL.Fishing
         /// </summary>
         [HarmonyPatch(typeof(Main), nameof(Main.DrawProj), typeof(int))]
         [HarmonyPrefix]
-        public static void DrawProjPrefix(int i, out int __state)
+        public static void DrawProjPrefix(int i, out BobberHoldState __state)
         {
-            __state = -1;
+            __state = new BobberHoldState { OriginalSelected = -1, IsFaked = false };
             if (!EnableHoldItemProtection.val || i < 0 || i >= Main.maxProjectiles)
                 return;
 
@@ -187,26 +191,19 @@ namespace OptimizeAndTool.Content.QoL.Fishing
             Item held = player.inventory[player.selectedItem];
             if (held != null && held.holdStyle == 0)
             {
-                __state = held.holdStyle;
+                __state.FakedItem = held;              // 记录引用，Postfix 直接恢复
+                __state.OriginalHoldStyle = held.holdStyle;
                 held.holdStyle = 1; // 临时设为 1 触发原版 DrawProj_FishingLine
             }
         }
 
         [HarmonyPatch(typeof(Main), nameof(Main.DrawProj), typeof(int))]
         [HarmonyPostfix]
-        public static void DrawProjPostfix(int i, int __state)
+        public static void DrawProjPostfix(int i, BobberHoldState __state)
         {
-            if (__state >= 0 && i >= 0 && i < Main.maxProjectiles)
+            if (__state.FakedItem != null)
             {
-                Projectile proj = Main.projectile[i];
-                if (proj != null && proj.owner >= 0 && proj.owner < Main.maxPlayers)
-                {
-                    Player player = Main.player[proj.owner];
-                    if (player != null && player.inventory[player.selectedItem] != null)
-                    {
-                        player.inventory[player.selectedItem].holdStyle = __state;
-                    }
-                }
+                __state.FakedItem.holdStyle = __state.OriginalHoldStyle;
             }
         }
 

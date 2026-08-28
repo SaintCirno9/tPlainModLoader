@@ -65,6 +65,11 @@ namespace OptimizeAndTool.Content.QoL.VeinMining
                 EnqueueNeighbors(startX, startY, queue, visited);
 
                 int maxLimit = Math.Max(1, Math.Min(1000, MaxTiles.val));
+                // 多人模式客户端每块需 SendData 同步，限制单次连锁量避免网络洪泛（原版 PickTile 校验稿力同理）
+                if (Main.netMode == 1)
+                {
+                    maxLimit = Math.Min(maxLimit, 200);
+                }
                 int minedCount = 0;
 
                 while (queue.Count > 0 && minedCount < maxLimit)
@@ -79,6 +84,11 @@ namespace OptimizeAndTool.Content.QoL.VeinMining
                     if (curTile == null || !curTile.active()) continue;
 
                     if (!IsMatchingTile(targetType, curTile.type, targetFrameX, curTile.frameX)) continue;
+
+                    // 稿力校验：复用原版 PickTile_DetermineDamage（GetPickaxeDamage 系列判定），
+                    // 伤害 <= 0 表示当前镐挖不动（如铜镐挖叶绿/精金/神庙砖），跳过不连锁破坏
+                    player.PickTile_DetermineDamage(cx, cy, pickPower, curTile, respectTransformingTiles: false, out int bufferIndex, out int damage);
+                    if (damage <= 0) continue;
 
                     WorldGen.KillTile(cx, cy, fail: false, effectOnly: false, noItem: false);
                     minedCount++;

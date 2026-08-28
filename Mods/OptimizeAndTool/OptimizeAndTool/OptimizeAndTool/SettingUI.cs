@@ -7,6 +7,7 @@ using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
 using OptimizeAndTool.Content.QoL;
 using OptimizeAndTool.Content.QoL.Fishing;
+using OptimizeAndTool.Content.QoL.GuaranteedDrop;
 using OptimizeAndTool.Content.QoL.InfiniteBuff;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.Reforge;
@@ -48,15 +49,19 @@ namespace OptimizeAndTool
             public bool MonsterBanners = true;
             public bool HideEndlessBuffs = false;
 
+            // 首见保底掉落
+            public bool GuaranteedDrop = true;
+            public bool GuaranteedMultiOptionBurst = true;
+
             public bool NPCInstantHousingTeleport = true;
             public bool NPCNightAutoHome = false;
-            public bool NPCAutoHouse = true;
+            public bool NPCAutoHouse = false;
             public bool NPCOptimalHappiness = true;
             public bool TravellingMerchantStay = true;
             public bool QuickNurse = true;
             public bool ReforgeOptimization = true;
 
-            public bool NoAnglerCooldown = true;
+            public bool NoAnglerCooldown = false;
             public bool QuestFishStack = true;
             public bool NoFishingPenalty = true;
 
@@ -163,6 +168,70 @@ namespace OptimizeAndTool
             public bool NoDead = false;
             public bool ManaMax = false;
 
+            // 无限消耗规则 (QoL.NoConsumeItems)
+            public bool NoConsumeSummonItem = false;
+            public bool NoConsumeAmmo = false;
+            public bool NoConsumeProjectile = false;
+            public bool NoConsumeWire = false;
+
+            // 旗帜与图鉴 (QoL.BannerAndBestiary)
+            public bool BannerRequirement = false;
+            public float BannerRequirementMult = 1f;
+            public bool BestiaryQuickUnlock = false;
+
+            // 史莱姆与熔岩 (QoL.SlimeAndLava)
+            public bool SlimeExDrop = false;
+            public bool LavalessLavaSlime = false;
+
+            // 死亡与伤害 (QoL.DeathAndDamage)
+            public bool BanTombstone = false;
+            public bool DisableDamageVar = false;
+            public bool RespawnWithFullHP = false;
+
+            // 提炼机加速 (QoL.FasterExtractinator)
+            public bool FasterExtractinator = false;
+
+            // 生态生长 (QoL.EcoGrowth)
+            public bool PumpkinFastGrow = false;
+            public bool LifeFruitFastGrow = false;
+
+            // 经济 (QoL.Economy)
+            public bool CoinDropRateEnabled = false;
+            public float CoinDropRateMult = 1f;
+
+            // 死亡保存增益 (QoL.KeepBuffsOnDeath)
+            public bool KeepBuffsOnDeath = false;
+
+            // 专家 Debuff 时长 (QoL.ExpertDebuffTime)
+            public bool ClassicDebuffTime = false;
+
+            // 城镇 NPC 刷新 (QoL.TownNPCSpawnSpeed)
+            public bool TownNPCSpawnSpeedEnabled = false;
+            public float TownNPCSpawnSpeedMult = 2f;
+
+            // 禁止邪恶蔓延 (QoL.NoBiomeSpread)
+            public bool NoBiomeSpread = false;
+
+            // 无条件队内传送 (QoL.NoConditionTeamTP)
+            public bool NoConditionTeamTP = false;
+
+            // 床与睡眠 (QoL.BedRules)
+            public bool BedAnywhere = false;
+            public bool NoSleepRestrictions = false;
+            public bool BedTimeRateEnabled = false;
+            public float BedTimeRateVal = 5f;
+            public bool OnePlayerSleep = false;
+
+            // 晶塔细分 (QoL.PylonRules)
+            public bool PylonNoNPCNeeded = false;
+            public bool PylonIgnoreBiome = false;
+
+            // 失焦保持运行 (QoL.KeepRunningWhenUnfocused)
+            public bool KeepRunningWhenUnfocused = false;
+
+            // 队伍共享 (QoL.TeamShare)
+            public bool ShareCraftingStation = false;
+
             // 无限 Buff 偏好设置 (全局配置)
             public List<int> InfiniteBuffBlacklist = new List<int>();
             public List<int> InfiniteBuffFavorites = new List<int>();
@@ -213,6 +282,8 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableBuffStations.val = data.BuffStations;
             InfinitePotionAndBuff.EnableMonsterBanners.val = data.MonsterBanners;
             InfinitePotionAndBuff.HideEndlessBuffs.val = data.HideEndlessBuffs;
+            GuaranteedDropSystem.EnableGuaranteedDrop.val = data.GuaranteedDrop;
+            GuaranteedDropSystem.EnableMultiOptionBurst.val = data.GuaranteedMultiOptionBurst;
             InfiniteBuffStorage.LoadFromConfig(data.InfiniteBuffBlacklist, data.InfiniteBuffFavorites);
 
             TownNPCOptimization.EnableInstantHousingTeleport.val = data.NPCInstantHousingTeleport;
@@ -329,6 +400,70 @@ namespace OptimizeAndTool
             // 基础作弊 (Cheat.Function1)
             Content.Cheat.Function1.Function.noDead.val = data.NoDead;
             Content.Cheat.Function1.Function.manaMax.val = data.ManaMax;
+
+            // 无限消耗规则 (QoL.NoConsumeItems)
+            Content.QoL.NoConsumeItems.NoConsumeSummonItem.val = data.NoConsumeSummonItem;
+            Content.QoL.NoConsumeItems.NoConsumeAmmo.val = data.NoConsumeAmmo;
+            Content.QoL.NoConsumeItems.NoConsumeProjectile.val = data.NoConsumeProjectile;
+            Content.QoL.NoConsumeItems.NoConsumeWire.val = data.NoConsumeWire;
+
+            // 旗帜与图鉴 (QoL.BannerAndBestiary)
+            Content.QoL.BannerAndBestiary.EnableBannerRequirement.val = data.BannerRequirement;
+            Content.QoL.BannerAndBestiary.BannerRequirementMultiplier.val = data.BannerRequirementMult;
+            Content.QoL.BannerAndBestiary.EnableBestiaryQuickUnlock.val = data.BestiaryQuickUnlock;
+
+            // 史莱姆与熔岩 (QoL.SlimeAndLava)
+            Content.QoL.SlimeAndLava.EnableSlimeExDrop.val = data.SlimeExDrop;
+            Content.QoL.SlimeAndLava.EnableLavalessLavaSlime.val = data.LavalessLavaSlime;
+
+            // 死亡与伤害 (QoL.DeathAndDamage)
+            Content.QoL.DeathAndDamage.BanTombstone.val = data.BanTombstone;
+            Content.QoL.DeathAndDamage.DisableDamageVar.val = data.DisableDamageVar;
+            Content.QoL.DeathAndDamage.RespawnWithFullHP.val = data.RespawnWithFullHP;
+
+            // 提炼机加速 (QoL.FasterExtractinator)
+            Content.QoL.FasterExtractinator.Enable.val = data.FasterExtractinator;
+
+            // 生态生长 (QoL.EcoGrowth)
+            Content.QoL.EcoGrowth.EnablePumpkinFastGrow.val = data.PumpkinFastGrow;
+            Content.QoL.EcoGrowth.EnableLifeFruitFastGrow.val = data.LifeFruitFastGrow;
+
+            // 经济 (QoL.Economy)
+            Content.QoL.Economy.EnableCoinDropRate.val = data.CoinDropRateEnabled;
+            Content.QoL.Economy.CoinDropRate.val = data.CoinDropRateMult;
+
+            // 死亡保存增益 (QoL.KeepBuffsOnDeath)
+            Content.QoL.KeepBuffsOnDeath.Enable.val = data.KeepBuffsOnDeath;
+
+            // 专家 Debuff 时长 (QoL.ExpertDebuffTime)
+            Content.QoL.ExpertDebuffTime.Enable.val = data.ClassicDebuffTime;
+
+            // 城镇 NPC 刷新 (QoL.TownNPCSpawnSpeed)
+            Content.QoL.TownNPCSpawnSpeed.Enable.val = data.TownNPCSpawnSpeedEnabled;
+            Content.QoL.TownNPCSpawnSpeed.Multiplier.val = data.TownNPCSpawnSpeedMult;
+
+            // 禁止邪恶蔓延 (QoL.NoBiomeSpread)
+            Content.QoL.NoBiomeSpread.Enable.val = data.NoBiomeSpread;
+
+            // 无条件队内传送 (QoL.NoConditionTeamTP)
+            Content.QoL.NoConditionTeamTP.Enable.val = data.NoConditionTeamTP;
+
+            // 床与睡眠 (QoL.BedRules)
+            Content.QoL.BedRules.EnableBedAnywhere.val = data.BedAnywhere;
+            Content.QoL.BedRules.EnableNoSleepRestrictions.val = data.NoSleepRestrictions;
+            Content.QoL.BedRules.EnableBedTimeRate.val = data.BedTimeRateEnabled;
+            Content.QoL.BedRules.BedTimeRate.val = data.BedTimeRateVal;
+            Content.QoL.BedRules.EnableOnePlayerSleep.val = data.OnePlayerSleep;
+
+            // 晶塔细分 (QoL.PylonRules)
+            Content.QoL.PylonRules.EnableNoNPCCheck.val = data.PylonNoNPCNeeded;
+            Content.QoL.PylonRules.EnableIgnoreBiome.val = data.PylonIgnoreBiome;
+
+            // 失焦保持运行 (QoL.KeepRunningWhenUnfocused)
+            Content.QoL.KeepRunningWhenUnfocused.Enable.val = data.KeepRunningWhenUnfocused;
+
+            // 队伍共享 (QoL.TeamShare)
+            Content.QoL.TeamShare.EnableShareCraftingStation.val = data.ShareCraftingStation;
 
             // 注册变更自动保存
             CleanRepeatChat.Enable.OnValUpdate += _ => NeedSave = true;
@@ -455,6 +590,74 @@ namespace OptimizeAndTool
             // 基础作弊
             Content.Cheat.Function1.Function.noDead.OnValUpdate += _ => NeedSave = true;
             Content.Cheat.Function1.Function.manaMax.OnValUpdate += _ => NeedSave = true;
+
+            // 无限消耗规则
+            Content.QoL.NoConsumeItems.NoConsumeSummonItem.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.NoConsumeItems.NoConsumeAmmo.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.NoConsumeItems.NoConsumeProjectile.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.NoConsumeItems.NoConsumeWire.OnValUpdate += _ => NeedSave = true;
+
+            // 首见保底掉落
+            GuaranteedDropSystem.EnableGuaranteedDrop.OnValUpdate += _ => NeedSave = true;
+            GuaranteedDropSystem.EnableMultiOptionBurst.OnValUpdate += _ => NeedSave = true;
+
+            // 旗帜与图鉴
+            Content.QoL.BannerAndBestiary.EnableBannerRequirement.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BannerAndBestiary.BannerRequirementMultiplier.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BannerAndBestiary.EnableBestiaryQuickUnlock.OnValUpdate += _ => NeedSave = true;
+
+            // 史莱姆与熔岩
+            Content.QoL.SlimeAndLava.EnableSlimeExDrop.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.SlimeAndLava.EnableLavalessLavaSlime.OnValUpdate += _ => NeedSave = true;
+
+            // 死亡与伤害
+            Content.QoL.DeathAndDamage.BanTombstone.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.DeathAndDamage.DisableDamageVar.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.DeathAndDamage.RespawnWithFullHP.OnValUpdate += _ => NeedSave = true;
+
+            // 提炼机加速
+            Content.QoL.FasterExtractinator.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 生态生长
+            Content.QoL.EcoGrowth.EnablePumpkinFastGrow.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.EcoGrowth.EnableLifeFruitFastGrow.OnValUpdate += _ => NeedSave = true;
+
+            // 经济
+            Content.QoL.Economy.EnableCoinDropRate.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.Economy.CoinDropRate.OnValUpdate += _ => NeedSave = true;
+
+            // 死亡保存增益
+            Content.QoL.KeepBuffsOnDeath.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 专家 Debuff 时长
+            Content.QoL.ExpertDebuffTime.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 城镇 NPC 刷新
+            Content.QoL.TownNPCSpawnSpeed.Enable.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.TownNPCSpawnSpeed.Multiplier.OnValUpdate += _ => NeedSave = true;
+
+            // 禁止邪恶蔓延
+            Content.QoL.NoBiomeSpread.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 无条件队内传送
+            Content.QoL.NoConditionTeamTP.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 床与睡眠
+            Content.QoL.BedRules.EnableBedAnywhere.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BedRules.EnableNoSleepRestrictions.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BedRules.EnableBedTimeRate.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BedRules.BedTimeRate.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.BedRules.EnableOnePlayerSleep.OnValUpdate += _ => NeedSave = true;
+
+            // 晶塔细分
+            Content.QoL.PylonRules.EnableNoNPCCheck.OnValUpdate += _ => NeedSave = true;
+            Content.QoL.PylonRules.EnableIgnoreBiome.OnValUpdate += _ => NeedSave = true;
+
+            // 失焦保持运行
+            Content.QoL.KeepRunningWhenUnfocused.Enable.OnValUpdate += _ => NeedSave = true;
+
+            // 队伍共享
+            Content.QoL.TeamShare.EnableShareCraftingStation.OnValUpdate += _ => NeedSave = true;
         }
 
         public override object GetSaveData()
@@ -479,6 +682,9 @@ namespace OptimizeAndTool
                 BuffStations = InfinitePotionAndBuff.EnableBuffStations.val,
                 MonsterBanners = InfinitePotionAndBuff.EnableMonsterBanners.val,
                 HideEndlessBuffs = InfinitePotionAndBuff.HideEndlessBuffs.val,
+
+                GuaranteedDrop = GuaranteedDropSystem.EnableGuaranteedDrop.val,
+                GuaranteedMultiOptionBurst = GuaranteedDropSystem.EnableMultiOptionBurst.val,
 
                 NPCInstantHousingTeleport = TownNPCOptimization.EnableInstantHousingTeleport.val,
                 NPCNightAutoHome = TownNPCOptimization.EnableNightAutoHome.val,
@@ -591,6 +797,70 @@ namespace OptimizeAndTool
                 // 基础作弊
                 NoDead = Content.Cheat.Function1.Function.noDead.val,
                 ManaMax = Content.Cheat.Function1.Function.manaMax.val,
+
+                // 无限消耗规则
+                NoConsumeSummonItem = Content.QoL.NoConsumeItems.NoConsumeSummonItem.val,
+                NoConsumeAmmo = Content.QoL.NoConsumeItems.NoConsumeAmmo.val,
+                NoConsumeProjectile = Content.QoL.NoConsumeItems.NoConsumeProjectile.val,
+                NoConsumeWire = Content.QoL.NoConsumeItems.NoConsumeWire.val,
+
+                // 旗帜与图鉴
+                BannerRequirement = Content.QoL.BannerAndBestiary.EnableBannerRequirement.val,
+                BannerRequirementMult = Content.QoL.BannerAndBestiary.BannerRequirementMultiplier.val,
+                BestiaryQuickUnlock = Content.QoL.BannerAndBestiary.EnableBestiaryQuickUnlock.val,
+
+                // 史莱姆与熔岩
+                SlimeExDrop = Content.QoL.SlimeAndLava.EnableSlimeExDrop.val,
+                LavalessLavaSlime = Content.QoL.SlimeAndLava.EnableLavalessLavaSlime.val,
+
+                // 死亡与伤害
+                BanTombstone = Content.QoL.DeathAndDamage.BanTombstone.val,
+                DisableDamageVar = Content.QoL.DeathAndDamage.DisableDamageVar.val,
+                RespawnWithFullHP = Content.QoL.DeathAndDamage.RespawnWithFullHP.val,
+
+                // 提炼机加速
+                FasterExtractinator = Content.QoL.FasterExtractinator.Enable.val,
+
+                // 生态生长
+                PumpkinFastGrow = Content.QoL.EcoGrowth.EnablePumpkinFastGrow.val,
+                LifeFruitFastGrow = Content.QoL.EcoGrowth.EnableLifeFruitFastGrow.val,
+
+                // 经济
+                CoinDropRateEnabled = Content.QoL.Economy.EnableCoinDropRate.val,
+                CoinDropRateMult = Content.QoL.Economy.CoinDropRate.val,
+
+                // 死亡保存增益
+                KeepBuffsOnDeath = Content.QoL.KeepBuffsOnDeath.Enable.val,
+
+                // 专家 Debuff 时长
+                ClassicDebuffTime = Content.QoL.ExpertDebuffTime.Enable.val,
+
+                // 城镇 NPC 刷新
+                TownNPCSpawnSpeedEnabled = Content.QoL.TownNPCSpawnSpeed.Enable.val,
+                TownNPCSpawnSpeedMult = Content.QoL.TownNPCSpawnSpeed.Multiplier.val,
+
+                // 禁止邪恶蔓延
+                NoBiomeSpread = Content.QoL.NoBiomeSpread.Enable.val,
+
+                // 无条件队内传送
+                NoConditionTeamTP = Content.QoL.NoConditionTeamTP.Enable.val,
+
+                // 床与睡眠
+                BedAnywhere = Content.QoL.BedRules.EnableBedAnywhere.val,
+                NoSleepRestrictions = Content.QoL.BedRules.EnableNoSleepRestrictions.val,
+                BedTimeRateEnabled = Content.QoL.BedRules.EnableBedTimeRate.val,
+                BedTimeRateVal = Content.QoL.BedRules.BedTimeRate.val,
+                OnePlayerSleep = Content.QoL.BedRules.EnableOnePlayerSleep.val,
+
+                // 晶塔细分
+                PylonNoNPCNeeded = Content.QoL.PylonRules.EnableNoNPCCheck.val,
+                PylonIgnoreBiome = Content.QoL.PylonRules.EnableIgnoreBiome.val,
+
+                // 失焦保持运行
+                KeepRunningWhenUnfocused = Content.QoL.KeepRunningWhenUnfocused.Enable.val,
+
+                // 队伍共享
+                ShareCraftingStation = Content.QoL.TeamShare.EnableShareCraftingStation.val,
 
                 // 无限 Buff 偏好设置
                 InfiniteBuffBlacklist = InfiniteBuffStorage.ExportBlacklist(),
@@ -725,6 +995,70 @@ namespace OptimizeAndTool
 
             Content.Cheat.Function1.Function.noDead.Reset();
             Content.Cheat.Function1.Function.manaMax.Reset();
+
+            // 无限消耗规则
+            Content.QoL.NoConsumeItems.NoConsumeSummonItem.Reset();
+            Content.QoL.NoConsumeItems.NoConsumeAmmo.Reset();
+            Content.QoL.NoConsumeItems.NoConsumeProjectile.Reset();
+            Content.QoL.NoConsumeItems.NoConsumeWire.Reset();
+
+            // 旗帜与图鉴
+            Content.QoL.BannerAndBestiary.EnableBannerRequirement.Reset();
+            Content.QoL.BannerAndBestiary.BannerRequirementMultiplier.Reset();
+            Content.QoL.BannerAndBestiary.EnableBestiaryQuickUnlock.Reset();
+
+            // 史莱姆与熔岩
+            Content.QoL.SlimeAndLava.EnableSlimeExDrop.Reset();
+            Content.QoL.SlimeAndLava.EnableLavalessLavaSlime.Reset();
+
+            // 死亡与伤害
+            Content.QoL.DeathAndDamage.BanTombstone.Reset();
+            Content.QoL.DeathAndDamage.DisableDamageVar.Reset();
+            Content.QoL.DeathAndDamage.RespawnWithFullHP.Reset();
+
+            // 提炼机加速
+            Content.QoL.FasterExtractinator.Enable.Reset();
+
+            // 生态生长
+            Content.QoL.EcoGrowth.EnablePumpkinFastGrow.Reset();
+            Content.QoL.EcoGrowth.EnableLifeFruitFastGrow.Reset();
+
+            // 经济
+            Content.QoL.Economy.EnableCoinDropRate.Reset();
+            Content.QoL.Economy.CoinDropRate.Reset();
+
+            // 死亡保存增益
+            Content.QoL.KeepBuffsOnDeath.Enable.Reset();
+
+            // 专家 Debuff 时长
+            Content.QoL.ExpertDebuffTime.Enable.Reset();
+
+            // 城镇 NPC 刷新
+            Content.QoL.TownNPCSpawnSpeed.Enable.Reset();
+            Content.QoL.TownNPCSpawnSpeed.Multiplier.Reset();
+
+            // 禁止邪恶蔓延
+            Content.QoL.NoBiomeSpread.Enable.Reset();
+
+            // 无条件队内传送
+            Content.QoL.NoConditionTeamTP.Enable.Reset();
+
+            // 床与睡眠
+            Content.QoL.BedRules.EnableBedAnywhere.Reset();
+            Content.QoL.BedRules.EnableNoSleepRestrictions.Reset();
+            Content.QoL.BedRules.EnableBedTimeRate.Reset();
+            Content.QoL.BedRules.BedTimeRate.Reset();
+            Content.QoL.BedRules.EnableOnePlayerSleep.Reset();
+
+            // 晶塔细分
+            Content.QoL.PylonRules.EnableNoNPCCheck.Reset();
+            Content.QoL.PylonRules.EnableIgnoreBiome.Reset();
+
+            // 失焦保持运行
+            Content.QoL.KeepRunningWhenUnfocused.Enable.Reset();
+
+            // 队伍共享
+            Content.QoL.TeamShare.EnableShareCraftingStation.Reset();
         }
     }
 }
