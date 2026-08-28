@@ -69,7 +69,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             float toolbarTopMargin = 6f;
             float toolbarHeight = 22f;
             float catToolbarTopMargin = 4f;
-            float catToolbarHeight = 52f; // 2 行分类网格 (24px * 2 + 4px)
+            float catToolbarHeight = 24f; // 单行分类网格 (24px)
             float searchToolbarTopMargin = 4f;
             float searchToolbarHeight = 22f;
 
@@ -289,10 +289,11 @@ namespace OptimizeAndTool.Content.Storage.Core
                 }
             }
 
-            // 7. 统计文本
+            // 7. 统计文本（靠右对齐）
             capacityText = new UIText("0/0", 0.8f);
             capacityText.VAlign = 0.5f;
-            sp.Append(capacityText);
+            capacityText.HAlign = 1f;
+            topToolbar.Append(capacityText);
         }
 
         private bool IsActiveFilter()
@@ -317,11 +318,9 @@ namespace OptimizeAndTool.Content.Storage.Core
             if (categoryToolbar.Parent != Child) Child.Append(categoryToolbar);
 
             int btnSize = 24;
-            int margin = 3;
 
             var categories = new (BagItemCategory cat, string desc, string icon)[]
             {
-                // 第一行 (8个)
                 (BagItemCategory.All, "全部物品", "Images/Item_2712"),
                 (BagItemCategory.Weapon, "武器（近战/远程/魔法/召唤）", "Images/Item_3507"),
                 (BagItemCategory.Tool, "工具（镐/斧/锤/钓竿/扳手等）", "Images/Item_3509"),
@@ -330,8 +329,6 @@ namespace OptimizeAndTool.Content.Storage.Core
                 (BagItemCategory.VanityDye, "时装与染料（外观衣物/各色染料）", "Images/Item_2873"),
                 (BagItemCategory.Potion, "药水与食物（治疗/魔力/增益/食物）", "Images/Item_296"),
                 (BagItemCategory.Ammo, "弹药（箭矢/子弹/火箭/飞镖）", "Images/Item_40"),
-
-                // 第二行 (8个)
                 (BagItemCategory.Bait, "鱼饵（各类诱饵/钓鱼昆虫等）", "Images/Item_2676"),
                 (BagItemCategory.Tile, "物块与建筑（方块/墙壁/平台）", "Images/Item_2"),
                 (BagItemCategory.Furniture, "家具与装饰（桌椅床门/箱子/挂画/雕像）", "Images/Item_362"),
@@ -341,24 +338,6 @@ namespace OptimizeAndTool.Content.Storage.Core
                 (BagItemCategory.Material, "合成素材（矿石/锭/灵魂/制作材料）", "Images/Item_706"),
                 (BagItemCategory.Misc, "杂项与钱币（钱币/杂物/其他）", "Images/Item_73")
             };
-
-            // 第一行容器
-            UIStackPanel row1 = new UIStackPanel();
-            row1.Height.Set(btnSize, 0);
-            row1.Top.Set(0, 0);
-            row1.IsAutoUpdateSize = true;
-            row1.Horizontal = true;
-            row1.ItemMargin = margin;
-            categoryToolbar.Append(row1);
-
-            // 第二行容器
-            UIStackPanel row2 = new UIStackPanel();
-            row2.Height.Set(btnSize, 0);
-            row2.Top.Set(btnSize + margin, 0);
-            row2.IsAutoUpdateSize = true;
-            row2.Horizontal = true;
-            row2.ItemMargin = margin;
-            categoryToolbar.Append(row2);
 
             for (int i = 0; i < categories.Length; i++)
             {
@@ -373,16 +352,25 @@ namespace OptimizeAndTool.Content.Storage.Core
                     () => currentCategory == targetCat
                 );
 
+                btn.HAlign = (float)i / (categories.Length - 1);
+                btn.VAlign = 0.5f;
+
                 btn.OnClick += () =>
                 {
-                    currentCategory = targetCat;
+                    if (currentCategory == targetCat)
+                    {
+                        currentCategory = BagItemCategory.All;
+                    }
+                    else
+                    {
+                        currentCategory = targetCat;
+                    }
                     SoundEngine.PlaySound(SoundID.MenuTick);
                     RebuildSlots();
                 };
 
                 categoryButtons.Add(btn);
-                if (i < 8) row1.Append(btn);
-                else row2.Append(btn);
+                categoryToolbar.Append(btn);
             }
         }
 
@@ -474,7 +462,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             float toolbarTopMargin = 6f;
             float toolbarHeight = 22f;
             float catToolbarTopMargin = 4f;
-            float catToolbarHeight = 52f;
+            float catToolbarHeight = 24f;
             float searchToolbarTopMargin = 4f;
             float searchToolbarHeight = 22f;
 
