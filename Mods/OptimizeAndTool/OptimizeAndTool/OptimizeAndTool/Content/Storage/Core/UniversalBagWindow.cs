@@ -20,7 +20,7 @@ namespace OptimizeAndTool.Content.Storage.Core
 {
     /// <summary>
     /// 通用大型容器 UI 窗口：
-    /// 精确对齐饰品包经典原生质感与自适应排版，杜绝左右空隙，具备原版物品栏材质、智能 Mod 侧边栏、分类筛选、多维拼音搜索与扩展动作插槽。
+    /// 精确对齐饰品包经典原生质感与自适应排版，杜绝左右空隙，具备原版物品栏材质、智能 Mod 侧边栏、16 大细分类多行网格、独立搜索工具栏、分类空格手动存入与分类精准提取。
     /// 作者: SaintCirno9
     /// </summary>
     public class UniversalBagWindow : UIWindow
@@ -33,7 +33,8 @@ namespace OptimizeAndTool.Content.Storage.Core
         public const float SLOT_MARGIN = 4f;
 
         private UIElement topToolbar = null;
-        private UIElement filterToolbar = null;
+        private UIElement categoryToolbar = null;
+        private UIElement searchToolbar = null;
         private UIElement contentArea = null;
         private UIBoxWrapPanel wp = null;
         private UIList uiList = null;
@@ -53,7 +54,7 @@ namespace OptimizeAndTool.Content.Storage.Core
         public BagItemCategory CurrentCategory => currentCategory;
         public string SearchQuery => searchQuery;
 
-        public UniversalBagWindow(string defaultTitle = "收纳容器") : base(defaultTitle, 476, 360)
+        public UniversalBagWindow(string defaultTitle = "收纳容器") : base(defaultTitle, 476, 420)
         {
             // 移除右下角缩放手柄，保持原生紧凑自适应尺寸
             foreach (UIElement el in Elements)
@@ -65,10 +66,12 @@ namespace OptimizeAndTool.Content.Storage.Core
                 }
             }
 
-            float toolbarTopMargin = 8f;
+            float toolbarTopMargin = 6f;
             float toolbarHeight = 22f;
-            float filterToolbarTopMargin = 4f;
-            float filterToolbarHeight = 22f;
+            float catToolbarTopMargin = 4f;
+            float catToolbarHeight = 52f; // 2 行分类网格 (24px * 2 + 4px)
+            float searchToolbarTopMargin = 4f;
+            float searchToolbarHeight = 22f;
 
             // 1. 第一行：顶部操作按钮栏
             topToolbar = new UIElement();
@@ -77,15 +80,22 @@ namespace OptimizeAndTool.Content.Storage.Core
             topToolbar.Height.Set(toolbarHeight, 0);
             Child.Append(topToolbar);
 
-            // 2. 第二行：分类图标与搜索工具栏
-            filterToolbar = new UIElement();
-            filterToolbar.Width.Set(0, 1);
-            filterToolbar.Top.Set(toolbarTopMargin + toolbarHeight + filterToolbarTopMargin, 0);
-            filterToolbar.Height.Set(filterToolbarHeight, 0);
-            Child.Append(filterToolbar);
+            // 2. 第二行：16 大细分类独占多行网格
+            categoryToolbar = new UIElement();
+            categoryToolbar.Width.Set(0, 1);
+            categoryToolbar.Top.Set(toolbarTopMargin + toolbarHeight + catToolbarTopMargin, 0);
+            categoryToolbar.Height.Set(catToolbarHeight, 0);
+            Child.Append(categoryToolbar);
 
-            // 3. 内容展示区（网格 + 侧边栏 + 滚动条）
-            float topOffset = toolbarTopMargin + toolbarHeight + filterToolbarTopMargin + filterToolbarHeight + 6f;
+            // 3. 第三行：搜索工具栏（独占一行）
+            searchToolbar = new UIElement();
+            searchToolbar.Width.Set(0, 1);
+            searchToolbar.Top.Set(toolbarTopMargin + toolbarHeight + catToolbarTopMargin + catToolbarHeight + searchToolbarTopMargin, 0);
+            searchToolbar.Height.Set(searchToolbarHeight, 0);
+            Child.Append(searchToolbar);
+
+            // 4. 内容展示区（网格 + 侧边栏 + 滚动条）
+            float topOffset = toolbarTopMargin + toolbarHeight + catToolbarTopMargin + catToolbarHeight + searchToolbarTopMargin + searchToolbarHeight + 6f;
             contentArea = new UIElement();
             contentArea.Width.Set(0, 1);
             contentArea.Top.Set(topOffset, 0);
@@ -142,7 +152,8 @@ namespace OptimizeAndTool.Content.Storage.Core
             }
 
             BuildTopToolbar();
-            BuildFilterToolbar();
+            BuildCategoryToolbar();
+            BuildSearchToolbar();
             Open(parentState);
             Rebuild();
         }
@@ -186,13 +197,62 @@ namespace OptimizeAndTool.Content.Storage.Core
             btnQuickStack.OnClick += () => CurrentBag?.QuickStack(Main.LocalPlayer);
             sp.Append(btnQuickStack);
 
-            // 3. 全部取出
-            UIBoxButton btnLoot = new UIBoxButton(height, () => "一键取出容器中所有物品回个人背包", "Images/UI/Cursor_6");
-            btnLoot.OnClick += () => CurrentBag?.LootAll(Main.LocalPlayer);
+            // 3. 全部取出（智能联动当前分类与搜索筛选）
+            UIBoxButton btnLoot = new UIBoxButton(
+                height,
+                () => IsActiveFilter() ? "一键取出当前筛选/分类下的所有物品回个人背包" : "一键取出容器中所有物品回个人背包",
+                () => "Images/UI/Cursor_6"
+            );
+            btnLoot.OnClick += () =>
+            {
+                if (CurrentBag == null) return;
+                if (!IsActiveFilter())
+                {
+                    CurrentBag.LootAll(Main.LocalPlayer, null);
+                }
+                else
+                {
+                    string currentMod = sidebar != null ? sidebar.CurrentFilter : "All";
+                    BagItemCategory targetCategory = currentCategory;
+                    string query = searchQuery;
+
+                    Func<Item, bool> filterPredicate = (it) =>
+                    {
+                        if (it == null || it.IsAir) return false;
+
+                        if (currentMod != "All")
+                        {
+                            if (currentMod == "Terraria")
+                            {
+                                if (it.type >= ItemID.Count) return false;
+                            }
+                            else
+                            {
+                                ModItem modIt = ItemLoader.GetModItem(it.type);
+                                if ((modIt?.Mod?.Name ?? "TPML") != currentMod) return false;
+                            }
+                        }
+
+                        if (targetCategory != BagItemCategory.All)
+                        {
+                            if (!BagCategoryHelper.MatchesCategory(it, targetCategory)) return false;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(query))
+                        {
+                            if (!BagCategoryHelper.MatchesSearch(it, query)) return false;
+                        }
+
+                        return true;
+                    };
+
+                    CurrentBag.LootAll(Main.LocalPlayer, filterPredicate);
+                }
+            };
             sp.Append(btnLoot);
 
-            // 4. 智能整理排序
-            UIBoxButton btnSort = new UIBoxButton(height, () => "一键智能整理并排序容器物品", "Images/UI/Cursor_9");
+            // 4. 智能整理排序（收藏 Favorited 置顶）
+            UIBoxButton btnSort = new UIBoxButton(height, () => "一键智能整理并排序容器物品（收藏锁定物品自动置顶）", "Images/UI/Cursor_9");
             btnSort.OnClick += () => CurrentBag?.Sort();
             sp.Append(btnSort);
 
@@ -235,79 +295,119 @@ namespace OptimizeAndTool.Content.Storage.Core
             sp.Append(capacityText);
         }
 
-        private void BuildFilterToolbar()
+        private bool IsActiveFilter()
         {
-            filterToolbar.Elements.Clear();
+            string modFilter = sidebar != null ? sidebar.CurrentFilter : "All";
+            return currentCategory != BagItemCategory.All ||
+                   !string.IsNullOrWhiteSpace(searchQuery) ||
+                   modFilter != "All";
+        }
+
+        private void BuildCategoryToolbar()
+        {
+            categoryToolbar.Elements.Clear();
             categoryButtons.Clear();
 
             if (CurrentBag == null || !CurrentBag.ShowFilterBar)
             {
-                if (filterToolbar.Parent == Child)
-                {
-                    Child.RemoveChild(filterToolbar);
-                }
+                if (categoryToolbar.Parent == Child) Child.RemoveChild(categoryToolbar);
                 return;
             }
 
-            if (filterToolbar.Parent != Child)
-            {
-                Child.Append(filterToolbar);
-            }
+            if (categoryToolbar.Parent != Child) Child.Append(categoryToolbar);
 
-            int height = 22;
-
-            // 1. 左侧：分类按钮横向堆叠
-            UIStackPanel catSp = new UIStackPanel();
-            catSp.Height.Set(height, 0);
-            catSp.VAlign = 0.5f;
-            catSp.IsAutoUpdateSize = true;
-            catSp.Horizontal = true;
-            catSp.ItemMargin = 2;
-            filterToolbar.Append(catSp);
+            int btnSize = 24;
+            int margin = 3;
 
             var categories = new (BagItemCategory cat, string desc, string icon)[]
             {
+                // 第一行 (8个)
                 (BagItemCategory.All, "全部物品", "Images/Item_2712"),
                 (BagItemCategory.Weapon, "武器（近战/远程/魔法/召唤）", "Images/Item_3507"),
-                (BagItemCategory.Armor, "防具（头盔/胸甲/护腿/时装/染料）", "Images/Item_895"),
+                (BagItemCategory.Tool, "工具（镐/斧/锤/钓竿/扳手等）", "Images/Item_3509"),
+                (BagItemCategory.Armor, "防具（头盔/胸甲/护腿）", "Images/Item_895"),
                 (BagItemCategory.Accessory, "饰品（配饰/坐骑/宠物/钩爪）", "Images/Item_54"),
-                (BagItemCategory.Tool, "工具（镐/斧/锤/钓竿/电线工具）", "Images/Item_3509"),
+                (BagItemCategory.VanityDye, "时装与染料（外观衣物/各色染料）", "Images/Item_2873"),
                 (BagItemCategory.Potion, "药水与食物（治疗/魔力/增益/食物）", "Images/Item_296"),
                 (BagItemCategory.Ammo, "弹药（箭矢/子弹/火箭/飞镖）", "Images/Item_40"),
+
+                // 第二行 (8个)
                 (BagItemCategory.Bait, "鱼饵（各类诱饵/钓鱼昆虫等）", "Images/Item_2676"),
                 (BagItemCategory.Tile, "物块与建筑（方块/墙壁/平台）", "Images/Item_2"),
+                (BagItemCategory.Furniture, "家具与装饰（桌椅床门/箱子/挂画/雕像）", "Images/Item_362"),
+                (BagItemCategory.GrabBag, "摸彩与宝匣（Boss宝藏袋/钓鱼宝匣/礼包）", "Images/Item_2334"),
+                (BagItemCategory.Summon, "召唤物与信物（Boss召唤物/天界符/事件信物）", "Images/Item_3601"),
+                (BagItemCategory.Light, "光源与照明（火把/荧光棒/提灯/蜡烛）", "Images/Item_8"),
                 (BagItemCategory.Material, "合成素材（矿石/锭/灵魂/制作材料）", "Images/Item_706"),
-                (BagItemCategory.Other, "杂项与家具（家具/钱币/其他）", "Images/Item_9")
+                (BagItemCategory.Misc, "杂项与钱币（钱币/杂物/其他）", "Images/Item_73")
             };
 
-            foreach (var (cat, desc, icon) in categories)
+            // 第一行容器
+            UIStackPanel row1 = new UIStackPanel();
+            row1.Height.Set(btnSize, 0);
+            row1.Top.Set(0, 0);
+            row1.IsAutoUpdateSize = true;
+            row1.Horizontal = true;
+            row1.ItemMargin = margin;
+            categoryToolbar.Append(row1);
+
+            // 第二行容器
+            UIStackPanel row2 = new UIStackPanel();
+            row2.Height.Set(btnSize, 0);
+            row2.Top.Set(btnSize + margin, 0);
+            row2.IsAutoUpdateSize = true;
+            row2.Horizontal = true;
+            row2.ItemMargin = margin;
+            categoryToolbar.Append(row2);
+
+            for (int i = 0; i < categories.Length; i++)
             {
+                var (cat, desc, icon) = categories[i];
                 BagItemCategory targetCat = cat;
+
                 UIBoxButton btn = new UIBoxButton(
-                    height,
+                    btnSize,
                     () => $"{desc} {(currentCategory == targetCat ? "[已选中]" : "")}",
                     () => icon,
                     () => currentCategory == targetCat ? Color.White : new Color(180, 180, 180),
                     () => currentCategory == targetCat
                 );
+
                 btn.OnClick += () =>
                 {
                     currentCategory = targetCat;
                     SoundEngine.PlaySound(SoundID.MenuTick);
                     RebuildSlots();
                 };
+
                 categoryButtons.Add(btn);
-                catSp.Append(btn);
+                if (i < 8) row1.Append(btn);
+                else row2.Append(btn);
+            }
+        }
+
+        private void BuildSearchToolbar()
+        {
+            searchToolbar.Elements.Clear();
+
+            if (CurrentBag == null || !CurrentBag.ShowFilterBar)
+            {
+                if (searchToolbar.Parent == Child) Child.RemoveChild(searchToolbar);
+                return;
             }
 
-            // 2. 右侧：搜索框
-            searchTextBox = new UITextBox("搜索/拼音/ID/词条");
-            searchTextBox.Width.Set(136, 0);
+            if (searchToolbar.Parent != Child) Child.Append(searchToolbar);
+
+            int height = 22;
+
+            // 搜索框（独占整行，铺开更宽裕）
+            searchTextBox = new UITextBox("搜索物品名称 / 拼音首字母 / ID / 词条...");
+            searchTextBox.Width.Set(-30, 1);
             searchTextBox.Height.Set(height, 0);
-            searchTextBox.Left.Set(-160, 1);
+            searchTextBox.Left.Set(0, 0);
             searchTextBox.VAlign = 0.5f;
             searchTextBox.TextScale = 0.75f;
-            searchTextBox.Text_MaxLength = 40;
+            searchTextBox.Text_MaxLength = 50;
             searchTextBox.SetPadding(3);
             searchTextBox.Text = searchQuery;
             searchTextBox.OnTextChanged += (text) =>
@@ -316,15 +416,15 @@ namespace OptimizeAndTool.Content.Storage.Core
                 searchPendingQuery = text;
             };
             searchTextBox.OnRightClick += (evt, el) => ClearSearch();
-            filterToolbar.Append(searchTextBox);
+            searchToolbar.Append(searchTextBox);
 
-            // 3. 右侧：一键清空搜索按钮
-            btnSearchClear = new UIClearButton(20, () => "清空搜索内容 (亦可右键搜索框清空)");
+            // 一键清空搜索按钮
+            btnSearchClear = new UIClearButton(22, () => "清空搜索内容 (亦可右键搜索框清空)");
             btnSearchClear.Height.Set(height, 0);
-            btnSearchClear.Left.Set(-20, 1);
+            btnSearchClear.Left.Set(-24, 1);
             btnSearchClear.VAlign = 0.5f;
             btnSearchClear.OnClick += ClearSearch;
-            filterToolbar.Append(btnSearchClear);
+            searchToolbar.Append(btnSearchClear);
         }
 
         public void ClearSearch()
@@ -360,49 +460,55 @@ namespace OptimizeAndTool.Content.Storage.Core
             if (CurrentBag?.Slots == null) return;
 
             bool showFilter = CurrentBag.ShowFilterBar;
-            if (showFilter && filterToolbar.Parent != Child)
+            if (showFilter)
             {
-                Child.Append(filterToolbar);
+                if (categoryToolbar.Parent != Child) Child.Append(categoryToolbar);
+                if (searchToolbar.Parent != Child) Child.Append(searchToolbar);
             }
-            else if (!showFilter && filterToolbar.Parent == Child)
+            else
             {
-                Child.RemoveChild(filterToolbar);
+                if (categoryToolbar.Parent == Child) Child.RemoveChild(categoryToolbar);
+                if (searchToolbar.Parent == Child) Child.RemoveChild(searchToolbar);
             }
 
-            float topOffset = showFilter ? (8f + 22f + 4f + 22f + 6f) : (8f + 22f + 6f);
+            float toolbarTopMargin = 6f;
+            float toolbarHeight = 22f;
+            float catToolbarTopMargin = 4f;
+            float catToolbarHeight = 52f;
+            float searchToolbarTopMargin = 4f;
+            float searchToolbarHeight = 22f;
+
+            float topOffset = showFilter
+                ? (toolbarTopMargin + toolbarHeight + catToolbarTopMargin + catToolbarHeight + searchToolbarTopMargin + searchToolbarHeight + 6f)
+                : (toolbarTopMargin + toolbarHeight + 6f);
+
             contentArea.Top.Set(topOffset, 0);
             contentArea.Height.Set(-topOffset, 1);
 
             string modFilter = sidebar != null ? sidebar.CurrentFilter : "All";
             Item[] inv = CurrentBag.Slots;
-            bool isFiltering = currentCategory != BagItemCategory.All ||
-                               !string.IsNullOrWhiteSpace(searchQuery) ||
-                               modFilter != "All";
+            bool isFiltering = IsActiveFilter();
 
             int filledCount = 0;
-            int matchedSlotCount = 0;
+            List<int> displaySlotIndices = new List<int>();
 
             for (int i = 0; i < inv.Length; i++)
             {
                 Item it = inv[i];
                 if (it != null && !it.IsAir) filledCount++;
 
-                bool pass = true;
-
                 if (!isFiltering)
                 {
                     // 未处于任何筛选状态时，展示全部槽位（含空格）
-                    pass = true;
+                    displaySlotIndices.Add(i);
                 }
                 else
                 {
-                    // 处于筛选/搜索状态时，仅保留命中的非空物品
-                    if (it == null || it.IsAir)
+                    // 处于筛选/分类状态时，先收集命中的非空物品
+                    if (it != null && !it.IsAir)
                     {
-                        pass = false;
-                    }
-                    else
-                    {
+                        bool pass = true;
+
                         // 1. Mod 来源筛选
                         if (modFilter != "All")
                         {
@@ -425,14 +531,40 @@ namespace OptimizeAndTool.Content.Storage.Core
                         {
                             pass = BagCategoryHelper.MatchesSearch(it, searchQuery);
                         }
+
+                        if (pass)
+                        {
+                            displaySlotIndices.Add(i);
+                        }
                     }
                 }
+            }
 
-                if (pass)
+            int matchedCount = displaySlotIndices.Count;
+
+            // 关键优化：在处于筛选/分类状态时，紧跟匹配物品末尾追加 10 个可用空格，方便手动存入并自动归类
+            if (isFiltering)
+            {
+                if (CurrentBag.IsDynamicCapacity)
                 {
-                    wp.Append(new UniversalBagSlot(CurrentBag, i));
-                    matchedSlotCount++;
+                    CurrentBag.EnsureTrailingEmptySlots(10);
+                    inv = CurrentBag.Slots;
                 }
+
+                int emptyAppended = 0;
+                for (int i = 0; i < inv.Length && emptyAppended < 10; i++)
+                {
+                    if (inv[i] == null || inv[i].IsAir)
+                    {
+                        displaySlotIndices.Add(i);
+                        emptyAppended++;
+                    }
+                }
+            }
+
+            foreach (int slotIdx in displaySlotIndices)
+            {
+                wp.Append(new UniversalBagSlot(CurrentBag, slotIdx));
             }
 
             // 计算网格与窗口自适应尺寸
@@ -449,7 +581,8 @@ namespace OptimizeAndTool.Content.Storage.Core
             }
 
             float gridW = SLOTS_PER_ROW * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 436px
-            int rowCount = Math.Max(1, (int)Math.Ceiling((double)matchedSlotCount / SLOTS_PER_ROW));
+            int totalDisplaySlots = displaySlotIndices.Count;
+            int rowCount = Math.Max(1, (int)Math.Ceiling((double)totalDisplaySlots / SLOTS_PER_ROW));
             int visibleRows = Math.Min(rowCount, MAX_VISIBLE_ROWS);
             float gridH = visibleRows * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 7 行约 304px
 
@@ -484,7 +617,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             {
                 if (isFiltering)
                 {
-                    capacityText.SetText($"匹配: {matchedSlotCount} | 已存: {filledCount}/{inv.Length}");
+                    capacityText.SetText($"匹配: {matchedCount} | 已存: {filledCount}/{inv.Length}");
                     capacityText.TextColor = Color.LightSkyBlue;
                 }
                 else
@@ -697,3 +830,4 @@ namespace OptimizeAndTool.Content.Storage.Core
         }
     }
 }
+

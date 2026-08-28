@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using Terraria;
 using Terraria.ID;
@@ -8,7 +9,7 @@ using TPML.Core.Pinyin;
 namespace OptimizeAndTool.Content.Storage.Core
 {
     /// <summary>
-    /// 通用容器物品一级细分类枚举
+    /// 通用容器物品 16 大细分类枚举
     /// 作者: SaintCirno9
     /// </summary>
     public enum BagItemCategory
@@ -17,13 +18,15 @@ namespace OptimizeAndTool.Content.Storage.Core
         All = 0,
         /// <summary>武器（近战/远程/魔法/召唤等）</summary>
         Weapon,
-        /// <summary>防具（头盔、胸甲、护腿、时装、染料等）</summary>
+        /// <summary>工具（镐、斧、锤、钓竿、电线工具等）</summary>
+        Tool,
+        /// <summary>防具（头盔、胸甲、护腿）</summary>
         Armor,
         /// <summary>饰品（各类配饰、坐骑、宠物、钩爪等）</summary>
         Accessory,
-        /// <summary>工具（镐、斧、锤、钓竿、电线工具等）</summary>
-        Tool,
-        /// <summary>药水与增益（治疗、魔力、增益药剂、食物等）</summary>
+        /// <summary>时装与染料（时装衣物、各色染料等）</summary>
+        VanityDye,
+        /// <summary>药水与食物（治疗、魔力、增益药剂、食物等）</summary>
         Potion,
         /// <summary>弹药（箭矢、子弹、火箭、飞镖等）</summary>
         Ammo,
@@ -31,10 +34,18 @@ namespace OptimizeAndTool.Content.Storage.Core
         Bait,
         /// <summary>物块与建筑（物块、方块、墙壁、平台等）</summary>
         Tile,
-        /// <summary>合成素材（矿石、锭、灵魂、Boss召唤物、各类制作材料等）</summary>
+        /// <summary>家具与装饰（桌椅床门、工作台、箱子、挂画、雕像等）</summary>
+        Furniture,
+        /// <summary>摸彩与宝匣（各类宝匣、Boss宝藏袋、礼包、草药包等）</summary>
+        GrabBag,
+        /// <summary>召唤物与信物（Boss召唤物、天界符、事件召唤物等）</summary>
+        Summon,
+        /// <summary>光源与照明（火把、荧光棒、提灯、蜡烛、光源家具等）</summary>
+        Light,
+        /// <summary>合成素材（矿石、锭、灵魂、Boss材料、各类制作材料等）</summary>
         Material,
-        /// <summary>杂项与其他（家具、光源、钱币、NPC信物等）</summary>
-        Other
+        /// <summary>杂项与钱币（钱币、杂物、信物等）</summary>
+        Misc
     }
 
     /// <summary>
@@ -50,7 +61,7 @@ namespace OptimizeAndTool.Content.Storage.Core
         {
             if (item == null || item.IsAir || item.type <= ItemID.None)
             {
-                return BagItemCategory.Other;
+                return BagItemCategory.Misc;
             }
 
             // 1. 工具优先（部分稿斧带有伤害判定，优先按工具归类）
@@ -73,20 +84,65 @@ namespace OptimizeAndTool.Content.Storage.Core
                 return BagItemCategory.Bait;
             }
 
-            // 4. 武器（带有攻击力且有挥动/使用方式）
-            if ((item.damage > 0 && item.useStyle > 0 && !item.accessory) ||
-                item.melee || item.ranged || item.magic || item.summon)
+            // 4. 光源与照明（火把、荧光棒、光源家具等）
+            if (item.type == ItemID.Torch || item.type == ItemID.Glowstick || item.type == ItemID.StickyGlowstick ||
+                item.type == ItemID.BouncyGlowstick || item.type == ItemID.SpelunkerGlowstick ||
+                (item.createTile >= 0 && (item.createTile == TileID.Torches ||
+                 item.createTile == TileID.Candles || item.createTile == TileID.Chandeliers ||
+                 item.createTile == TileID.Lamps || item.createTile == TileID.HangingLanterns ||
+                 item.createTile == TileID.Candelabras || item.createTile == TileID.Campfire || item.createTile == TileID.Fireplace)))
+            {
+                return BagItemCategory.Light;
+            }
+
+            // 5. 摸彩与宝匣（Boss宝藏袋、钓鱼宝匣、草药包、礼包等）
+            if (ItemID.Sets.BossBag[item.type] ||
+                (item.type >= ItemID.WoodenCrate && item.type <= ItemID.GoldenCrate) ||
+                (item.type >= ItemID.WoodenCrateHard && item.type <= ItemID.GoldenCrateHard) ||
+                (item.type >= ItemID.CorruptFishingCrate && item.type <= ItemID.LavaCrateHard) ||
+                item.type == ItemID.HerbBag || item.type == ItemID.CanOfWorms || item.type == ItemID.Oyster ||
+                item.type == ItemID.Present || item.type == ItemID.GoodieBag || item.type == ItemID.LockBox || item.type == ItemID.ObsidianLockbox)
+            {
+                return BagItemCategory.GrabBag;
+            }
+
+            // 6. Boss 与事件召唤物
+            if (item.type == ItemID.SlimeCrown || item.type == ItemID.SuspiciousLookingEye ||
+                item.type == ItemID.WormFood || item.type == ItemID.BloodySpine ||
+                item.type == ItemID.Abeemination || item.type == ItemID.DeerThing ||
+                item.type == ItemID.MechanicalEye || item.type == ItemID.MechanicalWorm ||
+                item.type == ItemID.MechanicalSkull || item.type == ItemID.LihzahrdPowerCell ||
+                item.type == ItemID.TruffleWorm || item.type == ItemID.CelestialSigil ||
+                item.type == ItemID.GoblinBattleStandard || item.type == ItemID.SnowGlobe ||
+                item.type == ItemID.PirateMap || item.type == ItemID.PumpkinMoonMedallion ||
+                item.type == ItemID.NaughtyPresent || item.type == ItemID.SolarTablet ||
+                item.type == ItemID.EmpressButterfly ||
+                item.type == ItemID.GuideVoodooDoll || item.type == ItemID.ClothierVoodooDoll)
+            {
+                return BagItemCategory.Summon;
+            }
+
+            // 7. 时装与染料
+            if (item.dye > 0 || item.vanity ||
+                ((item.headSlot >= 0 || item.bodySlot >= 0 || item.legSlot >= 0) && item.vanity))
+            {
+                return BagItemCategory.VanityDye;
+            }
+
+            // 8. 武器（带有攻击力且有挥动/使用方式）
+            if (((item.damage > 0 && item.useStyle > 0 && !item.accessory) ||
+                 item.melee || item.ranged || item.magic || item.summon) && !item.accessory)
             {
                 return BagItemCategory.Weapon;
             }
 
-            // 4. 防具与时装（头/胸/腿/时装/染料）
-            if (item.headSlot >= 0 || item.bodySlot >= 0 || item.legSlot >= 0 || item.vanity || item.dye > 0)
+            // 9. 防具（头/胸/腿，非纯时装）
+            if ((item.headSlot >= 0 || item.bodySlot >= 0 || item.legSlot >= 0) && !item.vanity)
             {
                 return BagItemCategory.Armor;
             }
 
-            // 5. 饰品与挂件（配饰/坐骑/宠物/钩爪）
+            // 10. 饰品与挂件（配饰/坐骑/宠物/钩爪）
             if (item.accessory || item.mountType >= 0 ||
                 (item.shoot > 0 && item.shoot < Main.projHook.Length && Main.projHook[item.shoot]) ||
                 (item.buffType > 0 && item.buffType < Main.vanityPet.Length && (Main.vanityPet[item.buffType] || Main.lightPet[item.buffType])))
@@ -94,16 +150,31 @@ namespace OptimizeAndTool.Content.Storage.Core
                 return BagItemCategory.Accessory;
             }
 
-            // 6. 药水与食物（治疗/魔力/增益/食物）
+            // 11. 药水与食物（治疗/魔力/增益/食物）
             if (item.buffType > 0 || item.healLife > 0 || item.healMana > 0 || item.potion)
             {
                 return BagItemCategory.Potion;
             }
 
-            // 7. 物块与墙壁建筑材料
+            // 12. 家具与装饰（工作台、床、桌椅、门、箱子、雕像、挂画等）
+            if (item.createTile >= 0)
+            {
+                int t = item.createTile;
+                if (Main.tileFrameImportant[t] ||
+                    t == TileID.Chairs || t == TileID.Tables || t == TileID.Beds || t == TileID.WorkBenches ||
+                    t == TileID.Anvils || t == TileID.Furnaces || t == TileID.Containers || t == TileID.Dressers ||
+                    t == TileID.OpenDoor || t == TileID.ClosedDoor || t == TileID.Statues || t == TileID.Banners ||
+                    t == TileID.Painting3X3 || t == TileID.Painting4X3 || t == TileID.Painting6X4 ||
+                    t == TileID.ItemFrame || t == TileID.WeaponsRack || t == TileID.Mannequin || t == TileID.Womannequin)
+                {
+                    return BagItemCategory.Furniture;
+                }
+            }
+
+            // 13. 物块与墙壁建筑材料
             if (item.createTile >= 0 || item.createWall >= 0)
             {
-                // 锭与矿石虽可放置但更偏向材料
+                // 锭与矿石虽可放置但更偏向合成材料
                 if (item.material && (item.type == ItemID.CopperOre || item.type == ItemID.IronOre || item.type == ItemID.GoldOre ||
                     item.type == ItemID.DemoniteOre || item.type == ItemID.CrimtaneOre || item.type == ItemID.Hellstone ||
                     item.type == ItemID.CobaltOre || item.type == ItemID.MythrilOre || item.type == ItemID.TitaniumOre ||
@@ -119,18 +190,14 @@ namespace OptimizeAndTool.Content.Storage.Core
                 return BagItemCategory.Tile;
             }
 
-            // 8. 合成材料与素材（Boss召唤物、纯制作素材等）
-            if (item.material || item.type == ItemID.SlimeCrown || item.type == ItemID.SuspiciousLookingEye ||
-                item.type == ItemID.WormFood || item.type == ItemID.BloodySpine ||
-                item.type == ItemID.Abeemination || item.type == ItemID.DeerThing ||
-                item.type == ItemID.MechanicalEye || item.type == ItemID.MechanicalWorm ||
-                item.type == ItemID.MechanicalSkull || item.type == ItemID.LihzahrdPowerCell ||
-                item.type == ItemID.TruffleWorm || item.type == ItemID.CelestialSigil)
+            // 14. 合成材料与素材
+            if (item.material)
             {
                 return BagItemCategory.Material;
             }
 
-            return BagItemCategory.Other;
+            // 15. 钱币与杂项
+            return BagItemCategory.Misc;
         }
 
         /// <summary>
@@ -143,6 +210,13 @@ namespace OptimizeAndTool.Content.Storage.Core
 
             // 针对 Bait 判定
             if (category == BagItemCategory.Bait && item.bait > 0)
+            {
+                return true;
+            }
+
+            // 针对 Light 判定
+            if (category == BagItemCategory.Light && (item.type == ItemID.Torch || item.type == ItemID.Glowstick ||
+                (item.createTile >= 0 && item.createTile == TileID.Torches)))
             {
                 return true;
             }

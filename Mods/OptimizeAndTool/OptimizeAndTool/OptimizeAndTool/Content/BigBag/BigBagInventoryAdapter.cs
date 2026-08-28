@@ -55,9 +55,9 @@ namespace OptimizeAndTool.Content.BigBag
             BigBag.QuickStackFromPlayer(player);
         }
 
-        public void LootAll(Player player)
+        public void LootAll(Player player, Func<Item, bool> filter = null)
         {
-            BigBag.LootAllToPlayer(player);
+            BigBag.LootAllToPlayer(player, filter);
         }
 
         public void Sort()

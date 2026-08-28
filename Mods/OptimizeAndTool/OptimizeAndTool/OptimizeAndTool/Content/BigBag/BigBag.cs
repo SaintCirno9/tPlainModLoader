@@ -244,9 +244,9 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 一键将大背包物品取出到玩家个人背包
+        /// 一键将大背包物品取出到玩家个人背包（支持按谓词筛选）
         /// </summary>
-        public static void LootAllToPlayer(Player player)
+        public static void LootAllToPlayer(Player player, Func<Item, bool> filter = null)
         {
             if (player == null || player.inventory == null) return;
 
@@ -258,6 +258,7 @@ namespace OptimizeAndTool.Content.BigBag
                 {
                     Item bItem = Slots[i];
                     if (bItem == null || bItem.IsAir) continue;
+                    if (filter != null && !filter(bItem)) continue;
 
                     int origStack = bItem.stack;
                     Slots[i] = player.GetItem(bItem, GetItemSettings.QuickTransferFromSlot);
@@ -324,7 +325,7 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 整理大背包：合并同类未满堆叠并按类别/ID 排序紧凑排列，末尾精准保留 10 个空位
+        /// 整理大背包：合并同类未满堆叠并按类别/ID 排序紧凑排列，收藏(Favorited)物品排在最前，末尾精准保留 10 个空位
         /// </summary>
         public static void SortBigBag()
         {
@@ -347,7 +348,7 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            // 2. 收集非空物品并按类型及 ID 排序
+            // 2. 收集非空物品并按类型及 ID 排序（收藏物品优先置顶）
             List<Item> items = new List<Item>();
             for (int i = 0; i < Slots.Length; i++)
             {
@@ -359,11 +360,17 @@ namespace OptimizeAndTool.Content.BigBag
 
             items.Sort((x, y) =>
             {
+                // 1. 收藏优先（金色锁定物品排在最前面）
+                if (x.favorited != y.favorited) return x.favorited ? -1 : 1;
+                // 2. 类别 Rank
                 int rankX = GetItemSortRank(x);
                 int rankY = GetItemSortRank(y);
                 if (rankX != rankY) return rankX.CompareTo(rankY);
+                // 3. 物品 ID
                 if (x.type != y.type) return x.type.CompareTo(y.type);
+                // 4. 前缀
                 if (x.prefix != y.prefix) return x.prefix.CompareTo(y.prefix);
+                // 5. 堆叠数降序
                 return y.stack.CompareTo(x.stack);
             });
 

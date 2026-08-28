@@ -29,7 +29,14 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         public string ShortID => BagID.ToString("N").Substring(0, 4).ToUpper();
 
         public event Action OnSlotsChanged;
-        public void TriggerSlotsChanged() => OnSlotsChanged?.Invoke();
+        public void TriggerSlotsChanged()
+        {
+            OnSlotsChanged?.Invoke();
+            if (!Main.gameMenu && Main.netMode != 2)
+            {
+                Recipe.UpdateRecipeList();
+            }
+        }
 
         #region IBagInventory 实现
         public string Title => $"随身饰品袋 [{ShortID}]";
@@ -232,7 +239,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             }
         }
 
-        public void LootAll(Player player)
+        public void LootAll(Player player, Func<Item, bool> filter = null)
         {
             if (player?.inventory == null || personalInventory == null) return;
 
@@ -246,6 +253,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 {
                     Item bIt = bInv[i];
                     if (bIt == null || bIt.IsAir) continue;
+                    if (filter != null && !filter(bIt)) continue;
 
                     int orig = bIt.stack;
                     bInv[i] = player.GetItem(bIt, GetItemSettings.QuickTransferFromSlot);

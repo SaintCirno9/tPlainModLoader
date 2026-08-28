@@ -21,7 +21,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         bool MeetEntryCriteria(Item item);
         void CollectFromAllInventories(Player player);
         void QuickStackFromPlayer(Player player);
-        void WithdrawAll(Player player);
+        void WithdrawAll(Player player, Func<Item, bool> filter = null);
         void AutoSort();
         int GetStoredCount();
         List<Item> GetStoredItems();
@@ -183,7 +183,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public void DepositAll(Player player) => CollectFromAllInventories(player);
         public void QuickStack(Player player) => QuickStackFromPlayer(player);
-        public void LootAll(Player player) => WithdrawAll(player);
+        public void LootAll(Player player, Func<Item, bool> filter = null) => WithdrawAll(player, filter);
         public void Sort() => AutoSort();
         public string GetCapacityText() => $"已存: {GetStoredCount()}/{Capacity}";
         public virtual bool IsDynamicCapacity => false;
@@ -290,7 +290,9 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             }
         }
 
-        public void WithdrawAll(Player player)
+        public void WithdrawAll(Player player) => WithdrawAll(player, null);
+
+        public void WithdrawAll(Player player, Func<Item, bool> filter = null)
         {
             if (player == null || player.inventory == null) return;
             InitSlots();
@@ -303,6 +305,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 {
                     Item item = Slots[i];
                     if (item == null || item.IsAir || item.favorited) continue;
+                    if (filter != null && !filter(item)) continue;
 
                     int orig = item.stack;
                     Slots[i] = player.GetItem(item, GetItemSettings.QuickTransferFromSlot);

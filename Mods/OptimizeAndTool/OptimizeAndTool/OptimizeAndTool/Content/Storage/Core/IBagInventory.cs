@@ -56,8 +56,8 @@ namespace OptimizeAndTool.Content.Storage.Core
         /// <summary>一键快速堆叠</summary>
         void QuickStack(Player player);
 
-        /// <summary>一键全部取出</summary>
-        void LootAll(Player player);
+        /// <summary>一键全部取出（支持按谓词筛选当前分类/搜索）</summary>
+        void LootAll(Player player, Func<Item, bool> filter = null);
 
         /// <summary>一键整理排序</summary>
         void Sort();

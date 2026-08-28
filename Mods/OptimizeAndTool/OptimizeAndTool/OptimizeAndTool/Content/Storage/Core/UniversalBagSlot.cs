@@ -197,6 +197,13 @@ namespace OptimizeAndTool.Content.Storage.Core
             CalculatedStyle dim = GetDimensions();
             Rectangle slotRect = dim.ToRectangle();
 
+            // 视口裁剪与虚拟化渲染优化：若槽位不在当前 UIList 裁剪可视窗口或屏幕范围内，直接跳过绘制与贴图加载
+            Rectangle scissor = sb.GraphicsDevice.ScissorRectangle;
+            if (scissor.Width > 0 && scissor.Height > 0 && !slotRect.Intersects(scissor))
+            {
+                return;
+            }
+
             // 1. 绘制原版官方物品栏底图 (TextureAssets.InventoryBack)
             Texture2D backTex = TextureAssets.InventoryBack.Value;
             sb.Draw(backTex, slotRect, Color.White);
