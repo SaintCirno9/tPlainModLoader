@@ -1,0 +1,65 @@
+using CommandHelp;
+using Microsoft.Xna.Framework.Graphics;
+using OptimizeAndTool.Content.UI;
+using OptimizeAndTool.Utils;
+using OptimizeAndTool.Utils.quickBuild;
+using System.Collections.Generic;
+using Terraria;
+using Terraria.UI;
+
+namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
+{
+    /// <summary>
+    /// 全场景全物品首见保底掉落系统配置与 UI 注册
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal static class GuaranteedDropSystem
+    {
+        /// <summary>首见掉落全保底总开关</summary>
+        public static readonly GetSetReset<bool> EnableGuaranteedDrop = new GetSetReset<bool>(true, true);
+
+        /// <summary>多选一掉落池首次全量大爆开关</summary>
+        public static readonly GetSetReset<bool> EnableMultiOptionBurst = new GetSetReset<bool>(true, true);
+
+        public static List<CommandObject> GetCO()
+        {
+            return new List<CommandObject>
+            {
+                CommandBuild.get2("dropGuaranteed", EnableGuaranteedDrop),
+                CommandBuild.get2("dropMultiBurst", EnableMultiOptionBurst),
+                new CommandResetDiscovered("dropReset")
+            };
+        }
+
+        public static List<UIElement> GetUI()
+        {
+            return new List<UIElement>
+            {
+                UIBuild.get2(EnableGuaranteedDrop, "怪物击杀、Boss 宝藏袋、钓鱼宝匣、开箱等掉落池中，只要是当前角色未曾获取过的物品，首次必定 100% 掉落（获取后恢复原概率）", "Images/Item_5010", "全场景首见全保底"),
+                UIBuild.get2(EnableMultiOptionBurst, "Boss/宝箱怪等多选一掉落池（如肉山徽章与武器），首次击杀全量大爆特爆（一次性掉齐所有未拥有的专属战利品）", "Images/Item_3324", "多选一全量大爆")
+            };
+        }
+
+        /// <summary>
+        /// 控制台重置指令：清空当前角色的历史已发现记忆并重新深度扫描当前背包
+        /// </summary>
+        private class CommandResetDiscovered : CommandObject
+        {
+            public CommandResetDiscovered(string name) : base(name)
+            {
+                TipText = "重置当前角色的历史掉落发现记忆，重新建档。";
+            }
+
+            public override object Run(ref int index, List<CommandObject> commandList)
+            {
+                Player player = Main.LocalPlayer;
+                if (player != null)
+                {
+                    DiscoveredItemTracker.ResetDiscovered(player);
+                    Main.NewText($"[保底掉落] 已重置角色 [{player.name}] 的历史掉落记忆，当前已重新扫描收录随身物品: {DiscoveredItemTracker.DiscoveredCount} 件。");
+                }
+                return this;
+            }
+        }
+    }
+}

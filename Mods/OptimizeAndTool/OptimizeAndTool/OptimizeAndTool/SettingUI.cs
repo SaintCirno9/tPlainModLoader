@@ -892,6 +892,8 @@ namespace OptimizeAndTool
             InfinitePotionAndBuff.EnableBuffStations.Reset();
             InfinitePotionAndBuff.EnableMonsterBanners.Reset();
             InfinitePotionAndBuff.HideEndlessBuffs.Reset();
+            GuaranteedDropSystem.EnableGuaranteedDrop.Reset();
+            GuaranteedDropSystem.EnableMultiOptionBurst.Reset();
 
             TownNPCOptimization.EnableInstantHousingTeleport.Reset();
             TownNPCOptimization.EnableNightAutoHome.Reset();
