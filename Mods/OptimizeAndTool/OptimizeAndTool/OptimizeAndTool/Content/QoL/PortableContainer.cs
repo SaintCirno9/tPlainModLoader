@@ -81,13 +81,12 @@ namespace OptimizeAndTool.Content.QoL
         {
             if (bank?.item == null) return;
 
-            // 原版虚空袋启用时已加入 bank4，重复加入会导致材料双计数
+            // 原版虚空袋启用时已加入 bank4，或当前已处于某随身容器界面，重复加入会导致材料双计数
             if (Recipe._recipeChests != null && !Recipe._recipeChests.Contains(bank))
             {
                 Recipe._recipeChests.Add(bank);
+                Recipe.CollectItems(bank.item, bank.maxItems);
             }
-
-            Recipe.CollectItems(bank.item, bank.maxItems);
         }
 
         /// <summary>
@@ -312,11 +311,9 @@ namespace OptimizeAndTool.Content.QoL
                     PortableContainer.AddBankToRecipe(player.bank4);
                 }
 
-                // 巨大额外背包（随身 Chest 包装）的材料独立判定纳入
-                if (BigBagMod.EnableBigBag.val && BigBagMod.EnableBigBagCraft.val)
-                {
-                    PortableContainer.AddBankToRecipe(BigBagMod.BagChest);
-                }
+                // 备注：巨大背包 (BigBag) 与饰品袋 (AccessoryBag) 已由 TPML.Content.Fusion 统一框架托管，
+                // 在 Recipe.CollectItemsToCraftWithFrom / CraftingRequests 中自动提供未收藏过滤、优先级及制作扣料通知，
+                // 此处无需亦不得重复注入，避免材料计数翻倍。
             }
         }
     }
