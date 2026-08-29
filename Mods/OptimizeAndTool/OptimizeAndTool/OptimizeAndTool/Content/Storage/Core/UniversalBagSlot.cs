@@ -66,6 +66,33 @@ namespace OptimizeAndTool.Content.Storage.Core
                 return;
             }
 
+            // 2.5 Ctrl+左键且商人界面打开: 快速售出物品 (对齐原版商人售出逻辑)
+            if (ItemSlot.ControlInUse && Main.npcShop > 0 && item != null && !item.IsAir && !item.favorited && (item.type < 71 || item.type > 74))
+            {
+                Chest shopChest = Main.instance.shop[Main.npcShop];
+                if (Main.LocalPlayer.SellItem(item))
+                {
+                    shopChest.AddItemToShop(item);
+                    ItemSlot.AnnounceTransfer(new ItemSlot.ItemTransferInfo(item, ItemSlot.Context.BankItem, ItemSlot.Context.ShopItem));
+                    item.TurnToAir();
+                    SoundEngine.PlaySound(SoundID.Coins);
+                }
+                else if (item.value == 0)
+                {
+                    shopChest.AddItemToShop(item);
+                    ItemSlot.AnnounceTransfer(new ItemSlot.ItemTransferInfo(item, ItemSlot.Context.BankItem, ItemSlot.Context.ShopItem));
+                    item.TurnToAir();
+                    SoundEngine.PlaySound(SoundID.Grab);
+                }
+
+                if (bag.IsDynamicCapacity)
+                {
+                    bag.EnsureTrailingEmptySlots(10);
+                }
+                bag.TriggerSlotsChanged();
+                return;
+            }
+
             // 3. Shift+左键: 快速提取回个人背包
             if (ItemSlot.ShiftInUse)
             {
@@ -133,42 +160,50 @@ namespace OptimizeAndTool.Content.Storage.Core
         {
             if (bag?.Slots == null || slotIndex < 0 || slotIndex >= bag.Slots.Length) return;
 
-            Item item = bag.Slots[slotIndex];
-            Item mouse = Main.mouseItem;
+            TakeOneItem();
+        }
 
+        /// <summary>
+        /// 从槽位中取出 1 个物品至鼠标光标（原版对齐：支持空手或持有同种未满堆叠物品时取出）
+        /// </summary>
+        private void TakeOneItem()
+        {
+            if (bag?.Slots == null || slotIndex < 0 || slotIndex >= bag.Slots.Length) return;
+
+            Item item = bag.Slots[slotIndex];
+            if (item == null || item.IsAir) return;
+
+            Item mouse = Main.mouseItem;
             if (mouse.IsAir)
             {
-                if (item == null || item.IsAir) return;
-
-                int take = (item.stack + 1) / 2;
-                Item half = item.Clone();
-                half.stack = take;
-                item.stack -= take;
-                if (item.stack <= 0) bag.Slots[slotIndex] = new Item();
-                Main.mouseItem = half;
-                SoundEngine.PlaySound(SoundID.Grab);
+                Main.mouseItem = item.Clone();
+                Main.mouseItem.stack = 1;
+                if (!item.favorited || item.stack > 1)
+                {
+                    Main.mouseItem.favorited = false;
+                }
+                item.stack--;
+                if (item.stack <= 0)
+                {
+                    item.TurnToAir();
+                }
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                ItemSlot.RefreshStackSplitCooldown();
+            }
+            else if (Item.CanStack(mouse, item) && mouse.stack < mouse.maxStack)
+            {
+                mouse.stack++;
+                item.stack--;
+                if (item.stack <= 0)
+                {
+                    item.TurnToAir();
+                }
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                ItemSlot.RefreshStackSplitCooldown();
             }
             else
             {
-                if (!bag.MeetEntryCriteria(mouse, slotIndex)) return;
-
-                if (item == null || item.IsAir)
-                {
-                    Item one = mouse.Clone();
-                    one.stack = 1;
-                    bag.Slots[slotIndex] = one;
-                    mouse.stack--;
-                    SoundEngine.PlaySound(SoundID.Grab);
-                }
-                else if (Item.CanStack(item, mouse) && item.stack < item.maxStack)
-                {
-                    item.stack++;
-                    mouse.stack--;
-                    SoundEngine.PlaySound(SoundID.Grab);
-                }
-                else return;
-
-                if (mouse.stack <= 0) Main.mouseItem = new Item();
+                return;
             }
 
             if (bag.IsDynamicCapacity)
@@ -187,6 +222,23 @@ namespace OptimizeAndTool.Content.Storage.Core
             if (IsMouseHovering)
             {
                 Main.LocalPlayer.mouseInterface = true;
+
+                // 长按右键持续取出 (对齐原版 stackSplit 连点加速机制)
+                if (Main.mouseRight && !Main.mouseRightRelease && Main.stackSplit <= 1)
+                {
+                    Item item = bag.Slots[slotIndex];
+                    if (item != null && !item.IsAir)
+                    {
+                        int num = Main.superFastStack + 1;
+                        for (int i = 0; i < num; i++)
+                        {
+                            if (Main.mouseItem.IsAir || (Item.CanStack(Main.mouseItem, item) && Main.mouseItem.stack < Main.mouseItem.maxStack))
+                            {
+                                TakeOneItem();
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -299,6 +351,10 @@ namespace OptimizeAndTool.Content.Storage.Core
                     if (bag.CanFavorite && isFavoriteKey)
                     {
                         Main.cursorOverride = 3; // 原版金色星星收藏光标
+                    }
+                    else if (ItemSlot.ControlInUse && Main.npcShop > 0 && !item.favorited && (item.type < 71 || item.type > 74))
+                    {
+                        Main.cursorOverride = 10; // 原版金币售出光标
                     }
                     else if (ItemSlot.ShiftInUse && !item.favorited)
                     {
