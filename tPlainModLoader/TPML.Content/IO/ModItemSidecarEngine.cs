@@ -343,6 +343,93 @@ namespace TPML.Content.IO
             return fallbackSlots;
         }
 
+        /// <summary>
+        /// 保存指定玩家的伴随自定义属性键值对（存入 PlayerSidecarData.CustomProperties）
+        /// </summary>
+        public static void SavePlayerCustomProperty(Player player, string key, string value)
+        {
+            if (player == null || string.IsNullOrEmpty(key)) return;
+
+            try
+            {
+                string path = GetPlayerSidecarPath(player);
+                PlayerSidecarData data = null;
+                bool fileExists = File.Exists(path);
+                if (fileExists)
+                {
+                    try
+                    {
+                        string json = File.ReadAllText(path);
+                        data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                    }
+                    catch { }
+                }
+
+                if (value == null)
+                {
+                    // 1. 若文件不存在或数据为空，本就无该键，直接短路返回，避免创建多余的空 Sidecar 文件
+                    if (!fileExists || data == null) return;
+
+                    // 2. 若数据中原本就不包含此 key，直接短路返回，避免无意义的序列化与写盘
+                    if (data.CustomProperties == null || !data.CustomProperties.ContainsKey(key)) return;
+
+                    data.CustomProperties.Remove(key);
+                }
+                else
+                {
+                    if (data == null)
+                    {
+                        data = new PlayerSidecarData { PlayerName = player.name };
+                    }
+
+                    if (data.CustomProperties == null)
+                    {
+                        data.CustomProperties = new Dictionary<string, string>();
+                    }
+
+                    data.CustomProperties[key] = value;
+                }
+
+                string output = JsonConvert.SerializeObject(data, Formatting.Indented);
+                string tmpPath = path + ".tmp";
+                File.WriteAllText(tmpPath, output);
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmpPath, path);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 保存玩家自定义属性 [{key}] 伴随数据异常: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 加载指定玩家的伴随自定义属性值（从 PlayerSidecarData.CustomProperties 读取）
+        /// </summary>
+        public static string LoadPlayerCustomProperty(Player player, string key)
+        {
+            if (player == null || string.IsNullOrEmpty(key)) return null;
+
+            try
+            {
+                string path = GetPlayerSidecarPath(player);
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path);
+                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                    if (data?.CustomProperties != null && data.CustomProperties.TryGetValue(key, out string val))
+                    {
+                        return val;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 加载玩家自定义属性 [{key}] 伴随数据异常: {ex.Message}");
+            }
+
+            return null;
+        }
+
         #endregion
 
         #region 玩家全域槽位持久化
