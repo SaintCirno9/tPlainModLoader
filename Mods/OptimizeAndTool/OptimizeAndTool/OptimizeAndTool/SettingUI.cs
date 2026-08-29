@@ -64,6 +64,7 @@ namespace OptimizeAndTool
             public bool NoAnglerCooldown = false;
             public bool QuestFishStack = true;
             public bool NoFishingPenalty = true;
+            public bool CatchQuestFishAnywhere = true;
 
             // 钓鱼增强与 AutoFisher 自动化
             public bool GuaranteedCrate = false;
@@ -290,6 +291,7 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableNoAnglerCooldown.val = data.NoAnglerCooldown;
             AnglerQuestOptimization.EnableQuestFishStack.val = data.QuestFishStack;
             AnglerQuestOptimization.EnableNoFishingPenalty.val = data.NoFishingPenalty;
+            AnglerQuestOptimization.EnableCatchQuestFishAnywhere.val = data.CatchQuestFishAnywhere;
 
             // 钓鱼与 AutoFisher 自动化
             FishingCrateModifier.EnableGuaranteedCrate.val = data.GuaranteedCrate;
@@ -481,6 +483,7 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableNoAnglerCooldown.OnValUpdate += _ => NeedSave = true;
             AnglerQuestOptimization.EnableQuestFishStack.OnValUpdate += _ => NeedSave = true;
             AnglerQuestOptimization.EnableNoFishingPenalty.OnValUpdate += _ => NeedSave = true;
+            AnglerQuestOptimization.EnableCatchQuestFishAnywhere.OnValUpdate += _ => NeedSave = true;
 
             FishingCrateModifier.EnableGuaranteedCrate.OnValUpdate += _ => NeedSave = true;
             FishingCrateModifier.EnableCrateMultiplier.OnValUpdate += _ => NeedSave = true;
@@ -676,6 +679,7 @@ namespace OptimizeAndTool
                 NoAnglerCooldown = AnglerQuestOptimization.EnableNoAnglerCooldown.val,
                 QuestFishStack = AnglerQuestOptimization.EnableQuestFishStack.val,
                 NoFishingPenalty = AnglerQuestOptimization.EnableNoFishingPenalty.val,
+                CatchQuestFishAnywhere = AnglerQuestOptimization.EnableCatchQuestFishAnywhere.val,
 
                 GuaranteedCrate = FishingCrateModifier.EnableGuaranteedCrate.val,
                 CrateChanceMultiplierEnabled = FishingCrateModifier.EnableCrateMultiplier.val,
@@ -878,6 +882,7 @@ namespace OptimizeAndTool
             AnglerQuestOptimization.EnableNoAnglerCooldown.Reset();
             AnglerQuestOptimization.EnableQuestFishStack.Reset();
             AnglerQuestOptimization.EnableNoFishingPenalty.Reset();
+            AnglerQuestOptimization.EnableCatchQuestFishAnywhere.Reset();
 
             FishingCrateModifier.EnableGuaranteedCrate.Reset();
             FishingCrateModifier.EnableCrateMultiplier.Reset();

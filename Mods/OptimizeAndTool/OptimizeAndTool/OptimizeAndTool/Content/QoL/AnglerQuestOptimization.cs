@@ -32,6 +32,7 @@ namespace OptimizeAndTool.Content.QoL
         public static GetSetReset<bool> EnableNoAnglerCooldown = new GetSetReset<bool>(false, false);
         public static GetSetReset<bool> EnableQuestFishStack = new GetSetReset<bool>(true, true);
         public static GetSetReset<bool> EnableNoFishingPenalty = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> EnableCatchQuestFishAnywhere = new GetSetReset<bool>(true, true);
 
         public static List<CommandObject> GetCO()
         {
@@ -39,7 +40,8 @@ namespace OptimizeAndTool.Content.QoL
             {
                 CommandBuild.get2("noAnglerCooldown", EnableNoAnglerCooldown),
                 CommandBuild.get2("questFishStack", EnableQuestFishStack),
-                CommandBuild.get2("noFishingPenalty", EnableNoFishingPenalty)
+                CommandBuild.get2("noFishingPenalty", EnableNoFishingPenalty),
+                CommandBuild.get2("catchQuestFishAnywhere", EnableCatchQuestFishAnywhere)
             };
         }
 
@@ -49,7 +51,8 @@ namespace OptimizeAndTool.Content.QoL
             {
                 UIBuild.get2(EnableNoAnglerCooldown, "提交渔夫任务后立即刷新下一个任务，无需等待至次日凌晨", "Images/Item_2422", "渔夫任务无冷却"),
                 UIBuild.get2(EnableQuestFishStack, "任务鱼解除唯一限制并可堆叠至 9999，渔夫不在/任务已交付/背包持有均可重复钓取", "Images/Item_2450", "任务鱼堆叠与无唯一限制"),
-                UIBuild.get2(EnableNoFishingPenalty, "消除水池过小对渔力的惩罚，任何水体均强制按满 300 格计算渔力", "Images/Item_2294", "水池无渔力惩罚")
+                UIBuild.get2(EnableNoFishingPenalty, "消除水池过小对渔力的惩罚，任何水体均强制按满 300 格计算渔力", "Images/Item_2294", "水池无渔力惩罚"),
+                UIBuild.get2(EnableCatchQuestFishAnywhere, "无视生物群落、水体深度与环境限制，在任何水体垂钓均可正常钓取今日渔夫任务鱼", "Images/Item_2451", "全环境钓取任务鱼")
             };
         }
 
@@ -216,12 +219,47 @@ namespace OptimizeAndTool.Content.QoL
         [HarmonyPostfix]
         public static void FishingCheck_ProbeForQuestFishPostfix(ref FishingAttempt fisher)
         {
-            if (!EnableQuestFishStack.val)
+            if (!EnableQuestFishStack.val && !EnableCatchQuestFishAnywhere.val)
                 return;
 
             if (Main.anglerQuest >= 0 && Main.anglerQuest < Main.anglerQuestItemNetIDs.Length)
             {
                 fisher.questFish = Main.anglerQuestItemNetIDs[Main.anglerQuest];
+            }
+        }
+
+        /// <summary>
+        /// 全环境钓取任务鱼：在任何水体垂钓命中 Uncommon 时，若无更高级别的敌怪/宝匣/稀有战利品，直接钓出今日渔夫任务鱼
+        /// </summary>
+        [HarmonyPatch(typeof(Projectile), "FishingCheck_RollItemDrop")]
+        [HarmonyPostfix]
+        public static void FishingCheck_RollItemDropPostfix(ref FishingAttempt fisher)
+        {
+            if (!EnableCatchQuestFishAnywhere.val)
+                return;
+
+            // 如果已有敌怪生成，不覆盖
+            if (fisher.rolledEnemySpawn > 0)
+                return;
+
+            // 如果已有宝匣产出，不覆盖
+            if (fisher.crate && fisher.rolledItemDrop > 0 &&
+                (ItemID.Sets.IsFishingCrate[fisher.rolledItemDrop] || ItemID.Sets.IsFishingCrateHardmode[fisher.rolledItemDrop]))
+                return;
+
+            // 如果 roll 出了更高级别的传奇或非常稀有道具（如和风鱼、青蛙腿、高级武器等），不覆盖
+            if (fisher.legendary || fisher.veryrare)
+                return;
+
+            int questFishId = fisher.questFish;
+            if (questFishId <= 0 && Main.anglerQuest >= 0 && Main.anglerQuest < Main.anglerQuestItemNetIDs.Length)
+            {
+                questFishId = Main.anglerQuestItemNetIDs[Main.anglerQuest];
+            }
+
+            if (fisher.uncommon && questFishId > 0)
+            {
+                fisher.rolledItemDrop = questFishId;
             }
         }
 
