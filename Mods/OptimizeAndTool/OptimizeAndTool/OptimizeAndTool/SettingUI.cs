@@ -156,13 +156,6 @@ namespace OptimizeAndTool
             public bool GemTreeFullGemDrops = true;
             public bool RemoveGraveyardVisuals = true;
             public bool AntiGriefExplosions = true;
-            public bool MarkStructuresOnMap = true;
-            public bool MarkPlanteraBulb = true;
-            public bool MarkSwordShrine = true;
-            public bool MarkBeeHive = true;
-            public bool MarkShimmer = true;
-            public bool MarkPyramid = true;
-            public bool MarkTempleAltar = true;
 
             // 基础作弊 (Cheat.Function1)
             public bool NoDead = false;
@@ -389,13 +382,6 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.val = data.GemTreeFullGemDrops;
             QoLValSet.removeGraveyardVisuals.val = data.RemoveGraveyardVisuals;
             QoLValSet.antiGriefExplosions.val = data.AntiGriefExplosions;
-            QoLValSet.markStructuresOnMap.val = data.MarkStructuresOnMap;
-            QoLValSet.markPlanteraBulb.val = data.MarkPlanteraBulb;
-            QoLValSet.markSwordShrine.val = data.MarkSwordShrine;
-            QoLValSet.markBeeHive.val = data.MarkBeeHive;
-            QoLValSet.markShimmer.val = data.MarkShimmer;
-            QoLValSet.markPyramid.val = data.MarkPyramid;
-            QoLValSet.markTempleAltar.val = data.MarkTempleAltar;
 
             // 基础作弊 (Cheat.Function1)
             Content.Cheat.Function1.Function.noDead.val = data.NoDead;
@@ -579,13 +565,6 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.OnValUpdate += _ => NeedSave = true;
             QoLValSet.removeGraveyardVisuals.OnValUpdate += _ => NeedSave = true;
             QoLValSet.antiGriefExplosions.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markStructuresOnMap.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markPlanteraBulb.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markSwordShrine.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markBeeHive.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markShimmer.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markPyramid.OnValUpdate += _ => NeedSave = true;
-            QoLValSet.markTempleAltar.OnValUpdate += _ => NeedSave = true;
 
             // 基础作弊
             Content.Cheat.Function1.Function.noDead.OnValUpdate += _ => NeedSave = true;
@@ -786,13 +765,6 @@ namespace OptimizeAndTool
                 GemTreeFullGemDrops = QoLValSet.gemTreeFullGemDrops.val,
                 RemoveGraveyardVisuals = QoLValSet.removeGraveyardVisuals.val,
                 AntiGriefExplosions = QoLValSet.antiGriefExplosions.val,
-                MarkStructuresOnMap = QoLValSet.markStructuresOnMap.val,
-                MarkPlanteraBulb = QoLValSet.markPlanteraBulb.val,
-                MarkSwordShrine = QoLValSet.markSwordShrine.val,
-                MarkBeeHive = QoLValSet.markBeeHive.val,
-                MarkShimmer = QoLValSet.markShimmer.val,
-                MarkPyramid = QoLValSet.markPyramid.val,
-                MarkTempleAltar = QoLValSet.markTempleAltar.val,
 
                 // 基础作弊
                 NoDead = Content.Cheat.Function1.Function.noDead.val,
@@ -987,13 +959,6 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.Reset();
             QoLValSet.removeGraveyardVisuals.Reset();
             QoLValSet.antiGriefExplosions.Reset();
-            QoLValSet.markStructuresOnMap.Reset();
-            QoLValSet.markPlanteraBulb.Reset();
-            QoLValSet.markSwordShrine.Reset();
-            QoLValSet.markBeeHive.Reset();
-            QoLValSet.markShimmer.Reset();
-            QoLValSet.markPyramid.Reset();
-            QoLValSet.markTempleAltar.Reset();
 
             Content.Cheat.Function1.Function.noDead.Reset();
             Content.Cheat.Function1.Function.manaMax.Reset();

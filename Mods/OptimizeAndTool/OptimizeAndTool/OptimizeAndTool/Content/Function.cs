@@ -79,7 +79,6 @@ namespace OptimizeAndTool.Content
             cos.AddRange(Cheat.Function2.Function.GetCO());
             cos.AddRange(Cheat.HeldItemModify.ValSet.GetCO());
             cos.AddRange(Cheat.PlayerModify.ValSet.GetCO());
-            cos.AddRange(Cheat.QoL.QoLValSet.GetCO());
 
             return cos;
         }
@@ -168,7 +167,6 @@ namespace OptimizeAndTool.Content
             uis.AddRange(Cheat.Function2.Function.GetUI());
 
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_3611", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "杂项 QoL 增强"));
-            uis.AddRange(Cheat.QoL.QoLValSet.GetUI());
 
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_3095", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "手持物品与属性微调"));
             uis.AddRange(Cheat.HeldItemModify.ValSet.GetUI());

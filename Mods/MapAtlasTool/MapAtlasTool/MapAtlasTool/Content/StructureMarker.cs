@@ -1,10 +1,10 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using OptimizeAndTool.Content.Cheat.Function2;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MapAtlasTool.Content.UI;
 using tContentPatch;
 using Terraria;
 using Terraria.GameContent;
@@ -13,7 +13,7 @@ using Terraria.ID;
 using TPML.Core.Diagnostics;
 using TPML.Core.Logging;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace MapAtlasTool.Content
 {
     public class StructurePin
     {
@@ -29,6 +29,37 @@ namespace OptimizeAndTool.Content.Cheat.QoL
     }
 
     /// <summary>
+    /// 搜索态视觉模式: 无搜索 / 命中(高亮) / 未命中(调暗)
+    /// </summary>
+    internal enum SearchVis
+    {
+        None,
+        Hit,
+        Dim,
+    }
+
+    /// <summary>
+    /// 受困/特殊 NPC 动态标记定义(绘制与搜索共用)
+    /// </summary>
+    internal struct NpcMarkerInfo
+    {
+        public int[] NpcTypes;
+        public string Name;
+        public Color Color;
+        public int IconItemId;
+    }
+
+    /// <summary>
+    /// 箱子搜索结果展示信息
+    /// </summary>
+    internal struct ChestDisplayInfo
+    {
+        public string Title;
+        public int Icon;
+        public string Tooltip;
+    }
+
+    /// <summary>
     /// 全图关键结构与全量宝箱雷达标记系统
     /// 作者: SaintCirno9
     /// </summary>
@@ -39,6 +70,25 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         private static StructurePin[] _pinsSnapshot = Array.Empty<StructurePin>();
         private static volatile bool _isScanning = false;
         private static int _cleanTick = 0;
+
+
+        internal static readonly NpcMarkerInfo[] NpcMarkerTable = new NpcMarkerInfo[]
+        {
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.BoundGoblin }, Name = "受困的哥布林工匠", Color = Color.DodgerBlue, IconItemId = ItemID.TinkerersWorkshop },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.BoundMechanic }, Name = "受困的机械师", Color = Color.HotPink, IconItemId = ItemID.Wrench },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.BoundWizard }, Name = "受困的巫师", Color = Color.MediumPurple, IconItemId = ItemID.CrystalBall },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.WebbedStylist }, Name = "被蛛网缠住的发型师", Color = Color.Pink, IconItemId = ItemID.StylistKilLaKillScissorsIWish },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.BartenderUnconscious }, Name = "昏迷的酒馆老板", Color = Color.SandyBrown, IconItemId = ItemID.Ale },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.GolferRescue }, Name = "受困的高尔夫球手", Color = Color.LightGreen, IconItemId = ItemID.GolfClubIron },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.DemonTaxCollector }, Name = "折磨之魂 (税收官)", Color = Color.IndianRed, IconItemId = ItemID.PurificationPowder },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.LostGirl }, Name = "迷失女孩 (宁芙)", Color = Color.Silver, IconItemId = ItemID.MetalDetector },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.OldMan }, Name = "地牢老人", Color = Color.SkyBlue, IconItemId = ItemID.BoneKey },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.CultistDevote, NPCID.CultistArcherBlue }, Name = "地牢神秘拜月教信徒", Color = Color.DarkCyan, IconItemId = ItemID.CelestialSigil },
+            new NpcMarkerInfo { NpcTypes = new int[] { NPCID.BoundTownSlimeOld, NPCID.BoundTownSlimePurple, NPCID.BoundTownSlimeYellow }, Name = "受困的城镇史莱姆", Color = Color.Lime, IconItemId = ItemID.Gel },
+        };
+
+        /// <summary>扫描结果快照(搜索侧只读)</summary>
+        internal static StructurePin[] GetPinsSnapshot() => _pinsSnapshot;
 
         private static readonly ConcurrentQueue<Action> _mainThreadActions = new ConcurrentQueue<Action>();
 
@@ -89,7 +139,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             {
                 try
                 {
-                    using (new ScopedTimer("StructureMarker.ScanWorldStructures", LogManager.GetLogger("OptimizeAndTool"), LogLevel.Info))
+                    using (new ScopedTimer("StructureMarker.ScanWorldStructures", LogManager.GetLogger("MapAtlasTool"), LogLevel.Info))
                     {
                         ScanWorldStructures(maxX, maxY, worldSurface, rockLayer, dungeonX, dungeonY, chestSnapshot);
                     }
@@ -817,8 +867,15 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 _pinsSnapshot = list.ToArray();
             }
 
+            // 构建箱子物品索引(同在后台线程, 供面板搜索与 N/M 统计)
+            ChestItemIndex.Build(chestSnapshot);
+
             int totalPins = _pinsSnapshot.Length;
-            RunOnMainThread(() => Main.NewText($"[结构与宝箱标记] 扫描完成，共索引 {totalPins} 处世界结构与宝箱！"));
+            RunOnMainThread(() =>
+            {
+                Main.NewText($"[结构与宝箱标记] 扫描完成，共索引 {totalPins} 处世界结构与宝箱！");
+                MapAtlasPanel.RefreshStatsOnMainThread();
+            });
         }
 
         private static bool HasNearbyPin(List<StructurePin> list, Vector2 pos, float maxDistance, string category)
@@ -906,58 +963,58 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             switch (pin.Category)
             {
                 case "ChestNormal":
-                    return QoLValSet.markChestsAll.val && QoLValSet.markChestsSurfaceUnderground.val;
+                    return AtlasValSet.markChestsAll.val && AtlasValSet.markChestsSurfaceUnderground.val;
                 case "ChestShadowBiome":
-                    return QoLValSet.markChestsAll.val && QoLValSet.markChestsShadowBiome.val;
+                    return AtlasValSet.markChestsAll.val && AtlasValSet.markChestsShadowBiome.val;
                 case "ChestTrapped":
-                    return QoLValSet.markChestsAll.val && QoLValSet.markChestsTrapped.val;
+                    return AtlasValSet.markChestsTrapped.val;
                 case "Plantera":
-                    return QoLValSet.markPlanteraBulb.val;
+                    return AtlasValSet.markPlanteraBulb.val;
                 case "SwordShrine":
-                    return QoLValSet.markSwordShrine.val;
+                    return AtlasValSet.markSwordShrine.val;
                 case "Larva":
-                    return QoLValSet.markBeeHive.val;
+                    return AtlasValSet.markBeeHive.val;
                 case "TempleAltar":
-                    return QoLValSet.markTempleAltar.val;
+                    return AtlasValSet.markTempleAltar.val;
                 case "TempleDoor":
-                    return QoLValSet.markTempleDoor.val;
+                    return AtlasValSet.markTempleDoor.val;
                 case "EvilAltars":
-                    return QoLValSet.markEvilAltars.val;
+                    return AtlasValSet.markEvilAltars.val;
                 case "EvilOrbsHearts":
-                    return QoLValSet.markEvilOrbsHearts.val;
+                    return AtlasValSet.markEvilOrbsHearts.val;
                 case "DungeonEntrance":
-                    return QoLValSet.markDungeon.val;
+                    return AtlasValSet.markDungeon.val;
                 case "DungeonWaterBolt":
-                    return QoLValSet.markDungeonWaterBolt.val;
+                    return AtlasValSet.markDungeonWaterBolt.val;
                 case "Traps":
-                    return QoLValSet.markTrapsExplosives.val;
+                    return AtlasValSet.markTrapsExplosives.val;
                 case "Shimmer":
-                    return QoLValSet.markShimmer.val;
+                    return AtlasValSet.markShimmer.val;
                 case "Pyramid":
-                    return QoLValSet.markPyramid.val;
+                    return AtlasValSet.markPyramid.val;
                 case "FloatingIsland":
-                    return QoLValSet.markFloatingIsland.val;
+                    return AtlasValSet.markFloatingIsland.val;
                 case "MiniBiomes":
-                    return QoLValSet.markMiniBiomes.val;
+                    return AtlasValSet.markMiniBiomes.val;
                 case "MushroomBiome":
-                    return QoLValSet.markMushroomBiome.val;
+                    return AtlasValSet.markMushroomBiome.val;
                 case "AntlionHive":
-                    return QoLValSet.markAntlionHive.val;
+                    return AtlasValSet.markAntlionHive.val;
                 case "MossCaves":
-                    return QoLValSet.markMossCaves.val;
+                    return AtlasValSet.markMossCaves.val;
                 case "Meteorite":
-                    return QoLValSet.markMeteorite.val;
+                    return AtlasValSet.markMeteorite.val;
                 case "TrappedNPC":
-                    return QoLValSet.markTrappedNPCs.val;
+                    return AtlasValSet.markTrappedNPCs.val;
                 default:
                     return true;
             }
         }
 
-        private static bool ShouldDrawPin(StructurePin pin, out string tooltip)
+        private static bool ShouldDrawPin(StructurePin pin, out string tooltip, bool buildTooltip = true, bool ignoreToggles = false)
         {
             tooltip = null;
-            if (!IsCategoryEnabled(pin)) return false;
+            if (!ignoreToggles && !IsCategoryEnabled(pin)) return false;
 
             if (pin.ChestIndex >= 0)
             {
@@ -965,57 +1022,134 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 Chest c = Main.chest[pin.ChestIndex];
                 if (c == null) return false;
 
-                List<string> itemLines = new List<string>();
-                int validItemsCount = 0;
-                for (int j = 0; j < c.item.Length; j++)
-                {
-                    Item it = c.item[j];
-                    if (it != null && !it.IsAir && it.stack > 0)
-                    {
-                        validItemsCount++;
-                        if (itemLines.Count < 7)
-                        {
-                            string itName = it.AffixName();
-                            if (it.stack > 1)
-                                itemLines.Add($" • {itName} x{it.stack}");
-                            else
-                                itemLines.Add($" • {itName}");
-                        }
-                    }
-                }
+                int validItemsCount = CountValidItems(c, out List<string> itemLines);
 
                 bool isEmpty = (validItemsCount == 0);
-                if (isEmpty && !QoLValSet.markChestsShowEmpty.val)
+                if (isEmpty && !ignoreToggles && !AtlasValSet.markChestsShowEmpty.val)
                 {
                     return false;
                 }
 
-                string chestTitle = string.IsNullOrEmpty(c.name) ? pin.Name : $"{pin.Name} (\"{c.name}\")";
-                string contentSummary;
-                if (isEmpty)
+                if (buildTooltip)
                 {
-                    contentSummary = "[c/888888:(已清空/空箱)]";
+                    tooltip = BuildChestContentTooltip(pin.Name, pin.CategoryLabel, pin.PositionInTiles, c, validItemsCount, itemLines);
                 }
-                else
-                {
-                    contentSummary = string.Join("\n", itemLines);
-                    if (validItemsCount > itemLines.Count)
-                    {
-                        contentSummary += $"\n[c/AAAAAA:...等共 {validItemsCount} 件物品]";
-                    }
-                }
-
-                tooltip = $"[c/FFE45E:{chestTitle}]\n类型: {pin.CategoryLabel}\n坐标: [X: {(int)pin.PositionInTiles.X}, Y: {(int)pin.PositionInTiles.Y}]\n{contentSummary}";
                 return true;
             }
 
-            tooltip = $"[c/FFE45E:{pin.Name}]\n类型: {pin.CategoryLabel}\n坐标: [X: {(int)pin.PositionInTiles.X}, Y: {(int)pin.PositionInTiles.Y}]";
+            if (buildTooltip)
+            {
+                tooltip = BuildBasicTooltip(pin.Name, pin.CategoryLabel, pin.PositionInTiles);
+            }
             return true;
+        }
+
+        private static int CountValidItems(Chest c, out List<string> itemLines)
+        {
+            itemLines = new List<string>();
+            int validItemsCount = 0;
+            for (int j = 0; j < c.item.Length; j++)
+            {
+                Item it = c.item[j];
+                if (it != null && !it.IsAir && it.stack > 0)
+                {
+                    validItemsCount++;
+                    if (itemLines.Count < 7)
+                    {
+                        string itName = it.AffixName();
+                        if (it.stack > 1)
+                            itemLines.Add($" • {itName} x{it.stack}");
+                        else
+                            itemLines.Add($" • {itName}");
+                    }
+                }
+            }
+            return validItemsCount;
+        }
+
+        internal static string BuildBasicTooltip(string name, string catLabel, Vector2 pos)
+        {
+            return $"[c/FFE45E:{name}]\n类型: {catLabel}\n坐标: [X: {(int)pos.X}, Y: {(int)pos.Y}]";
+        }
+
+        private static string BuildChestContentTooltip(string typeName, string catLabel, Vector2 pos, Chest c, int validItemsCount, List<string> itemLines)
+        {
+            string chestTitle = string.IsNullOrEmpty(c.name) ? typeName : $"{typeName} (\"{c.name}\")";
+            string contentSummary;
+            if (validItemsCount == 0)
+            {
+                contentSummary = "[c/888888:(已清空/空箱)]";
+            }
+            else
+            {
+                contentSummary = string.Join("\n", itemLines);
+                if (validItemsCount > itemLines.Count)
+                {
+                    contentSummary += $"\n[c/AAAAAA:...等共 {validItemsCount} 件物品]";
+                }
+            }
+
+            return $"[c/FFE45E:{chestTitle}]\n类型: {catLabel}\n坐标: [X: {(int)pos.X}, Y: {(int)pos.Y}]\n{contentSummary}";
+        }
+
+        internal static string BuildChestContentTooltip(string typeName, string catLabel, Vector2 pos, Chest c)
+        {
+            int validItemsCount = CountValidItems(c, out List<string> itemLines);
+            return BuildChestContentTooltip(typeName, catLabel, pos, c, validItemsCount, itemLines);
+        }
+
+        /// <summary>搜索是否命中该图钉(无搜索时视为全部命中; 搜索权威, 无视分类开关)</summary>
+        internal static bool IsSearchHit(StructurePin pin)
+        {
+            if (!MapAtlasPanel.HasActiveQuery) return true;
+            if (pin.ChestIndex >= 0) return MapAtlasPanel.HitChestIndexes.Contains(pin.ChestIndex);
+            return MapAtlasPanel.HitTexts.Contains(pin.Name);
+        }
+
+        /// <summary>面板结果列表: 图钉详情 tooltip</summary>
+        internal static string BuildSearchTooltip(StructurePin pin)
+        {
+            if (pin.ChestIndex >= 0 && pin.ChestIndex < Main.chest.Length && Main.chest[pin.ChestIndex] != null)
+            {
+                return BuildChestContentTooltip(pin.Name, pin.CategoryLabel, pin.PositionInTiles, Main.chest[pin.ChestIndex]);
+            }
+            return BuildBasicTooltip(pin.Name, pin.CategoryLabel, pin.PositionInTiles);
+        }
+
+        /// <summary>面板结果列表: 箱子条目展示信息(标题/图标/内容 tooltip)</summary>
+        internal static ChestDisplayInfo BuildChestSearchInfo(int chestIndex, string matchText)
+        {
+            Chest c = Main.chest[chestIndex];
+            if (c == null) return default;
+
+            string typeName = $"宝箱 #{chestIndex}";
+            int icon = ItemID.Chest;
+            Tile t = Main.tile[c.x, c.y];
+            if (t != null && t.active())
+            {
+                ChestStyleInfo info = GetChestInfo(t.type, t.frameX / 36);
+                typeName = info.Name;
+                icon = info.ItemId;
+            }
+
+            string chestTitle = string.IsNullOrEmpty(c.name) ? typeName : $"{typeName} (\"{c.name}\")";
+            if (!string.IsNullOrEmpty(matchText))
+            {
+                chestTitle += $"  [c/9BE87C:命中: {matchText}]";
+            }
+
+            return new ChestDisplayInfo
+            {
+                Title = chestTitle,
+                Icon = icon,
+                Tooltip = BuildChestContentTooltip(typeName, "宝箱雷达", new Vector2(c.x, c.y), c),
+            };
         }
 
         public override void DrawMapPostfix(GameTime gameTime)
         {
-            if (!QoLValSet.markStructuresOnMap.val) return;
+            bool searching = MapAtlasPanel.HasActiveQuery;
+            if (!searching && !AtlasValSet.IsAnyMarkerEnabled) return;
             if (!Main.mapEnabled || !Main.mapReady) return;
 
             // 动态生命周期清理：每隔 60 帧对标记存活状态进行一次检查
@@ -1035,25 +1169,40 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             string hoveredTooltip = null;
 
             // 1. 绘制静态扫描缓存的结构与宝箱
+            //    搜索态分两轮: 先画未命中(调暗, 仍受分类开关过滤), 再画命中(高亮置顶, 无视分类开关)
             StructurePin[] currentPins = _pinsSnapshot;
             if (currentPins != null && currentPins.Length > 0)
             {
+                if (searching)
+                {
+                    for (int i = 0; i < currentPins.Length; i++)
+                    {
+                        StructurePin pin = currentPins[i];
+                        if (pin == null || IsSearchHit(pin)) continue;
+
+                        // 视口预裁剪: 视野外的图钉跳过开关判定与战利品扫描 (上千图钉时的性能关键路径)
+                        if (!IsPositionInViewport(pin.PositionInTiles)) continue;
+                        if (!ShouldDrawPin(pin, out _, buildTooltip: false)) continue;
+
+                        RenderSinglePinOnCurrentMap(pin, null, ref hoveredTooltip, SearchVis.Dim);
+                    }
+                }
+
                 for (int i = 0; i < currentPins.Length; i++)
                 {
                     StructurePin pin = currentPins[i];
                     if (pin == null) continue;
+                    if (searching && !IsSearchHit(pin)) continue;
 
-                    // 视口预裁剪: 视野外的图钉跳过开关判定与战利品扫描 (上千图钉时的性能关键路径)
                     if (!IsPositionInViewport(pin.PositionInTiles)) continue;
+                    if (!ShouldDrawPin(pin, out string pinTooltip, buildTooltip: true, ignoreToggles: searching)) continue;
 
-                    if (!ShouldDrawPin(pin, out string pinTooltip)) continue;
-
-                    RenderSinglePinOnCurrentMap(pin, pinTooltip, ref hoveredTooltip);
+                    RenderSinglePinOnCurrentMap(pin, pinTooltip, ref hoveredTooltip, searching ? SearchVis.Hit : SearchVis.None);
                 }
             }
 
             // 2. 绘制动态 NPC 实时标记 (受困NPC/老人/邪教徒等)
-            DrawDynamicNPCs(ref hoveredTooltip);
+            DrawDynamicNPCs(ref hoveredTooltip, searching);
 
             if (hoveredTooltip != null)
             {
@@ -1061,98 +1210,56 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             }
         }
 
-        private static void DrawDynamicNPCs(ref string hoveredTooltip)
+        private static void DrawDynamicNPCs(ref string hoveredTooltip, bool searching)
         {
-            if (!QoLValSet.markTrappedNPCs.val) return;
+            if (!AtlasValSet.markTrappedNPCs.val) return;
 
             for (int i = 0; i < Main.maxNPCs; i++)
             {
                 NPC npc = Main.npc[i];
                 if (npc == null || !npc.active) continue;
 
-                string npcName = null;
-                Color npcColor = Color.Gold;
-                int iconItemId = 0;
-
-                switch (npc.type)
+                NpcMarkerInfo info = default;
+                bool matched = false;
+                for (int t = 0; t < NpcMarkerTable.Length; t++)
                 {
-                    case NPCID.BoundGoblin:
-                        npcName = "受困的哥布林工匠";
-                        npcColor = Color.DodgerBlue;
-                        iconItemId = ItemID.TinkerersWorkshop;
-                        break;
-                    case NPCID.BoundMechanic:
-                        npcName = "受困的机械师";
-                        npcColor = Color.HotPink;
-                        iconItemId = ItemID.Wrench;
-                        break;
-                    case NPCID.BoundWizard:
-                        npcName = "受困的巫师";
-                        npcColor = Color.MediumPurple;
-                        iconItemId = ItemID.CrystalBall;
-                        break;
-                    case NPCID.WebbedStylist:
-                        npcName = "被蛛网缠住的发型师";
-                        npcColor = Color.Pink;
-                        iconItemId = ItemID.StylistKilLaKillScissorsIWish;
-                        break;
-                    case NPCID.BartenderUnconscious:
-                        npcName = "昏迷的酒馆老板";
-                        npcColor = Color.SandyBrown;
-                        iconItemId = ItemID.Ale;
-                        break;
-                    case NPCID.GolferRescue:
-                        npcName = "受困的高尔夫球手";
-                        npcColor = Color.LightGreen;
-                        iconItemId = ItemID.GolfClubIron;
-                        break;
-                    case NPCID.DemonTaxCollector:
-                        npcName = "折磨之魂 (税收官)";
-                        npcColor = Color.IndianRed;
-                        iconItemId = ItemID.PurificationPowder;
-                        break;
-                    case NPCID.LostGirl:
-                        npcName = "迷失女孩 (宁芙)";
-                        npcColor = Color.Silver;
-                        iconItemId = ItemID.MetalDetector;
-                        break;
-                    case NPCID.OldMan:
-                        npcName = "地牢老人";
-                        npcColor = Color.SkyBlue;
-                        iconItemId = ItemID.BoneKey;
-                        break;
-                    case NPCID.CultistDevote:
-                    case NPCID.CultistArcherBlue:
-                        npcName = "地牢神秘拜月教信徒";
-                        npcColor = Color.DarkCyan;
-                        iconItemId = ItemID.CelestialSigil;
-                        break;
-                    case NPCID.BoundTownSlimeOld:
-                    case NPCID.BoundTownSlimePurple:
-                    case NPCID.BoundTownSlimeYellow:
-                        npcName = "受困的城镇史莱姆";
-                        npcColor = Color.Lime;
-                        iconItemId = ItemID.Gel;
-                        break;
+                    int[] types = NpcMarkerTable[t].NpcTypes;
+                    for (int k = 0; k < types.Length; k++)
+                    {
+                        if (npc.type == types[k])
+                        {
+                            info = NpcMarkerTable[t];
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (matched) break;
                 }
 
-                if (npcName == null) continue;
+                if (!matched) continue;
 
                 Vector2 npcPosInTiles = npc.Center / 16f;
                 if (!IsPositionInViewport(npcPosInTiles)) continue;
 
+                // 搜索权威: 命中的 NPC 无视开关高亮, 未命中调暗(整体仍受 markTrappedNPCs 开关控制)
+                SearchVis vis = SearchVis.None;
+                if (searching)
+                {
+                    vis = MapAtlasPanel.HitTexts.Contains(info.Name) ? SearchVis.Hit : SearchVis.Dim;
+                }
+
                 StructurePin pin = new StructurePin
                 {
                     PositionInTiles = npcPosInTiles,
-                    Name = npcName,
-                    Color = npcColor,
+                    Name = info.Name,
+                    Color = info.Color,
                     Category = "TrappedNPC",
                     CategoryLabel = "受困/特殊NPC",
-                    ItemId = iconItemId
+                    ItemId = info.IconItemId
                 };
 
-                string tooltip = $"[c/FFE45E:{pin.Name}]\n类型: {pin.CategoryLabel}\n坐标: [X: {(int)pin.PositionInTiles.X}, Y: {(int)pin.PositionInTiles.Y}]";
-                RenderSinglePinOnCurrentMap(pin, tooltip, ref hoveredTooltip);
+                string tooltip = vis == SearchVis.Dim ? null : BuildBasicTooltip(pin.Name, pin.CategoryLabel, pin.PositionInTiles);
+                RenderSinglePinOnCurrentMap(pin, tooltip, ref hoveredTooltip, vis);
             }
         }
 
@@ -1206,7 +1313,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             return true;
         }
 
-        private static void RenderSinglePinOnCurrentMap(StructurePin pin, string pinTooltip, ref string hoveredTooltip)
+        private static void RenderSinglePinOnCurrentMap(StructurePin pin, string pinTooltip, ref string hoveredTooltip, SearchVis vis = SearchVis.None)
         {
             // 1. 全屏大地图
             if (Main.mapFullscreen)
@@ -1226,9 +1333,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 drawPos += pin.PositionInTiles * Main.mapFullscreenScale;
 
                 bool isHovered = IsMouseHovering(drawPos, 14f * Main.UIScale);
-                DrawPinMarker(drawPos, pin, 1.25f, isHovered);
+                DrawPinMarker(drawPos, pin, 1.25f, isHovered, vis);
 
-                if (isHovered && hoveredTooltip == null)
+                if (isHovered && pinTooltip != null && hoveredTooltip == null)
                 {
                     hoveredTooltip = pinTooltip;
                 }
@@ -1253,9 +1360,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     if (scale > 1f) scale = 1f;
 
                     bool isHovered = IsMouseHovering(drawPos, 10f);
-                    DrawPinMarker(drawPos, pin, scale, isHovered);
+                    DrawPinMarker(drawPos, pin, scale, isHovered, vis);
 
-                    if (isHovered && hoveredTooltip == null)
+                    if (isHovered && pinTooltip != null && hoveredTooltip == null)
                     {
                         hoveredTooltip = pinTooltip;
                     }
@@ -1280,9 +1387,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     scale *= Main.UIScale;
 
                     bool isHovered = IsMouseHovering(drawPos, 12f * scale);
-                    DrawPinMarker(drawPos, pin, scale, isHovered);
+                    DrawPinMarker(drawPos, pin, scale, isHovered, vis);
 
-                    if (isHovered && hoveredTooltip == null)
+                    if (isHovered && pinTooltip != null && hoveredTooltip == null)
                     {
                         hoveredTooltip = pinTooltip;
                     }
@@ -1290,7 +1397,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             }
         }
 
-        private static void DrawPinMarker(Vector2 pos, StructurePin pin, float scale, bool isHovered)
+        private static void DrawPinMarker(Vector2 pos, StructurePin pin, float scale, bool isHovered, SearchVis vis = SearchVis.None)
         {
             Texture2D magicPixel = TextureAssets.MagicPixel.Value;
             if (magicPixel == null) return;
@@ -1301,9 +1408,22 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             if (isHovered) size += 4;
             Rectangle rect = new Rectangle((int)pos.X - size / 2, (int)pos.Y - size / 2, size, size);
 
+            // 搜索未命中: 整体调暗
+            float visAlpha = vis == SearchVis.Dim ? 0.4f : 1f;
+
             // 2. 绘制深色半透明底衬与发光外边框
             Color borderColor = pin.IsTrapped ? (Color.Crimson * ((float)Math.Sin(Main.GlobalTimeWrappedHourly * 6f) * 0.25f + 0.75f)) : (pin.Color * (isHovered ? 1f : 0.85f));
             Color bgColor = Color.Black * (isHovered ? 0.85f : 0.72f);
+            borderColor *= visAlpha;
+            bgColor *= visAlpha;
+
+            // 搜索命中: 白色脉动光圈(最外层)
+            if (vis == SearchVis.Hit)
+            {
+                float pulse = (float)Math.Sin(Main.GlobalTimeWrappedHourly * 5f) * 0.25f + 0.75f;
+                int glow = 4 + (int)(pulse * 3f);
+                Main.spriteBatch.Draw(magicPixel, new Rectangle(rect.X - glow, rect.Y - glow, rect.Width + glow * 2, rect.Height + glow * 2), Color.White * pulse);
+            }
 
             // 外边框发光
             Main.spriteBatch.Draw(magicPixel, new Rectangle(rect.X - 2, rect.Y - 2, rect.Width + 4, rect.Height + 4), borderColor);
@@ -1327,13 +1447,13 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 float maxDim = Math.Max(iconTex.Width, iconTex.Height);
                 float iconScale = (size - 6f) / maxDim;
                 Vector2 iconOrigin = new Vector2(iconTex.Width / 2f, iconTex.Height / 2f);
-                Main.spriteBatch.Draw(iconTex, pos, null, Color.White * (isHovered ? 1f : 0.95f), 0f, iconOrigin, iconScale, SpriteEffects.None, 0f);
+                Main.spriteBatch.Draw(iconTex, pos, null, Color.White * ((isHovered ? 1f : 0.95f) * visAlpha), 0f, iconOrigin, iconScale, SpriteEffects.None, 0f);
             }
             else
             {
                 // 兜底几何方块
                 Rectangle coreRect = new Rectangle(rect.X + 3, rect.Y + 3, rect.Width - 6, rect.Height - 6);
-                Main.spriteBatch.Draw(magicPixel, coreRect, pin.Color * 0.9f);
+                Main.spriteBatch.Draw(magicPixel, coreRect, pin.Color * 0.9f * visAlpha);
             }
         }
 

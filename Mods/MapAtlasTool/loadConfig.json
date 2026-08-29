@@ -1,0 +1,6 @@
+{
+  "key": "StaticTile.MapAtlasTool",
+  "version": "1.0.0",
+  "isEnable": true,
+  "dllPath": "MapAtlasTool.dll"
+}
