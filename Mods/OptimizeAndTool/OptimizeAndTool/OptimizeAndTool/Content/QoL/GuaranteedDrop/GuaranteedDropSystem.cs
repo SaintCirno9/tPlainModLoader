@@ -35,8 +35,8 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
         {
             return new List<UIElement>
             {
-                UIBuild.get2(EnableGuaranteedDrop, "怪物击杀、Boss 宝藏袋、钓鱼宝匣、开箱等掉落池中，只要是当前角色未曾获取过的物品，首次必定 100% 掉落（获取后恢复原概率）", "Images/Item_5010", "全场景首见全保底"),
-                UIBuild.get2(EnableMultiOptionBurst, "Boss/宝箱怪等多选一掉落池（如肉山徽章与武器），首次击杀全量大爆特爆（一次性掉齐所有未拥有的专属战利品）", "Images/Item_3324", "多选一全量大爆")
+                UIBuild.get2(EnableGuaranteedDrop, "怪物与Boss本体掉落享受首见保底（首次掉齐未拥有战利品）；17种原版Boss宝藏袋与钓鱼宝匣/锁盒开启时永久全量大爆（肉后Boss袋必出1套完整开发者套装）", "Images/Item_5010", "掉落优化与全量开箱"),
+                UIBuild.get2(EnableMultiOptionBurst, "怪物与Boss本体的多选一/多选多掉落池（如肉山徽章与武器），首次击杀全量大爆特爆（一次性掉齐所有未拥有的专属战利品）", "Images/Item_3324", "多选一全量大爆")
             };
         }
 

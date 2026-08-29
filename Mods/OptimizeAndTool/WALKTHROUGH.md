@@ -181,3 +181,33 @@
 | Bug#19 | 天顶世界/颠倒世界图格 null 引发 `Player.AdjTiles` 空指针异常并中断主更新循环（导致开背包无法移动、吸钱币停滞、开闭设置崩溃） | `Patch_Player.AdjTilesPrefix` 框架级全量安全接管与诊断探针，引入 `PlayerAdjTileExtensions` 安全扩展方法，彻底杜绝 NRE 崩溃 |
 
 **验证**：子工程与全量 sln 构建均 **0 警告 0 错误**，自动热部署成功。实机验证制作界面稳定无频闪，天顶世界背包移动与图格扫描完全正常。
+
+---
+
+# Boss 宝藏袋与钓鱼宝匣开箱永久全量掉落改造记录
+
+> **方案对齐**：需求说明与原版 1.4.4.9 `GameSource` 反编译源码对照。
+
+## 1. 改造内容与架构设计
+
+1. **原版 17 种 Boss 宝藏袋永久全量掉落**：
+   - 拦截 `Player.OpenBossBag`（`Prefix`），玩家开启任意 Boss 宝藏袋时，无视历史获取状态，直接全量喷出该 Boss 掉落池中的所有武器、专家专属饰品、坐骑、宠物、工具、面具与材料；
+   - 9 种困难模式（肉山后）Boss 宝藏袋（双子魔眼、毁灭者、机械骷髅王、世纪之花、石巨人、猪鲨公爵、光之女皇、史莱姆皇后、月球领主）开启时，每次必定额外掉落 1 套随机完整的开发者套装（包含衣服+裤子/裙子+头饰/面具+翅膀+特有饰品/染料，共 21 套完整开发者套装）；
+2. **钓鱼宝匣与开箱容器同步永久全量掉落**：
+   - 拦截 `Player.OpenFishingCrate`、`OpenCanofWorms`、`OpenOyster`、`OpenLockBox`、`OpenShadowLockbox`；
+   - 12 种钓鱼宝匣（木匣、铁匣、金匣、地牢匣、天空匣、丛林匣、腐化匣、猩红匣、神圣匣、冰冻匣、绿洲匣、海洋匣及其肉后版本）、金锁盒、黑曜石锁盒、生蚝（白/黑/粉珍珠）、蠕虫罐头每次开启均掉落全部专属物品；
+3. **小怪与 Boss 死亡本体掉落**：
+   - 保持原有的 Anti-RNG 首见保底机制（`ItemDropResolver.ResolveRule` 拦截，首次击杀掉齐未拥有战利品，后续击杀恢复原版概率）；
+4. **强类型与 ItemID 全量校对**：
+   - 校对并替换所有不一致的物品 ID 常量，确保强类型与原版 1.4.4.9 完全对齐，杜绝编译错误与运行时异常；
+5. **UI 文案更新**：
+   - 更新 `GuaranteedDropSystem.cs` 的提示文案与设置标题，清晰传达掉落优化与开箱全量大爆机制。
+
+## 2. 编译构建验证
+
+- **子工程构建**：
+  `dotnet build tPlainModLoader/Mods/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool.csproj -c Release`
+  - 结果：**0 警告 0 错误**，生成并自动热部署至游戏目录。
+- **全量解决方案构建**：
+  `dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`
+  - 结果：**20+ 个工程全部 0 警告 0 错误**，极速多核图构建完成，全部自动热部署成功。

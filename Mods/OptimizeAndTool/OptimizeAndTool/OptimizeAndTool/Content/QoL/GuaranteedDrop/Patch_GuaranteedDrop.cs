@@ -196,44 +196,354 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
 
         #endregion
 
-        #region 2. Boss 宝藏袋首开保底 (Player.OpenBossBag)
+        #region 2. 困难模式开发者套装与 Boss 宝藏袋永久全量大爆 (Player.OpenBossBag)
 
+        /// <summary>
+        /// 21 套完整的困难模式开发者时装套装定义（头饰/面具、上衣、裤子/裙子、翅膀、专属附带饰品/染料）
+        /// </summary>
+        private static readonly int[][] DeveloperSets = new int[][]
+        {
+            // 1. Red's set
+            new int[] { ItemID.RedsHelmet, ItemID.RedsBreastplate, ItemID.RedsLeggings, ItemID.RedsWings, ItemID.RedsYoyo },
+            // 2. Cenx's set
+            new int[] { ItemID.CenxsTiara, ItemID.CenxsBreastplate, ItemID.CenxsLeggings, ItemID.CenxsWings },
+            // 3. Cenx's dress set
+            new int[] { ItemID.CenxsTiara, ItemID.CenxsDress, ItemID.CenxsDressPants, ItemID.CenxsWings },
+            // 4. Crowno's set
+            new int[] { ItemID.CrownosMask, ItemID.CrownosBreastplate, ItemID.CrownosLeggings, ItemID.CrownosWings },
+            // 5. Will's set
+            new int[] { ItemID.WillsHelmet, ItemID.WillsBreastplate, ItemID.WillsLeggings, ItemID.WillsWings },
+            // 6. Jim's set
+            new int[] { ItemID.JimsHelmet, ItemID.JimsBreastplate, ItemID.JimsLeggings, ItemID.JimsWings },
+            // 7. Aaron's set
+            new int[] { ItemID.AaronsHelmet, ItemID.AaronsBreastplate, ItemID.AaronsLeggings },
+            // 8. D-Town's set
+            new int[] { ItemID.DTownsHelmet, ItemID.DTownsBreastplate, ItemID.DTownsLeggings, ItemID.DTownsWings },
+            // 9. Lazure's set
+            new int[] { ItemID.BejeweledValkyrieHead, ItemID.BejeweledValkyrieBody, ItemID.BejeweledValkyrieWing, ItemID.ValkyrieYoyo },
+            // 10. Yoraiz0r's set
+            new int[] { ItemID.Yoraiz0rHead, ItemID.Yoraiz0rShirt, ItemID.Yoraiz0rPants, ItemID.Yoraiz0rWings, ItemID.Yoraiz0rDarkness },
+            // 11. Skiphs' set
+            new int[] { ItemID.SkiphsHelm, ItemID.SkiphsShirt, ItemID.SkiphsPants, ItemID.SkiphsWings, ItemID.DevDye },
+            // 12. Loki's set
+            new int[] { ItemID.LokisHelm, ItemID.LokisShirt, ItemID.LokisPants, ItemID.LokisWings, ItemID.LokisDye },
+            // 13. Arkhalis's set
+            new int[] { ItemID.Arkhalis, ItemID.ArkhalisHat, ItemID.ArkhalisShirt, ItemID.ArkhalisPants, ItemID.ArkhalisWings },
+            // 14. Leinfors' set
+            new int[] { ItemID.LeinforsHat, ItemID.LeinforsShirt, ItemID.LeinforsPants, ItemID.LeinforsWings, ItemID.LeinforsAccessory },
+            // 15. Ghostar's set
+            new int[] { ItemID.GhostarSkullPin, ItemID.GhostarShirt, ItemID.GhostarPants, ItemID.GhostarsWings },
+            // 16. Safeman's set
+            new int[] { ItemID.SafemanSunHair, ItemID.SafemanSunDress, ItemID.SafemanDressLeggings, ItemID.SafemanWings },
+            // 17. FoodBarbarian's set
+            new int[] { ItemID.FoodBarbarianHelm, ItemID.FoodBarbarianArmor, ItemID.FoodBarbarianGreaves, ItemID.FoodBarbarianWings },
+            // 18. Grox The Great's set
+            new int[] { ItemID.GroxTheGreatHelm, ItemID.GroxTheGreatArmor, ItemID.GroxTheGreatGreaves, ItemID.GroxTheGreatWings },
+            // 19. ChickenBones' set
+            new int[] { ItemID.ChickenBonesHead, ItemID.ChickenBonesBody, ItemID.ChickenBonesLegs, ItemID.ChickenBonesWings, ItemID.ChickenBonesRobe },
+            // 20. Kazzymodus's set
+            new int[] { ItemID.KazzymodusHood, ItemID.KazzymodusChestpiece, ItemID.KazzymodusLeggings, ItemID.KazzymodusWings },
+            // 21. Luna's set
+            new int[] { ItemID.LunasHead, ItemID.LunasBody, ItemID.LunasLegs, ItemID.LunasWings, ItemID.LunasCloak }
+        };
+
+        /// <summary>
+        /// 困难模式（肉山后）Boss 宝藏袋集合
+        /// </summary>
+        private static readonly HashSet<int> HardmodeBossBags = new HashSet<int>
+        {
+            ItemID.TwinsBossBag,
+            ItemID.DestroyerBossBag,
+            ItemID.SkeletronPrimeBossBag,
+            ItemID.PlanteraBossBag,
+            ItemID.GolemBossBag,
+            ItemID.FishronBossBag,
+            ItemID.FairyQueenBossBag,
+            ItemID.QueenSlimeBossBag,
+            ItemID.MoonLordBossBag
+        };
+
+        /// <summary>
+        /// 17 个原版 Boss 宝藏袋全部专属武器、专家饰品、坐骑、宠物、工具、面具与稀有战利品全集
+        /// </summary>
         private static readonly Dictionary<int, int[]> BossBagLootTable = new Dictionary<int, int[]>
         {
             // 史莱姆王 (3318)
-            { 3318, new int[] { 2430, 2493, 256, 257, 258, 2610, 998, 3090 } },
+            {
+                ItemID.KingSlimeBossBag,
+                new int[]
+                {
+                    ItemID.RoyalGel,
+                    ItemID.KingSlimeMask,
+                    ItemID.SlimySaddle,
+                    ItemID.NinjaHood,
+                    ItemID.NinjaShirt,
+                    ItemID.NinjaPants,
+                    ItemID.SlimeHook,
+                    ItemID.Solidifier,
+                    ItemID.SlimeGun
+                }
+            },
             // 克苏鲁之眼 (3319)
-            { 3319, new int[] { 2112, 1299, 2108 } },
+            {
+                ItemID.EyeOfCthulhuBossBag,
+                new int[]
+                {
+                    ItemID.EoCShield,
+                    ItemID.EyeMask,
+                    ItemID.Binoculars,
+                    ItemID.DemoniteOre,
+                    ItemID.CrimtaneOre,
+                    ItemID.UnholyArrow,
+                    ItemID.CorruptSeeds,
+                    ItemID.CrimsonSeeds
+                }
+            },
             // 世界吞噬怪 (3320)
-            { 3320, new int[] { 3224, 3091, 2105 } },
+            {
+                ItemID.EaterOfWorldsBossBag,
+                new int[]
+                {
+                    ItemID.WormScarf,
+                    ItemID.EaterMask,
+                    ItemID.EatersBone,
+                    ItemID.DemoniteOre,
+                    ItemID.ShadowScale
+                }
+            },
             // 克苏鲁之脑 (3321)
-            { 3321, new int[] { 3223, 3092, 2106 } },
+            {
+                ItemID.BrainOfCthulhuBossBag,
+                new int[]
+                {
+                    ItemID.BrainOfConfusion,
+                    ItemID.BrainMask,
+                    ItemID.BoneRattle,
+                    ItemID.CrimtaneOre,
+                    ItemID.TissueSample
+                }
+            },
             // 蜂王 (3322)
-            { 3322, new int[] { 3333, 1121, 1122, 1123, 1133, 1134, 2431, 1132, 2435, 1131 } },
+            {
+                ItemID.QueenBeeBossBag,
+                new int[]
+                {
+                    ItemID.HiveBackpack,
+                    ItemID.BeeMask,
+                    ItemID.HoneyedGoggles,
+                    ItemID.HiveWand,
+                    ItemID.BeeKeeper,
+                    ItemID.BeesKnees,
+                    ItemID.BeeGun,
+                    ItemID.HoneyComb,
+                    ItemID.BeeHat,
+                    ItemID.BeeShirt,
+                    ItemID.BeePants,
+                    ItemID.Beenade,
+                    ItemID.BeeWax,
+                    ItemID.QueenOfBees
+                }
+            },
+            // 独眼巨鹿 (5111)
+            {
+                ItemID.DeerclopsBossBag,
+                new int[]
+                {
+                    ItemID.BoneHelm,
+                    ItemID.DeerclopsMask,
+                    ItemID.Eyebrella,
+                    ItemID.ChesterPetItem,
+                    ItemID.DontStarveShaderItem,
+                    ItemID.HamBat,
+                    ItemID.LucyTheAxe,
+                    ItemID.PewMaticHorn,
+                    ItemID.WeatherPain,
+                    ItemID.HoundiusShootius,
+                    ItemID.DizzyHat
+                }
+            },
             // 骷髅王 (3323)
-            { 3323, new int[] { 3245, 865, 3094, 1280, 1279, 1313, 1305 } },
+            {
+                ItemID.SkeletronBossBag,
+                new int[]
+                {
+                    ItemID.BoneGlove,
+                    ItemID.SkeletronMask,
+                    ItemID.SkeletronHand,
+                    ItemID.BookofSkulls,
+                    ItemID.ChippysCouch
+                }
+            },
             // 血肉墙 (3324)
-            { 3324, new int[] { 3225, 489, 490, 491, 2998, 426, 434, 514, 533, 3018, 2111, 3095 } },
-            // 双子魔眼 (3325)
-            { 3325, new int[] { 3353, 2107, 3096 } },
-            // 毁灭者 (3326)
-            { 3326, new int[] { 3354, 2109, 3097 } },
+            {
+                ItemID.WallOfFleshBossBag,
+                new int[]
+                {
+                    ItemID.DemonHeart,
+                    ItemID.FleshMask,
+                    ItemID.Pwnhammer,
+                    ItemID.WarriorEmblem,
+                    ItemID.RangerEmblem,
+                    ItemID.SorcererEmblem,
+                    ItemID.SummonerEmblem,
+                    ItemID.BreakerBlade,
+                    ItemID.ClockworkAssaultRifle,
+                    ItemID.LaserRifle,
+                    ItemID.FireWhip,
+                    ItemID.WallOfFleshGoatMountItem
+                }
+            },
+            // 史莱姆皇后 (4957)
+            {
+                ItemID.QueenSlimeBossBag,
+                new int[]
+                {
+                    ItemID.VolatileGelatin,
+                    ItemID.QueenSlimeMask,
+                    ItemID.QueenSlimeMountSaddle,
+                    ItemID.Smolstar,
+                    ItemID.QueenSlimeHook,
+                    ItemID.CrystalNinjaHelmet,
+                    ItemID.CrystalNinjaChestplate,
+                    ItemID.CrystalNinjaLeggings,
+                    ItemID.GelBalloon
+                }
+            },
+            // 双子魔眼 (3326)
+            {
+                ItemID.TwinsBossBag,
+                new int[]
+                {
+                    ItemID.MechanicalWheelPiece,
+                    ItemID.TwinMask,
+                    ItemID.SoulofSight,
+                    ItemID.HallowedBar
+                }
+            },
+            // 毁灭者 (3325)
+            {
+                ItemID.DestroyerBossBag,
+                new int[]
+                {
+                    ItemID.MechanicalWagonPiece,
+                    ItemID.DestroyerMask,
+                    ItemID.SoulofMight,
+                    ItemID.HallowedBar
+                }
+            },
             // 机械骷髅王 (3327)
-            { 3327, new int[] { 3355, 2110, 3098 } },
+            {
+                ItemID.SkeletronPrimeBossBag,
+                new int[]
+                {
+                    ItemID.MechanicalBatteryPiece,
+                    ItemID.SkeletronPrimeMask,
+                    ItemID.SoulofFright,
+                    ItemID.HallowedBar
+                }
+            },
             // 世纪之花 (3328)
-            { 3328, new int[] { 3336, 757, 1254, 1255, 1258, 1259, 1260, 1295, 3019, 1141, 1297, 2113, 3099 } },
+            {
+                ItemID.PlanteraBossBag,
+                new int[]
+                {
+                    ItemID.SporeSac,
+                    ItemID.PlanteraMask,
+                    ItemID.TempleKey,
+                    ItemID.Seedling,
+                    ItemID.TheAxe,
+                    ItemID.PygmyStaff,
+                    ItemID.ThornHook,
+                    ItemID.GrenadeLauncher,
+                    ItemID.RocketI,
+                    ItemID.VenusMagnum,
+                    ItemID.NettleBurst,
+                    ItemID.LeafBlower,
+                    ItemID.FlowerPow,
+                    ItemID.WaspGun,
+                    ItemID.Seedler,
+                    ItemID.FlowerWhip
+                }
+            },
             // 石巨人 (3329)
-            { 3329, new int[] { 3337, 1251, 1256, 1257, 1294, 1296, 2114, 3100, 1293 } },
+            {
+                ItemID.GolemBossBag,
+                new int[]
+                {
+                    ItemID.ShinyStone,
+                    ItemID.GolemMask,
+                    ItemID.SunStone,
+                    ItemID.EyeoftheGolem,
+                    ItemID.Picksaw,
+                    ItemID.PossessedHatchet,
+                    ItemID.Stynger,
+                    ItemID.StyngerBolt,
+                    ItemID.HeatRay,
+                    ItemID.StaffofEarth,
+                    ItemID.GolemFist,
+                    ItemID.BeetleHusk,
+                    ItemID.MobiusStrip
+                }
+            },
             // 猪鲨公爵 (3330)
-            { 3330, new int[] { 3338, 2611, 2621, 2622, 2623, 2624, 3101, 2588 } },
+            {
+                ItemID.FishronBossBag,
+                new int[]
+                {
+                    ItemID.ShrimpyTruffle,
+                    ItemID.DukeFishronMask,
+                    ItemID.FishronWings,
+                    ItemID.TempestStaff,
+                    ItemID.RazorbladeTyphoon,
+                    ItemID.BubbleGun,
+                    ItemID.Tsunami,
+                    ItemID.Flairon,
+                    ItemID.FlaironFlail,
+                    ItemID.EelWhip,
+                    ItemID.Kraken
+                }
+            },
+            // 光之女皇 (4782)
+            {
+                ItemID.FairyQueenBossBag,
+                new int[]
+                {
+                    ItemID.EmpressFlightBooster,
+                    ItemID.FairyQueenMask,
+                    ItemID.RainbowWings,
+                    ItemID.SparkleGuitar,
+                    ItemID.HallowBossDye,
+                    ItemID.RainbowCursor,
+                    ItemID.PiercingStarlight,
+                    ItemID.FairyQueenMagicItem,
+                    ItemID.FairyQueenRangedItem,
+                    ItemID.RainbowWhip
+                }
+            },
             // 月球领主 (3332)
-            { 3332, new int[] { 3339, 3531, 3546, 3063, 3065, 3106, 3389, 3540, 3541, 3542, 3543, 3544, 3545, 3547 } },
-            // 光之女皇 (4957)
-            { 4957, new int[] { 4986, 4782, 4783, 4784, 4785, 4786, 4787, 4788, 4789, 4959, 4960 } },
-            // 史莱姆皇后 (4958)
-            { 4958, new int[] { 4987, 4982, 4983, 4984, 4985, 4981, 4961, 4962 } },
-            // 巨鹿 (5070)
-            { 5070, new int[] { 5098, 5100, 5099, 5101, 5109, 5108, 5110, 5111 } }
+            {
+                ItemID.MoonLordBossBag,
+                new int[]
+                {
+                    ItemID.GravityGlobe,
+                    ItemID.SuspiciousLookingTentacle,
+                    ItemID.PortalGun,
+                    ItemID.BossMaskMoonlord,
+                    ItemID.LunarOre,
+                    ItemID.Meowmere,
+                    ItemID.StarWrath,
+                    ItemID.Terrarian,
+                    ItemID.SDMG,
+                    ItemID.Celeb2,
+                    ItemID.LastPrism,
+                    ItemID.LunarFlareBook,
+                    ItemID.RainbowCrystalStaff,
+                    ItemID.MoonlordTurretStaff,
+                    ItemID.MoonLordWhip,
+                    ItemID.MeowmereMinecart,
+                    ItemID.LongRainbowTrailWings
+                }
+            }
         };
 
         [HarmonyPatch(typeof(Player), nameof(Player.OpenBossBag))]
@@ -244,35 +554,37 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             {
                 if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || __instance == null || __instance != Main.LocalPlayer) return;
 
+                IEntitySource source = __instance.GetItemSource_OpenItem(type);
+
+                // 1. 永久全量掉落该 Boss 宝藏袋池中的所有可能物品
                 if (BossBagLootTable.TryGetValue(type, out int[] potentialLoot) && potentialLoot != null)
                 {
-                    List<int> undiscovered = new List<int>();
                     for (int i = 0; i < potentialLoot.Length; i++)
                     {
                         int itemId = potentialLoot[i];
-                        if (itemId > 0 && itemId < ItemID.Count && !DiscoveredItemTracker.HasDiscovered(__instance, itemId))
+                        if (itemId > 0 && itemId < ItemID.Count)
                         {
-                            undiscovered.Add(itemId);
+                            __instance.QuickSpawnItem(source, itemId, 1);
+                            DiscoveredItemTracker.RecordDiscovered(itemId);
                         }
                     }
+                }
 
-                    if (undiscovered.Count > 0)
+                // 2. 若属于困难模式（肉后）Boss 宝藏袋，每次必定额外掉落 1 套随机完整的开发者套装
+                if (HardmodeBossBags.Contains(type) && DeveloperSets.Length > 0)
+                {
+                    int setIndex = Main.rand.Next(DeveloperSets.Length);
+                    int[] chosenSet = DeveloperSets[setIndex];
+                    if (chosenSet != null)
                     {
-                        IEntitySource source = __instance.GetItemSource_OpenItem(type);
-                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                        for (int i = 0; i < chosenSet.Length; i++)
                         {
-                            for (int i = 0; i < undiscovered.Count; i++)
+                            int devItemId = chosenSet[i];
+                            if (devItemId > 0 && devItemId < ItemID.Count)
                             {
-                                int itemId = undiscovered[i];
-                                __instance.QuickSpawnItem(source, itemId, 1);
-                                DiscoveredItemTracker.RecordDiscovered(itemId);
+                                __instance.QuickSpawnItem(source, devItemId, 1);
+                                DiscoveredItemTracker.RecordDiscovered(devItemId);
                             }
-                        }
-                        else
-                        {
-                            int chosen = undiscovered[Main.rand.Next(undiscovered.Count)];
-                            __instance.QuickSpawnItem(source, chosen, 1);
-                            DiscoveredItemTracker.RecordDiscovered(chosen);
                         }
                     }
                 }
@@ -281,46 +593,46 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
 
         #endregion
 
-        #region 3. 钓鱼宝匣、摸奖包与锁盒保底 (Player.OpenFishingCrate / OpenCanofWorms / OpenLockBox 等)
+        #region 3. 钓鱼宝匣、摸奖包与锁盒永久全量大爆 (Player.OpenFishingCrate / OpenCanofWorms / OpenLockBox 等)
 
         private static readonly Dictionary<int, int[]> CrateExclusiveLootTable = new Dictionary<int, int[]>
         {
             // 木匣 / 珍珠木匣 (2334, 3979)
-            { 2334, new int[] { 285, 953, 4341, 3068, 3084, 3200, 3201 } },
-            { 3979, new int[] { 285, 953, 4341, 3068, 3084, 3200, 3201, 3064, 2424 } },
+            { ItemID.WoodenCrate, new int[] { ItemID.SailfishBoots, ItemID.TsunamiInABottle, ItemID.Aglet, ItemID.Radar, ItemID.ClimbingClaws, ItemID.CordageGuide, ItemID.Sundial, ItemID.Anchor } },
+            { ItemID.WoodenCrateHard, new int[] { ItemID.SailfishBoots, ItemID.TsunamiInABottle, ItemID.Aglet, ItemID.Radar, ItemID.ClimbingClaws, ItemID.CordageGuide, ItemID.Sundial, ItemID.Anchor } },
             // 铁匣 / 秘银匣 (2335, 3980)
-            { 2335, new int[] { 158, 159, 285, 953, 4341, 3068, 3084 } },
-            { 3980, new int[] { 158, 159, 285, 953, 4341, 3068, 3084, 3064, 2424 } },
+            { ItemID.IronCrate, new int[] { ItemID.FalconBlade, ItemID.TartarSauce, ItemID.SailfishBoots, ItemID.TsunamiInABottle, ItemID.Sundial } },
+            { ItemID.IronCrateHard, new int[] { ItemID.FalconBlade, ItemID.TartarSauce, ItemID.SailfishBoots, ItemID.TsunamiInABottle, ItemID.Sundial } },
             // 金匣 / 钛金匣 (2336, 3981)
-            { 2336, new int[] { 997, 3064, 2424 } },
-            { 3981, new int[] { 997, 3064, 2424 } },
+            { ItemID.GoldenCrate, new int[] { ItemID.LifeformAnalyzer, ItemID.Sundial, ItemID.HardySaddle } },
+            { ItemID.GoldenCrateHard, new int[] { ItemID.LifeformAnalyzer, ItemID.Sundial, ItemID.HardySaddle } },
             // 地牢匣 / 围栏匣 (3203, 3982)
-            { 3203, new int[] { 3085 } },
-            { 3982, new int[] { 3085 } },
+            { ItemID.DungeonFishingCrate, new int[] { ItemID.GoldenKey, ItemID.LockBox } },
+            { ItemID.DungeonFishingCrateHard, new int[] { ItemID.GoldenKey, ItemID.LockBox } },
             // 天空匣 / 天蓝匣 (3206, 3985)
-            { 3206, new int[] { 158, 65, 159, 2219, 1584 } },
-            { 3985, new int[] { 158, 65, 159, 2219, 1584 } },
+            { ItemID.FloatingIslandFishingCrate, new int[] { ItemID.Starfury, ItemID.LuckyHorseshoe, ItemID.ShinyRedBalloon, ItemID.CreativeWings, ItemID.CelestialMagnet } },
+            { ItemID.FloatingIslandFishingCrateHard, new int[] { ItemID.Starfury, ItemID.LuckyHorseshoe, ItemID.ShinyRedBalloon, ItemID.CreativeWings, ItemID.CelestialMagnet } },
             // 丛林匣 / 荆棘匣 (3208, 3987)
-            { 3208, new int[] { 211, 212, 964, 2292, 2266, 2289, 753 } },
-            { 3987, new int[] { 211, 212, 964, 2292, 2266, 2289, 753 } },
+            { ItemID.JungleFishingCrate, new int[] { ItemID.FeralClaws, ItemID.AnkletoftheWind, ItemID.StaffofRegrowth, ItemID.Boomstick, ItemID.Seaweed, ItemID.FlowerBoots, ItemID.FiberglassFishingPole } },
+            { ItemID.JungleFishingCrateHard, new int[] { ItemID.FeralClaws, ItemID.AnkletoftheWind, ItemID.StaffofRegrowth, ItemID.Boomstick, ItemID.Seaweed, ItemID.FlowerBoots, ItemID.FiberglassFishingPole } },
             // 腐化匣 / 污损匣 (3204, 3983)
-            { 3204, new int[] { 64, 96, 111, 162, 800, 3210 } },
-            { 3983, new int[] { 64, 96, 111, 162, 800, 3210 } },
+            { ItemID.CorruptFishingCrate, new int[] { ItemID.BallOHurt, ItemID.BandofStarpower, ItemID.Musket, ItemID.ShadowOrb, ItemID.Vilethorn } },
+            { ItemID.CorruptFishingCrateHard, new int[] { ItemID.BallOHurt, ItemID.BandofStarpower, ItemID.Musket, ItemID.ShadowOrb, ItemID.Vilethorn } },
             // 猩红匣 / 血匣 (3207, 3986)
-            { 3207, new int[] { 802, 1257, 1290, 800, 3211 } },
-            { 3986, new int[] { 802, 1257, 1290, 800, 3211 } },
+            { ItemID.CrimsonFishingCrate, new int[] { ItemID.TheUndertaker, ItemID.TheMeatball, ItemID.TheRottedFork, ItemID.PanicNecklace, ItemID.CrimsonRod } },
+            { ItemID.CrimsonFishingCrateHard, new int[] { ItemID.TheUndertaker, ItemID.TheMeatball, ItemID.TheRottedFork, ItemID.PanicNecklace, ItemID.CrimsonRod } },
             // 神圣匣 / 圣灵匣 (3205, 3984)
-            { 3205, new int[] { 520, 502, 2426, 3064 } },
-            { 3984, new int[] { 520, 502, 2426, 3064 } },
+            { ItemID.HallowedFishingCrate, new int[] { ItemID.SoulofLight, ItemID.CrystalShard, ItemID.BlessedApple, ItemID.Sundial } },
+            { ItemID.HallowedFishingCrateHard, new int[] { ItemID.SoulofLight, ItemID.CrystalShard, ItemID.BlessedApple, ItemID.Sundial } },
             // 冰冻匣 / 极寒匣 (3209, 3988)
-            { 3209, new int[] { 670, 724, 669, 725, 987, 1579, 3200 } },
-            { 3988, new int[] { 670, 724, 669, 725, 987, 1579, 3200 } },
+            { ItemID.FrozenCrate, new int[] { ItemID.IceBoomerang, ItemID.IceBlade, ItemID.IceSkates, ItemID.SnowballCannon, ItemID.BlizzardinaBottle, ItemID.FlurryBoots, ItemID.Fish } },
+            { ItemID.FrozenCrateHard, new int[] { ItemID.IceBoomerang, ItemID.IceBlade, ItemID.IceSkates, ItemID.SnowballCannon, ItemID.BlizzardinaBottle, ItemID.FlurryBoots, ItemID.Fish } },
             // 绿洲匣 / 海市蜃楼匣 (4442, 4443)
-            { 4442, new int[] { 4483, 4055, 4484, 4056, 4485 } },
-            { 4443, new int[] { 4483, 4055, 4484, 4056, 4485 } },
+            { ItemID.OasisCrate, new int[] { ItemID.SandstorminaBottle, ItemID.FlyingCarpet, ItemID.AncientChisel, ItemID.SandBoots, ItemID.CatBast, ItemID.EncumberingStone } },
+            { ItemID.OasisCrateHard, new int[] { ItemID.SandstorminaBottle, ItemID.FlyingCarpet, ItemID.AncientChisel, ItemID.SandBoots, ItemID.CatBast, ItemID.EncumberingStone } },
             // 海洋匣 / 渊海匣 (4444, 4445)
-            { 4444, new int[] { 186, 277, 863, 4404, 4057 } },
-            { 4445, new int[] { 186, 277, 863, 4404, 4057 } }
+            { ItemID.OceanCrate, new int[] { ItemID.BreathingReed, ItemID.Flipper, ItemID.WaterWalkingBoots, ItemID.Trident, ItemID.SharkToothNecklace, ItemID.FloatingTube } },
+            { ItemID.OceanCrateHard, new int[] { ItemID.BreathingReed, ItemID.Flipper, ItemID.WaterWalkingBoots, ItemID.Trident, ItemID.SharkToothNecklace, ItemID.FloatingTube } }
         };
 
         [HarmonyPatch(typeof(Player), nameof(Player.OpenFishingCrate))]
@@ -333,33 +645,14 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
 
                 if (CrateExclusiveLootTable.TryGetValue(crateItemID, out int[] potentialLoot) && potentialLoot != null)
                 {
-                    List<int> undiscovered = new List<int>();
+                    IEntitySource source = __instance.GetItemSource_OpenItem(crateItemID);
                     for (int i = 0; i < potentialLoot.Length; i++)
                     {
                         int itemId = potentialLoot[i];
-                        if (itemId > 0 && itemId < ItemID.Count && !DiscoveredItemTracker.HasDiscovered(__instance, itemId))
+                        if (itemId > 0 && itemId < ItemID.Count)
                         {
-                            undiscovered.Add(itemId);
-                        }
-                    }
-
-                    if (undiscovered.Count > 0)
-                    {
-                        IEntitySource source = __instance.GetItemSource_OpenItem(crateItemID);
-                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                        {
-                            for (int i = 0; i < undiscovered.Count; i++)
-                            {
-                                int itemId = undiscovered[i];
-                                __instance.QuickSpawnItem(source, itemId, 1);
-                                DiscoveredItemTracker.RecordDiscovered(itemId);
-                            }
-                        }
-                        else
-                        {
-                            int chosen = undiscovered[Main.rand.Next(undiscovered.Count)];
-                            __instance.QuickSpawnItem(source, chosen, 1);
-                            DiscoveredItemTracker.RecordDiscovered(chosen);
+                            __instance.QuickSpawnItem(source, itemId, 1);
+                            DiscoveredItemTracker.RecordDiscovered(itemId);
                         }
                     }
                 }
@@ -374,11 +667,13 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             {
                 if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || __instance == null || __instance != Main.LocalPlayer) return;
 
-                // 蠕虫罐头首见保底：金蠕虫 (2895)
-                if (!DiscoveredItemTracker.HasDiscovered(__instance, 2895))
+                IEntitySource source = __instance.GetItemSource_OpenItem(sourceItemType);
+                // 蠕虫罐头全量掉落：金蠕虫、附魔夜行者、普通蠕虫
+                int[] worms = { ItemID.GoldWorm, ItemID.EnchantedNightcrawler, ItemID.Worm };
+                for (int i = 0; i < worms.Length; i++)
                 {
-                    __instance.QuickSpawnItem(__instance.GetItemSource_OpenItem(sourceItemType), 2895, 1);
-                    DiscoveredItemTracker.RecordDiscovered(2895);
+                    __instance.QuickSpawnItem(source, worms[i], 1);
+                    DiscoveredItemTracker.RecordDiscovered(worms[i]);
                 }
             }
         }
@@ -391,36 +686,13 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             {
                 if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || __instance == null || __instance != Main.LocalPlayer) return;
 
-                // 生蚝首见保底：白珍珠 (4412)、黑珍珠 (4413)、粉珍珠 (4414)
-                int[] pearls = { 4412, 4413, 4414 };
-                List<int> undiscovered = new List<int>();
+                IEntitySource source = __instance.GetItemSource_OpenItem(sourceItemType);
+                // 生蚝全量掉落：白珍珠、黑珍珠、粉珍珠
+                int[] pearls = { ItemID.WhitePearl, ItemID.BlackPearl, ItemID.PinkPearl };
                 for (int i = 0; i < pearls.Length; i++)
                 {
-                    int itemId = pearls[i];
-                    if (!DiscoveredItemTracker.HasDiscovered(__instance, itemId))
-                    {
-                        undiscovered.Add(itemId);
-                    }
-                }
-
-                if (undiscovered.Count > 0)
-                {
-                    IEntitySource source = __instance.GetItemSource_OpenItem(sourceItemType);
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                    {
-                        for (int i = 0; i < undiscovered.Count; i++)
-                        {
-                            int itemId = undiscovered[i];
-                            __instance.QuickSpawnItem(source, itemId, 1);
-                            DiscoveredItemTracker.RecordDiscovered(itemId);
-                        }
-                    }
-                    else
-                    {
-                        int chosen = undiscovered[Main.rand.Next(undiscovered.Count)];
-                        __instance.QuickSpawnItem(source, chosen, 1);
-                        DiscoveredItemTracker.RecordDiscovered(chosen);
-                    }
+                    __instance.QuickSpawnItem(source, pearls[i], 1);
+                    DiscoveredItemTracker.RecordDiscovered(pearls[i]);
                 }
             }
         }
@@ -433,36 +705,13 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             {
                 if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || __instance == null || __instance != Main.LocalPlayer) return;
 
-                // 金锁盒地牢武器
-                int[] dungeonWeapons = { 155, 156, 157, 163, 113, 327, 3317 };
-                List<int> undiscovered = new List<int>();
+                IEntitySource source = __instance.GetItemSource_OpenItem(lockboxItemType);
+                // 金锁盒地牢武器全量掉落
+                int[] dungeonWeapons = { ItemID.Muramasa, ItemID.CobaltShield, ItemID.AquaScepter, ItemID.BlueMoon, ItemID.MagicMissile, ItemID.Handgun, ItemID.ShadowKey };
                 for (int i = 0; i < dungeonWeapons.Length; i++)
                 {
-                    int itemId = dungeonWeapons[i];
-                    if (!DiscoveredItemTracker.HasDiscovered(__instance, itemId))
-                    {
-                        undiscovered.Add(itemId);
-                    }
-                }
-
-                if (undiscovered.Count > 0)
-                {
-                    IEntitySource source = __instance.GetItemSource_OpenItem(lockboxItemType);
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                    {
-                        for (int i = 0; i < undiscovered.Count; i++)
-                        {
-                            int itemId = undiscovered[i];
-                            __instance.QuickSpawnItem(source, itemId, 1);
-                            DiscoveredItemTracker.RecordDiscovered(itemId);
-                        }
-                    }
-                    else
-                    {
-                        int chosen = undiscovered[Main.rand.Next(undiscovered.Count)];
-                        __instance.QuickSpawnItem(source, chosen, 1);
-                        DiscoveredItemTracker.RecordDiscovered(chosen);
-                    }
+                    __instance.QuickSpawnItem(source, dungeonWeapons[i], 1);
+                    DiscoveredItemTracker.RecordDiscovered(dungeonWeapons[i]);
                 }
             }
         }
@@ -475,36 +724,13 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             {
                 if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || __instance == null || __instance != Main.LocalPlayer) return;
 
-                // 黑曜石锁盒地狱武器
-                int[] hellWeapons = { 274, 220, 112, 218, 3019 };
-                List<int> undiscovered = new List<int>();
+                IEntitySource source = __instance.GetItemSource_OpenItem(boxType);
+                // 黑曜石锁盒地狱武器全量掉落
+                int[] hellWeapons = { ItemID.DarkLance, ItemID.Sunfury, ItemID.FlowerofFire, ItemID.Flamelash, ItemID.HellwingBow };
                 for (int i = 0; i < hellWeapons.Length; i++)
                 {
-                    int itemId = hellWeapons[i];
-                    if (!DiscoveredItemTracker.HasDiscovered(__instance, itemId))
-                    {
-                        undiscovered.Add(itemId);
-                    }
-                }
-
-                if (undiscovered.Count > 0)
-                {
-                    IEntitySource source = __instance.GetItemSource_OpenItem(boxType);
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                    {
-                        for (int i = 0; i < undiscovered.Count; i++)
-                        {
-                            int itemId = undiscovered[i];
-                            __instance.QuickSpawnItem(source, itemId, 1);
-                            DiscoveredItemTracker.RecordDiscovered(itemId);
-                        }
-                    }
-                    else
-                    {
-                        int chosen = undiscovered[Main.rand.Next(undiscovered.Count)];
-                        __instance.QuickSpawnItem(source, chosen, 1);
-                        DiscoveredItemTracker.RecordDiscovered(chosen);
-                    }
+                    __instance.QuickSpawnItem(source, hellWeapons[i], 1);
+                    DiscoveredItemTracker.RecordDiscovered(hellWeapons[i]);
                 }
             }
         }
