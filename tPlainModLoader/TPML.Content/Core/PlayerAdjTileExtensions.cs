@@ -1,5 +1,10 @@
+using Microsoft.Xna.Framework;
 using System;
 using Terraria;
+using Terraria.DataStructures;
+using Terraria.ID;
+using Terraria.WorldBuilding;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -10,6 +15,78 @@ namespace TPML.Content
     /// </summary>
     public static class PlayerAdjTileExtensions
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("PlayerAdjTile");
+
+        /// <summary>
+        /// 全量安全扫描玩家周围图格并设置 adjTile 及相关制作环境（彻底替代原版易抛 NRE 的 Player.AdjTiles）
+        /// </summary>
+        public static void SafeScanAdjTiles(this Player player)
+        {
+            if (player == null) return;
+
+            try
+            {
+                if (player.adjTile == null || player.adjTile.Length < 693)
+                {
+                    player.adjTile = new bool[693];
+                }
+
+                Array.Clear(player.adjTile, 0, player.adjTile.Length);
+                player.oldAdjWaterSource = player.adjWaterSource;
+                player.adjWaterSource = false;
+                player.oldAdjHoney = player.adjHoney;
+                player.adjHoney = false;
+                player.oldAdjLava = player.adjLava;
+                player.adjLava = false;
+                player.alchemyTable = false;
+
+                if (Main.tile == null)
+                {
+                    return;
+                }
+
+                Rectangle tileRegion = TileReachCheckSettings.Simple.GetTileRegion(player, player.ateArtisanBread ? 4 : 0);
+                tileRegion = WorldUtils.ClampToWorld(tileRegion);
+
+                for (int x = tileRegion.Left; x <= tileRegion.Right; x++)
+                {
+                    for (int y = tileRegion.Top; y <= tileRegion.Bottom; y++)
+                    {
+                        if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY) continue;
+                        Tile tile = Main.tile[x, y];
+                        if (tile == null) continue;
+
+                        if (tile.active())
+                        {
+                            player.SafeSetAdjTileWithEquivalents(tile.type);
+                            if (TileID.Sets.CountsAsWaterForCrafting != null &&
+                                tile.type < TileID.Sets.CountsAsWaterForCrafting.Length &&
+                                TileID.Sets.CountsAsWaterForCrafting[tile.type])
+                            {
+                                player.adjWaterSource = true;
+                            }
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 0)
+                        {
+                            player.adjWaterSource = true;
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 2)
+                        {
+                            player.adjHoney = true;
+                        }
+                        if (tile.liquid > 200 && tile.liquidType() == 1)
+                        {
+                            player.adjLava = true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"SafeScanAdjTiles 发生异常，已安全拦截: {ex.Message}", ex);
+            }
+        }
+
         /// <summary>
         /// 安全获取/判断玩家是否处于指定制作站图格环境（等价于 player.adjTile[tileType]）
         /// </summary>

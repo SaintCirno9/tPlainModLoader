@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace RecipeBrowser
 {
@@ -65,10 +66,16 @@ namespace RecipeBrowser
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.AdjTiles))]
+        [HarmonyPriority(Priority.First)]
         [HarmonyPrefix]
-        public static void Player_AdjTiles_Prefix(Player __instance)
+        public static bool Player_AdjTiles_Prefix(Player __instance)
         {
             AdjTilesActive = true;
+            if (__instance != null)
+            {
+                __instance.SafeScanAdjTiles();
+            }
+            return false; // 阻断原版易抛 NRE 的 IL 执行，由 SafeScanAdjTiles 全量安全接管
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.AdjTiles))]

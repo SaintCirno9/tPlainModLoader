@@ -46,6 +46,18 @@ namespace OptimizeAndTool.Content.QoL
         private static bool cachedAlchemyTable = false;
 
         [HarmonyPatch(nameof(Player.AdjTiles))]
+        [HarmonyPriority(Priority.First)]
+        [HarmonyPrefix]
+        public static bool AdjTilesPrefix(Player __instance)
+        {
+            if (__instance != null)
+            {
+                __instance.SafeScanAdjTiles();
+            }
+            return false; // 阻断原版易抛 NRE 的 IL 执行，由 SafeScanAdjTiles 全量安全接管
+        }
+
+        [HarmonyPatch(nameof(Player.AdjTiles))]
         [HarmonyPostfix]
         public static void AdjTilesPostfix(Player __instance)
         {
