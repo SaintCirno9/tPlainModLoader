@@ -11,6 +11,7 @@ using Terraria.ID;
 using TPML.Content;
 using TPML.Content.UI;
 using Terraria.DataStructures;
+using TPML.Core.Logging;
 
 namespace TPMLBridge.GABP.Tools
 {
@@ -20,6 +21,7 @@ namespace TPMLBridge.GABP.Tools
     /// </summary>
     public static class PlayerInventoryTools
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("PlayerInventoryTools");
         public static bool IsManualUsingItem = false;
 
         public static List<GABPToolDescriptor> GetDescriptors()
@@ -391,8 +393,7 @@ namespace TPMLBridge.GABP.Tools
                 // M2 诊断：定位 give_item 失败（物品进不了背包）
                 if (slot < 0 || (overflow != null && !overflow.IsAir))
                 {
-                    Console.WriteLine($"[GiveItem] 诊断: itemId={itemId} type={item.type} IsAir={item.IsAir} stack={item.stack} overflow={overflow?.stack ?? -1} slot={slot}");
-                    TPML.Content.ModLoader.Log($"[GiveItem] 诊断: itemId={itemId} type={item.type} IsAir={item.IsAir} stack={item.stack} overflow={overflow?.stack ?? -1} slot={slot}");
+                    Logger.Warn($"[GiveItem] 诊断: itemId={itemId} type={item.type} IsAir={item.IsAir} stack={item.stack} overflow={overflow?.stack ?? -1} slot={slot}");
                 }
                 return new
                 {
@@ -406,8 +407,7 @@ namespace TPMLBridge.GABP.Tools
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[GiveItem] 异常: {ex}");
-                TPML.Content.ModLoader.Log($"[GiveItem] 异常: {ex}");
+                Logger.Error("GiveItem 异常", ex);
                 throw new Exception($"GiveItem 内部异常: {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}", ex);
             }
         }
@@ -543,7 +543,7 @@ namespace TPMLBridge.GABP.Tools
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[TPMLBridge] 计算物品 Tooltip 异常: {ex.Message}");
+                Logger.Warn($"计算物品 Tooltip 异常: {ex.Message}");
             }
 
             var tooltipLines = new List<string>();

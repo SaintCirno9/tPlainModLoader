@@ -32,9 +32,9 @@ namespace tContentPatch.Command
             tcps = new TCPS(5);
             tcps.OnCanJoin += (ip, port) =>
             {
-                Console.WriteLine($"收到指令连接[{ip}:{port}]");
+                Logger.Info($"收到指令连接[{ip}:{port}]");
                 bool ok = CanJoin(ip, port);
-                Console.WriteLine($"{(ok ? null : "不")}允许连接");
+                Logger.Info($"{(ok ? null : "不")}允许连接");
                 return ok;
             };
             tcps.OnGotClient += s =>
@@ -66,7 +66,7 @@ namespace tContentPatch.Command
                 if (pr == null) return false;
                 if (pr.MainWindowTitle != JoinWindowTile)
                 {
-                    Console.WriteLine($"窗口名不匹配:{pr.MainWindowTitle}");
+                    Logger.Warn($"窗口名不匹配:{pr.MainWindowTitle}");
                     return false;
                 }
 

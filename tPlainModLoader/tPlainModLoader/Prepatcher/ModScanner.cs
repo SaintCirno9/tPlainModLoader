@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using tContentPatch;
+using TPML.Core.Logging;
 
 namespace tPlainModLoader.Prepatcher
 {
     internal class ModScanner
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("Prepatcher");
         internal class MiniModConfig
         {
             public string key { get; set; }
@@ -84,7 +86,7 @@ namespace tPlainModLoader.Prepatcher
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[Prepatcher] 扫描模组目录异常 {modSubDir}: {ex.Message}");
+                        Logger.Warn($"扫描模组目录异常 {modSubDir}: {ex.Message}");
                     }
                 }
             }

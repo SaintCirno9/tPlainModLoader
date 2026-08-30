@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Mono.Cecil;
 using tContentPatch.Prepatcher;
+using TPML.Core.Logging;
 
 namespace Instavator
 {
@@ -10,6 +11,7 @@ namespace Instavator
     /// </summary>
     public class InstavatorItemSetDefaultsPrepatcher : IPrepatcher
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("InstavatorPrepatcher");
         public void EarlyPatch(AssemblyDefinition terrariaAssembly)
         {
             try
@@ -23,11 +25,11 @@ namespace Instavator
                     method.NoOptimization = true;
                 }
 
-                Console.WriteLine("[InstavatorItemSetDefaultsPrepatcher] ★ 成功预修补 Item.SetDefaults 与 Item.netDefaults (NoInlining)");
+                Logger.Info("成功预修补 Item.SetDefaults 与 Item.netDefaults (NoInlining)");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[InstavatorItemSetDefaultsPrepatcher] 预修补异常: {ex.Message}");
+                Logger.Warn($"预修补异常: {ex.Message}");
             }
         }
     }

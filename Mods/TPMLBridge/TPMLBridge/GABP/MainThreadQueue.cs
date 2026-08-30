@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using TPML.Core.Logging;
 
 namespace TPMLBridge.GABP
 {
@@ -9,6 +10,7 @@ namespace TPMLBridge.GABP
     /// </summary>
     public static class MainThreadQueue
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("MainThreadQueue");
         private static readonly ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
 
         public static void Enqueue(Action action)
@@ -67,7 +69,7 @@ namespace TPMLBridge.GABP
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[MainThreadQueue] 执行任务异常: {ex}");
+                    Logger.Error("执行任务异常", ex);
                 }
             }
         }

@@ -65,6 +65,7 @@ namespace MapAtlasTool.Content
     /// </summary>
     public class StructureMarker : PatchMain
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("MapAtlasTool");
         private static readonly object _pinsLock = new object();
         private static List<StructurePin> _pins = new List<StructurePin>();
         private static StructurePin[] _pinsSnapshot = Array.Empty<StructurePin>();
@@ -111,7 +112,7 @@ namespace MapAtlasTool.Content
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[结构标记] 主线程任务异常: {ex}");
+                    Logger.Error("主线程任务异常", ex);
                 }
             }
         }

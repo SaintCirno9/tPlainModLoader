@@ -53,9 +53,8 @@ namespace tPlainModLoader
             }
 
             Directory.SetCurrentDirectory(dir);
-
-            Console.WriteLine($"启动文件路径[{file}]");
-            Console.WriteLine($"工作目录[{Directory.GetCurrentDirectory()}]");
+            Logger.Info($"启动文件路径[{file}]");
+            Logger.Info($"工作目录[{Directory.GetCurrentDirectory()}]");
         }
 
         private static void Initialize_AssemblyResolveEvent()
@@ -271,8 +270,6 @@ namespace tPlainModLoader
                 catch (Exception ex)
                 {
                     Logger.Fatal("目标程序运行异常", ex);
-                    Console.WriteLine("目标程序运行异常:");
-                    Console.WriteLine($"{ex}");
                     runExit?.Invoke();
                 }
             });

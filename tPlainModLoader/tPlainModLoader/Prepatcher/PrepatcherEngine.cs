@@ -344,7 +344,7 @@ namespace tPlainModLoader.Prepatcher
         {
             if (!accessor.IsStatic || accessor.Parameters.Count < 1)
             {
-                Console.WriteLine($"[Prepatcher] 跳过无效的 PrepatcherField 方法 {accessor.Name}: 必须为静态方法且至少包含一个宿主参数");
+                Logger.Warn($"跳过无效的 PrepatcherField 方法 {accessor.Name}: 必须为静态方法且至少包含一个宿主参数");
                 return false;
             }
 
@@ -355,7 +355,7 @@ namespace tPlainModLoader.Prepatcher
             TypeDefinition targetTypeDef;
             if (!terrariaTypeMap.TryGetValue(targetTypeName, out targetTypeDef))
             {
-                Console.WriteLine($"[Prepatcher] 未在原版程序集中找到目标宿主类型: {targetTypeName}");
+                Logger.Warn($"未在原版程序集中找到目标宿主类型: {targetTypeName}");
                 return false;
             }
 

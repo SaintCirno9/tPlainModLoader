@@ -4,6 +4,7 @@ using System.Reflection;
 using tContentPatch.ModLoad;
 using tContentPatch.Patch;
 using Terraria;
+using TPML.Core.Logging;
 
 namespace tContentPatch
 {
@@ -93,7 +94,7 @@ namespace tContentPatch
         {
             try
             {
-                Console.WriteLine(s);
+                Logger.Info(s);
                 Command.MsgCommand.SendMsg(s);
             }
             catch { }

@@ -40,9 +40,6 @@ namespace tPlainModLoader
             catch (Exception ex)
             {
                 Logger.Fatal("初始化失败", ex);
-
-                Console.WriteLine($"初始化失败:");
-                Console.WriteLine($"{ex}");
                 Console.ReadKey(true);
                 return;
             }

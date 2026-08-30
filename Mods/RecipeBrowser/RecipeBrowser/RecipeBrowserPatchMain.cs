@@ -6,11 +6,13 @@ using RecipeBrowser.UIElements;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Core.Logging;
 
 namespace RecipeBrowser
 {
     public class RecipeBrowserPatchMain : PatchMain
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("RecipeBrowser");
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
         {
             if (Main.dedServ) return;
@@ -28,7 +30,7 @@ namespace RecipeBrowser
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[RecipeBrowser] Draw UI Error: {ex}");
+                            Logger.Error("Draw UI 异常", ex);
                         }
                         return true;
                     },
@@ -65,7 +67,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] Update UI Error: {ex}");
+                Logger.Error("Update UI 异常", ex);
             }
         }
     }

@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using Terraria;
 using Terraria.IO;
 using TPML.Content.IO;
+using TPML.Core.Logging;
 
 namespace TPMLBridge.GABP.Tools
 {
@@ -15,6 +16,7 @@ namespace TPMLBridge.GABP.Tools
     /// </summary>
     public static class LifecycleTools
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("LifecycleTools");
         public static List<GABPToolDescriptor> GetDescriptors()
         {
             return new List<GABPToolDescriptor>
@@ -378,7 +380,7 @@ namespace TPMLBridge.GABP.Tools
                 Main.NewText($"[TPMLBridge] {command}", 100, 255, 200);
             }
 
-            Console.WriteLine($"[TPMLBridge Command] {command}");
+            Logger.Info($"[TPMLBridge Command] {command}");
             tContentPatch.ContentPatch.RunCommand(command);
             return new { success = true, command, message = "指令已执行" };
         }

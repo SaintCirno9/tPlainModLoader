@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using Terraria;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
+using TPML.Core.Logging;
 
 namespace RecipeBrowser
 {
     internal static class LootCacheManager
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("RecipeBrowser");
         /// <summary>
         /// 物品 → 掉率信息缓存（含全局掉落；替代 tML 的 ItemDropDatabase.GetRulesForItemID，供掉落查看器使用）
         /// </summary>
@@ -50,7 +52,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] LootCacheManager.EnsureItemDropRates Error: {ex}");
+                Logger.Error("LootCacheManager.EnsureItemDropRates 异常", ex);
             }
         }
 
@@ -106,7 +108,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] LootCacheManager.Setup Error: {ex}");
+                Logger.Error("LootCacheManager.Setup 异常", ex);
             }
         }
     }

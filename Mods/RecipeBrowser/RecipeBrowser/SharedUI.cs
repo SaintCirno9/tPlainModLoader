@@ -13,11 +13,13 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 using Terraria.WorldBuilding;
+using TPML.Core.Logging;
 
 namespace RecipeBrowser
 {
     public class SharedUI
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("RecipeBrowser");
         internal static SharedUI instance;
         internal bool updateNeeded;
         internal UIPanel sortsAndFiltersPanel;
@@ -715,7 +717,7 @@ namespace RecipeBrowser
                             found = true;
                         }
                     }
-                    if (!found) Console.WriteLine($"[RecipeBrowser] Parent '{modCategory.parent}' for '{modCategory.name}' category not found.");
+                    if (!found) Logger.Warn($"Parent '{modCategory.parent}' for '{modCategory.name}' category not found.");
                 }
 
                 foreach (var modFilter in RecipeBrowserMod.Instance.modFilters)
@@ -742,7 +744,7 @@ namespace RecipeBrowser
                             }
                         }
                     }
-                    if (!found) Console.WriteLine($"[RecipeBrowser] Parent '{modFilter.parent}' for '{modFilter.name}' filter not found.");
+                    if (!found) Logger.Warn($"Parent '{modFilter.parent}' for '{modFilter.name}' filter not found.");
                 }
             }
 

@@ -5,6 +5,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
+using TPML.Core.Logging;
 
 namespace Instavator.Content.Logic
 {
@@ -15,6 +16,7 @@ namespace Instavator.Content.Logic
     /// </summary>
     public static class InstavatorShaftBuilder
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("Instavator");
         private const int MaxCellsPerUpdate = 512;
         private const int LiquidSettlePasses = 6;
         private static BuildJob _activeJob;
@@ -326,7 +328,7 @@ namespace Instavator.Content.Logic
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Instavator] 分帧建造异常，已停止当前任务: {ex}");
+                Logger.Error("分帧建造异常，已停止当前任务", ex);
                 _activeJob = null;
             }
         }
@@ -375,7 +377,7 @@ namespace Instavator.Content.Logic
                 CompletedAt = DateTime.Now
             };
 
-            Console.WriteLine($"[Instavator] 建造完成: 类型={job.Variant}, 深度={LastBuildSummary.TotalDepth}, 耗时={LastBuildSummary.DurationMs}ms ({LastBuildSummary.DurationFrames} 帧), 收纳箱={placedChestsCount} 个, 收集物资种类={sortedItems.Count}, 宝箱战利品={job.RecoveredChestLootCount} 件, 避让保护物块={job.BypassedProtectedTiles}");
+            Logger.Info($"建造完成: 类型={job.Variant}, 深度={LastBuildSummary.TotalDepth}, 耗时={LastBuildSummary.DurationMs}ms ({LastBuildSummary.DurationFrames} 帧), 收纳箱={placedChestsCount} 个, 收集物资种类={sortedItems.Count}, 宝箱战利品={job.RecoveredChestLootCount} 件, 避让保护物块={job.BypassedProtectedTiles}");
 
             if (player != null && player.whoAmI == Main.myPlayer)
             {

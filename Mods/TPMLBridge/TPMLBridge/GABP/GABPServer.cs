@@ -8,11 +8,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using TPML.Core.Logging;
 
 namespace TPMLBridge.GABP
 {
     public class GABPServer
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("GABP");
         private TcpListener _listener;
         private CancellationTokenSource _cts;
         private int _port = 49153;
@@ -57,13 +59,13 @@ namespace TPMLBridge.GABP
             {
                 _listener = new TcpListener(IPAddress.Loopback, _port);
                 _listener.Start();
-                Console.WriteLine($"[GABP] 服务器已成功启动，监听 127.0.0.1:{_port} (GameID: {_gameId})");
+                Logger.Info($"服务器已成功启动，监听 127.0.0.1:{_port} (GameID: {_gameId})");
 
                 Task.Run(() => AcceptLoopAsync(_cts.Token));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[GABP] 启动监听端口 {_port} 失败: {ex.Message}");
+                Logger.Error($"启动监听端口 {_port} 失败", ex);
             }
         }
 
@@ -72,7 +74,7 @@ namespace TPMLBridge.GABP
             _isRunning = false;
             _cts?.Cancel();
             _listener?.Stop();
-            Console.WriteLine("[GABP] 服务器已停止");
+            Logger.Info("服务器已停止");
         }
 
         private async Task AcceptLoopAsync(CancellationToken ct)
@@ -90,7 +92,7 @@ namespace TPMLBridge.GABP
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[GABP] 接受客户端连接异常: {ex.Message}");
+                    Logger.Error($"接受客户端连接异常: {ex.Message}");
                 }
             }
         }
@@ -100,7 +102,7 @@ namespace TPMLBridge.GABP
             using (client)
             using (var stream = client.GetStream())
             {
-                Console.WriteLine("[GABP] 收到来自 GABS/客户端 的连接");
+                Logger.Info("收到来自 GABS/客户端 的连接");
 
                 while (!ct.IsCancellationRequested && client.Connected)
                 {
@@ -175,7 +177,7 @@ namespace TPMLBridge.GABP
                     catch (Exception ex)
                     {
                         if (ct.IsCancellationRequested) break;
-                        Console.WriteLine($"[GABP] 处理客户端请求异常: {ex.Message}");
+                        Logger.Error("处理客户端请求异常", ex);
                         break;
                     }
                 }
@@ -225,7 +227,7 @@ namespace TPMLBridge.GABP
 
                         if (!string.IsNullOrEmpty(_token) && !string.IsNullOrEmpty(clientToken) && clientToken != _token)
                         {
-                            Console.WriteLine($"[GABP] 警告: 客户端 Token ({clientToken}) 与服务器 Token ({_token}) 不一致，本地连接仍予以握手成功");
+                            Logger.Warn($"客户端 Token ({clientToken}) 与服务器 Token ({_token}) 不一致，本地连接仍予以握手成功");
                         }
 
                         resp.Result = new

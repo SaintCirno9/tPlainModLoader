@@ -13,6 +13,7 @@ using tContentPatch.Input;
 using Terraria;
 using Terraria.UI.Chat;
 using TPML.Content;
+using TPML.Core.Logging;
 using KeybindLoader = tContentPatch.Input.KeybindLoader;
 using ModKeybind = tContentPatch.Input.ModKeybind;
 
@@ -33,7 +34,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] Load Error: {ex}");
+                LogManager.GetLogger("RecipeBrowser").Error("Load 异常", ex);
             }
         }
     }
@@ -70,7 +71,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] Harmony Patch Error: {ex}");
+                Logger.Error("Harmony Patch 异常", ex);
             }
 
             // 1. 注册文本标签解析器
@@ -142,7 +143,7 @@ namespace RecipeBrowser
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[RecipeBrowser] Call Error: {ex}");
+                LogManager.GetLogger("RecipeBrowser").Error("Call 异常", ex);
             }
             return "Failure";
         }

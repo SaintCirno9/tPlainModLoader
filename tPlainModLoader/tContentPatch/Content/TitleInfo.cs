@@ -9,6 +9,7 @@ using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.UI.Chat;
 using TPML.Content.Engine;
+using TPML.Core.Logging;
 
 namespace tContentPatch.Content
 {
@@ -17,6 +18,7 @@ namespace tContentPatch.Content
     /// </summary>
     internal class TitleInfo
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("TitleInfo");
         /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
         public static void RegisterAll()
         {
@@ -165,9 +167,9 @@ namespace tContentPatch.Content
                 {
                     Platform.Get<IPathService>().OpenURL(URL);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Failed to open link");
+                    Logger.Warn($"打开链接失败: {ex.Message}");
                 }
             }
         }
