@@ -1,10 +1,9 @@
-using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System;
-using System.Reflection;
 using Terraria;
 using Terraria.IO;
 using tContentPatch;
+using TPML.Core.Logging;
 using TPMLBridge.GABP;
 using TPMLBridge.GABP.Tools;
 
@@ -12,7 +11,9 @@ namespace TPMLBridge
 {
     public class TPMLBridgeMod : Mod
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("TPMLBridge");
         public static bool WorldSaveProtectionEnabled = false;
+        private static bool _hooksRegistered = false;
 
         public override void Load()
         {
@@ -20,46 +21,57 @@ namespace TPMLBridge
             // 仅在通过 GABP 自动化测试接口（如 tpml/load_world）接管世界时按需激活保护
             WorldSaveProtectionEnabled = false;
 
-            try
-            {
-                var harmony = new Harmony("saintcirno9.tpmlbridge.saveprotection");
-                var targetMethods = typeof(WorldFile).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                var prefixMethod = new HarmonyMethod(typeof(TPMLBridgeMod).GetMethod(nameof(SaveWorldPrefix), BindingFlags.Public | BindingFlags.Static));
-
-                foreach (var method in targetMethods)
-                {
-                    if (method.Name == "SaveWorld")
-                    {
-                        harmony.Patch(method, prefix: prefixMethod);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Terraria.Main.NewText($"[TPMLBridge] 存档保护补丁挂载失败: {ex.Message}", 255, 100, 100);
-            }
+            RegisterHooks();
 
             // 启动 GABP TCP Server
             GABPServer.StartFromEnvironment();
         }
 
-        public static bool SaveWorldPrefix(MethodBase __originalMethod)
+        public static void RegisterHooks()
+        {
+            if (_hooksRegistered) return;
+            On_WorldFile.SaveWorld += Hook_SaveWorld;
+            On_WorldFile._SaveWorld += Hook__SaveWorld;
+            _hooksRegistered = true;
+            Logger.Info("★ TPMLBridge 存档保护 MonoMod On_ 门控已就绪");
+        }
+
+        public static void UnregisterHooks()
+        {
+            if (!_hooksRegistered) return;
+            On_WorldFile.SaveWorld -= Hook_SaveWorld;
+            On_WorldFile._SaveWorld -= Hook__SaveWorld;
+            _hooksRegistered = false;
+        }
+
+        private static void Hook_SaveWorld(On_WorldFile.orig_SaveWorld orig, bool resetTime, bool useTemps, bool canBeSkipped)
         {
             if (WorldSaveProtectionEnabled)
             {
                 // 彻底拦截写盘保存，保护玩家正常游玩的世界数据
-                return false;
+                return;
             }
-            return true;
+            orig(resetTime, useTemps, canBeSkipped);
+        }
+
+        private static void Hook__SaveWorld(On_WorldFile.orig__SaveWorld orig, bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)
+        {
+            if (WorldSaveProtectionEnabled)
+            {
+                // 彻底拦截写盘保存，保护玩家正常游玩的世界数据
+                return;
+            }
+            orig(useCloudSaving, resetTime, useTemps, canBeSkipped);
         }
 
         public override void Unload()
         {
+            UnregisterHooks();
             GABPServer.Instance?.Stop();
         }
     }
 
-    public class TPMLBridgePatchMain : PatchMain
+    public class TPMLBridgeMain : PatchMain
     {
         public override void UpdatePrefix(GameTime gameTime)
         {

@@ -57,22 +57,13 @@ namespace RecipeBrowser
 
         public List<ModCategory> modCategories = new List<ModCategory>();
         public List<ModCategory> modFilters = new List<ModCategory>();
-        private HarmonyLib.Harmony harmony;
 
         public override void Load()
         {
             Instance = this;
 
-            // 0. 初始化 Harmony 补丁
-            try
-            {
-                harmony = new HarmonyLib.Harmony("saintcirno9.recipebrowser");
-                harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Harmony Patch 异常", ex);
-            }
+            // 0. 初始化 MonoMod 强类型门控
+            RecipeBrowserHooks.RegisterAll();
 
             // 1. 注册文本标签解析器
             ChatManager.Register<LinkTagHandler>(new string[] { "l", "link" });
@@ -152,7 +143,7 @@ namespace RecipeBrowser
         {
             concurrentTaskHandlerToken?.Cancel();
             try { concurrentTaskHandler?.Wait(500); } catch { }
-            try { harmony?.UnpatchSelf(); } catch { }
+            RecipeBrowserHooks.UnregisterAll();
 
             Instance = null;
             ToggleRecipeBrowserHotKey = null;

@@ -1,5 +1,4 @@
 using CommandHelp;
-using HarmonyLib;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -9,14 +8,37 @@ using Terraria.UI;
 namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
-    /// 失焦时保持游戏运行（对齐 ImproveGame 语义）：单人游戏窗口失焦时不再暂停。
-    /// 原版 FocusHelper.UpdateFocus（FocusHelper.cs:133）在失焦 && 单机 && 未开启"失焦运行"时
-    /// 置 wantsToPause=true，主循环随即 gamePaused。
+    /// 失焦时保持游戏运行（对齐 ImproveGame 语义，基于 HookGen 强类型 On_ 门控）：单人游戏窗口失焦时不再暂停。
+    /// 原版 FocusHelper.UpdateFocus 在失焦 && 单机 && 未开启"失焦运行"时置 wantsToPause=true，主循环随即 gamePaused。
     /// 作者: SaintCirno9
     /// </summary>
     internal static class KeepRunningWhenUnfocused
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(false, false);
+        private static bool _registered = false;
+
+        public static void RegisterAll()
+        {
+            if (_registered) return;
+            On_FocusHelper.UpdateFocus += Hook_UpdateFocus;
+            _registered = true;
+        }
+
+        public static void UnregisterAll()
+        {
+            if (!_registered) return;
+            On_FocusHelper.UpdateFocus -= Hook_UpdateFocus;
+            _registered = false;
+        }
+
+        private static void Hook_UpdateFocus(On_FocusHelper.orig_UpdateFocus orig, out bool wantsToPause)
+        {
+            orig(out wantsToPause);
+            if (Enable.val)
+            {
+                wantsToPause = false;
+            }
+        }
 
         public static List<CommandObject> GetCO()
         {
@@ -32,21 +54,6 @@ namespace OptimizeAndTool.Content.QoL
             {
                 UIBuild.get2(Enable, "单人游戏窗口失焦（后台运行）时不再暂停游戏", "Images/Item_1621", "失焦时保持游戏运行")
             };
-        }
-    }
-
-    /// <summary>
-    /// 失焦保持运行：Postfix 覆写 wantsToPause=false（原方法仍正常更新 IsSelectedApplication 与鼠标可见性，
-    /// 只是不让主循环进入 gamePaused）。
-    /// </summary>
-    [HarmonyPatch(typeof(FocusHelper), nameof(FocusHelper.UpdateFocus))]
-    internal static class Patch_KeepRunningWhenUnfocused
-    {
-        [HarmonyPostfix]
-        internal static void Postfix(ref bool wantsToPause)
-        {
-            if (!KeepRunningWhenUnfocused.Enable.val) return;
-            wantsToPause = false;
         }
     }
 }

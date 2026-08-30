@@ -40,7 +40,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
     <ProjectReference Include="..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
-    <ProjectReference Include="..\..\..\tPlainModLoader\TerrariaHooks\TerrariaHooks.csproj" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

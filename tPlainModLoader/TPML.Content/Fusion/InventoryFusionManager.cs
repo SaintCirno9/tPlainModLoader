@@ -4,6 +4,8 @@ using System.Linq;
 using Terraria;
 using TPML.Core.Diagnostics;
 
+using TPML.Core.Logging;
+
 namespace TPML.Content.Fusion
 {
     /// <summary>
@@ -13,6 +15,7 @@ namespace TPML.Content.Fusion
     /// </summary>
     public static class InventoryFusionManager
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("FusionManager");
         private static readonly List<IFusionItemSource> _sources = new List<IFusionItemSource>();
         private static readonly object _lock = new object();
 
@@ -28,6 +31,7 @@ namespace TPML.Content.Fusion
                 _sources.RemoveAll(s => s.Id.Equals(source.Id, StringComparison.OrdinalIgnoreCase));
                 _sources.Add(source);
                 _sources.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+                Logger.Info($"[FusionManager] 成功注册融合源 [{source.Id}], 优先级={source.Priority}, 允许制作={source.AllowCrafting}, 当前总源数={_sources.Count}");
             }
         }
 
@@ -40,7 +44,11 @@ namespace TPML.Content.Fusion
             if (string.IsNullOrEmpty(id)) return;
             lock (_lock)
             {
-                _sources.RemoveAll(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+                int removed = _sources.RemoveAll(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+                if (removed > 0)
+                {
+                    Logger.Info($"[FusionManager] 注销融合源 [{id}], 剩余总源数={_sources.Count}");
+                }
             }
         }
 
@@ -51,7 +59,12 @@ namespace TPML.Content.Fusion
         {
             lock (_lock)
             {
+                int count = _sources.Count;
                 _sources.Clear();
+                if (count > 0)
+                {
+                    Logger.Info($"[FusionManager] 清空所有融合源 ({count} 个)");
+                }
             }
         }
 
@@ -229,6 +242,7 @@ namespace TPML.Content.Fusion
             using (PerformanceProfiler.Measure("Fusion", "InventoryFusionManager.CollectUnfavoritedItems"))
             {
                 var sources = GetActiveSources(player);
+
                 for (int s = 0; s < sources.Count; s++)
                 {
                     var src = sources[s];

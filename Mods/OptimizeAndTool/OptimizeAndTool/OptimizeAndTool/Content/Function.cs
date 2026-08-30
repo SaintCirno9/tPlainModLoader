@@ -33,7 +33,7 @@ namespace OptimizeAndTool.Content
 
             // 2. 性能与输入优化
             cos.AddRange(MouseLagFixEngine.GetCO());
-            cos.AddRange(PatchGameViewMatrixZoomLimit.GetCO());
+            cos.AddRange(GameViewMatrixZoomLimitHooks.GetCO());
 
             // 3. 扩展存储系统
             cos.AddRange(Content.BigBag.BigBag.GetCO());
@@ -97,7 +97,7 @@ namespace OptimizeAndTool.Content
             // 1. 性能与输入优化
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_5010", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "性能与输入优化"));
             uis.AddRange(MouseLagFixEngine.GetUI());
-            uis.AddRange(PatchGameViewMatrixZoomLimit.GetUI());
+            uis.AddRange(GameViewMatrixZoomLimitHooks.GetUI());
 
             // 2. 扩展存储系统 (大背包 + 随身饰品袋)
             uis.Add(new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_3813", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "扩展存储系统"));

@@ -11,6 +11,7 @@ using Terraria.Localization;
 using Terraria.UI;
 using TPML.Content.UI;
 using TPML.Core.Diagnostics;
+using TPML.Core.Logging;
 
 namespace TPML.Content.Engine
 {
@@ -35,10 +36,20 @@ namespace TPML.Content.Engine
 
         #endregion
 
+        private static readonly ILogger Logger = LogManager.GetLogger("ContentHookDispatcher");
+
         public static void Initialize(string harmonyId = "TPML.Content.HookDispatcher")
         {
             if (_initialized) return;
             _initialized = true;
+
+            if (!_patchesApplied)
+            {
+                Logger.Info("[ContentHookDispatcher] 正在应用原生内容引擎核心钩子与背包融合矩阵...");
+                ApplyOnDemandPatches();
+                _patchesApplied = true;
+                Logger.Info("[ContentHookDispatcher] 原生内容引擎核心钩子与背包融合矩阵应用完毕");
+            }
         }
 
         public static void RegisterHookInstances(IEnumerable<ILoadable> contents)
@@ -74,6 +85,7 @@ namespace TPML.Content.Engine
             ActiveModSystems.Clear();
             ActiveGlobalItems.Clear();
             TPML.Content.Fusion.InventoryFusionManager.Clear();
+            TPML.Content.Fusion.UnifiedInventoryFusionHooks.UnregisterAll();
             HookRegistry.Clear(HookScope.Content);
             _initialized = false;
             _patchesApplied = false;
@@ -116,8 +128,8 @@ namespace TPML.Content.Engine
             PatchLang();
             PatchPopupText();
 
-            // 框架级全量背包融合系统补丁矩阵 (通用外部容器/魔杖/油漆/HasItem/ConsumeItem)
-            TPML.Content.Fusion.Patch_UnifiedInventoryFusion.RegisterAll();
+            // 框架级全量背包融合系统 Hook 门控矩阵 (通用外部容器/魔杖/油漆/HasItem/ConsumeItem)
+            TPML.Content.Fusion.UnifiedInventoryFusionHooks.RegisterAll();
 
             _patchesApplied = true;
         }

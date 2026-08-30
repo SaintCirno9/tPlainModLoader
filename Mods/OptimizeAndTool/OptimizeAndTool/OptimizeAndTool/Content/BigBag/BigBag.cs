@@ -626,6 +626,8 @@ namespace OptimizeAndTool.Content.BigBag
             Item[] slots = Slots;
             if (slots == null) return false;
 
+            int itemType = item.type;
+
             // 1. 若首选槽位为空，直接放入
             if (preferredSlot >= 0 && preferredSlot < slots.Length)
             {
@@ -635,6 +637,7 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
+                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }
@@ -653,6 +656,7 @@ namespace OptimizeAndTool.Content.BigBag
                         item.TurnToAir();
                         EnsureTrailingEmptySlots(10);
                         NotifySlotsChanged();
+                        QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                         return true;
                     }
                 }
@@ -668,6 +672,7 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
+                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }
@@ -684,6 +689,7 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
+                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }

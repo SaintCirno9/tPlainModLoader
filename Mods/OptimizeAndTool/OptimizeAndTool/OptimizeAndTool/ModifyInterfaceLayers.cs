@@ -142,7 +142,7 @@ namespace OptimizeAndTool
                 SwitchBigBag(fromKeybind: true);
             }
 
-            Patch_AccessoryBagInteractions.UpdateKeybinds();
+            AccessoryBagInteractionHooks.UpdateKeybinds();
             PipetteKeybind.Update();
 
             if (CreativeInventoryKeybind.ToggleKeybind?.JustPressed == true)

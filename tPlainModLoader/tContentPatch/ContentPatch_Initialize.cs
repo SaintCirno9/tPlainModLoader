@@ -118,6 +118,16 @@ namespace tContentPatch
         {
             CheckNetplayConnect();
 
+            // 初始化原生内容引擎与全量背包融合底层门控
+            try
+            {
+                TPML.Content.ContentHost.Initialize();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[ContentPatch] ContentHost 初始化异常: {ex.Message}", ex);
+            }
+
             // M2: 引擎补丁自 Harmony PatchAll 迁移为各补丁类显式 RegisterAll()（MonoMod）
             ModPatch.Patch_Main.RegisterAll();
             ModPatch.Patch_Player.RegisterAll();

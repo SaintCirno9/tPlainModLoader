@@ -481,7 +481,7 @@ namespace TPMLBridge.GABP.Tools
             InfinitePotionAndBuff.ResetScanCache();
             if (player != null && player.active)
             {
-                InfinitePotionAndBuff.UpdateBuffsPrefix(player);
+                InfinitePotionAndBuff.UpdateAvailableBuffs(player);
             }
 
             result["buffState"] = new

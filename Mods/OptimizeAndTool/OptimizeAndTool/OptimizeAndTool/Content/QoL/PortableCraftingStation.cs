@@ -1,5 +1,4 @@
 using CommandHelp;
-using HarmonyLib;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
@@ -9,17 +8,20 @@ using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
 using TPML.Content.Fusion;
+using TPML.Core.Logging;
 
 namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
-    /// 随身/便携制作站与水源补丁
-    /// 遍历背包、便携收纳与所有框架级外部融合容器（如大背包），常驻激活其中的制作站与水源/熔岩/蜂蜜环境
+    /// 随身/便携制作站与水源补丁（基于 HookGen 强类型 On_ 门控，零反射，100% 对齐规范）：<br/>
+    /// 遍历背包、便携收纳与所有框架级外部融合容器（如大背包、饰品袋），常驻激活其中的制作站与水源/熔岩/蜂蜜环境。<br/>
     /// 作者: SaintCirno9
     /// </summary>
-    [HarmonyPatch(typeof(Player))]
-    internal class PortableCraftingStation
+    internal static class PortableCraftingStation
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("PortableCraftingStation");
+        private static bool _registered = false;
+
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
 
         public static List<CommandObject> GetCO()
@@ -45,39 +47,52 @@ namespace OptimizeAndTool.Content.QoL
         private static bool cachedAdjHoney = false;
         private static bool cachedAlchemyTable = false;
 
-        [HarmonyPatch(nameof(Player.AdjTiles))]
-        [HarmonyPriority(Priority.First)]
-        [HarmonyPrefix]
-        public static bool AdjTilesPrefix(Player __instance)
+        /// <summary>
+        /// 集中注册便携制作站 MonoMod 门控
+        /// </summary>
+        public static void RegisterAll()
         {
-            if (__instance != null)
-            {
-                __instance.SafeScanAdjTiles();
-            }
-            return false; // 阻断原版易抛 NRE 的 IL 执行，由 SafeScanAdjTiles 全量安全接管
+            if (_registered) return;
+
+            On_Player.AdjTiles += Hook_AdjTiles;
+            _registered = true;
+            Logger.Info("★ 便携制作站 (PortableCraftingStation) MonoMod On_ 门控已成功注册");
         }
 
-        [HarmonyPatch(nameof(Player.AdjTiles))]
-        [HarmonyPostfix]
-        public static void AdjTilesPostfix(Player __instance)
+        /// <summary>
+        /// 集中注销便携制作站 MonoMod 门控
+        /// </summary>
+        public static void UnregisterAll()
         {
-            if (__instance == null || !Enable.val || __instance.adjTile == null) return;
+            if (!_registered) return;
+
+            On_Player.AdjTiles -= Hook_AdjTiles;
+            _registered = false;
+            Logger.Info("便携制作站 (PortableCraftingStation) MonoMod On_ 门控已解绑");
+        }
+
+        private static void Hook_AdjTiles(On_Player.orig_AdjTiles orig, Player self)
+        {
+            // 1. 先执行原版周围物块扫描管线
+            orig(self);
+
+            if (self == null || !Enable.val || self.whoAmI != Main.myPlayer || self.adjTile == null) return;
 
             try
             {
-                // 1. 周期性扫描（每 15 tick 扫描一次背包与外部容器，更新缓存）
+                // 2. 周期性扫描（每 15 tick 扫描一次背包与外部容器，更新缓存）
                 if (++scanTimer >= 15)
                 {
                     scanTimer = 0;
-                    UpdateCachedAdjTiles(__instance);
+                    UpdateCachedAdjTiles(self);
                 }
 
-                // 2. 每一帧原版清空后，都把缓存的随身制作站状态快速合并给玩家（确保每帧稳定生效，彻底消除合成列表闪烁）
-                ApplyCachedAdjTiles(__instance);
+                // 3. 每一帧原版清空后，都把缓存的随身制作站状态快速合并给玩家（确保每帧稳定生效，彻底消除合成列表闪烁）
+                ApplyCachedAdjTiles(self);
             }
-            catch
+            catch (Exception ex)
             {
-                // 防御性保护：避免制作站扫描异常中断游戏更新循环
+                Logger.Error($"[PortableCraftingStation] AdjTiles 扫描异常: {ex.Message}", ex);
             }
         }
 

@@ -1,5 +1,4 @@
 using FishingMachine.UI;
-using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
@@ -229,23 +228,38 @@ namespace FishingMachine.Content.Tiles
     }
 
     /// <summary>
-    /// 挖掘破坏钓鱼机瓦片时的掉落与实体回收拦截
+    /// 挖掘破坏钓鱼机瓦片时的掉落与实体回收拦截（基于 HookGen 强类型 On_ 门控）
     /// </summary>
-    [HarmonyPatch(typeof(WorldGen), nameof(WorldGen.KillTile))]
-    public static class Patch_FishingMachineKillTile
+    public static class HookFishingMachineKillTile
     {
-        [HarmonyPrefix]
-        public static bool Prefix(int i, int j, bool fail, bool effectOnly, bool noItem)
+        private static bool _registered = false;
+
+        public static void RegisterAll()
+        {
+            if (_registered) return;
+            On_WorldGen.KillTile += Hook_KillTile;
+            _registered = true;
+        }
+
+        public static void UnregisterAll()
+        {
+            if (!_registered) return;
+            On_WorldGen.KillTile -= Hook_KillTile;
+            _registered = false;
+        }
+
+        private static void Hook_KillTile(On_WorldGen.orig_KillTile orig, int i, int j, bool fail, bool effectOnly, bool noItem)
         {
             if (!fail && !effectOnly)
             {
                 if (FishingMachineTileManager.GetMachineAt(i, j, out _, out Point16 origin))
                 {
                     FishingMachineTileManager.DestroyMachine(origin);
-                    return false;
+                    return; // 安全拦截破坏
                 }
             }
-            return true;
+
+            orig(i, j, fail, effectOnly, noItem);
         }
     }
 }

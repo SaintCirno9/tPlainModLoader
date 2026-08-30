@@ -1,7 +1,6 @@
 using FishingMachine.Content.IO;
 using FishingMachine.Content.Tiles;
 using FishingMachine.UI;
-using HarmonyLib;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -50,9 +49,8 @@ namespace FishingMachine
                 // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
                 ModInstance = ContentHost.Find<FishingMachineMod>();
 
-                // 应用 Harmony 补丁
-                var harmony = new Harmony("SaintCirno9.FishingMachine");
-                harmony.PatchAll(Assembly.GetExecutingAssembly());
+                // 注册 MonoMod 强类型门控
+                HookFishingMachineKillTile.RegisterAll();
 
                 Logger.Info("===== FishingMachine 模组加载成功 =====");
             }
@@ -61,12 +59,17 @@ namespace FishingMachine
                 Logger.Error("FishingMachine 载入失败", ex);
             }
         }
+
+        public override void Unload()
+        {
+            HookFishingMachineKillTile.UnregisterAll();
+        }
     }
 
     /// <summary>
     /// 挂钩主循环更新、世界物块绘制与交互面板
     /// </summary>
-    public class FishingMachinePatchMain : tContentPatch.PatchMain
+    public class FishingMachineMain : tContentPatch.PatchMain
     {
         private static bool _texturesLoaded = false;
 

@@ -211,3 +211,28 @@
 - **全量解决方案构建**：
   `dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`
   - 结果：**20+ 个工程全部 0 警告 0 错误**，极速多核图构建完成，全部自动热部署成功。
+
+---
+
+# OptimizeAndTool 全量 Harmony 清零与 HookGen 强类型门控重构记录
+
+> **日期**：2026-08-30  
+> **作者**：SaintCirno9  
+> **核心目标**：全面废弃 Harmony 补丁，全量迁移至 `TerrariaHooks` HookGen 强类型 `On_` / `IL_` 门面系统，并彻底移除 `HarmonyX` 依赖。
+
+## 1. 核心变更总结
+1. **彻底移除 HarmonyX**：从 `OptimizeAndTool.csproj` 移除 `<PackageReference Include="HarmonyX" />`，消除全部 `MethodInfo` / `AccessTools` / `HarmonyPatch` 反射和字符串挂钩；
+2. **45 个历史文件命名标准化**：消除遗留 `Patch_` 前缀，标准化重命名为 `*Hooks.cs`，并提供显式对称的 `RegisterAll()` / `UnregisterAll()` 生命周期管理；
+3. **全模块强类型门控接入**：
+   - 渲染优化：`ReduceMouseLagHooks`、`GameViewMatrixZoomLimitHooks`、`SmartSelectRangeHooks`、`KeepRunningWhenUnfocused`、`PortableCraftingStation`；
+   - 存储系统：`BigBagPickupHooks`、`BigBagShiftTransferHooks`、`HotbarScrollHooks`、`AccessoryBagInteractionHooks`、`ItemContainerInteractionHooks`、`PortableContainerHooks`；
+   - 钓鱼系统：`AutoFishingSuppliesHooks`、`AutoFishingSystemHooks`、`FishingCatchProcessor`、`FishingCrateModifierHooks`、`FishingInfoHUDHooks`、`MultipleFishingLinesHooks`、`AnglerQuestOptimizationHooks`；
+   - 物块与生态：`PlayerPickTileHooks`、`AntiGriefHooks`、`EcologyHooks`、`PylonHooks`、`PylonRuleHooks`、`EcoGrowthHooks`、`SlimeAndLavaHooks`、`BedRulesHooks`、`TownNPCOptimizationHooks`、`TownNPCSpawnSpeedHooks`、`FasterExtractinatorHooks`；
+   - 玩家战斗与规则：`DeathAndDamageHooks`、`ExpertDebuffTimeHooks`、`KeepBuffsOnDeathHooks`、`NoConditionTeamTPHooks`、`NoConsumeItemHooks`、`TeamShareHooks`、`UncapMaxLifeHooks`、`ItemMaxStackHooks`、`BannerAndBestiaryHooks`；
+   - 无限增益与掉落：`BuffInteractionHooks`、`InfinitePotionAndBuffHooks`、`GuaranteedDropHooks`、`ReforgeHooks`；
+4. **统一生命周期收拢**：入口类标准化为 `OptimizeAndToolHookInit`，统一注册与注销所有 MonoMod 门控；
+5. **日志清理**：移除了 `PortableCraftingStation.cs` 中的周期性激活统计日志。
+
+## 2. 编译验证
+- **全量解决方案构建**：`dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release`
+- **验证结果**：`[构建验证]` **0 警告、0 错误**，19 个工程全量构建完成并自动热部署至游戏目录。
