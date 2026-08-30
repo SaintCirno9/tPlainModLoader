@@ -1,0 +1,7 @@
+{
+  "name": "PotionSlots",
+  "author": "SaintCirno9",
+  "version": "0.7.0.0",
+  "displayName": "药水扩展栏 (Potion Slots)",
+  "description": "提供生命药水、魔力药水与传送药水专用快捷槽位，支持独立存储、自动吸入与快速使用快捷键。"
+}

@@ -26,6 +26,7 @@ namespace TPMLBridge.GABP
             list.AddRange(SidecarTools.GetDescriptors());
             list.AddRange(ScreenCaptureTools.GetDescriptors());
             list.AddRange(RecipeBrowserTools.GetDescriptors());
+            list.AddRange(PotionSlotTools.GetDescriptors());
             return list;
         }
 
@@ -65,6 +66,10 @@ namespace TPMLBridge.GABP
 
             // 9. RecipeBrowser 合成表与物品图鉴工具
             result = await RecipeBrowserTools.HandleAsync(name, args);
+            if (result != null) return result;
+
+            // 10. PotionSlots 自动化测试工具
+            result = await PotionSlotTools.HandleAsync(name, args);
             if (result != null) return result;
 
             throw new KeyNotFoundException($"未知的工具名称: {name}");

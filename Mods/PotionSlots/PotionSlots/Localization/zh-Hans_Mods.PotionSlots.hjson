@@ -1,0 +1,13 @@
+Items: {
+	DebugStick: {
+		DisplayName: 调试魔杖
+		Tooltip: ""
+	}
+}
+
+UI: {
+	Potions: 药水栏
+	LifeSlot: 生命药水槽
+	ManaSlot: 魔力药水槽
+	WormholeSlot: 传送药水槽
+}
