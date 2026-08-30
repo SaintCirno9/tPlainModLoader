@@ -7,6 +7,22 @@ namespace TPML.Content.IO
     {
         public TagCompound() : base(StringComparer.OrdinalIgnoreCase) { }
 
+        public new object this[string key]
+        {
+            get => base.TryGetValue(key, out var val) ? val : null;
+            set
+            {
+                if (value is Terraria.Item item)
+                {
+                    base[key] = ItemIO.Save(item);
+                }
+                else
+                {
+                    base[key] = value;
+                }
+            }
+        }
+
         public void Set(string key, object value) => this[key] = value;
 
         public T Get<T>(string key)
@@ -23,6 +39,34 @@ namespace TPML.Content.IO
                 if (obj is T direct)
                 {
                     value = direct;
+                    return true;
+                }
+                if (typeof(T) == typeof(Terraria.Item))
+                {
+                    if (obj is TagCompound tagComp)
+                    {
+                        value = (T)(object)ItemIO.Load(tagComp);
+                        return true;
+                    }
+                    if (obj is Newtonsoft.Json.Linq.JObject jObj)
+                    {
+                        var tc = new TagCompound();
+                        foreach (var prop in jObj.Properties())
+                        {
+                            tc[prop.Name] = prop.Value;
+                        }
+                        value = (T)(object)ItemIO.Load(tc);
+                        return true;
+                    }
+                }
+                if (typeof(T) == typeof(TagCompound) && obj is Newtonsoft.Json.Linq.JObject jCompound)
+                {
+                    var tc = new TagCompound();
+                    foreach (var prop in jCompound.Properties())
+                    {
+                        tc[prop.Name] = prop.Value;
+                    }
+                    value = (T)(object)tc;
                     return true;
                 }
                 if (obj is Newtonsoft.Json.Linq.JToken jToken)
@@ -58,24 +102,6 @@ namespace TPML.Content.IO
                 {
                     value = (T)(object)cDouble.ToDouble(System.Globalization.CultureInfo.InvariantCulture);
                     return true;
-                }
-                if (typeof(T) == typeof(Terraria.Item))
-                {
-                    if (obj is TagCompound tagComp)
-                    {
-                        value = (T)(object)ItemIO.Load(tagComp);
-                        return true;
-                    }
-                    if (obj is Newtonsoft.Json.Linq.JObject jObj)
-                    {
-                        var tc = new TagCompound();
-                        foreach (var prop in jObj.Properties())
-                        {
-                            tc[prop.Name] = prop.Value;
-                        }
-                        value = (T)(object)ItemIO.Load(tc);
-                        return true;
-                    }
                 }
                 if (typeof(T) == typeof(string))
                 {
@@ -153,6 +179,10 @@ namespace TPML.Content.IO
             string mod = tag.GetString("mod");
             string name = tag.GetString("name");
             int id = tag.GetInt("id");
+            if (id <= 0 && tag.ContainsKey("type"))
+            {
+                id = tag.GetInt("type");
+            }
 
             int type = 0;
             if (!string.IsNullOrEmpty(mod) && mod != "Terraria" && !string.IsNullOrEmpty(name))
@@ -169,7 +199,7 @@ namespace TPML.Content.IO
             var item = new Terraria.Item();
             item.SetDefaults(type);
             int stack = tag.GetInt("stack");
-            if (stack > 0) item.stack = Math.Min(stack, item.maxStack);
+            if (stack > 0) item.stack = stack;
             int prefix = tag.GetInt("prefix");
             if (prefix > 0) item.Prefix(prefix);
             item.favorited = tag.GetBool("favorited");

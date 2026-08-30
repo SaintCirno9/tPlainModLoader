@@ -129,10 +129,14 @@ namespace TPMLBridge.GABP.Tools
             bool pickupSuccess = curLifeSlot.stack == 12 && pickupItem.stack == 0;
             testSteps.Add(new { step = "4. OnPickup 自动拾取合并", status = pickupSuccess ? "PASS" : "FAIL", details = $"槽位堆叠: 9 -> {curLifeSlot.stack}, 拾取物品剩余: {pickupItem.stack}" });
 
-            // Step 5: 测试 TagCompound 序列化与反序列化
+            // Step 5: 测试 TagCompound 序列化与真实 JSON Sidecar 反序列化
             var tag = new TagCompound();
             var saveMethod = potionPlayerType.GetMethod("SaveData");
             saveMethod.Invoke(psp, new object[] { tag });
+
+            // 模拟真实的 Sidecar JSON 序列化与反序列化全流程
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(tag);
+            var loadedTag = Newtonsoft.Json.JsonConvert.DeserializeObject<TagCompound>(json);
 
             // 重置槽位
             lifeField.SetValue(psp, new Item());
@@ -141,7 +145,7 @@ namespace TPMLBridge.GABP.Tools
 
             // 恢复
             var loadMethod = potionPlayerType.GetMethod("LoadData");
-            loadMethod.Invoke(psp, new object[] { tag });
+            loadMethod.Invoke(psp, new object[] { loadedTag });
 
             var resLife = (Item)lifeField.GetValue(psp);
             var resMana = (Item)manaField.GetValue(psp);
@@ -151,7 +155,7 @@ namespace TPMLBridge.GABP.Tools
                               resMana.type == ItemID.LesserManaPotion && resMana.stack == 14 &&
                               resWorm.type == ItemID.WormholePotion && resWorm.stack == 5;
 
-            testSteps.Add(new { step = "5. TagCompound 存档序列化/反序列化", status = tagSuccess ? "PASS" : "FAIL", details = $"恢复结果: Life={resLife.type}({resLife.stack}), Mana={resMana.type}({resMana.stack}), Wormhole={resWorm.type}({resWorm.stack})" });
+            testSteps.Add(new { step = "5. TagCompound 存档序列化/JSON反序列化", status = tagSuccess ? "PASS" : "FAIL", details = $"恢复结果: Life={resLife.type}({resLife.stack}), Mana={resMana.type}({resMana.stack}), Wormhole={resWorm.type}({resWorm.stack})" });
 
             // 清理
             lifeField.SetValue(psp, new Item());

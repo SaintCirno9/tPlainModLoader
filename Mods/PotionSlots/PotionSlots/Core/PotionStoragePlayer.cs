@@ -53,16 +53,16 @@ namespace PotionSlots.Core
 
         public override void SaveData(TagCompound tag)
         {
-            tag.Set("life", lifeSlot);
-            tag.Set("mana", manaSlot);
-            tag.Set("wormhole", wormholeSlot);
+            tag.Set("life", ItemIO.Save(lifeSlot));
+            tag.Set("mana", ItemIO.Save(manaSlot));
+            tag.Set("wormhole", ItemIO.Save(wormholeSlot));
         }
 
         public override void LoadData(TagCompound tag)
         {
-            lifeSlot = tag.Get<Item>("life") ?? new Item();
-            manaSlot = tag.Get<Item>("mana") ?? new Item();
-            wormholeSlot = tag.Get<Item>("wormhole") ?? new Item();
+            lifeSlot = tag.Get<Item>("life") ?? (tag.ContainsKey("life") ? ItemIO.Load(tag.GetCompound("life")) : new Item());
+            manaSlot = tag.Get<Item>("mana") ?? (tag.ContainsKey("mana") ? ItemIO.Load(tag.GetCompound("mana")) : new Item());
+            wormholeSlot = tag.Get<Item>("wormhole") ?? (tag.ContainsKey("wormhole") ? ItemIO.Load(tag.GetCompound("wormhole")) : new Item());
         }
 
         public override bool OnPickup(Item item)
