@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
     <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />
@@ -84,6 +84,12 @@
           DestinationFolder="$(GameDeployDir)"
           SkipUnchangedFiles="true"
           Condition="Exists('$(ReLogicPath)')" />
+    <!-- M2: 引擎已迁移 MonoMod，不再产出 0Harmony.dll；仓库 Mods 保留 Harmony，
+         运行时从 launcher 目录解析该 DLL，此处作为部署资产随引擎发布（引擎零引用） -->
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\Libs\0Harmony.dll"
+          DestinationFolder="$(GameDeployDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\..\Libs\0Harmony.dll')" />
     <Copy SourceFiles="$(OutDir)launchConfig.json"
           DestinationFiles="$(GameDeployDir)\launchConfig.json"
           Condition="!Exists('$(GameDeployDir)\launchConfig.json') and Exists('$(OutDir)launchConfig.json')" />

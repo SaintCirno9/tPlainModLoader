@@ -1,16 +1,37 @@
-﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Localization;
 using Terraria.Social;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.ModSetSwitch
 {
     //屎
     internal class Patch
     {
-        [HarmonyPatch(typeof(IngameOptions), nameof(IngameOptions.DrawLeftSide))]
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            // IngameOptions.DrawLeftSide(SpriteBatch, string, int, Vector2, Vector2, float[], float, float, float)（静态）
+            // 前缀声明 ref 是 Harmony 惯例：本地副本传参，修改传入原方法（与原版按值语义一致）
+            HookRegistry.Add(MethodLookup.Static(typeof(IngameOptions), "DrawLeftSide",
+                typeof(SpriteBatch), typeof(string), typeof(int), typeof(Vector2), typeof(Vector2),
+                typeof(float[]), typeof(float), typeof(float), typeof(float)),
+                (Hook_DrawLeftSide)DrawLeftSideHook);
+        }
+
+        private delegate bool Orig_DrawLeftSide(SpriteBatch sb, string txt, int i, Vector2 anchor, Vector2 offset, float[] scales, float minscale, float maxscale, float scalespeed);
+        private delegate bool Hook_DrawLeftSide(Orig_DrawLeftSide orig, SpriteBatch sb, string txt, int i, Vector2 anchor, Vector2 offset, float[] scales, float minscale, float maxscale, float scalespeed);
+
+        private static bool DrawLeftSideHook(Orig_DrawLeftSide orig, SpriteBatch sb, string txt, int i, Vector2 anchor, Vector2 offset, float[] scales, float minscale, float maxscale, float scalespeed)
+        {
+            Vector2 anchorLocal = anchor;
+            Vector2 offsetLocal = offset;
+            IngameOptions_DrawLeftSide.Prefix(sb, txt, i, ref anchorLocal, ref offsetLocal, scales, minscale, maxscale, scalespeed);
+            return orig(sb, txt, i, anchorLocal, offsetLocal, scales, minscale, maxscale, scalespeed);
+        }
+
         private class IngameOptions_DrawLeftSide
         {
             private static int iOff = 0;

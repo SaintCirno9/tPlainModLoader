@@ -18,6 +18,19 @@ namespace Terraria.ModLoader
     {
         public TooltipLine(TPML.Content.Mod mod, string name, string text) : base(mod, name, text) { }
     }
+    public class EntitySource_Misc : TPML.Content.EntitySource_Misc
+    {
+        public EntitySource_Misc(string context) : base(context) { }
+    }
+
+    public static class ModPlayerExtensions
+    {
+        public static T GetModPlayer<T>(this Terraria.Player player) where T : TPML.Content.ModPlayer
+            => TPML.Content.ModPlayerExtensions.GetModPlayer<T>(player);
+
+        public static Terraria.DataStructures.IEntitySource GetSource_Misc(this Terraria.Player player, string context)
+            => TPML.Content.ModPlayerExtensions.GetSource_Misc(player, context);
+    }
 
     public static class ModContent
     {
@@ -31,6 +44,29 @@ namespace Terraria.ModLoader
         public static T Find<T>(string fullName) where T : class => TPML.Content.ModContent.Find<T>(fullName);
         public static int ItemType<T>() where T : TPML.Content.ModItem => TPML.Content.ModContent.ItemType<T>();
         public static IEnumerable<T> GetContent<T>() where T : class => TPML.Content.ModContent.GetContent<T>();
+        public static bool TryGetMod(string name, out TPML.Content.Mod mod) => TPML.Content.ModContent.TryGetMod(name, out mod);
+        public static TPML.Content.Mod GetMod(string name) => TPML.Content.ModContent.GetMod(name);
+        public static ReLogic.Content.Asset<T> Request<T>(string path, ReLogic.Content.AssetRequestMode mode = ReLogic.Content.AssetRequestMode.ImmediateLoad) where T : class =>
+            TPML.Content.ModContent.Request<T>(path, mode);
+    }
+
+    public static class MonoModHooks
+    {
+        public static void Add(System.Reflection.MethodBase target, Delegate hookDelegate)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (hookDelegate == null) throw new ArgumentNullException(nameof(hookDelegate));
+            TPML.Content.Engine.HookRegistry.Add(target, hookDelegate);
+        }
+
+        public static void Modify(System.Reflection.MethodBase target, Delegate hookDelegate)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (hookDelegate == null) throw new ArgumentNullException(nameof(hookDelegate));
+            MonoMod.RuntimeDetour.HookGen.HookEndpointManager.Modify(target, hookDelegate);
+        }
+
+        public static void RequestNativeAccess() { }
     }
 
     public static class ItemLoader
@@ -68,6 +104,8 @@ namespace Terraria.ModLoader
             set => TPML.Content.ModLoader.LogCallback = value;
         }
         public static void Log(string message) => TPML.Content.ModLoader.Log(message);
+        public static bool TryGetMod(string name, out TPML.Content.Mod mod) => TPML.Content.ModLoader.TryGetMod(name, out mod);
+        public static TPML.Content.Mod GetMod(string name) => TPML.Content.ModLoader.GetMod(name);
     }
 }
 
@@ -91,7 +129,6 @@ namespace Terraria.ModLoader.Engine
 
 namespace Terraria.ModLoader.IO
 {
-    public class TagCompound : TPML.Content.IO.TagCompound { }
     public static class SidecarSaveManager
     {
         public static string SaveDirectory => TPML.Content.IO.SidecarSaveManager.SaveDirectory;

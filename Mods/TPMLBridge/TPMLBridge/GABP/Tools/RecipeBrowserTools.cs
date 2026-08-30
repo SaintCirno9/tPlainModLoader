@@ -564,7 +564,7 @@ namespace TPMLBridge.GABP.Tools
                     });
 
                 default:
-                    throw new ArgumentException($"未知的 GABP 工具: {name}");
+                    return null;
             }
         }
     }

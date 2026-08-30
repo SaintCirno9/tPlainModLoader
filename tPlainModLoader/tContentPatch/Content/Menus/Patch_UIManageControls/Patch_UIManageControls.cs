@@ -1,4 +1,3 @@
-using HarmonyLib;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,15 +7,27 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.UI;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.Patch_UIManageControls
 {
     /// <summary>
     /// 拦截 UIManageControls.OnActivate (进入控件设置菜单)，确保每次打开时动态刷新并注入模组快捷键分组
     /// </summary>
-    [HarmonyPatch(typeof(UIManageControls), nameof(UIManageControls.OnActivate))]
     internal static class Patch_UIManageControls
     {
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            // UIManageControls.OnActivate()（实例，postfix）
+            HookRegistry.Add(typeof(UIManageControls).GetMethod("OnActivate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic),
+                (System.Action<System.Action<UIManageControls>, UIManageControls>)((orig, self) =>
+                {
+                    orig(self);
+                    Postfix(self);
+                }));
+        }
+
         private static void Postfix(UIManageControls __instance)
         {
             var keybinds = KeybindLoader.Keybinds.ToList();

@@ -345,6 +345,11 @@ namespace TPMLBridge.GABP.Tools
 
         private static Item[] GetContainerSlots(string containerName)
         {
+            if (Main.gameMenu || Main.LocalPlayer == null || !Main.LocalPlayer.active)
+            {
+                return null;
+            }
+
             if (string.Equals(containerName, "bigBag", StringComparison.OrdinalIgnoreCase))
             {
                 return OptimizeAndTool.Content.BigBag.BigBag.Slots;
@@ -352,7 +357,27 @@ namespace TPMLBridge.GABP.Tools
             if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(containerName, "accessoryBag", StringComparison.OrdinalIgnoreCase))
             {
-                return OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.personalInventory;
+                var carried = OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag();
+                if (carried == null && Main.LocalPlayer != null)
+                {
+                    int bagType = TPML.Content.ItemLoader.ItemType("OptimizeAndTool", "AccessoryBag");
+                    if (bagType > 0)
+                    {
+                        for (int i = 0; i < 50; i++)
+                        {
+                            if (Main.LocalPlayer.inventory[i] == null || Main.LocalPlayer.inventory[i].IsAir)
+                            {
+                                Item bagIt = new Item();
+                                bagIt.SetDefaults(bagType);
+                                Main.LocalPlayer.inventory[i] = bagIt;
+                                OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.UpdateCache();
+                                carried = TPML.Content.ItemLoader.GetModItem(bagIt) as OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagItem;
+                                break;
+                            }
+                        }
+                    }
+                }
+                return carried?.personalInventory;
             }
             return null;
         }

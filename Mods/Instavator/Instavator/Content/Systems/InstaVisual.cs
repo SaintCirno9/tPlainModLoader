@@ -26,6 +26,11 @@ namespace Instavator.Content.Systems
             }
         }
 
+        public override void PostUpdateEverything()
+        {
+            InstavatorShaftBuilder.Update();
+        }
+
         private bool DrawAreaPreview()
         {
             if (Main.gameMenu || Main.dedServ) return true;

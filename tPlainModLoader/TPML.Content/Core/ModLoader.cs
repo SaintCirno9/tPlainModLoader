@@ -20,5 +20,8 @@ namespace TPML.Content
             }
             catch { }
         }
+
+        public static bool TryGetMod(string name, out Mod mod) => ModContent.TryGetMod(name, out mod);
+        public static Mod GetMod(string name) => ModContent.GetMod(name);
     }
 }

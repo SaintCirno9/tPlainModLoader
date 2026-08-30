@@ -1,6 +1,5 @@
-﻿using SuspiciousPlayer.Content.Event1;
+using SuspiciousPlayer.Content.Event1;
 using tContentPatch;
-using tContentPatch.Patch;
 using Terraria;
 using Terraria.DataStructures;
 
@@ -8,13 +7,17 @@ namespace SuspiciousPlayer.Patch
 {
     internal class PatchNPC : Mod
     {
-        public override void AddPatch(IAddPatch addPatch)
+        // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
+        public override void Load()
         {
-            addPatch.AddPrefix(typeof(NPC).GetMethod("NewNPC"),
-                typeof(PatchNPC).GetMethod("NewNPC"));
+            On.Terraria.NPC.NewNPC += (orig, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target) =>
+            {
+                if (!CanSpawn(Type)) return -1;
+                return orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
+            };
         }
 
-        public static bool NewNPC(IEntitySource source, int X, int Y, int Type, int Start = 0, float ai0 = 0f, float ai1 = 0f, float ai2 = 0f, float ai3 = 0f, int Target = 255)
+        private static bool CanSpawn(int Type)
         {
             if (Event.CanSpawnNPC == false)
             {
@@ -31,8 +34,12 @@ namespace SuspiciousPlayer.Patch
                 //if (Type == 413) return false;
                 //if (Type == 414) return false;
             }
-
             return true;
+        }
+
+        public static bool NewNPC(IEntitySource source, int X, int Y, int Type, int Start = 0, float ai0 = 0f, float ai1 = 0f, float ai2 = 0f, float ai3 = 0f, int Target = 255)
+        {
+            return CanSpawn(Type);
         }
     }
 }

@@ -71,6 +71,15 @@ namespace tContentPatch
             {
                 Input.KeybindLoader.SyncWithPlayerInput();
 
+                try
+                {
+                    TPML.Content.ModContent.PostSetupContent();
+                }
+                catch (Exception ex)
+                {
+                    TPML.Core.Logging.LogManager.CoreLogger.Error($"PostSetupContent 派发异常: {ex.Message}", ex);
+                }
+
                 if (Main.netMode != 0 && Main.netMode != 1) return;
                 Main.menuMode = MenuID.Title;
             };
@@ -109,8 +118,34 @@ namespace tContentPatch
         {
             CheckNetplayConnect();
 
-            gamePatch = new AddPatch(patchId_tContentPatch);
-            gamePatch.AllPatch();
+            // M2: 引擎补丁自 Harmony PatchAll 迁移为各补丁类显式 RegisterAll()（MonoMod）
+            ModPatch.Patch_Main.RegisterAll();
+            ModPatch.Patch_Player.RegisterAll();
+            ModPatch.Patch_PlayerFileData.RegisterAll();
+            ModPatch.Patch_NPC.RegisterAll();
+            ModPatch.Patch_Item.RegisterAll();
+            ModPatch.Patch_Projectile.RegisterAll();
+            ModPatch.Patch_TileLightScanner.RegisterAll();
+            ModPatch.Patch_RemadeChatMonitor.RegisterAll();
+            ModPatch.Patch_WorldFile.RegisterAll();
+            ModPatch.Patch_NetMessage.RegisterAll();
+            ModPatch.Patch_MessageBuffer.RegisterAll();
+            ModPatch.Patch_Chest.RegisterAll();
+            ModPatch.Patch_RemoteClient.RegisterAll();
+            ModPatch.Patch_WorldGen.RegisterAll();
+            ModPatch.Patch_CreativeAndCraftingSearch.RegisterAll();
+            ModPatch.Patch_ChatCommand.RegisterAll();
+
+            Content.AutoLoadMod.RegisterAll();
+            Content.DrawTip.RegisterAll();
+            Content.DrawIME.RegisterAll();
+            Content.DedServConsoleCommand.RegisterAll();
+            Content.Network.RegisterNetModule.RegisterAll();
+            Content.TitleInfo.RegisterAll();
+            Content.Menus.Patch_UIWorkshopHub.Patch.RegisterAll();
+            Content.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
+            Content.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
+            Content.Menus.ModSetSwitch.Patch.RegisterAll();
 
             typePatch = new ModPatch.TypePatch();
             typePatch.AddPatch(new ModPatch.Patch_Main());

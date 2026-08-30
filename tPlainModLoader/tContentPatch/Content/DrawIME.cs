@@ -1,14 +1,13 @@
-﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using System;
 using Terraria;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
     /// <summary>
     /// 绘制输入法
     /// </summary>
-    [HarmonyPatch(typeof(Main), "DoDraw")]
     public static class DrawIME
     {
         /// <summary>
@@ -19,6 +18,18 @@ namespace tContentPatch.Content
         /// 输入法位置
         /// </summary>
         public static Vector2 IME_P = Vector2.Zero;
+
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            // Main.DoDraw(GameTime)（实例，postfix）
+            HookRegistry.Add(MethodLookup.Instance(typeof(Main), "DoDraw", typeof(GameTime)),
+                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
+                {
+                    orig(self, gameTime);
+                    Postfix(gameTime);
+                }));
+        }
 
         internal static void Postfix(GameTime gameTime)
         {

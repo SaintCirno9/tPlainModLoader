@@ -4,7 +4,6 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using tContentPatch;
-using tContentPatch.Patch;
 using Terraria;
 using Terraria.UI;
 
@@ -17,9 +16,14 @@ namespace OptimizeAndTool.Content.Cheat.Function1
     {
         public static GetSetReset<bool> noTeleport = new GetSetReset<bool>();
 
-        public override void AddPatch(IAddPatch addPatch)
+        // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
+        public override void Load()
         {
-            addPatch.AddPrefix(typeof(Player).GetMethod("Teleport"), typeof(Function_noTeleport).GetMethod("Teleport"));
+            On.Terraria.Player.Teleport += (orig, self, newPos, Style, extraInfo) =>
+            {
+                if (self == Main.LocalPlayer && noTeleport.val) return; // 跳过（prefix 返回 false）
+                orig(self, newPos, Style, extraInfo);
+            };
         }
 
         public static bool Teleport(Player __instance, Vector2 newPos, int Style = 0, int extraInfo = 0)

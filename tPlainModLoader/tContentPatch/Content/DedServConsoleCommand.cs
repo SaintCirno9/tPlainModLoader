@@ -1,16 +1,32 @@
-﻿using CommandHelp;
-using HarmonyLib;
+using CommandHelp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Terraria;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
-    [HarmonyPatch(typeof(Main), "ReadLineInput")]
+    /// <summary>
+    /// 服务端控制台指令（M2 迁移：Harmony → MonoMod，静态方法 + __result）
+    /// </summary>
     internal static class DedServConsoleCommand
     {
         public static bool Enable = false;
+
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            // Main.ReadLineInput()（静态，返回 string）
+            HookRegistry.Add(typeof(Main).GetMethod("ReadLineInput", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic),
+                (Func<Func<string>, string>)(orig =>
+                {
+                    string result = orig();
+                    Postfix(ref result);
+                    return result;
+                }));
+        }
 
         private static void Postfix(ref string __result)
         {

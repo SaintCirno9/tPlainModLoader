@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using tContentPatch;
-using tContentPatch.Patch;
 using Terraria;
 using Terraria.Localization;
 
@@ -10,10 +9,14 @@ namespace SuspiciousPlayer.Patch
     {
         public static Func<Player, bool> OnCanDropTombstone = null;
 
-        public override void AddPatch(IAddPatch addPatch)
+        // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
+        public override void Load()
         {
-            addPatch.AddPrefix(typeof(Player).GetMethod("DropTombstone"),
-                typeof(PatchPlayer).GetMethod("CanDropTombstone"));
+            On.Terraria.Player.DropTombstone += (orig, self, coinsOwned, deathText, hitDirection) =>
+            {
+                if (!(OnCanDropTombstone?.Invoke(self) ?? true)) return;
+                orig(self, coinsOwned, deathText, hitDirection);
+            };
         }
 
         public static bool CanDropTombstone(Player __instance, long coinsOwned, NetworkText deathText, int hitDirection)

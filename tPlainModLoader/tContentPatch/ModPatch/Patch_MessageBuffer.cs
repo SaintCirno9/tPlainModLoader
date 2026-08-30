@@ -1,20 +1,41 @@
-﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using tContentPatch.Content.Network;
 using Terraria;
 using Terraria.ID;
+using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
-    [HarmonyPatch(typeof(MessageBuffer))]
+    /// <summary>
+    /// MessageBuffer 网络数据分发补丁（M2 迁移：Harmony → MonoMod，prefix 返回 false 跳过原方法）
+    /// </summary>
     internal class Patch_MessageBuffer : ListCopy<PatchMessageBuffer>
     {
         private static List<PatchMessageBuffer> mod = new List<PatchMessageBuffer>();
 
         public Patch_MessageBuffer() : base(mod) { }
 
-        [HarmonyPatch("GetData")]
-        [HarmonyPrefix]
+        // 原方法第三参为 out int，需自定义 byref 委托
+        private delegate void Orig_GetData(MessageBuffer self, int start, int length, out int messageType);
+        private delegate void Hook_GetData(Orig_GetData orig, MessageBuffer self, int start, int length, out int messageType);
+
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            // MessageBuffer.GetData(int, int, out int)（实例，返回 void，第三参 out）
+            HookRegistry.Add(MethodLookup.Instance(typeof(MessageBuffer), "GetData", typeof(int), typeof(int), typeof(int).MakeByRefType()),
+                (Hook_GetData)GetDataHook);
+        }
+
+        private static void GetDataHook(Orig_GetData orig, MessageBuffer self, int start, int length, out int messageType)
+        {
+            messageType = 0;
+            if (!GetDataPrefix(self, start, length, messageType)) return;
+            orig(self, start, length, out messageType);
+            GetDataPostfix(self, start, length, messageType);
+        }
+
         public static bool GetDataPrefix(MessageBuffer __instance, int start, int length, int messageType)
         {
             messageType = __instance.readBuffer[start];
@@ -87,8 +108,6 @@ namespace tContentPatch.ModPatch
             }
         }
 
-        [HarmonyPatch("GetData")]
-        [HarmonyPostfix]
         public static void GetDataPostfix(MessageBuffer __instance, int start, int length, int messageType)
         {
             messageType = __instance.readBuffer[start];

@@ -33,6 +33,7 @@ namespace TPML.Content
 
             _mods[mod.Name] = mod;
             _instances[mod.GetType()] = mod;
+            Localization.LocalizationLoader.LoadModLocalization(mod);
         }
 
         public static void RegisterContent(ILoadable content)
@@ -140,9 +141,65 @@ namespace TPML.Content
             return _allContent.OfType<T>();
         }
 
-        public static Asset<Texture2D> Request<T>(string name, AssetRequestMode mode = AssetRequestMode.ImmediateLoad) where T : class
+        public static bool TryGetMod(string name, out Mod mod)
         {
-            return Asset<Texture2D>.Empty;
+            mod = null;
+            if (string.IsNullOrEmpty(name)) return false;
+            return _mods.TryGetValue(name, out mod);
+        }
+
+        public static Mod GetMod(string name)
+        {
+            if (TryGetMod(name, out Mod mod)) return mod;
+            return null;
+        }
+
+        public static void PostSetupContent()
+        {
+            foreach (var mod in _mods.Values)
+            {
+                try
+                {
+                    mod.PostSetupContent();
+                }
+                catch (Exception ex)
+                {
+                    ModLoader.Log($"[ModContent] 模组 {mod.Name} PostSetupContent 异常: {ex.Message}");
+                }
+            }
+
+            foreach (var content in _allContent)
+            {
+                if (content is ModType mt)
+                {
+                    try
+                    {
+                        mt.PostSetupContent();
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLoader.Log($"[ModContent] 内容 {mt.FullName} PostSetupContent 异常: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        public static Asset<T> Request<T>(string path, AssetRequestMode mode = AssetRequestMode.ImmediateLoad) where T : class
+        {
+            if (string.IsNullOrEmpty(path)) return Asset<T>.Empty;
+
+            string cleanPath = path.Replace('\\', '/');
+            int slashIdx = cleanPath.IndexOf('/');
+            if (slashIdx > 0)
+            {
+                string modName = cleanPath.Substring(0, slashIdx);
+                string assetName = cleanPath.Substring(slashIdx + 1);
+                if (_mods.TryGetValue(modName, out Mod mod) && mod.Assets != null)
+                {
+                    return mod.Assets.Request<T>(assetName, mode);
+                }
+            }
+            return Asset<T>.Empty;
         }
     }
 }

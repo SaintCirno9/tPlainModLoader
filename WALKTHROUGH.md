@@ -191,5 +191,99 @@
   - 全量解决方案 20 个项目 Release 构建通过，0 警告 0 错误，自动热部署完毕；
   - 实机真实键盘在角色名、世界名和游戏内聊天框中连续输入中文、拼音合成与候选选词均 100% 正常。
 
+---
+
+## 13. M2 引擎全量 MonoMod 迁移与 Item.SetDefaults 原生 IL 织入根治（2026-08-30）
+
+### 13.1 引擎全量 MonoMod 迁移落地
+- **依赖统一**：统一全仓 `Mono.Cecil` 为 0.11.4 版本；`TPML.Content` 与 `tContentPatch` 彻底移除 `Lib.Harmony` 引用，改用 `MonoMod.RuntimeDetour 22.7.31.1`；
+- **集中管理**：引入 `HookRegistry`，集中管理 MonoMod On 风格 Detour 生命周期与统一反注册；
+- **补丁集中重构**：
+  - `ContentHookDispatcher`（16 个动态派发点）与 `Patch_UnifiedInventoryFusion`（19 个背包融合拦截点）全量转换为强类型显式 MonoMod `Hook`；
+  - `tContentPatch` 25 个静态属性 Patch 类全量改写为显式注册；
+  - 仓库模组采用 tML 标准生态的 `On.` 门面（`MMHOOK_Terraria.dll`）机制。
+
+### 13.2 Item.SetDefaults 原生 IL 短路根治
+- **根本原因定位**：原版 `Terraria.Item.SetDefaults` 内部在 `[001E]` 处硬编码了 `if (this.type >= ItemID.Count) this.type = 0;`。过去依赖的运行时 Detour 易受 JIT 内联展开与下游模组 Harmony Patch 覆盖而丢失，导致模组物品 ID 穿透至原版后被强制置 0 变空气；
+- **底层架构根治**：
+  - 在 `ItemLoader` 中增加静态纯纯拦截入口 `OnSetDefaultsPrefix(Item, int)`；
+  - 在 `PrepatcherEngine` 启动引导期，使用纯静态 Cecil 元数据向 `Item.SetDefaults(int, ItemVariant)` 与 `Item.netDefaults(int)` 头部织入原生 IL 短路指令（`ldarg.0; ldarg.1; call OnSetDefaultsPrefix; brfalse.s ...; ret;`）；
+  - 模组物品在进入原版逻辑前即由 `ItemLoader` 完成实体初始化并直接 `ret`，原版清零代码永远不会被执行；原版物品代码 100% 毫无改变地原样执行；
+- **清理冗余代码**：彻底移除了所有调用方（`GiveItem`、`SidecarTools`、`AccessoryBagTools`、`RecipeLoader`、`ModItemSidecarEngine` 等）中所有的临时 `if (item.type != type || item.IsAir)` 兜底代码，恢复纯净原生调用。
+
+### 13.3 实机自动化测试全量回归验收
+- **全量构建**：19 个工程 `dotnet build ...sln -c Release -m /graph` 0 警告 0 错误（~5.5s）；
+- **GABS 实机测试套件验收**：
+  - `test_tpml_sidecar_persistence.py` **10/10 PASS**
+  - `test_tpml_sidecar_containers.py` **9/9 PASS**
+  - `test_tpml_instavator.py` **10/10 PASS**
+  - `test_tpml_accessory_bag.py` **11/11 PASS**
+  - `test_tpml_creative_inventory.py` **PASS**
+  - `test_tpml_recipe_browser.py` **PASS**
+  - `test_tpml_inventory_fusion.py` **12/12 PASS**
+  - `test_tpml_item_containers.py` **10/10 PASS**
+  - `test_tpml_scroll_wheel.py` **PASS**
+- **出口判定**：M2 引擎 MonoMod 迁移与核心回归全量达标，已正式标记为完成。
+
+---
+
+## 14. M3 阶段：TPML.Content tML API 兼容层与资产/本地化引擎补齐（2026-08-30）
+
+### 14.1 核心 tML 兼容性增强（B1–B6）
+- **MonoMod 门面（工作包 A）**：
+  - 新增 `Terraria.ModLoader.MonoModHooks`（支持 `Add` / `Modify` / `RequestNativeAccess`），直连 MonoMod RuntimeDetour 与 HookGen，对齐 tML 门面。
+- **生命周期扩展（B1 & B2）**：
+  - `ModType`、`ModPlayer`、`ModSystem` 扩充无参 `public virtual void Load()` 与 `public virtual void PostSetupContent()`；
+  - `ModType.Load(Mod)` 自动派发 `this.Load()`，完全兼容 tML 风格子类生命周期；
+  - 在 `LoaderControl.OnModLoad_Ok` 触发阶段全域派发 `ModContent.PostSetupContent()`。
+- **Mod 查找与状态（B3）**：
+  - `ModContent` 与 `ModLoader` 扩充 `TryGetMod(string name, out Mod mod)` 与 `GetMod(string name)`。
+- **资产管线（B4）**：
+  - `ModAssetRepository` 与 `ModContent.Request<T>` 真实实现：支持从嵌入资源和模组文件系统中解析 `.png` 与 `.rawimg` 并封装为 `Asset<Texture2D>` 缓存，缺失时安全返回 `Asset<T>.Empty` 并记录日志。
+- **TagCompound 与 Item 序列化层（B5）**：
+  - 在 `TagCompound` 与 `ItemIO` 中实现原版与模组物品无损序列化/反序列化（`ItemIO.Save(item)` / `ItemIO.Load(tag)`）；
+  - `tag.Get<Item>("key")` 能够自动从 JObject 或嵌套 `TagCompound` 中无缝还原 `Item` 实例。
+- **Player.KillMe 派发（B6）**：
+  - `ContentHookDispatcher` 挂钩 `Player.KillMe`，先派发 `ModPlayer.PreKill`（返回 false 则取消死亡），再执行原版死亡逻辑，后派发 `ModPlayer.Kill`。
+
+### 14.2 引擎级 Hjson 本地化自动加载器（工作包 C）
+- **`LocalizationLoader`**：
+  - 自动扫描模组嵌入资源中的 `*.hjson`，支持多层级嵌套、注释与三引号多行字符串；
+  - 自动将翻译词条安全注入到原版 `LanguageManager._localizedTexts` 与 `_categoryGroupedTranslations` 中。
+
+### 14.3 构建与全量实机回归
+- **构建结果**：19 个工程 `dotnet build` 0 警告 0 错误（~7.4s 极速构建）；
+- **实机测试套件**：9 大自动化测试套件（Sidecar、容器、直通车、饰品袋、创造浏览器、合成表、背包融合、药水袋/旗帜盒、滚轮快捷栏）全量回归 **100% PASS**。
+
+---
+
+## 15. M4 阶段：PotionSlots 模组完整移植与自动化实机回归（2026-08-30）
+
+### 15.1 移植与工程架构
+- **新建工程与依赖配置**：
+  - 新建 `tPlainModLoader/tPlainModLoader/TerrariaHooks/TerrariaHooks.csproj`（提供 MonoMod HookGen `On_Player.QuickHeal_GetItemToUse` 与 `QuickMana_GetItemToUse` 门面）；
+  - 新建 `tPlainModLoader/Mods/PotionSlots/PotionSlots/PotionSlots.csproj`（引用 `TerrariaHooks`、`tContentPatch`、`TPML.Content`，不依赖 `Lib.Harmony`）；
+  - 自动部署：配置 `[DeployToGameDir]` Target，Release 构建时自动将二进制与元数据发布至 `tPlainModLoader\Mods\PotionSlots\`。
+- **引擎自动发现与生命周期激活**：
+  - 在 `ContentHost.Register` 中增强了对程序集内部所有非抽象 `ILoadable`（`ModPlayer`、`ModSystem`、`ModItem`）的自动反射发现与 `mod.AddContent` 注册；
+  - 使 `PotionStoragePlayer.Load()` 与 `UILoader.Load()` 能够在模组启动期被自动激活，完成 MonoMod 事件订阅与 UI 图层注册。
+
+### 15.2 源码清理与兼容适配对比
+- **强类型零反射对齐**：通过 `Krafs.Publicizer` 与 `TerrariaHooks`，所有原版方法与钩子均采用强类型调用；
+- **鼠标事件裁剪**：裁剪了原版 `UIElement` 中不存在的 `XButton1/2` 与 `MiddleClick` 虚方法重写，保持原版 XNA/UI 管道稳定；
+- **死亡掉落物品签名**：使用原版 `Item.NewItem(Player.GetSource_Misc("PlayerDeath"), Player.position, item.type, item.stack)` 替代重载不匹配的临时参数。
+
+### 15.3 自动化实机测试与回归结果
+- **全量构建验证**：全量 21 个工程构建耗时 4.22s，0 警告 0 错误；
+- **PotionSlots 专用回归测试套件 (`tpml/test_potion_slots`)**：**5/5 项全部 PASS**
+  1. `1. 槽位赋值`：成功初始化 `lifeSlot(10)`、`manaSlot(15)`、`wormholeSlot(5)`；
+  2. `2. QuickHeal 钩子消耗与治疗`：血量 20 -> 70，槽位药水由 10 消耗至 9；
+  3. `3. QuickMana 钩子消耗与回蓝`：魔力 0 -> 20，槽位魔力药水由 15 消耗至 14；
+  4. `4. OnPickup 自动拾取合并`：拾取药水后槽位自动补齐至 12，拾取物品归 0；
+  5. `5. TagCompound 存档序列化/反序列化`：槽位数据在内存与 TagCompound 转换中 100% 保真恢复；
+- **历史套件全量回归**：全域 10 大测试套件（Sidecar 存取、Instavator、AccessoryBag、Creative 背包、RecipeBrowser、背包融合、ItemContainers、滚轮模拟）**100% 全部通过**。
+
+
+
 
 

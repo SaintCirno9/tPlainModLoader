@@ -223,7 +223,8 @@ namespace RecipeBrowser
                 {
                     if (modItem == null || modItem.Type <= 0) continue;
                     Item item = new Item();
-                    item.SetDefaults(modItem.Type);
+                    item.type = modItem.Type;
+                    TPML.Content.ItemLoader.SetDefaults(item);
                     if (item.type != 0)
                     {
                         itemSlots.Add(new UIItemCatalogueItemSlot(item));

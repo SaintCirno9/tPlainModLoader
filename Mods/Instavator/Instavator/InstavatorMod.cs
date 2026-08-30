@@ -85,6 +85,9 @@ namespace Instavator
     /// </summary>
     public class InstavatorMod : TPML.Content.Mod
     {
+        public override string Name => "Instavator";
+        public override string DisplayName => "地狱直通车 (Instavator)";
+
         public override void Load()
         {
             try

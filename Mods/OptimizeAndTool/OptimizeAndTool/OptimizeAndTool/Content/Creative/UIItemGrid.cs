@@ -47,28 +47,22 @@ namespace OptimizeAndTool.Content.Creative
             ItemSlot.Draw(spriteBatch, ref _item, _itemSlotContext, position);
         }
 
-        private bool IsOverflowHidden(Terraria.UI.UIElement uie, Terraria.UI.UIElement parent, float offx = 0, float offy = 0)
+        private bool IsOverflowHidden(Terraria.UI.UIElement uie, Terraria.UI.UIElement parent)
         {
-            if (uie == null) return false;
-            if (parent == null) return false;
+            if (uie == null || parent == null) return false;
 
             if (parent.OverflowHidden)
             {
-                Rectangle parentR = parent.GetInnerDimensions().ToRectangle();
+                Rectangle parentRect = parent.GetInnerDimensions().ToRectangle();
+                Rectangle elementRect = uie.GetDimensions().ToRectangle();
 
-                float uiex = uie.Left.Pixels + offx;
-                float uiey = uie.Top.Pixels + offy;
-
-                if (parentR.Width <= uiex) return true;
-                if (parentR.Height <= uiey) return true;
-                if (0 >= uiex + uie.Width.Pixels) return true;
-                if (0 >= uiey + uie.Height.Pixels) return true;
+                if (!parentRect.Intersects(elementRect))
+                {
+                    return true;
+                }
             }
 
-            offx += parent.Left.Pixels;
-            offy += parent.Top.Pixels;
-
-            return IsOverflowHidden(uie, parent.Parent, offx, offy);
+            return parent.Parent != null && IsOverflowHidden(uie, parent.Parent);
         }
     }
 }

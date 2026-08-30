@@ -252,8 +252,8 @@ namespace TPMLBridge.GABP.Tools
                     int afterArmorDef = player.statDefense;
                     armorDefDelta = afterArmorDef - beforeArmorDef;
 
-                    // 叶绿面具(25) + 胸甲(20) + 护腿(13) = +58 防御
-                    armorStatsPassed = (armorDefDelta >= 58);
+                    // 叶绿面具(25) + 胸甲(18) + 护腿(13) = +56 防御
+                    armorStatsPassed = (armorDefDelta >= 56);
                     // 套装激活检查：setChlorophyte == true 且获得 Buff 60 (Leaf Crystal)
                     armorSetPassed = player.setChlorophyte;
 

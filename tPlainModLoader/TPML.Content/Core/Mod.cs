@@ -45,11 +45,11 @@ namespace TPML.Content
         {
         }
 
-        public virtual void Unload()
+        public virtual void PostSetupContent()
         {
         }
 
-        public virtual void PostSetupContent()
+        public virtual void Unload()
         {
         }
 

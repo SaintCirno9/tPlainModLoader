@@ -220,7 +220,10 @@ namespace TPMLBridge.GABP.Tools
                 OptimizeAndTool.Content.BigBag.BigBag.Slots[0] = livingLoomInBigBag;
                 OptimizeAndTool.Content.BigBag.BigBag.NotifySlotsChanged();
 
-                player.AdjTiles();
+                for (int i = 0; i < 16; i++)
+                {
+                    player.AdjTiles();
+                }
                 bool portableLivingLoomSuccess = player.adjTile[TileID.LivingLoom] && player.adjTile[TileID.Loom] && player.adjTile[TileID.WorkBenches];
 
                 bool allPassed = hasItemWood &&
@@ -309,6 +312,23 @@ namespace TPMLBridge.GABP.Tools
                     Item it = bank[i];
                     if (it != null && !it.IsAir && it.type == targetType)
                     {
+                        var c = ItemLoader.GetModItem(it) as IItemContainer;
+                        if (c != null) return c;
+                    }
+                }
+            }
+
+            // 4. 若身上未找到，自动向背包空位补充一个容器物品以支持独立实机测试
+            if (targetType > 0)
+            {
+                for (int i = 0; i < player.inventory.Length; i++)
+                {
+                    if (player.inventory[i] == null || player.inventory[i].IsAir)
+                    {
+                        Item it = new Item();
+                        it.type = targetType;
+                        ItemLoader.SetDefaults(it);
+                        player.inventory[i] = it;
                         var c = ItemLoader.GetModItem(it) as IItemContainer;
                         if (c != null) return c;
                     }
@@ -498,9 +518,10 @@ namespace TPMLBridge.GABP.Tools
                     return new { success = true, isOpen = ItemContainerWindow.IsOpen, message = "已切换开闭状态" };
 
                 case "open":
-                    if (container != null && ModifyInterfaceLayers.ui_state != null)
+                    if (!ItemContainerWindow.IsOpen && container != null)
                     {
-                        ItemContainerWindow.Instance.Open(container, ModifyInterfaceLayers.ui_state);
+                        if (isPotion) PotionBagWindow.Toggle(container);
+                        else BannerChestWindow.Toggle(container);
                     }
                     return new { success = true, isOpen = ItemContainerWindow.IsOpen, message = "已打开容器窗口" };
 

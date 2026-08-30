@@ -184,8 +184,70 @@ namespace tPlainModLoader.Prepatcher
             // 4. 在 ReLogic.Native 初始化前保证游戏窗口具备 IMM 输入上下文
             InjectImeContextBootstrap(terrariaAssembly);
 
+            // 5. 织入 Item.SetDefaults 与 Item.netDefaults 原生模组短路分支（根治模组物品类型被原版清零问题）
+            PatchItemSetDefaults(terrariaAssembly);
+
             sw.Stop();
             Logger.Info($"预修补完成 (注入字段: {injectedFieldCount}, 重写访问器: {patchedMethodCount}, 早期补丁: {executedEarlyPatchCount}, 耗时: {sw.ElapsedMilliseconds}ms)");
+        }
+
+        private static void PatchItemSetDefaults(AssemblyDefinition terrariaAssembly)
+        {
+            try
+            {
+                var itemType = terrariaAssembly.MainModule.Types.FirstOrDefault(x => x.FullName == "Terraria.Item");
+                if (itemType == null) return;
+
+                // 纯静态 Cecil 元数据构建，无需 CLR 反射加载目标程序集
+                var tpmlContentRef = terrariaAssembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "TPML.Content");
+                if (tpmlContentRef == null)
+                {
+                    tpmlContentRef = new AssemblyNameReference("TPML.Content", new Version(1, 0, 0, 0));
+                    terrariaAssembly.MainModule.AssemblyReferences.Add(tpmlContentRef);
+                }
+
+                var itemLoaderRef = new TypeReference("TPML.Content", "ItemLoader", terrariaAssembly.MainModule, tpmlContentRef);
+                var hookRef = new MethodReference("OnSetDefaultsPrefix", terrariaAssembly.MainModule.TypeSystem.Boolean, itemLoaderRef)
+                {
+                    HasThis = false
+                };
+                hookRef.Parameters.Add(new ParameterDefinition("item", Mono.Cecil.ParameterAttributes.None, itemType));
+                hookRef.Parameters.Add(new ParameterDefinition("type", Mono.Cecil.ParameterAttributes.None, terrariaAssembly.MainModule.TypeSystem.Int32));
+
+                // 1. 织入 SetDefaults(int, ItemVariant)
+                foreach (var setDefaults in itemType.Methods.Where(m => m.Name == "SetDefaults" && m.Parameters.Count >= 1 && m.Parameters[0].ParameterType.FullName == "System.Int32"))
+                {
+                    if (!setDefaults.HasBody) continue;
+                    var il = setDefaults.Body.GetILProcessor();
+                    var first = setDefaults.Body.Instructions[0];
+
+                    il.InsertBefore(first, il.Create(OpCodes.Ldarg_0));
+                    il.InsertBefore(first, il.Create(OpCodes.Ldarg_1));
+                    il.InsertBefore(first, il.Create(OpCodes.Call, hookRef));
+                    il.InsertBefore(first, il.Create(OpCodes.Brfalse_S, first));
+                    il.InsertBefore(first, il.Create(OpCodes.Ret));
+                }
+
+                // 2. 织入 netDefaults(int)
+                var netDefaults = itemType.Methods.FirstOrDefault(m => m.Name == "netDefaults" && m.Parameters.Count == 1);
+                if (netDefaults != null && netDefaults.HasBody)
+                {
+                    var il = netDefaults.Body.GetILProcessor();
+                    var first = netDefaults.Body.Instructions[0];
+
+                    il.InsertBefore(first, il.Create(OpCodes.Ldarg_0));
+                    il.InsertBefore(first, il.Create(OpCodes.Ldarg_1));
+                    il.InsertBefore(first, il.Create(OpCodes.Call, hookRef));
+                    il.InsertBefore(first, il.Create(OpCodes.Brfalse_S, first));
+                    il.InsertBefore(first, il.Create(OpCodes.Ret));
+                }
+
+                Logger.Info("★ 成功向 Item.SetDefaults 与 Item.netDefaults 织入底层原生短路拦截 (Cecil Prepatcher)");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"织入 Item.SetDefaults 模组短路异常: {ex.Message}", ex);
+            }
         }
 
         private static void InjectGameWindowDarkener(AssemblyDefinition terrariaAssembly)

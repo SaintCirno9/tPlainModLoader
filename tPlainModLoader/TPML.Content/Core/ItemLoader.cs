@@ -57,8 +57,19 @@ namespace TPML.Content
             try
             {
                 Item sample = new Item();
-                sample.netDefaults(type);
+                sample.type = type;
+                SetDefaults(sample);
                 ContentSamples.ItemsByType[type] = sample;
+
+                if (!string.IsNullOrEmpty(item.FullName))
+                {
+                    ContentSamples.ItemPersistentIdsByNetIds[type] = item.FullName;
+                    ContentSamples.ItemNetIdsByPersistentIds[item.FullName] = type;
+                    if (!string.IsNullOrEmpty(item.Name) && !ContentSamples.ItemNetIdsByPersistentIds.ContainsKey(item.Name))
+                    {
+                        ContentSamples.ItemNetIdsByPersistentIds[item.Name] = type;
+                    }
+                }
             }
             catch { }
 
@@ -369,6 +380,17 @@ namespace TPML.Content
                     item.SetNameOverride(name);
                 }
 
+                string tooltip = GetTooltip(template.Type);
+                if (!string.IsNullOrEmpty(tooltip))
+                {
+                    string[] lines = tooltip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    item.ToolTip = Terraria.UI.ItemTooltip.FromHardcodedText(lines);
+                }
+                else
+                {
+                    item.ToolTip = Terraria.UI.ItemTooltip.None;
+                }
+
                 if (item.stack <= 0)
                 {
                     item.stack = 1;
@@ -381,6 +403,22 @@ namespace TPML.Content
                     try { gItem.SetDefaults(item); } catch (Exception ex) { ModLoader.Log($"[ItemLoader] GlobalItem.SetDefaults 异常: {ex.Message}"); }
                 }
             }
+        }
+
+        /// <summary>
+        /// 原生 SetDefaults IL 拦截入口：由 Prepatcher 织入 Item.SetDefaults 与 Item.netDefaults 头部
+        /// </summary>
+        public static bool OnSetDefaultsPrefix(Item item, int type)
+        {
+            if (item == null) return false;
+            ModItem modItem = GetItem(type);
+            if (modItem == null) return false;
+
+            item.type = type;
+            item.stack = 1;
+            item.prefix = 0;
+            SetDefaults(item);
+            return true;
         }
 
         public static bool? CanUseItem(Item item, Player player)

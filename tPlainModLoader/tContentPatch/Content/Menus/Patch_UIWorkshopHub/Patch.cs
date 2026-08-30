@@ -1,20 +1,51 @@
-using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Linq;
-using System.Reflection;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.Localization;
 using Terraria.UI;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
 {
+    /// <summary>
+    /// 创意工坊中心菜单增强（模组管理器入口，M2 迁移：Harmony → MonoMod）
+    /// </summary>
     internal class Patch
     {
-        [HarmonyPatch(typeof(Main), "OpenResourcePacksMenu")]
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            var main = typeof(Main);
+
+            // Main.OpenResourcePacksMenu(UIState)（静态 void，prefix 返回 false 跳过）
+            HookRegistry.Add(MethodLookup.Static(main, "OpenResourcePacksMenu", typeof(UIState)),
+                (Action<Action<UIState>, UIState>)((orig, uiStateToGoBackTo) =>
+                {
+                    if (!Main_OpenResourcePacksMenu.Prefix(uiStateToGoBackTo)) return;
+                    orig(uiStateToGoBackTo);
+                }));
+
+            // Main.DrawMenu(GameTime)（实例，prefix）
+            HookRegistry.Add(MethodLookup.Instance(main, "DrawMenu", typeof(GameTime)),
+                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
+                {
+                    Main_DrawMenu.Prefix(gameTime);
+                    orig(self, gameTime);
+                }));
+
+            // UIWorkshopHub.OnInitialize()（实例，postfix）
+            HookRegistry.Add(typeof(UIWorkshopHub).GetMethod("OnInitialize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic),
+                (Action<Action<UIWorkshopHub>, UIWorkshopHub>)((orig, self) =>
+                {
+                    orig(self);
+                    GameContent_UI_States_UIWorkshopHub_OnInitialize.Postfix(self);
+                }));
+        }
+
         private class Main_OpenResourcePacksMenu
         {
             internal static bool Prefix(UIState uiStateToGoBackTo)
@@ -30,7 +61,6 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
             }
         }
 
-        [HarmonyPatch(typeof(Main), "DrawMenu")]
         private class Main_DrawMenu
         {
             internal static void Prefix(GameTime gameTime)
@@ -44,7 +74,6 @@ namespace tContentPatch.Content.Menus.Patch_UIWorkshopHub
             }
         }
 
-        [HarmonyPatch(typeof(UIWorkshopHub), "OnInitialize")]
         private class GameContent_UI_States_UIWorkshopHub_OnInitialize
         {
             internal static void Postfix(UIWorkshopHub __instance)

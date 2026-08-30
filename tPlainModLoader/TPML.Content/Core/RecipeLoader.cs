@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Terraria;
 
 namespace TPML.Content
@@ -25,17 +26,29 @@ namespace TPML.Content
 
         public static void SetupRecipes()
         {
-            foreach (var mod in ModContent.Mods)
+            var log = TPML.Core.Logging.LogManager.GetLogger("RecipeLoader");
+            try
             {
-                mod.AddRecipes();
-            }
+                foreach (var mod in ModContent.Mods)
+                {
+                    mod.AddRecipes();
+                }
 
-            foreach (var item in ModContent.GetContent<ModItem>())
+                foreach (var item in ModContent.GetContent<ModItem>())
+                {
+                    item.AddRecipes();
+                }
+
+                // 兜底确保所有注册配方已成功注入原版
+                PostSetupRecipes();
+                var modItems = ModContent.GetContent<ModItem>().ToList();
+                log.Info($"SetupRecipes 完成: Mods={ModContent.Mods.Count}, ModItems={modItems.Count}, 注入配方={_registeredModRecipes.Count}");
+            }
+            catch (Exception ex)
             {
-                item.AddRecipes();
+                log.Error("SetupRecipes 异常", ex);
+                throw;
             }
-
-            PostSetupRecipes();
         }
 
         public static void PostSetupRecipes()
@@ -119,6 +132,14 @@ namespace TPML.Content
             Recipe recipe = new Recipe();
             recipe.createItem = new Item();
             recipe.createItem.SetDefaults(ResultType);
+            // M2 兜底：SetDefaults 钩子若未生效，原版会把 mod ID(>=6200) 当越界清成 type=0，
+            // 此时强制恢复 type 并走引擎 ItemLoader 派发（否则配方产物无效、向导/浏览器搜不到）
+            if (recipe.createItem.type != ResultType || recipe.createItem.IsAir)
+            {
+                recipe.createItem.type = ResultType;
+                recipe.createItem.stack = ResultStack > 0 ? ResultStack : 1;
+                ItemLoader.SetDefaults(recipe.createItem);
+            }
             recipe.createItem.stack = ResultStack > 0 ? ResultStack : 1;
 
             for (int i = 0; i < RequiredItems.Count && i < recipe.requiredItem.Length; i++)

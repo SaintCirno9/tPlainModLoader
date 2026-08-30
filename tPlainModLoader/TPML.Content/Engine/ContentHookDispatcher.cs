@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Items;
 using Terraria.GameInput;
+using Terraria.Localization;
 using Terraria.UI;
 using TPML.Content.UI;
 using TPML.Core.Diagnostics;
@@ -15,11 +15,10 @@ using TPML.Core.Diagnostics;
 namespace TPML.Content.Engine
 {
     /// <summary>
-    /// TPML 原生内容引擎核心 Harmony 钩子分发与生命周期调度器
+    /// TPML 原生内容引擎核心 MonoMod 钩子分发与生命周期调度器（自 Harmony 迁移，M2）
     /// </summary>
     public static class ContentHookDispatcher
     {
-        private static Harmony _harmony;
         private static bool _initialized = false;
         private static bool _patchesApplied = false;
 
@@ -29,10 +28,16 @@ namespace TPML.Content.Engine
 
         private static bool _firstInvDrawLogged = false;
 
+        #region Tooltip 管线自定义委托（原方法含 ref 参数，Action/Func 无法表达）
+
+        private delegate void Orig_TooltipLines(Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors);
+        private delegate void Hook_TooltipLines(Orig_TooltipLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors);
+
+        #endregion
+
         public static void Initialize(string harmonyId = "TPML.Content.HookDispatcher")
         {
             if (_initialized) return;
-            _harmony = new Harmony(harmonyId);
             _initialized = true;
         }
 
@@ -69,7 +74,7 @@ namespace TPML.Content.Engine
             ActiveModSystems.Clear();
             ActiveGlobalItems.Clear();
             TPML.Content.Fusion.InventoryFusionManager.Clear();
-            _harmony?.UnpatchAll(_harmony.Id);
+            HookRegistry.ClearAll();
             _initialized = false;
             _patchesApplied = false;
             _firstInvDrawLogged = false;
@@ -83,8 +88,6 @@ namespace TPML.Content.Engine
 
         private static void ApplyOnDemandPatches()
         {
-            if (_harmony == null) Initialize();
-
             // 自定义物品必须在原版 Item.SetDefaults 入口处短路到 ItemLoader
             PatchItemDefaults();
 
@@ -105,6 +108,7 @@ namespace TPML.Content.Engine
 
             // 1. ModPlayer.PreUpdate & PostUpdate
             PatchPlayerUpdate();
+            PatchPlayerKill();
             PatchInput();
             PatchPlayerPickup();
             PatchUpdateHooks();
@@ -113,18 +117,24 @@ namespace TPML.Content.Engine
             PatchPopupText();
 
             // 框架级全量背包融合系统补丁矩阵 (通用外部容器/魔杖/油漆/HasItem/ConsumeItem)
-            _harmony.CreateClassProcessor(typeof(TPML.Content.Fusion.Patch_UnifiedInventoryFusion)).Patch();
+            TPML.Content.Fusion.Patch_UnifiedInventoryFusion.RegisterAll();
 
             _patchesApplied = true;
         }
+
+        #region Item 系列
 
         private static void PatchItemClone()
         {
             var target = typeof(Item).GetMethod(nameof(Item.Clone), BindingFlags.Instance | BindingFlags.Public);
             if (target != null)
             {
-                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Item_Clone_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                HookRegistry.Add(target, (Func<Func<Item, Item>, Item, Item>)((orig, self) =>
+                {
+                    Item result = orig(self);
+                    Item_Clone_Postfix(self, result);
+                    return result;
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Item.Clone (ModItem 实体克隆与数据保持)");
             }
         }
@@ -137,43 +147,20 @@ namespace TPML.Content.Engine
 
         private static void PatchItemDefaults()
         {
-            var prefixSet = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Item_SetDefaults_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var setDefaults = typeof(Item).GetMethod(
-                nameof(Item.SetDefaults),
-                new[] { typeof(int), typeof(ItemVariant) });
-            if (setDefaults != null)
-            {
-                _harmony.Patch(setDefaults, prefix: new HarmonyMethod(prefixSet));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Item.SetDefaults(int, ItemVariant)");
-            }
-            else
-            {
-                ModLoader.Log("[ContentHookDispatcher] 错误: 未能找到 Item.SetDefaults(int, ItemVariant)!");
-            }
-
-            var prefixNet = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Item_NetDefaults_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var netDefaults = typeof(Item).GetMethod(
-                nameof(Item.netDefaults),
-                new[] { typeof(int) });
-            if (netDefaults != null)
-            {
-                _harmony.Patch(netDefaults, prefix: new HarmonyMethod(prefixNet));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Item.netDefaults(int)");
-            }
+            // Item.SetDefaults 与 Item.netDefaults 已由 Cecil Prepatcher 在启动期织入头部原生短路拦截
+            // (ItemLoader.OnSetDefaultsPrefix)，彻底杜绝 JIT 内联与运行时 Detour 冲突
         }
 
         private static bool Item_SetDefaults_Prefix(Item __instance, int Type)
         {
             var modItem = ItemLoader.GetItem(Type);
             if (modItem == null)
+            {
+                ModLoader.Log($"[SetDefaults-Prefix] type={Type} modItem=NULL -> 走原版");
                 return true;
+            }
 
+            ModLoader.Log($"[SetDefaults-Prefix] type={Type} modItem={modItem.FullName} -> 设type跳过原版");
             __instance.type = Type;
             __instance.stack = 1;
             __instance.prefix = 0;
@@ -188,34 +175,26 @@ namespace TPML.Content.Engine
 
         private static void PatchItemTooltips()
         {
-            var target = typeof(Main).GetMethod(
-                nameof(Main.MouseText_DrawItemTooltip_GetLinesInfo),
-                new[] { typeof(Item), typeof(int).MakeByRefType(), typeof(float), typeof(int).MakeByRefType(), typeof(string[]), typeof(Microsoft.Xna.Framework.Color[]) });
+            var target = MethodLookup.Static(typeof(Main), nameof(Main.MouseText_DrawItemTooltip_GetLinesInfo),
+                typeof(Item), typeof(int).MakeByRefType(), typeof(float), typeof(int).MakeByRefType(), typeof(string[]), typeof(Microsoft.Xna.Framework.Color[]));
             if (target != null)
             {
-                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Main_MouseText_DrawItemTooltip_GetLinesInfo_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                HookRegistry.Add(target, (Hook_TooltipLines)TooltipLinesHook);
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Main.MouseText_DrawItemTooltip_GetLinesInfo (Tooltip 支持)");
             }
+        }
+
+        private static void TooltipLinesHook(Orig_TooltipLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
+        {
+            orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
+            Main_MouseText_DrawItemTooltip_GetLinesInfo_Postfix(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
         }
 
         private static void Main_MouseText_DrawItemTooltip_GetLinesInfo_Postfix(Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Microsoft.Xna.Framework.Color[] lineColors)
         {
             if (item == null || item.IsAir) return;
 
-            var modItem = ItemLoader.GetItem(item.type);
-            string baseTip = ItemLoader.GetTooltip(item.type);
-
             var list = new List<TooltipLine>();
-            if (!string.IsNullOrEmpty(baseTip))
-            {
-                var lines = baseTip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    list.Add(new TooltipLine(modItem?.Mod ?? null, $"Tooltip{i}", lines[i]));
-                }
-            }
-
             ItemLoader.ModifyTooltips(item, list);
 
             foreach (var line in list)
@@ -234,18 +213,19 @@ namespace TPML.Content.Engine
 
         private static void PatchItemShoot()
         {
-            var target = typeof(Player).GetMethod(
-                nameof(Player.ItemCheck_Shoot),
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            var target = MethodLookup.Instance(typeof(Player), nameof(Player.ItemCheck_Shoot), typeof(int), typeof(Item), typeof(int), typeof(bool));
             if (target != null)
             {
-                var prefix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_ItemCheck_Shoot_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+                HookRegistry.Add(target, (Action<Action<Player, int, Item, int, bool>, Player, int, Item, int, bool>)((orig, self, i, sItem, weaponDamage, withAudioVisualFeedback) =>
+                {
+                    if (!Player_ItemCheck_Shoot_Prefix(self, i, sItem, weaponDamage)) return;
+                    orig(self, i, sItem, weaponDamage, withAudioVisualFeedback);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_Shoot (物品射击与动作拦截)");
             }
         }
 
-        private static bool Player_ItemCheck_Shoot_Prefix(Player __instance, int i, Item sItem, int weaponDamage, bool withAudioVisualFeedback)
+        private static bool Player_ItemCheck_Shoot_Prefix(Player __instance, int i, Item sItem, int weaponDamage)
         {
             if (sItem == null || sItem.IsAir) return true;
             var modItem = ItemLoader.GetItem(sItem.type);
@@ -270,8 +250,11 @@ namespace TPML.Content.Engine
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (target != null)
             {
-                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_ItemCheck_StartActualUse_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                HookRegistry.Add(target, (Action<Action<Player, Item>, Player, Item>)((orig, self, sItem) =>
+                {
+                    orig(self, sItem);
+                    Player_ItemCheck_StartActualUse_Postfix(self, sItem);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_StartActualUse (物品使用逻辑)");
             }
         }
@@ -289,8 +272,11 @@ namespace TPML.Content.Engine
                 BindingFlags.Instance | BindingFlags.Public);
             if (target != null)
             {
-                var prefix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_ItemCheck_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+                HookRegistry.Add(target, (Action<Action<Player>, Player>)((orig, self) =>
+                {
+                    if (!Player_ItemCheck_Prefix(self)) return;
+                    orig(self);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck (CanUseItem 检查)");
             }
         }
@@ -314,15 +300,70 @@ namespace TPML.Content.Engine
             return true;
         }
 
-        #region Harmony Patches
+        #endregion
+
+        #region MonoMod Hooks
 
         private static void PatchPlayerUpdate()
         {
-            var target = typeof(Player).GetMethod(nameof(Player.Update), new[] { typeof(int) });
-            var prefix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_Update_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
-            var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_Update_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-            _harmony.Patch(target, prefix: new HarmonyMethod(prefix), postfix: new HarmonyMethod(postfix));
+            var target = MethodLookup.Instance(typeof(Player), nameof(Player.Update), typeof(int));
+            HookRegistry.Add(target, (Action<Action<Player, int>, Player, int>)((orig, self, i) =>
+            {
+                Player_Update_Prefix(self, i);
+                orig(self, i);
+                Player_Update_Postfix(self, i);
+            }));
             ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.Update");
+        }
+
+        private static void PatchPlayerKill()
+        {
+            var target = MethodLookup.Instance(typeof(Player), nameof(Player.KillMe), typeof(PlayerDeathReason), typeof(double), typeof(int), typeof(bool));
+            if (target != null)
+            {
+                HookRegistry.Add(target, (Action<Action<Player, PlayerDeathReason, double, int, bool>, Player, PlayerDeathReason, double, int, bool>)((orig, self, damageSource, dmg, hitDirection, pvp) =>
+                {
+                    bool playSound = true;
+                    bool genDust = true;
+                    bool continueKill = true;
+
+                    for (int idx = 0; idx < ActiveModPlayers.Count; idx++)
+                    {
+                        var mp = ActiveModPlayers[idx];
+                        mp.Player = self;
+                        try
+                        {
+                            if (!mp.PreKill(dmg, hitDirection, pvp, ref playSound, ref genDust, ref damageSource))
+                            {
+                                continueKill = false;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ModLoader.Log($"[ContentHookDispatcher] ModPlayer.PreKill 异常: {ex.Message}");
+                        }
+                    }
+
+                    if (!continueKill) return;
+
+                    orig(self, damageSource, dmg, hitDirection, pvp);
+
+                    for (int idx = 0; idx < ActiveModPlayers.Count; idx++)
+                    {
+                        var mp = ActiveModPlayers[idx];
+                        mp.Player = self;
+                        try
+                        {
+                            mp.Kill(dmg, hitDirection, pvp, damageSource);
+                        }
+                        catch (Exception ex)
+                        {
+                            ModLoader.Log($"[ContentHookDispatcher] ModPlayer.Kill 异常: {ex.Message}");
+                        }
+                    }
+                }));
+                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.KillMe (ModPlayer.PreKill/Kill 派发)");
+            }
         }
 
         private static void Player_Update_Prefix(Player __instance, int i)
@@ -382,16 +423,21 @@ namespace TPML.Content.Engine
 
         private static void PatchPlayerPickup()
         {
-            var target = typeof(Player).GetMethod(nameof(Player.GetItem), new[] { typeof(int), typeof(Item), typeof(GetItemSettings) });
+            // 1.4.5.8: Player.GetItem(Item newItem, GetItemSettings settings)（无 plr 参数）
+            var target = MethodLookup.Instance(typeof(Player), nameof(Player.GetItem), typeof(Item), typeof(GetItemSettings));
             if (target != null)
             {
-                var prefix = typeof(ContentHookDispatcher).GetMethod(nameof(Player_GetItem_Prefix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+                HookRegistry.Add(target, (Func<Func<Player, Item, GetItemSettings, Item>, Player, Item, GetItemSettings, Item>)((orig, self, newItem, settings) =>
+                {
+                    Item result = null;
+                    if (!Player_GetItem_Prefix(self, newItem, settings, ref result)) return result;
+                    return orig(self, newItem, settings);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.GetItem (OnPickup)");
             }
         }
 
-        private static bool Player_GetItem_Prefix(Player __instance, int plr, Item newItem, GetItemSettings settings, ref Item __result)
+        private static bool Player_GetItem_Prefix(Player __instance, Item newItem, GetItemSettings settings, ref Item __result)
         {
             if (__instance != Main.LocalPlayer || newItem == null || newItem.IsAir) return true;
 
@@ -418,8 +464,11 @@ namespace TPML.Content.Engine
         private static void PatchInput()
         {
             var target = typeof(PlayerInput).GetMethod(nameof(PlayerInput.UpdateInput), BindingFlags.Static | BindingFlags.Public);
-            var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(PlayerInput_UpdateInput_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-            _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+            HookRegistry.Add(target, (Action<Action>)(orig =>
+            {
+                orig();
+                PlayerInput_UpdateInput_Postfix();
+            }));
             ModLoader.Log("[ContentHookDispatcher] 已挂钩 PlayerInput.UpdateInput");
         }
 
@@ -435,11 +484,15 @@ namespace TPML.Content.Engine
 
         private static void PatchUpdateHooks()
         {
-            var target = typeof(Main).GetMethod("UpdateUIStates", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            // 1.4.5.8 中 Main.UpdateUIStates 为静态方法
+            var target = typeof(Main).GetMethod("UpdateUIStates", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (target != null)
             {
-                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Main_UpdateUIStates_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                HookRegistry.Add(target, (Action<Action<GameTime>, GameTime>)((orig, gameTime) =>
+                {
+                    orig(gameTime);
+                    Main_UpdateUIStates_Postfix(gameTime);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Main.UpdateUIStates");
             }
         }
@@ -479,8 +532,11 @@ namespace TPML.Content.Engine
             var target = typeof(Main).GetMethod("SetupDrawInterfaceLayers", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (target != null)
             {
-                var postfix = typeof(ContentHookDispatcher).GetMethod(nameof(Main_SetupDrawInterfaceLayers_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
-                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                HookRegistry.Add(target, (Action<Action<Main>, Main>)((orig, self) =>
+                {
+                    orig(self);
+                    Main_SetupDrawInterfaceLayers_Postfix();
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Main.SetupDrawInterfaceLayers (原生图层管道接入)");
             }
             else
@@ -533,55 +589,51 @@ namespace TPML.Content.Engine
 
         private static void PatchLang()
         {
-            var prefixGetItemNameValue = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Lang_GetItemNameValue_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var getItemNameValue = typeof(Lang).GetMethod(
-                nameof(Lang.GetItemNameValue),
-                new[] { typeof(int) });
+            var getItemNameValue = MethodLookup.Static(typeof(Lang), nameof(Lang.GetItemNameValue), typeof(int));
             if (getItemNameValue != null)
             {
-                _harmony.Patch(getItemNameValue, prefix: new HarmonyMethod(prefixGetItemNameValue));
+                HookRegistry.Add(getItemNameValue, (Func<Func<int, string>, int, string>)((orig, id) =>
+                {
+                    string result = null;
+                    if (!Lang_GetItemNameValue_Prefix(id, ref result)) return result;
+                    return orig(id);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Lang.GetItemNameValue(int)");
             }
 
-            var prefixGetItemName = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Lang_GetItemName_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var getItemName = typeof(Lang).GetMethod(
-                nameof(Lang.GetItemName),
-                new[] { typeof(int) });
+            var getItemName = MethodLookup.Static(typeof(Lang), nameof(Lang.GetItemName), typeof(int));
             if (getItemName != null)
             {
-                _harmony.Patch(getItemName, prefix: new HarmonyMethod(prefixGetItemName));
+                HookRegistry.Add(getItemName, (Func<Func<int, LocalizedText>, int, LocalizedText>)((orig, id) =>
+                {
+                    LocalizedText result = null;
+                    if (!Lang_GetItemName_Prefix(id, ref result)) return result;
+                    return orig(id);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Lang.GetItemName(int)");
             }
 
-            var prefixGetPrefixed = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Lang_GetPrefixedItemName_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var getPrefixedItemName = typeof(Lang).GetMethod(
-                nameof(Lang.GetPrefixedItemName),
-                new[] { typeof(int), typeof(int) });
+            var getPrefixedItemName = MethodLookup.Static(typeof(Lang), nameof(Lang.GetPrefixedItemName), typeof(int), typeof(int));
             if (getPrefixedItemName != null)
             {
-                _harmony.Patch(getPrefixedItemName, prefix: new HarmonyMethod(prefixGetPrefixed));
+                HookRegistry.Add(getPrefixedItemName, (Func<Func<int, int, string>, int, int, string>)((orig, id, prefixType) =>
+                {
+                    string result = null;
+                    if (!Lang_GetPrefixedItemName_Prefix(id, prefixType, ref result)) return result;
+                    return orig(id, prefixType);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Lang.GetPrefixedItemName(int, int)");
             }
 
-            var prefixGetTooltip = typeof(ContentHookDispatcher).GetMethod(
-                nameof(Lang_GetTooltip_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var getTooltip = typeof(Lang).GetMethod(
-                nameof(Lang.GetTooltip),
-                new[] { typeof(int) });
+            var getTooltip = MethodLookup.Static(typeof(Lang), nameof(Lang.GetTooltip), typeof(int));
             if (getTooltip != null)
             {
-                _harmony.Patch(getTooltip, prefix: new HarmonyMethod(prefixGetTooltip));
+                HookRegistry.Add(getTooltip, (Func<Func<int, ItemTooltip>, int, ItemTooltip>)((orig, itemId) =>
+                {
+                    ItemTooltip result = null;
+                    if (!Lang_GetTooltip_Prefix(itemId, ref result)) return result;
+                    return orig(itemId);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Lang.GetTooltip(int)");
             }
         }
@@ -644,7 +696,8 @@ namespace TPML.Content.Engine
                 }
                 else
                 {
-                    __result = new ItemTooltip(tip.Split('\n'));
+                    string[] lines = tip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    __result = ItemTooltip.FromHardcodedText(lines);
                 }
                 return false;
             }
@@ -653,29 +706,26 @@ namespace TPML.Content.Engine
 
         private static void PatchPopupText()
         {
-            var prefixNewText = typeof(ContentHookDispatcher).GetMethod(
-                nameof(PopupText_NewText_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var newTextMethod = typeof(PopupText).GetMethod(
-                nameof(PopupText.NewText),
-                new[] { typeof(PopupTextContext), typeof(Item), typeof(Vector2), typeof(int), typeof(bool), typeof(bool) });
+            var newTextMethod = MethodLookup.Static(typeof(PopupText), nameof(PopupText.NewText), typeof(PopupTextContext), typeof(Item), typeof(Vector2), typeof(int), typeof(bool), typeof(bool));
             if (newTextMethod != null)
             {
-                _harmony.Patch(newTextMethod, prefix: new HarmonyMethod(prefixNewText));
+                HookRegistry.Add(newTextMethod, (Func<Func<PopupTextContext, Item, Vector2, int, bool, bool, int>, PopupTextContext, Item, Vector2, int, bool, bool, int>)((orig, context, newItem, position, stack, noStack, longText) =>
+                {
+                    if (!PopupText_NewText_Prefix(context, newItem, position, stack, noStack, longText)) return 0;
+                    return orig(context, newItem, position, stack, noStack, longText);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 PopupText.NewText(PopupTextContext, Item, Vector2, int, bool, bool)");
             }
 
-            var prefixUpdate = typeof(ContentHookDispatcher).GetMethod(
-                nameof(PopupText_Update_Prefix),
-                BindingFlags.Static | BindingFlags.NonPublic);
-
-            var updateMethod = typeof(PopupText).GetMethod(
-                nameof(PopupText.Update),
-                new[] { typeof(int) });
+            // PopupText.Update(int) 为实例方法
+            var updateMethod = MethodLookup.Instance(typeof(PopupText), nameof(PopupText.Update), typeof(int));
             if (updateMethod != null)
             {
-                _harmony.Patch(updateMethod, prefix: new HarmonyMethod(prefixUpdate));
+                HookRegistry.Add(updateMethod, (Action<Action<PopupText, int>, PopupText, int>)((orig, self, whoAmI) =>
+                {
+                    if (!PopupText_Update_Prefix(whoAmI)) return;
+                    orig(self, whoAmI);
+                }));
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 PopupText.Update(int) [空引用终极防护]");
             }
         }

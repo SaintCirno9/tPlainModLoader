@@ -95,8 +95,20 @@ namespace TPMLBridge.GABP.Tools
 
         public static object TestInstavator()
         {
-            const int firstInstavatorId = 6200;
-            const int lastInstavatorId = 6202;
+            // M2：不再硬编码 6200-6202（FishingMachine 占 6200 后 ID 漂移），按显示名动态扫描直通车系列
+            int firstInstavatorId = int.MaxValue;
+            int lastInstavatorId = -1;
+            foreach (ModItem modItem in ItemLoader.Items)
+            {
+                if (modItem == null) continue;
+                string nm = ToolHelpers.GetItemDisplayName(modItem.Type) ?? "";
+                if (nm.Contains("直通车") || modItem.Name.Contains("Instavator"))
+                {
+                    if (modItem.Type < firstInstavatorId) firstInstavatorId = modItem.Type;
+                    if (modItem.Type > lastInstavatorId) lastInstavatorId = modItem.Type;
+                }
+            }
+            if (lastInstavatorId < 0) { firstInstavatorId = 6200; lastInstavatorId = 6203; } // 兜底
             var items = new List<object>();
             var itemTypes = new HashSet<int>();
 

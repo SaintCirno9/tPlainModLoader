@@ -59,6 +59,43 @@ namespace TPML.Content
                 Logger.Error($"内容模组 Load 失败: {mod.Name}", ex);
             }
 
+            // 自动扫描程序集中的所有 ILoadable 内容并注册（如 ModPlayer, ModSystem, ModItem）
+            if (mod.Code != null)
+            {
+                Type[] types = null;
+                try
+                {
+                    types = mod.Code.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    types = ex.Types.Where(t => t != null).ToArray();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"模组 [{mod.Name}] 扫描内容类型异常: {ex.Message}");
+                }
+
+                if (types != null)
+                {
+                    foreach (var type in types)
+                    {
+                        if (type.IsClass && !type.IsAbstract && typeof(ILoadable).IsAssignableFrom(type) && !typeof(Mod).IsAssignableFrom(type))
+                        {
+                            try
+                            {
+                                var loadable = (ILoadable)Activator.CreateInstance(type);
+                                mod.AddContent(loadable);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"模组 [{mod.Name}] 注册内容实例 [{type.FullName}] 失败", ex);
+                            }
+                        }
+                    }
+                }
+            }
+
             return mod;
         }
 

@@ -22,12 +22,10 @@ namespace tContentPatch
         /// <summary/>
         public static bool NoPublic = true;
 
-        internal const string patchId_tContentPatch = "tContentPatch.gamePatch";
         internal const string patchId_mod = "tContentPatch.mod.patch";
 
         private static ContentPatch Instance = null;
 
-        private static AddPatch gamePatch = null;
         internal static ModPatch.TypePatch typePatch = null;
 
         private static FieldInfo reflection_Terraria_Main_inRun = null;

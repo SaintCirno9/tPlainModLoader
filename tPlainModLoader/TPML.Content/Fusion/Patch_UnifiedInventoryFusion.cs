@@ -1,21 +1,196 @@
-using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using MonoMod.RuntimeDetour;
 using Terraria;
 using Terraria.GameContent;
+using TPML.Content.Engine;
 
 namespace TPML.Content.Fusion
 {
     /// <summary>
-    /// TPML 框架级全量背包融合底层补丁矩阵：<br/>
+    /// TPML 框架级全量背包融合底层补丁矩阵（自 Harmony 迁移至 MonoMod，M2）：<br/>
     /// 1. 统一拦截 HasItem、CountItem、ConsumeItem 等标准查询与消耗方法，调度已注册的 <see cref="IFusionItemSource"/>；<br/>
     /// 2. 统一拦截经典魔杖（tileWand）、万能魔杖（FlexibleTileWand）、油漆涂料（FindPaintOrCoating）等原版硬编码背包遍历的特殊系统，<br/>
     ///    使生命木魔棒、树叶魔棒、骨头魔棒、蜂巢魔棒、碎石放置器、油漆刷等能够直接使用并消耗外部融合容器中的材料。
     /// 作者: SaintCirno9
     /// </summary>
-    [HarmonyPatch]
     public static class Patch_UnifiedInventoryFusion
     {
+        /// <summary>集中注册全部融合补丁（由 ContentHookDispatcher.ApplyOnDemandPatches 调用）</summary>
+        public static void RegisterAll()
+        {
+            // 1. HasItem 系列
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.HasItem), typeof(int)),
+                (Func<Func<Player, int, bool>, Player, int, bool>)((orig, self, type) =>
+                {
+                    bool result = orig(self, type);
+                    HasItemPostfix(self, type, ref result);
+                    return result;
+                }));
+
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.HasItemInInventoryOrOpenVoidBag), typeof(int)),
+                (Func<Func<Player, int, bool>, Player, int, bool>)((orig, self, type) =>
+                {
+                    bool result = orig(self, type);
+                    HasItemInInventoryOrOpenVoidBagPostfix(self, type, ref result);
+                    return result;
+                }));
+
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.HasItemInAnyInventory), typeof(int)),
+                (Func<Func<Player, int, bool>, Player, int, bool>)((orig, self, type) =>
+                {
+                    bool result = orig(self, type);
+                    HasItemInAnyInventoryPostfix(self, type, ref result);
+                    return result;
+                }));
+
+            // 2. CountItem
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.CountItem), typeof(int), typeof(int)),
+                (Func<Func<Player, int, int, int>, Player, int, int, int>)((orig, self, type, stopCountingAt) =>
+                {
+                    int result = orig(self, type, stopCountingAt);
+                    CountItemPostfix(self, type, stopCountingAt, ref result);
+                    return result;
+                }));
+
+            // 3. ConsumeItem
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.ConsumeItem), typeof(int), typeof(bool), typeof(bool)),
+                (Func<Func<Player, int, bool, bool, bool>, Player, int, bool, bool, bool>)((orig, self, type, reverseOrder, includeVoidBag) =>
+                {
+                    bool result = orig(self, type, reverseOrder, includeVoidBag);
+                    ConsumeItemPostfix(self, type, reverseOrder, includeVoidBag, ref result);
+                    return result;
+                }));
+
+            // 4. 经典魔杖
+            // PlaceThing_Tiles_CheckWandUsability(bool canUse)（实例，返回 bool）
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), nameof(Player.PlaceThing_Tiles_CheckWandUsability)),
+                (Func<Func<Player, bool, bool>, Player, bool, bool>)((orig, self, canUse) =>
+                {
+                    bool result = orig(self, canUse);
+                    PlaceThing_Tiles_CheckWandUsabilityPostfix(self, ref result);
+                    return result;
+                }));
+
+            // ItemCheck_CheckCanUse_Inner(Item, bool ignoreCursed)（实例，返回 bool）
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), nameof(Player.ItemCheck_CheckCanUse_Inner)),
+                (Func<Func<Player, Item, bool, bool>, Player, Item, bool, bool>)((orig, self, sItem, ignoreCursed) =>
+                {
+                    bool result = orig(self, sItem, ignoreCursed);
+                    ItemCheck_CheckCanUse_InnerPostfix(self, sItem, ref result);
+                    return result;
+                }));
+
+            // ItemCheck 前缀+后缀共享 __state
+            HookRegistryAdd(MethodLookup.Instance(typeof(Player), nameof(Player.ItemCheck)),
+                (Action<Action<Player>, Player>)((orig, self) =>
+                {
+                    (bool shouldCheckWand, int wandType, bool hadInInventory) state = default;
+                    ItemCheckPrefix(self, out state);
+                    orig(self);
+                    ItemCheckPostfix(self, state);
+                }));
+
+            // 5. 万能魔杖
+            HookRegistryAdd(GetInstanceMethod(typeof(FlexibleTileWand), nameof(FlexibleTileWand.TryGetPlacementOption)),
+                (Hook_TryGetPlacementOption)TryGetPlacementOptionHook);
+
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), nameof(Player.PlaceThing_Tiles_PlaceIt_ConsumeFlexibleWandMaterial)),
+                (Action<Action<Player>, Player>)((orig, self) =>
+                {
+                    orig(self);
+                    PlaceThing_Tiles_PlaceIt_ConsumeFlexibleWandMaterialPostfix(self);
+                }));
+
+            // 6. 油漆与涂料
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), nameof(Player.FindPaintOrCoating)),
+                (Func<Func<Player, Item>, Player, Item>)((orig, self) =>
+                {
+                    Item result = orig(self);
+                    FindPaintOrCoatingPostfix(self, ref result);
+                    return result;
+                }));
+
+            // ApplyPaint/ApplyCoating(int x, int y, bool paintingAWall, bool applyItemAnimation, Item targetItem)（实例）
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), "ApplyPaint"),
+                (Action<Action<Player, int, int, bool, bool, Item>, Player, int, int, bool, bool, Item>)((orig, self, x, y, paintingAWall, applyItemAnimation, targetItem) =>
+                {
+                    orig(self, x, y, paintingAWall, applyItemAnimation, targetItem);
+                    ApplyPaintPostfix(self);
+                }));
+
+            HookRegistryAdd(GetInstanceMethod(typeof(Player), "ApplyCoating"),
+                (Action<Action<Player, int, int, bool, bool, Item>, Player, int, int, bool, bool, Item>)((orig, self, x, y, paintingAWall, applyItemAnimation, targetItem) =>
+                {
+                    orig(self, x, y, paintingAWall, applyItemAnimation, targetItem);
+                    ApplyCoatingPostfix(self);
+                }));
+
+            // 7. 原版制作系统
+            // Recipe.CollectItemsToCraftWithFrom(Player) 为 private static
+            HookRegistryAdd(GetStaticMethod(typeof(Recipe), nameof(Recipe.CollectItemsToCraftWithFrom)),
+                (Action<Action<Player>, Player>)((orig, player) =>
+                {
+                    orig(player);
+                    CollectItemsToCraftWithFromPostfix(player);
+                }));
+
+            HookRegistryAdd(GetStaticMethod(typeof(CraftingRequests), nameof(CraftingRequests.CanCraftLocally)),
+                (Func<Func<Recipe.RequiredItemEntry, List<Chest>, bool>, Recipe.RequiredItemEntry, List<Chest>, bool>)((orig, req, chests) =>
+                {
+                    bool result = orig(req, chests);
+                    CanCraftLocallyPostfix(req, chests, ref result);
+                    return result;
+                }));
+
+            HookRegistryAdd(GetStaticMethod(typeof(CraftingRequests), nameof(CraftingRequests.Consume)),
+                (Func<Func<Recipe.RequiredItemEntry, List<Chest>, List<Item>, bool, int>, Recipe.RequiredItemEntry, List<Chest>, List<Item>, bool, int>)((orig, req, chests, consumedItems, fromChests) =>
+                {
+                    int result = orig(req, chests, consumedItems, fromChests);
+                    ConsumePostfix(req, chests, consumedItems, fromChests, ref result);
+                    return result;
+                }));
+
+            // CraftingRequests.CraftItem(Recipe, int, bool)（静态）
+            HookRegistryAdd(GetStaticMethod(typeof(CraftingRequests), nameof(CraftingRequests.CraftItem)),
+                (Action<Action<Recipe, int, bool>, Recipe, int, bool>)((orig, recipe, num, flag) =>
+                {
+                    orig(recipe, num, flag);
+                    CraftItemPostfix();
+                }));
+        }
+
+        private static void HookRegistryAdd(MethodBase target, Delegate detour)
+        {
+            if (target == null) throw new MissingMethodException("[Fusion] 目标方法查找失败，请核对游戏版本签名");
+            TPML.Content.Engine.HookRegistry.Add(target, detour);
+        }
+
+        private static MethodInfo GetInstanceMethod(Type type, string name)
+        {
+            return type.GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+
+        private static MethodInfo GetStaticMethod(Type type, string name)
+        {
+            return type.GetMethod(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+
+        #region 万能魔杖自定义委托（原方法含 out 参数）
+
+        private delegate bool Orig_TryGetPlacementOption(FlexibleTileWand self, Player player, int randomSeed, int selectCycleOffset, ref FlexibleTileWand.PlacementOption option, ref Item itemToConsume);
+        private delegate bool Hook_TryGetPlacementOption(Orig_TryGetPlacementOption orig, FlexibleTileWand self, Player player, int randomSeed, int selectCycleOffset, ref FlexibleTileWand.PlacementOption option, ref Item itemToConsume);
+
+        private static bool TryGetPlacementOptionHook(Orig_TryGetPlacementOption orig, FlexibleTileWand self, Player player, int randomSeed, int selectCycleOffset, ref FlexibleTileWand.PlacementOption option, ref Item itemToConsume)
+        {
+            bool result = orig(self, player, randomSeed, selectCycleOffset, ref option, ref itemToConsume);
+            TryGetPlacementOptionPostfix(self, player, randomSeed, selectCycleOffset, ref option, ref itemToConsume, ref result);
+            return result;
+        }
+
+        #endregion
+
         private static bool ShouldFusion(Player player)
         {
             if (player == null || !player.active || player.whoAmI != Main.myPlayer) return false;
@@ -24,8 +199,6 @@ namespace TPML.Content.Fusion
 
         #region 1. HasItem 系列查询拦截
 
-        [HarmonyPatch(typeof(Player), nameof(Player.HasItem), typeof(int))]
-        [HarmonyPostfix]
         private static void HasItemPostfix(Player __instance, int type, ref bool __result)
         {
             if (__result) return;
@@ -37,8 +210,6 @@ namespace TPML.Content.Fusion
             }
         }
 
-        [HarmonyPatch(typeof(Player), nameof(Player.HasItemInInventoryOrOpenVoidBag))]
-        [HarmonyPostfix]
         private static void HasItemInInventoryOrOpenVoidBagPostfix(Player __instance, int type, ref bool __result)
         {
             if (__result) return;
@@ -50,8 +221,6 @@ namespace TPML.Content.Fusion
             }
         }
 
-        [HarmonyPatch(typeof(Player), nameof(Player.HasItemInAnyInventory))]
-        [HarmonyPostfix]
         private static void HasItemInAnyInventoryPostfix(Player __instance, int type, ref bool __result)
         {
             if (__result) return;
@@ -67,8 +236,6 @@ namespace TPML.Content.Fusion
 
         #region 2. CountItem 数量统计拦截
 
-        [HarmonyPatch(typeof(Player), nameof(Player.CountItem), typeof(int), typeof(int))]
-        [HarmonyPostfix]
         private static void CountItemPostfix(Player __instance, int type, int stopCountingAt, ref int __result)
         {
             if (!ShouldFusion(__instance)) return;
@@ -82,8 +249,6 @@ namespace TPML.Content.Fusion
 
         #region 3. ConsumeItem 自动消耗扣除拦截
 
-        [HarmonyPatch(typeof(Player), nameof(Player.ConsumeItem))]
-        [HarmonyPostfix]
         private static void ConsumeItemPostfix(Player __instance, int type, bool reverseOrder, bool includeVoidBag, ref bool __result)
         {
             if (__result) return;
@@ -102,8 +267,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截物块放置时的经典魔杖（生命木魔棒、树叶魔棒、骨头魔棒等）可用性判定
         /// </summary>
-        [HarmonyPatch(typeof(Player), nameof(Player.PlaceThing_Tiles_CheckWandUsability))]
-        [HarmonyPostfix]
         private static void PlaceThing_Tiles_CheckWandUsabilityPostfix(Player __instance, ref bool __result)
         {
             if (__result) return;
@@ -119,8 +282,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截挥动检测中的经典魔杖与漆刷/涂料刷可用性判定
         /// </summary>
-        [HarmonyPatch(typeof(Player), nameof(Player.ItemCheck_CheckCanUse_Inner))]
-        [HarmonyPostfix]
         private static void ItemCheck_CheckCanUse_InnerPostfix(Player __instance, Item sItem, ref bool __result)
         {
             if (__result) return;
@@ -146,8 +307,6 @@ namespace TPML.Content.Fusion
         /// 拦截魔杖挥动放置物块时的消耗逻辑：<br/>
         /// 原版在 ItemCheck 内部硬编码扣除 inventory[0..57]，若背包中无材料而外部融合源中有，在此扣除外部源中的 1 个材料。
         /// </summary>
-        [HarmonyPatch(typeof(Player), nameof(Player.ItemCheck))]
-        [HarmonyPrefix]
         private static void ItemCheckPrefix(Player __instance, out (bool shouldCheckWand, int wandType, bool hadInInventory) __state)
         {
             __state = default;
@@ -172,8 +331,6 @@ namespace TPML.Content.Fusion
             }
         }
 
-        [HarmonyPatch(typeof(Player), nameof(Player.ItemCheck))]
-        [HarmonyPostfix]
         private static void ItemCheckPostfix(Player __instance, (bool shouldCheckWand, int wandType, bool hadInInventory) __state)
         {
             if (!__state.shouldCheckWand) return;
@@ -194,8 +351,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截 1.4.4 万能魔杖（碎石放置器 Rubble Maker、便携式熔炉等）的放置选项与材料匹配
         /// </summary>
-        [HarmonyPatch(typeof(FlexibleTileWand), nameof(FlexibleTileWand.TryGetPlacementOption))]
-        [HarmonyPostfix]
         private static void TryGetPlacementOptionPostfix(FlexibleTileWand __instance, Player player, int randomSeed, int selectCycleOffset, ref FlexibleTileWand.PlacementOption option, ref Item itemToConsume, ref bool __result)
         {
             if (__result) return;
@@ -226,8 +381,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 万能魔杖消耗材料后同步保存外部源数据
         /// </summary>
-        [HarmonyPatch(typeof(Player), nameof(Player.PlaceThing_Tiles_PlaceIt_ConsumeFlexibleWandMaterial))]
-        [HarmonyPostfix]
         private static void PlaceThing_Tiles_PlaceIt_ConsumeFlexibleWandMaterialPostfix(Player __instance)
         {
             if (!ShouldFusion(__instance)) return;
@@ -241,8 +394,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截油漆与涂料查找，使其能识别并使用外部融合源中的油漆
         /// </summary>
-        [HarmonyPatch(typeof(Player), nameof(Player.FindPaintOrCoating))]
-        [HarmonyPostfix]
         private static void FindPaintOrCoatingPostfix(Player __instance, ref Item __result)
         {
             if (__result != null) return;
@@ -255,16 +406,12 @@ namespace TPML.Content.Fusion
             }
         }
 
-        [HarmonyPatch(typeof(Player), "ApplyPaint")]
-        [HarmonyPostfix]
         private static void ApplyPaintPostfix(Player __instance)
         {
             if (!ShouldFusion(__instance)) return;
             InventoryFusionManager.NotifyAllActiveModified(__instance);
         }
 
-        [HarmonyPatch(typeof(Player), "ApplyCoating")]
-        [HarmonyPostfix]
         private static void ApplyCoatingPostfix(Player __instance)
         {
             if (!ShouldFusion(__instance)) return;
@@ -278,8 +425,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截制作系统材料收集：将所有激活的外部融合源（如饰品袋、大背包等）中的未收藏材料累加进 Recipe._ownedItems，并重新计算配方组
         /// </summary>
-        [HarmonyPatch(typeof(Recipe), nameof(Recipe.CollectItemsToCraftWithFrom))]
-        [HarmonyPostfix]
         private static void CollectItemsToCraftWithFromPostfix(Player player)
         {
             if (!ShouldFusion(player)) return;
@@ -304,8 +449,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截本地可制作判定：当背包+箱子材料不足而加上外部融合源满足时，允许本地直接合成
         /// </summary>
-        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.CanCraftLocally))]
-        [HarmonyPostfix]
         private static void CanCraftLocallyPostfix(Recipe.RequiredItemEntry req, List<Chest> chests, ref bool __result)
         {
             if (__result) return;
@@ -339,8 +482,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截制作消耗扣料：原版背包与箱子扣除后若仍有剩余需求，从外部融合源按优先级扣除未收藏材料
         /// </summary>
-        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.Consume))]
-        [HarmonyPostfix]
         private static void ConsumePostfix(Recipe.RequiredItemEntry req, List<Chest> chests, List<Item> consumedItems, bool fromChests, ref int __result)
         {
             if (__result <= 0) return;
@@ -357,8 +498,6 @@ namespace TPML.Content.Fusion
         /// <summary>
         /// 拦截制作完成触发：制作完成后统一触发激活数据源持久化通知
         /// </summary>
-        [HarmonyPatch(typeof(CraftingRequests), nameof(CraftingRequests.CraftItem))]
-        [HarmonyPostfix]
         private static void CraftItemPostfix()
         {
             if (!ShouldFusion(Main.LocalPlayer)) return;

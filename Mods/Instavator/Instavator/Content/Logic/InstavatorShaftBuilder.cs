@@ -15,7 +15,7 @@ namespace Instavator.Content.Logic
     /// </summary>
     public static class InstavatorShaftBuilder
     {
-        private const int MaxCellsPerUpdate = 128;
+        private const int MaxCellsPerUpdate = 512;
         private const int LiquidSettlePasses = 6;
         private static BuildJob _activeJob;
 

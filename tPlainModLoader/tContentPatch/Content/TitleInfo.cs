@@ -1,4 +1,3 @@
-﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.OS;
@@ -9,12 +8,37 @@ using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.UI.Chat;
+using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
+    /// <summary>
+    /// 标题界面信息（版本号与社媒链接，M2 迁移：Harmony → MonoMod）
+    /// </summary>
     internal class TitleInfo
     {
-        [HarmonyPatch(typeof(Main), "DrawSocialMediaButtons")]
+        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        public static void RegisterAll()
+        {
+            var main = typeof(Main);
+
+            // Main.DrawSocialMediaButtons(Color, float)（静态，postfix）
+            HookRegistry.Add(MethodLookup.Static(main, "DrawSocialMediaButtons", typeof(Color), typeof(float)),
+                (Action<Action<Color, float>, Color, float>)((orig, menuColor, upBump) =>
+                {
+                    orig(menuColor, upBump);
+                    MainPatch_DrawSocialMediaButtons.Postfix(menuColor, upBump);
+                }));
+
+            // Main.DrawVersionNumber(Color, float)（静态，postfix）
+            HookRegistry.Add(MethodLookup.Static(main, "DrawVersionNumber", typeof(Color), typeof(float)),
+                (Action<Action<Color, float>, Color, float>)((orig, menuColor, upBump) =>
+                {
+                    orig(menuColor, upBump);
+                    MainPatch_DrawVersionNumber.Postfix(menuColor, upBump);
+                }));
+        }
+
         public class MainPatch_DrawSocialMediaButtons
         {
             private static TitleLinkButton[] buttons = null;
@@ -43,7 +67,6 @@ namespace tContentPatch.Content
             }
         }
 
-        [HarmonyPatch(typeof(Main), "DrawVersionNumber")]
         public class MainPatch_DrawVersionNumber
         {
             internal static void Postfix(Color menuColor, float upBump)

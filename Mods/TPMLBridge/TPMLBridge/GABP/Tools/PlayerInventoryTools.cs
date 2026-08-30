@@ -388,6 +388,12 @@ namespace TPMLBridge.GABP.Tools
 
                 Item overflow = Main.LocalPlayer.GetItem(item, GetItemSettings.QuickTransferFromSlot);
                 int slot = ToolHelpers.FindInventorySlot(itemId);
+                // M2 诊断：定位 give_item 失败（物品进不了背包）
+                if (slot < 0 || (overflow != null && !overflow.IsAir))
+                {
+                    Console.WriteLine($"[GiveItem] 诊断: itemId={itemId} type={item.type} IsAir={item.IsAir} stack={item.stack} overflow={overflow?.stack ?? -1} slot={slot}");
+                    TPML.Content.ModLoader.Log($"[GiveItem] 诊断: itemId={itemId} type={item.type} IsAir={item.IsAir} stack={item.stack} overflow={overflow?.stack ?? -1} slot={slot}");
+                }
                 return new
                 {
                     success = slot >= 0 && (overflow == null || overflow.IsAir),
