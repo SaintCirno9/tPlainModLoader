@@ -53,20 +53,15 @@ namespace Terraria.ModLoader
     public static class MonoModHooks
     {
         public static void Add(System.Reflection.MethodBase target, Delegate hookDelegate)
-        {
-            if (target == null) throw new ArgumentNullException(nameof(target));
-            if (hookDelegate == null) throw new ArgumentNullException(nameof(hookDelegate));
-            TPML.Content.Engine.HookRegistry.Add(target, hookDelegate);
-        }
+            => TPML.Content.Engine.MonoModHooks.Add(target, hookDelegate);
 
-        public static void Modify(System.Reflection.MethodBase target, Delegate hookDelegate)
-        {
-            if (target == null) throw new ArgumentNullException(nameof(target));
-            if (hookDelegate == null) throw new ArgumentNullException(nameof(hookDelegate));
-            MonoMod.RuntimeDetour.HookGen.HookEndpointManager.Modify(target, hookDelegate);
-        }
+        public static void Modify(System.Reflection.MethodBase target, MonoMod.Cil.ILContext.Manipulator callback)
+            => TPML.Content.Engine.MonoModHooks.Modify(target, callback);
 
-        public static void RequestNativeAccess() { }
+        public static void RequestNativeAccess() => TPML.Content.Engine.MonoModHooks.RequestNativeAccess();
+        public static void DumpILHooks() => TPML.Content.Engine.MonoModHooks.DumpILHooks();
+        public static void DumpOnHooks() => TPML.Content.Engine.MonoModHooks.DumpOnHooks();
+        public static void DumpIL(TPML.Content.Mod mod, MonoMod.Cil.ILContext il) => TPML.Content.Engine.MonoModHooks.DumpIL(mod, il);
     }
 
     public static class ItemLoader

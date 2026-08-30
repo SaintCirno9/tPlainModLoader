@@ -15,7 +15,7 @@ namespace OptimizeAndTool.Content.Cheat.Function1
         // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
         public override void Load()
         {
-            On.Terraria.Player.KillMe += (orig, self, damageSource, dmg, hitDirection, pvp) =>
+            On_Player.KillMe += (orig, self, damageSource, dmg, hitDirection, pvp) =>
             {
                 if (self == Main.LocalPlayer && noDead2.val) return; // 跳过（prefix 返回 false）
                 orig(self, damageSource, dmg, hitDirection, pvp);

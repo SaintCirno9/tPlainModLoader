@@ -12,7 +12,7 @@ namespace SuspiciousPlayer.Patch
         // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
         public override void Load()
         {
-            On.Terraria.Player.DropTombstone += (orig, self, coinsOwned, deathText, hitDirection) =>
+            On_Player.DropTombstone += (orig, self, coinsOwned, deathText, hitDirection) =>
             {
                 if (!(OnCanDropTombstone?.Invoke(self) ?? true)) return;
                 orig(self, coinsOwned, deathText, hitDirection);

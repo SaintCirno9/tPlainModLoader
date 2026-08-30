@@ -49,7 +49,7 @@ namespace OptimizeAndTool.Content.Patch
         // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
         public override void Load()
         {
-            On.Terraria.GameContent.UI.Chat.RemadeChatMonitor.AddNewMessage += (orig, self, text, color, widthLimitInPixels) =>
+            Terraria.GameContent.UI.Chat.On_RemadeChatMonitor.AddNewMessage += (orig, self, text, color, widthLimitInPixels) =>
             {
                 AddNewMessagePrefix(ref text, color, widthLimitInPixels); // ref 修改经 lambda 局部传回 orig
                 orig(self, text, color, widthLimitInPixels);

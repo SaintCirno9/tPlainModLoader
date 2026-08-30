@@ -283,6 +283,27 @@
   5. `5. TagCompound 存档序列化/反序列化`：槽位数据在内存与 TagCompound 转换中 100% 保真恢复；
 - **历史套件全量回归**：全域 10 大测试套件（Sidecar 存取、Instavator、AccessoryBag、Creative 背包、RecipeBrowser、背包融合、ItemContainers、滚轮模拟）**100% 全部通过**。
 
+---
+
+## 16. M5 阶段：TPML 全量 HookGen 引擎与 Detour 自动追踪回收架构落地（2026-08-30）
+
+### 16.1 全量自动化 HookGen 生成器 (`TPML.HookGen`)
+- **独立工具工程**：新建 `TPML.HookGen` 控制台工具工程，基于 Cecil 静态扫描原版 `Terraria.exe` 命名空间下的所有类与方法；
+- **强类型事件与委托生成**：自动为每个原版类生成 `orig_` 委托、`hook_` 委托（带 `orig` 参数）、`On.<Namespace>.<Class>.<Method>` 事件（IL 织入 `ldtoken` + `MethodBase.GetMethodFromHandle` + `HookEndpointManager.Add/Remove`）与 `IL.<Namespace>.<Class>.<Method>` 事件（`HookEndpointManager.Modify/Unmodify`）；
+- **对齐 tML 标准命名**：生成类型归属于 `On.<Namespace>` 与 `IL.<Namespace>`（如 `On.Terraria.Player`、`IL.Terraria.Player`），1 秒内全量生成 1305 个类型与 15605 个方法钩子，完全对齐 tModLoader 标准生态。
+
+### 16.2 Detour 运行时生命周期自动追踪与零泄漏回滚 (`MonoModHooks`)
+- **程序集级生命周期维护**：在 `TPML.Content.Engine.MonoModHooks` 中按调用方/定义方 Mod 程序集自动记录持有的 Detour 与 ILHook 列表；
+- **无感自动卸载回滚**：在 `ContentHost.UnloadAll()` 与 `ModLoader.Unload()` 阶段，自动遍历释放所有已注册的 Hook 并重置 `HookEndpointManager` 字典与反射缓存，彻底消除模组未手动 `-=` 解绑时的内存残留与幽灵钩子；
+- **tML 兼容门面**：提供与 tModLoader 完全对齐的 `MonoModHooks.Add` / `Modify` / `DumpOnHooks` / `DumpILHooks` / `DumpIL` 门面。
+
+### 16.3 彻底清理历史遗留项
+- **废弃 HookBinder**：彻底删除旧 `IAddPatch` 动态编译生成器 `HookBinder.cs`，清理 `PatchUtil.cs`；
+- **升级 Mono.Cecil**：全仓统一升级 `Mono.Cecil` 至 0.11.5 版本，对齐最新工具链；
+- **移除旧版 MMHOOK 声明**：从 `Directory.Build.props` 中移除对外部旧 `MMHOOK_Terraria.dll` 的静态引用，通过 `Directory.Build.props` 全局自动引用新架构生成的 `TerrariaHooks.dll`；
+- **全量构建验证**：全量 24 个工程 `dotnet build ...sln -c Release -m -graph` 0 警告 0 错误编译通过并完成自动热部署（~4.9s）。
+
+
 
 
 

@@ -7,6 +7,7 @@
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
     <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
@@ -25,7 +26,22 @@
     </Reference>
   </ItemGroup>
 
-  <Target Name="DeployToGameDir" AfterTargets="Build" Condition="Exists('$(TerrariaDir)')">
+  <ItemGroup>
+    <ProjectReference Include="..\TPML.HookGen\TPML.HookGen.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- 自动调用 TPML.HookGen 扫描原版并生成全量强类型 TerrariaHooks.dll -->
+  <Target Name="GenerateHooks" AfterTargets="CoreCompile" Condition="Exists('$(TerrariaDir)\Terraria.exe')">
+    <PropertyGroup>
+      <HookGenExe>$(MSBuildThisFileDirectory)..\TPML.HookGen\bin\$(Configuration)\net472\TPML.HookGen.exe</HookGenExe>
+    </PropertyGroup>
+    <Exec Command="&quot;$(HookGenExe)&quot; &quot;$(TerrariaDir)\Terraria.exe&quot; &quot;$(TargetPath)&quot;" Condition="Exists('$(HookGenExe)')" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetFileName)" Condition="Exists('$(TargetPath)')" />
+  </Target>
+
+  <Target Name="DeployToGameDir" AfterTargets="Build" DependsOnTargets="GenerateHooks" Condition="Exists('$(TerrariaDir)')">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TerrariaDir)\tPlainModLoader" ContinueOnError="true" />
   </Target>
 

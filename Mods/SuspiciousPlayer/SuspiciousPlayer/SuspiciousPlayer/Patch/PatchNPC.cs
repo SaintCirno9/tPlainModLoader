@@ -10,7 +10,7 @@ namespace SuspiciousPlayer.Patch
         // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
         public override void Load()
         {
-            On.Terraria.NPC.NewNPC += (orig, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target) =>
+            On_NPC.NewNPC += (orig, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target) =>
             {
                 if (!CanSpawn(Type)) return -1;
                 return orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);

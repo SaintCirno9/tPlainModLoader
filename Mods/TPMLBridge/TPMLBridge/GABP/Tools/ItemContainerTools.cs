@@ -340,6 +340,7 @@ namespace TPMLBridge.GABP.Tools
 
         public static object TestItemContainers()
         {
+            Player player = Main.LocalPlayer;
             var result = new Dictionary<string, object>();
 
             // 1. 物品注册与材质检测
@@ -477,6 +478,12 @@ namespace TPMLBridge.GABP.Tools
             };
 
             // 4. 无尽增益与旗帜状态
+            InfinitePotionAndBuff.ResetScanCache();
+            if (player != null && player.active)
+            {
+                InfinitePotionAndBuff.UpdateBuffsPrefix(player);
+            }
+
             result["buffState"] = new
             {
                 activeInfiniteBuffs = InfinitePotionAndBuff.ActiveInfiniteBuffs.ToList(),

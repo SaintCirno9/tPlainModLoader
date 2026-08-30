@@ -25,6 +25,7 @@ namespace TPML.Content
         public static void Initialize()
         {
             if (_initialized) return;
+            MonoModHooks.Initialize();
             ContentHookDispatcher.Initialize();
             _initialized = true;
         }
@@ -200,6 +201,7 @@ namespace TPML.Content
 
             try
             {
+                MonoModHooks.Clear();
                 ContentHookDispatcher.Clear();
                 RecipeLoader.Clear();
                 ModPlayerExtensions.ClearInstances();

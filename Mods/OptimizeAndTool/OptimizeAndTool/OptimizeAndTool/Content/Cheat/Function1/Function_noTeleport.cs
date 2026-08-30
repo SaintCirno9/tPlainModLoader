@@ -19,7 +19,7 @@ namespace OptimizeAndTool.Content.Cheat.Function1
         // M2：弃用 IAddPatch，改用 MonoMod.HookGen 的 On_ 门面（tML 标准做法）
         public override void Load()
         {
-            On.Terraria.Player.Teleport += (orig, self, newPos, Style, extraInfo) =>
+            On_Player.Teleport += (orig, self, newPos, Style, extraInfo) =>
             {
                 if (self == Main.LocalPlayer && noTeleport.val) return; // 跳过（prefix 返回 false）
                 orig(self, newPos, Style, extraInfo);

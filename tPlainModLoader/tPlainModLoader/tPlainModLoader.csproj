@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\tContentPatch\tContentPatch.csproj" />
     <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />

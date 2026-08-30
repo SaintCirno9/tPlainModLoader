@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using TPML.Core.Logging;
 
 namespace tContentPatch.Patch
 {
@@ -12,36 +13,21 @@ namespace tContentPatch.Patch
     }
 
     /// <summary>
-    /// IAddPatch 补丁注册后端（M2 迁移：Harmony → MonoMod）。
-    /// API 签名保持与迁移前一致，仓库 Mods 使用方无感。
+    /// 旧 IAddPatch 补丁注册兼容后端门面（HookBinder 已彻底移除，补丁已全量改用显式注册与 MonoMod 门面）。
     /// </summary>
     internal static class PatchUtil
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("PatchUtil");
         private static readonly Dictionary<string, List<IDisposable>> patchMap = new Dictionary<string, List<IDisposable>>(StringComparer.Ordinal);
 
         internal static void AddPatch(string patchId, MethodBase original, MethodInfo method, HarmonyPatchType harmonyPatchType)
         {
-            if (patchId == null) throw new ArgumentNullException(nameof(patchId));
-            if (original == null) throw new ArgumentNullException(nameof(original));
-            if (method == null) throw new ArgumentNullException(nameof(method));
-
-            IDisposable hook = harmonyPatchType == HarmonyPatchType.Prefix
-                ? HookBinder.CreateHook(original, method, null)
-                : HookBinder.CreateHook(original, null, method);
-
-            if (!patchMap.TryGetValue(patchId, out var list))
-            {
-                list = new List<IDisposable>();
-                patchMap[patchId] = list;
-            }
-            list.Add(hook);
+            Logger.Warn($"[PatchUtil] AddPatch({patchId}, {original?.Name}) 被调用：IAddPatch 已废弃，请改用显式 MonoMod Hook 或 TerrariaHooks 门面");
         }
 
         internal static void AllPatch(string patchId)
         {
-            // M2: PatchAll 属性扫描已废弃，引擎补丁改为各补丁类的显式 RegisterAll() 注册；
-            // 保留空实现以兼容旧调用链。
-            TPML.Core.Logging.LogManager.GetLogger("PatchUtil").Info("[PatchUtil] AllPatch 已由显式注册替代，忽略调用");
+            Logger.Info("[PatchUtil] AllPatch 已由显式注册替代，忽略调用");
         }
 
         internal static void AddPatchPrefix(string patchId, MethodBase original, MethodInfo prefix)
@@ -69,7 +55,8 @@ namespace tContentPatch.Patch
 
         internal static object GetHarmony(string patchId)
         {
-            return null; // 兼容旧调用：Harmony 实例已不存在
+            return null;
         }
     }
 }
+
