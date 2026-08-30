@@ -82,19 +82,11 @@ namespace tContentPatch.ModPatch
                     orig(self, coinsOwned, deathText, hitDirection);
                 }));
 
-            // Player.AdjTiles()（优先原版与下游补丁链路，异常时安全兜底接管）
+            // Player.AdjTiles()（全量安全接管图格扫描，彻底杜绝天顶/颠倒世界空图格 NRE 与越界中断）
             HookRegistry.Add(GetInstance(player, "AdjTiles"),
                 (Action<Action<Player>, Player>)((orig, self) =>
                 {
-                    try
-                    {
-                        orig(self);
-                    }
-                    catch (Exception ex)
-                    {
-                        LogManager.GetLogger("PlayerPatch").Warn($"[AdjTiles] 原版图格扫描异常，启用框架安全兜底: {ex.Message}");
-                        AdjTilesPrefix(self);
-                    }
+                    AdjTilesPrefix(self);
                 }));
         }
 
@@ -202,18 +194,13 @@ namespace tContentPatch.ModPatch
                 Rectangle tileRegion = TileReachCheckSettings.Simple.GetTileRegion(__instance, __instance.ateArtisanBread ? 4 : 0);
                 tileRegion = WorldUtils.ClampToWorld(tileRegion);
 
-                int nullTileCount = 0;
                 for (int x = tileRegion.Left; x <= tileRegion.Right; x++)
                 {
                     for (int y = tileRegion.Top; y <= tileRegion.Bottom; y++)
                     {
                         if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY) continue;
                         Tile tile = Main.tile[x, y];
-                        if (tile == null)
-                        {
-                            nullTileCount++;
-                            continue;
-                        }
+                        if (tile == null) continue;
 
                         if (tile.active())
                         {
@@ -238,11 +225,6 @@ namespace tContentPatch.ModPatch
                             __instance.adjLava = true;
                         }
                     }
-                }
-
-                if (nullTileCount > 0)
-                {
-                    LogManager.GetLogger("PlayerPatch").Warn($"[AdjTiles 诊断] 在玩家周围扫描区域 ({tileRegion.Left},{tileRegion.Top})-({tileRegion.Right},{tileRegion.Bottom}) 发现 {nullTileCount} 个 null 空图格对象，已安全忽略防止闪退。");
                 }
 
                 return false; // 安全接管，阻止原版易崩代码执行

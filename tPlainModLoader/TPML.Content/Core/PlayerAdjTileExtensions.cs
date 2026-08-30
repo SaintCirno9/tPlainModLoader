@@ -39,19 +39,29 @@ namespace TPML.Content
         }
 
         /// <summary>
-        /// 安全调用原版 SetAdjTile 并递归向下兼任低阶制作站（带越界与 null 保护）
+        /// 安全设置玩家制作站图格标志，并自动递归向下兼任低阶制作站（带越界、null 保护与炼金桌环境识别）
         /// </summary>
         public static void SafeSetAdjTileWithEquivalents(this Player player, int tileType)
         {
             if (player?.adjTile == null) return;
             if (tileType < 0 || tileType >= player.adjTile.Length) return;
-            try
+
+            player.adjTile[tileType] = true;
+            if (tileType == 355 || tileType == 699)
             {
-                player.SetAdjTile(tileType);
+                player.alchemyTable = true;
             }
-            catch
+
+            if (Recipe.TileCountsAs != null && tileType < Recipe.TileCountsAs.Length)
             {
-                player.adjTile[tileType] = true;
+                var list = Recipe.TileCountsAs[tileType];
+                if (list != null)
+                {
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        player.SafeSetAdjTileWithEquivalents(list[i]);
+                    }
+                }
             }
         }
     }
