@@ -36,7 +36,7 @@ namespace OptimizeAndTool.Content.Patch
 
         public override void Unload()
         {
-            harmony?.UnpatchAll(patchId); // 卸载修补
+            harmony?.UnpatchSelf(); // 卸载修补
             harmony = null;
         }
     }

@@ -74,10 +74,10 @@ namespace TPML.Content
 
             foreach (var item in _allContent)
             {
-                if (item is T match)
+                if (item is T match || item.GetType().FullName == typeof(T).FullName)
                 {
-                    _instances[typeof(T)] = match;
-                    return match;
+                    _instances[typeof(T)] = item;
+                    return item as T;
                 }
             }
 
@@ -97,12 +97,12 @@ namespace TPML.Content
 
             foreach (var item in _allContent)
             {
-                if (item is T match && item is ModType mt)
+                if ((item is T || item.GetType().FullName == typeof(T).FullName) && item is ModType mt)
                 {
                     if (string.Equals(mt.Mod?.Name, modName, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(mt.Name, contentName, StringComparison.OrdinalIgnoreCase))
                     {
-                        value = match;
+                        value = item as T;
                         return true;
                     }
                 }
@@ -121,6 +121,15 @@ namespace TPML.Content
         {
             if (_itemTypes.TryGetValue(typeof(T), out int id))
                 return id;
+
+            foreach (var kvp in _itemTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _itemTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
 
             var instance = GetInstance<T>();
             if (instance != null)

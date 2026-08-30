@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+    <PackageReference Include="HarmonyX" Version="2.16.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,7 +58,7 @@
       <ModDeployDir>$(TerrariaDir)\tPlainModLoader\Mods\$(MSBuildProjectName)</ModDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />
-    <Message Importance="High" Text="[DeployToGameDir] 部署模组 $(MSBuildProjectName) -> $(ModDeployDir)" />
+    <Message Importance="High" Text="[DeployToGameDir] 部署模组 $(MSBuildProjectName) -&gt; $(ModDeployDir)" />
     <ItemGroup>
       <ModDeployFile Include="$(TargetPath)" />
       <ModDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
@@ -66,9 +66,7 @@
       <ModDeployFile Include="$(ModSourceDir)\ico.png" Condition="Exists('$(ModSourceDir)\ico.png')" />
     </ItemGroup>
     <Copy SourceFiles="@(ModDeployFile)" DestinationFolder="$(ModDeployDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(ModSourceDir)\loadConfig.json"
-          DestinationFiles="$(ModDeployDir)\loadConfig.json"
-          Condition="!Exists('$(ModDeployDir)\loadConfig.json') and Exists('$(ModSourceDir)\loadConfig.json')" />
+    <Copy SourceFiles="$(ModSourceDir)\loadConfig.json" DestinationFiles="$(ModDeployDir)\loadConfig.json" Condition="!Exists('$(ModDeployDir)\loadConfig.json') and Exists('$(ModSourceDir)\loadConfig.json')" />
     <ItemGroup>
       <ModResourceFiles Include="$(ModSourceDir)\Resources\**\*.*" />
     </ItemGroup>

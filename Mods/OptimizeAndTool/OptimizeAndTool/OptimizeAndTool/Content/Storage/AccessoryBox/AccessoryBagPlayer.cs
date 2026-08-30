@@ -6,6 +6,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using TPML.Content;
+using TPML.Core.Logging;
 
 namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
@@ -15,7 +16,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     /// </summary>
     public class AccessoryBagPlayer : PatchPlayer
     {
-        public override void UpdateEquipsPostfix(Player This, int playerI)
+        public override void UpdateEquipsPrefix(Player This, int playerI)
         {
             if (This != Main.LocalPlayer || Main.dedServ) return;
             if (!AccessoryBagConfig.EnablePassive.val) return;
@@ -28,7 +29,9 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             var equippedTypes = new HashSet<int>();
             if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && This.armor != null)
             {
-                for (int i = 0; i < This.armor.Length; i++)
+                // 仅扫描 0..9 号有效穿戴槽位，绝不把 10..19 号时装饰品槽位误判为重复装备
+                int maxEffectiveArmor = Math.Min(10, This.armor.Length);
+                for (int i = 0; i < maxEffectiveArmor; i++)
                 {
                     if (This.armor[i] != null && !This.armor[i].IsAir)
                     {
@@ -38,6 +41,89 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             }
 
             var seenInBags = new HashSet<int>();
+
+            foreach (var bag in bags)
+            {
+                if (bag?.personalInventory == null) continue;
+
+                int limit = bag.personalInventory.Length;
+                if (AccessoryBagConfig.EnableEffectiveSlotsLimit.val)
+                {
+                    limit = Math.Min(limit, AccessoryBagConfig.EffectiveSlots.val);
+                }
+
+                for (int i = 0; i < limit; i++)
+                {
+                    Item it = bag.personalInventory[i];
+
+                    if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && equippedTypes.Contains(it.type))
+                        continue;
+
+                    if (AccessoryBagConfig.PreventBagDuplicates.val)
+                    {
+                        if (seenInBags.Contains(it.type)) continue;
+                        seenInBags.Add(it.type);
+                    }
+
+                    // 1. 词缀属性生效 (+4 防御、暴击、伤害、移速等)
+                    if (AccessoryBagConfig.AllowPrefixRoll.val && (it.accessory || it.prefix > 0))
+                    {
+                        This.GrantPrefixBenefits(it);
+                    }
+
+                    // 2. 基础防具/装备属性生效 (+防御、+生命恢复等)
+                    if (AccessoryBagConfig.ApplyBaseStats.val)
+                    {
+                        This.GrantArmorBenefits(it);
+                        ItemLoader.UpdateEquip(it, This);
+                    }
+
+                    // 3. 饰品功能生效 (激活 skyStoneEffects, manaFlower, chiselSpeed, dd2Accessory, buffImmune, noKnockback 等)
+                    if (it.accessory && AccessoryBagConfig.EnableAccessoryEffects.val)
+                    {
+                        This.ApplyEquipFunctional(3, it);
+                    }
+
+                    // 4. 信息类与机械类饰品激活 (PDA, 手机, 表, 深度计, 罗盘, 雷达, 生命体分析仪, DPS 计, 秒表, 金属探测器等)
+                    This.RefreshInfoAccsFromItemType(it.type);
+                    This.RefreshMechanicalAccsFromItemType(it.type);
+
+                    // 逻辑翅膀飞行能力不受外观隐藏影响，必须在原版后续派生计算前写入
+                    if (it.wingSlot > 0)
+                    {
+                        This.wingsLogic = it.wingSlot;
+                    }
+                }
+            }
+        }
+
+        public override void UpdateEquipsPostfix(Player This, int playerI)
+        {
+            if (This != Main.LocalPlayer || Main.dedServ) return;
+            if (!AccessoryBagConfig.EnablePassive.val) return;
+
+            var bags = AccessoryBagCacheManager.GetAllBags();
+            if (bags == null || bags.Count == 0) return;
+
+            var equippedTypes = new HashSet<int>();
+            if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && This.armor != null)
+            {
+                // 仅扫描 0..9 号有效穿戴槽位，绝不把 10..19 号时装饰品槽位误判为重复装备
+                int maxEffectiveArmor = Math.Min(10, This.armor.Length);
+                for (int i = 0; i < maxEffectiveArmor; i++)
+                {
+                    if (This.armor[i] != null && !This.armor[i].IsAir)
+                    {
+                        equippedTypes.Add(This.armor[i].type);
+                    }
+                }
+            }
+
+            var seenInBags = new HashSet<int>();
+
+            bool hasTileSpeed = false;
+            bool hasWallSpeed = false;
+            bool hasTileRange = false;
 
             foreach (var bag in bags)
             {
@@ -63,23 +149,24 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                         seenInBags.Add(it.type);
                     }
 
-                    if (AccessoryBagConfig.AllowPrefixRoll.val && (it.accessory || it.prefix > 0))
-                    {
-                        This.GrantPrefixBenefits(it);
-                    }
-
-                    if (AccessoryBagConfig.ApplyBaseStats.val)
-                    {
-                        This.GrantArmorBenefits(it);
-                        ItemLoader.UpdateEquip(it, This);
-                    }
-
+                    // 仅重扫建筑类饰品标志与外观，避免把 Prefix 已应用的属性再次计算
                     if (it.accessory && AccessoryBagConfig.EnableAccessoryEffects.val)
                     {
-                        This.ApplyEquipFunctional(3, it);
+                        if (it.type == ItemID.ArchitectGizmoPack || it.type == ItemID.HandOfCreation || it.type == ItemID.BrickLayer)
+                        {
+                            hasTileSpeed = true;
+                        }
+                        if (it.type == ItemID.ArchitectGizmoPack || it.type == ItemID.HandOfCreation || it.type == ItemID.PortableCementMixer)
+                        {
+                            hasWallSpeed = true;
+                        }
+                        if (it.type == ItemID.ArchitectGizmoPack || it.type == ItemID.HandOfCreation || it.type == ItemID.ExtendoGrip || it.type == ItemID.Toolbelt || it.type == ItemID.Toolbox)
+                        {
+                            hasTileRange = true;
+                        }
                     }
 
-                    // 外观渲染
+                    // 外观渲染：受 hideVisuals 控制
                     bool hidden = bag.hideVisuals != null && i < bag.hideVisuals.Length && bag.hideVisuals[i];
                     if (!hidden)
                     {
@@ -89,7 +176,6 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                             {
                                 This.wings = it.wingSlot;
                             }
-                            This.wingsLogic = it.wingSlot;
                         }
                         if (it.backSlot > 0) This.back = (sbyte)it.backSlot;
                         if (it.shieldSlot > 0) This.shield = (sbyte)it.shieldSlot;
@@ -102,6 +188,25 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                         if (it.balloonSlot > 0) This.balloon = (sbyte)it.balloonSlot;
                     }
                 }
+            }
+
+            // 补全建筑放置速度与范围属性
+            if (hasTileSpeed)
+            {
+                int createTile = This.inventory[This.selectedItem].createTile;
+                if (createTile >= 0 && !TileID.Sets.Torches[createTile])
+                {
+                    This.tileSpeed += 0.5f;
+                }
+            }
+            if (hasWallSpeed)
+            {
+                This.wallSpeed += 0.5f;
+            }
+            if (hasTileRange && This.whoAmI == Main.myPlayer)
+            {
+                Player.tileRangeX += 3;
+                Player.tileRangeY += 2;
             }
         }
 

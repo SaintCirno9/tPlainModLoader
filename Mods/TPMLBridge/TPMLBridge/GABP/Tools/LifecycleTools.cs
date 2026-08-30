@@ -112,6 +112,17 @@ namespace TPMLBridge.GABP.Tools
                             command = new { type = "string", description = "要执行的指令字符串或聊天信息" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/reload_mods",
+                    Description = "触发 TPML 现有模组加载器执行完整卸载与重新加载。调用后 Bridge 会短暂断开并重启。",
+                    Tags = new List<string> { "lifecycle" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
                 }
             };
         }
@@ -162,6 +173,10 @@ namespace TPMLBridge.GABP.Tools
                         return await MainThreadQueue.EnqueueAsync(() => RunCommand(cmd));
                     }
 
+                case "tpml/reload_mods":
+                case "tpml_reload_mods":
+                    return await MainThreadQueue.EnqueueAsync(() => ReloadMods());
+
                 default:
                     return null;
             }
@@ -189,6 +204,21 @@ namespace TPMLBridge.GABP.Tools
                     maxLife = p.statLifeMax2,
                     mana = p.statMana,
                     maxMana = p.statManaMax2,
+                    defense = p.statDefense,
+                    meleeDamage = p.meleeDamage,
+                    rangedDamage = p.rangedDamage,
+                    magicDamage = p.magicDamage,
+                    minionDamage = p.minionDamage,
+                    manaCost = p.manaCost,
+                    pickSpeed = p.pickSpeed,
+                    maxTurrets = p.maxTurrets,
+                    wingsLogic = p.wingsLogic,
+                    tileSpeed = p.tileSpeed,
+                    wallSpeed = p.wallSpeed,
+                    skyStoneEffects = p.skyStoneEffects,
+                    manaFlower = p.manaFlower,
+                    chiselSpeed = p.chiselSpeed,
+                    dd2Accessory = p.dd2Accessory,
                     position = new { x = p.position.X, y = p.position.Y },
                     tilePosition = new { x = (int)(p.position.X / 16f), y = (int)(p.position.Y / 16f) },
                     selectedItem = p.selectedItem,
@@ -383,6 +413,12 @@ namespace TPMLBridge.GABP.Tools
             Logger.Info($"[TPMLBridge Command] {command}");
             tContentPatch.ContentPatch.RunCommand(command);
             return new { success = true, command, message = "指令已执行" };
+        }
+
+        public static object ReloadMods()
+        {
+            tContentPatch.ContentPatch.ReloadMods();
+            return new { success = true, message = "已触发模组重载，Bridge 将短暂断开并自动恢复" };
         }
     }
 }

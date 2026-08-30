@@ -74,7 +74,7 @@ namespace TPML.Content.Engine
             ActiveModSystems.Clear();
             ActiveGlobalItems.Clear();
             TPML.Content.Fusion.InventoryFusionManager.Clear();
-            HookRegistry.ClearAll();
+            HookRegistry.Clear(HookScope.Content);
             _initialized = false;
             _patchesApplied = false;
             _firstInvDrawLogged = false;
@@ -129,7 +129,7 @@ namespace TPML.Content.Engine
             var target = typeof(Item).GetMethod(nameof(Item.Clone), BindingFlags.Instance | BindingFlags.Public);
             if (target != null)
             {
-                HookRegistry.Add(target, (Func<Func<Item, Item>, Item, Item>)((orig, self) =>
+                HookRegistry.AddContent(target, (Func<Func<Item, Item>, Item, Item>)((orig, self) =>
                 {
                     Item result = orig(self);
                     Item_Clone_Postfix(self, result);
@@ -179,7 +179,7 @@ namespace TPML.Content.Engine
                 typeof(Item), typeof(int).MakeByRefType(), typeof(float), typeof(int).MakeByRefType(), typeof(string[]), typeof(Microsoft.Xna.Framework.Color[]));
             if (target != null)
             {
-                HookRegistry.Add(target, (Hook_TooltipLines)TooltipLinesHook);
+                HookRegistry.AddContent(target, (Hook_TooltipLines)TooltipLinesHook);
                 ModLoader.Log("[ContentHookDispatcher] 已挂钩 Main.MouseText_DrawItemTooltip_GetLinesInfo (Tooltip 支持)");
             }
         }
@@ -216,7 +216,7 @@ namespace TPML.Content.Engine
             var target = MethodLookup.Instance(typeof(Player), nameof(Player.ItemCheck_Shoot), typeof(int), typeof(Item), typeof(int), typeof(bool));
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<Player, int, Item, int, bool>, Player, int, Item, int, bool>)((orig, self, i, sItem, weaponDamage, withAudioVisualFeedback) =>
+                HookRegistry.AddContent(target, (Action<Action<Player, int, Item, int, bool>, Player, int, Item, int, bool>)((orig, self, i, sItem, weaponDamage, withAudioVisualFeedback) =>
                 {
                     if (!Player_ItemCheck_Shoot_Prefix(self, i, sItem, weaponDamage)) return;
                     orig(self, i, sItem, weaponDamage, withAudioVisualFeedback);
@@ -250,7 +250,7 @@ namespace TPML.Content.Engine
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<Player, Item>, Player, Item>)((orig, self, sItem) =>
+                HookRegistry.AddContent(target, (Action<Action<Player, Item>, Player, Item>)((orig, self, sItem) =>
                 {
                     orig(self, sItem);
                     Player_ItemCheck_StartActualUse_Postfix(self, sItem);
@@ -272,7 +272,7 @@ namespace TPML.Content.Engine
                 BindingFlags.Instance | BindingFlags.Public);
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<Player>, Player>)((orig, self) =>
+                HookRegistry.AddContent(target, (Action<Action<Player>, Player>)((orig, self) =>
                 {
                     if (!Player_ItemCheck_Prefix(self)) return;
                     orig(self);
@@ -307,7 +307,7 @@ namespace TPML.Content.Engine
         private static void PatchPlayerUpdate()
         {
             var target = MethodLookup.Instance(typeof(Player), nameof(Player.Update), typeof(int));
-            HookRegistry.Add(target, (Action<Action<Player, int>, Player, int>)((orig, self, i) =>
+            HookRegistry.AddContent(target, (Action<Action<Player, int>, Player, int>)((orig, self, i) =>
             {
                 Player_Update_Prefix(self, i);
                 orig(self, i);
@@ -321,7 +321,7 @@ namespace TPML.Content.Engine
             var target = MethodLookup.Instance(typeof(Player), nameof(Player.KillMe), typeof(PlayerDeathReason), typeof(double), typeof(int), typeof(bool));
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<Player, PlayerDeathReason, double, int, bool>, Player, PlayerDeathReason, double, int, bool>)((orig, self, damageSource, dmg, hitDirection, pvp) =>
+                HookRegistry.AddContent(target, (Action<Action<Player, PlayerDeathReason, double, int, bool>, Player, PlayerDeathReason, double, int, bool>)((orig, self, damageSource, dmg, hitDirection, pvp) =>
                 {
                     bool playSound = true;
                     bool genDust = true;
@@ -427,7 +427,7 @@ namespace TPML.Content.Engine
             var target = MethodLookup.Instance(typeof(Player), nameof(Player.GetItem), typeof(Item), typeof(GetItemSettings));
             if (target != null)
             {
-                HookRegistry.Add(target, (Func<Func<Player, Item, GetItemSettings, Item>, Player, Item, GetItemSettings, Item>)((orig, self, newItem, settings) =>
+                HookRegistry.AddContent(target, (Func<Func<Player, Item, GetItemSettings, Item>, Player, Item, GetItemSettings, Item>)((orig, self, newItem, settings) =>
                 {
                     Item result = null;
                     if (!Player_GetItem_Prefix(self, newItem, settings, ref result)) return result;
@@ -464,7 +464,7 @@ namespace TPML.Content.Engine
         private static void PatchInput()
         {
             var target = typeof(PlayerInput).GetMethod(nameof(PlayerInput.UpdateInput), BindingFlags.Static | BindingFlags.Public);
-            HookRegistry.Add(target, (Action<Action>)(orig =>
+            HookRegistry.AddContent(target, (Action<Action>)(orig =>
             {
                 orig();
                 PlayerInput_UpdateInput_Postfix();
@@ -488,7 +488,7 @@ namespace TPML.Content.Engine
             var target = typeof(Main).GetMethod("UpdateUIStates", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<GameTime>, GameTime>)((orig, gameTime) =>
+                HookRegistry.AddContent(target, (Action<Action<GameTime>, GameTime>)((orig, gameTime) =>
                 {
                     orig(gameTime);
                     Main_UpdateUIStates_Postfix(gameTime);
@@ -532,7 +532,7 @@ namespace TPML.Content.Engine
             var target = typeof(Main).GetMethod("SetupDrawInterfaceLayers", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (target != null)
             {
-                HookRegistry.Add(target, (Action<Action<Main>, Main>)((orig, self) =>
+                HookRegistry.AddContent(target, (Action<Action<Main>, Main>)((orig, self) =>
                 {
                     orig(self);
                     Main_SetupDrawInterfaceLayers_Postfix();
@@ -592,7 +592,7 @@ namespace TPML.Content.Engine
             var getItemNameValue = MethodLookup.Static(typeof(Lang), nameof(Lang.GetItemNameValue), typeof(int));
             if (getItemNameValue != null)
             {
-                HookRegistry.Add(getItemNameValue, (Func<Func<int, string>, int, string>)((orig, id) =>
+                HookRegistry.AddContent(getItemNameValue, (Func<Func<int, string>, int, string>)((orig, id) =>
                 {
                     string result = null;
                     if (!Lang_GetItemNameValue_Prefix(id, ref result)) return result;
@@ -604,7 +604,7 @@ namespace TPML.Content.Engine
             var getItemName = MethodLookup.Static(typeof(Lang), nameof(Lang.GetItemName), typeof(int));
             if (getItemName != null)
             {
-                HookRegistry.Add(getItemName, (Func<Func<int, LocalizedText>, int, LocalizedText>)((orig, id) =>
+                HookRegistry.AddContent(getItemName, (Func<Func<int, LocalizedText>, int, LocalizedText>)((orig, id) =>
                 {
                     LocalizedText result = null;
                     if (!Lang_GetItemName_Prefix(id, ref result)) return result;
@@ -616,7 +616,7 @@ namespace TPML.Content.Engine
             var getPrefixedItemName = MethodLookup.Static(typeof(Lang), nameof(Lang.GetPrefixedItemName), typeof(int), typeof(int));
             if (getPrefixedItemName != null)
             {
-                HookRegistry.Add(getPrefixedItemName, (Func<Func<int, int, string>, int, int, string>)((orig, id, prefixType) =>
+                HookRegistry.AddContent(getPrefixedItemName, (Func<Func<int, int, string>, int, int, string>)((orig, id, prefixType) =>
                 {
                     string result = null;
                     if (!Lang_GetPrefixedItemName_Prefix(id, prefixType, ref result)) return result;
@@ -628,7 +628,7 @@ namespace TPML.Content.Engine
             var getTooltip = MethodLookup.Static(typeof(Lang), nameof(Lang.GetTooltip), typeof(int));
             if (getTooltip != null)
             {
-                HookRegistry.Add(getTooltip, (Func<Func<int, ItemTooltip>, int, ItemTooltip>)((orig, itemId) =>
+                HookRegistry.AddContent(getTooltip, (Func<Func<int, ItemTooltip>, int, ItemTooltip>)((orig, itemId) =>
                 {
                     ItemTooltip result = null;
                     if (!Lang_GetTooltip_Prefix(itemId, ref result)) return result;
@@ -709,7 +709,7 @@ namespace TPML.Content.Engine
             var newTextMethod = MethodLookup.Static(typeof(PopupText), nameof(PopupText.NewText), typeof(PopupTextContext), typeof(Item), typeof(Vector2), typeof(int), typeof(bool), typeof(bool));
             if (newTextMethod != null)
             {
-                HookRegistry.Add(newTextMethod, (Func<Func<PopupTextContext, Item, Vector2, int, bool, bool, int>, PopupTextContext, Item, Vector2, int, bool, bool, int>)((orig, context, newItem, position, stack, noStack, longText) =>
+                HookRegistry.AddContent(newTextMethod, (Func<Func<PopupTextContext, Item, Vector2, int, bool, bool, int>, PopupTextContext, Item, Vector2, int, bool, bool, int>)((orig, context, newItem, position, stack, noStack, longText) =>
                 {
                     if (!PopupText_NewText_Prefix(context, newItem, position, stack, noStack, longText)) return 0;
                     return orig(context, newItem, position, stack, noStack, longText);
@@ -721,7 +721,7 @@ namespace TPML.Content.Engine
             var updateMethod = MethodLookup.Instance(typeof(PopupText), nameof(PopupText.Update), typeof(int));
             if (updateMethod != null)
             {
-                HookRegistry.Add(updateMethod, (Action<Action<PopupText, int>, PopupText, int>)((orig, self, whoAmI) =>
+                HookRegistry.AddContent(updateMethod, (Action<Action<PopupText, int>, PopupText, int>)((orig, self, whoAmI) =>
                 {
                     if (!PopupText_Update_Prefix(whoAmI)) return;
                     orig(self, whoAmI);

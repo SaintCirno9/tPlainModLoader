@@ -152,7 +152,7 @@ namespace RecipeBrowser
         {
             concurrentTaskHandlerToken?.Cancel();
             try { concurrentTaskHandler?.Wait(500); } catch { }
-            try { harmony?.UnpatchAll("saintcirno9.recipebrowser"); } catch { }
+            try { harmony?.UnpatchSelf(); } catch { }
 
             Instance = null;
             ToggleRecipeBrowserHotKey = null;

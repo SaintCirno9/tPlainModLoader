@@ -20,7 +20,7 @@ namespace WandsTool.Content.Patch
 
         public override void Unload()
         {
-            harmony?.UnpatchAll(patchId);
+            harmony?.UnpatchSelf();
             harmony = null;
         }
     }

@@ -88,6 +88,14 @@ namespace tContentPatch
         }
 
         /// <summary>
+        /// 通过现有加载器执行模组重载；若已经加载，会先完整卸载再重新加载。
+        /// </summary>
+        public static void ReloadMods()
+        {
+            LoaderControl.Load();
+        }
+
+        /// <summary>
         /// 输出到控制台和其它消息接收端
         /// </summary>
         public static void PrintTry(string s)

@@ -29,6 +29,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             ScanArray(player.bank2?.item);
             ScanArray(player.bank3?.item);
             ScanArray(player.bank4?.item);
+            ScanArray(BigBag.BigBag.Slots);
         }
 
         private static void ScanArray(Item[] items)
@@ -62,7 +63,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
         public static IReadOnlyList<AccessoryBagItem> GetAllBags()
         {
-            if (Main.GameUpdateCount % 10 == 0) UpdateCache();
+            if (_playerBagsCache.Count == 0 || Main.GameUpdateCount % 10 == 0) UpdateCache();
             return _playerBagsCache;
         }
 

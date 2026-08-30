@@ -164,7 +164,7 @@ namespace TPML.Content.Fusion
         private static void HookRegistryAdd(MethodBase target, Delegate detour)
         {
             if (target == null) throw new MissingMethodException("[Fusion] 目标方法查找失败，请核对游戏版本签名");
-            TPML.Content.Engine.HookRegistry.Add(target, detour);
+            TPML.Content.Engine.HookRegistry.AddContent(target, detour);
         }
 
         private static MethodInfo GetInstanceMethod(Type type, string name)
