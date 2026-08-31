@@ -176,6 +176,10 @@ namespace tContentPatch.ModPatch
 
         private static void MouseTextLinesHook(Orig_MouseTextLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
         {
+            if (item != null && item.type >= TPML.Content.ItemLoader.ModItemOffset)
+            {
+                TPML.Content.ItemLoader.EnsureArraySizes(item.type);
+            }
             orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
 
             // 后缀期望全 ref；值参数（oldKB/toolTipLine/lineColors）用本地副本传递，改动不回写（与 Harmony 语义一致）

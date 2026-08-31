@@ -198,6 +198,10 @@ namespace TPML.Content.Engine
 
         private static void TooltipLinesHook(Orig_TooltipLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
         {
+            if (item != null && item.type >= ItemLoader.ModItemOffset)
+            {
+                ItemLoader.EnsureArraySizes(item.type);
+            }
             orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
             Main_MouseText_DrawItemTooltip_GetLinesInfo_Postfix(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
         }

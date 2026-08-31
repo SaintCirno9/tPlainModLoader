@@ -9,6 +9,8 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
 using Terraria.ID;
+using Terraria.Localization;
+using Terraria.UI;
 using TPML.Content.Assets;
 using TPML.Content.Engine;
 using TPML.Content.UI;
@@ -99,51 +101,23 @@ namespace TPML.Content
                 }
             }
 
-            // 自动扩容 ItemID.Sets 中的所有数组字段
-            foreach (FieldInfo field in typeof(ItemID.Sets).GetFields(BindingFlags.Public | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
+            // 自动递归扩容 ItemID.Sets 及其所有嵌套类中的数组字段
+            ResizeSetsClass(typeof(ItemID.Sets), required, 5000);
 
             // 扩容 ArmorSetBonuses.SetsContaining
             if (ArmorSetBonuses.SetsContaining != null && ArmorSetBonuses.SetsContaining.Length <= required)
             {
                 int newLen = Math.Max(required, ArmorSetBonuses.SetsContaining.Length * 2);
+                int oldLen = ArmorSetBonuses.SetsContaining.Length;
                 Array.Resize(ref ArmorSetBonuses.SetsContaining, newLen);
-                for (int i = 0; i < ArmorSetBonuses.SetsContaining.Length; i++)
+                for (int i = oldLen; i < newLen; i++)
                 {
-                    if (ArmorSetBonuses.SetsContaining[i] == null)
-                    {
-                        ArmorSetBonuses.SetsContaining[i] = Array.Empty<ArmorSetBonus>();
-                    }
+                    ArmorSetBonuses.SetsContaining[i] = Array.Empty<ArmorSetBonus>();
                 }
             }
 
-            // 自动扩容 PrefixLegacy.ItemSets 中的所有数组字段
-            foreach (FieldInfo field in typeof(Terraria.GameContent.Prefixes.PrefixLegacy.ItemSets).GetFields(BindingFlags.Public | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
+            // 自动递归扩容 PrefixLegacy.ItemSets 及其所有嵌套类中的数组字段
+            ResizeSetsClass(typeof(Terraria.GameContent.Prefixes.PrefixLegacy.ItemSets), required, 5000);
 
             // 扩容 Item.staff 与 Item.claw
             if (Item.staff != null && Item.staff.Length <= required)
@@ -178,6 +152,68 @@ namespace TPML.Content
                 int newLen = Math.Max(required, Main.itemFrame.Length * 2);
                 Array.Resize(ref Main.itemFrame, newLen);
             }
+
+            // 扩容 Lang 中的物品文本与 Tooltip 缓存数组
+            if (Lang._itemTooltipCache != null && Lang._itemTooltipCache.Length <= required)
+            {
+                int newLen = Math.Max(required, Lang._itemTooltipCache.Length * 2);
+                int oldLen = Lang._itemTooltipCache.Length;
+                Array.Resize(ref Lang._itemTooltipCache, newLen);
+                for (int i = oldLen; i < newLen; i++)
+                {
+                    Lang._itemTooltipCache[i] = ItemTooltip.None;
+                }
+            }
+
+            if (Lang._itemNameCache != null && Lang._itemNameCache.Length <= required)
+            {
+                int newLen = Math.Max(required, Lang._itemNameCache.Length * 2);
+                int oldLen = Lang._itemNameCache.Length;
+                Array.Resize(ref Lang._itemNameCache, newLen);
+                for (int i = oldLen; i < newLen; i++)
+                {
+                    Lang._itemNameCache[i] = LocalizedText.Empty;
+                }
+            }
+        }
+
+        static ItemLoader()
+        {
+            On_Lang.GetTooltip += (orig, id) =>
+            {
+                if (id < 0) return ItemTooltip.None;
+                if (Lang._itemTooltipCache == null || id >= Lang._itemTooltipCache.Length)
+                {
+                    EnsureArraySizes(id);
+                }
+                if (Lang._itemTooltipCache != null && id < Lang._itemTooltipCache.Length && Lang._itemTooltipCache[id] != null)
+                {
+                    return Lang._itemTooltipCache[id];
+                }
+                return ItemTooltip.None;
+            };
+
+            On_Lang.GetItemName += (orig, id) =>
+            {
+                if (id >= ModItemOffset)
+                {
+                    if (_displayNames.TryGetValue(id, out string name))
+                    {
+                        return new LocalizedText($"ItemName.{id}", name);
+                    }
+                }
+                if (id >= 0 && (Lang._itemNameCache == null || id >= Lang._itemNameCache.Length))
+                {
+                    EnsureArraySizes(id);
+                }
+                return orig(id);
+            };
+
+            On_ArmorSetBonuses.BuildLookup += (orig) =>
+            {
+                orig();
+                EnsureArraySizes(NextItemID);
+            };
         }
 
         public static void ReloadTextures()
@@ -311,10 +347,36 @@ namespace TPML.Content
             return item;
         }
 
-        public static void SetDisplayName(int type, string name) => _displayNames[type] = name;
+        public static void SetDisplayName(int type, string name)
+        {
+            _displayNames[type] = name;
+            EnsureArraySizes(type);
+            if (Lang._itemNameCache != null && type < Lang._itemNameCache.Length)
+            {
+                Lang._itemNameCache[type] = new LocalizedText($"ItemName.{type}", name);
+            }
+        }
+
         public static string GetDisplayName(int type) => _displayNames.TryGetValue(type, out string name) ? name : string.Empty;
 
-        public static void SetTooltip(int type, string tooltip) => _tooltips[type] = tooltip;
+        public static void SetTooltip(int type, string tooltip)
+        {
+            _tooltips[type] = tooltip;
+            EnsureArraySizes(type);
+            if (Lang._itemTooltipCache != null && type < Lang._itemTooltipCache.Length)
+            {
+                if (!string.IsNullOrEmpty(tooltip))
+                {
+                    string[] lines = tooltip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    Lang._itemTooltipCache[type] = ItemTooltip.FromHardcodedText(lines);
+                }
+                else
+                {
+                    Lang._itemTooltipCache[type] = ItemTooltip.None;
+                }
+            }
+        }
+
         public static string GetTooltip(int type) => _tooltips.TryGetValue(type, out string tip) ? tip : string.Empty;
 
         public static void EnsureTextureLoaded(int type)
@@ -564,6 +626,30 @@ namespace TPML.Content
                 if (_itemsByName.TryGetValue(shortName, out int shortType)) return shortType;
             }
             return 0;
+        }
+
+        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
+        {
+            if (type == null) return;
+            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
+                {
+                    Array arr = field.GetValue(null) as Array;
+                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
+                    {
+                        int newLen = Math.Max(required, arr.Length * 2);
+                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
+                        Array.Copy(arr, newArr, arr.Length);
+                        field.SetValue(null, newArr);
+                    }
+                }
+            }
+
+            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                ResizeSetsClass(nested, required, minMatchLen);
+            }
         }
 
         public static void Clear()

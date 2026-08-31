@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.ID;
 
 namespace TPML.Content
 {
@@ -77,6 +78,23 @@ namespace TPML.Content
         public virtual bool Drop(int i, int j)
         {
             return true;
+        }
+
+        /// <summary>
+        /// 获取物块被破坏时掉落的物品 ID（默认优先返回 ItemDrop，若未设置则自动反查 createTile 绑定的 ModItem）
+        /// </summary>
+        public virtual int GetItemDrop(int tileType, int frameX, int frameY)
+        {
+            if (ItemDrop > 0) return ItemDrop;
+            foreach (var item in ItemLoader.Items)
+            {
+                Item sample = ContentSamples.ItemsByType.TryGetValue(item.Type, out var s) ? s : item.Item;
+                if (sample != null && sample.createTile == tileType)
+                {
+                    return item.Type;
+                }
+            }
+            return 0;
         }
 
         /// <summary>

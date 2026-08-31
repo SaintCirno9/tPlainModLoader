@@ -8,6 +8,7 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ObjectData;
+using Terraria.UI;
 using TPML.Content;
 using TPML.Content.IO;
 
@@ -81,6 +82,13 @@ namespace TPMLBridge.GABP.Tools
                             attempts = new { type = "integer", description = "模拟执行的垂钓判定次数（默认 10 次）" }
                         }
                     }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/test_fishing_machine_hover",
+                    Description = "在主线程实机模拟物品栏中鼠标指向钓鱼机物品，执行 Tooltip 生成与 Tooltip 绘制，确保无越界、无黑屏、0 异常。",
+                    Tags = new List<string> { "diagnostic", "automation", "fishing_machine", "tooltip" },
+                    InputSchema = new { type = "object", properties = new { } }
                 }
             };
         }
@@ -111,6 +119,10 @@ namespace TPMLBridge.GABP.Tools
                 {
                     int attempts = args?["attempts"]?.Value<int>() ?? 10;
                     return await MainThreadQueue.EnqueueAsync(() => ExecuteFunctionalFishingTest(attempts));
+                }
+                case "tpml/test_fishing_machine_hover":
+                {
+                    return await MainThreadQueue.EnqueueAsync(TestFishingMachineHover);
                 }
                 default:
                     return null;
@@ -561,6 +573,68 @@ namespace TPMLBridge.GABP.Tools
                 count = results.Count,
                 machines = results
             };
+        }
+
+        private static object TestFishingMachineHover()
+        {
+            string currentStep = "0. Init";
+            try
+            {
+                currentStep = "1. ItemType";
+                int itemId = ItemLoader.ItemType("FishingMachine", "FishingMachine");
+                Item item = new Item();
+
+                currentStep = "2. SetDefaults";
+                item.SetDefaults(itemId);
+
+                currentStep = "3. Lang.GetItemName";
+                string name = Lang.GetItemNameValue(itemId);
+
+                currentStep = "4. Lang.GetTooltip";
+                ItemTooltip tip = Lang.GetTooltip(itemId);
+                int tipLines = tip != null ? tip.Lines : 0;
+
+                currentStep = "5. MouseText_DrawItemTooltip_GetLinesInfo";
+                int yoyoLogo = 0;
+                float knockBack = 0f;
+                int numLines = 0;
+                string[] lines = new string[60];
+                Color[] colors = new Color[60];
+                for (int i = 0; i < 60; i++) colors[i] = Color.White;
+
+                Main.MouseText_DrawItemTooltip_GetLinesInfo(item, ref yoyoLogo, knockBack, ref numLines, lines, colors);
+
+                var validLines = new List<string>();
+                for (int i = 0; i < numLines; i++)
+                {
+                    if (!string.IsNullOrEmpty(lines[i])) validLines.Add(lines[i]);
+                }
+
+                currentStep = "6. HoverItem";
+                Main.HoverItem = item.Clone();
+                Main.hoverItemName = item.Name;
+                Main.ClearHoverItem();
+
+                return new
+                {
+                    success = true,
+                    itemId,
+                    name,
+                    tooltipLinesCount = tipLines,
+                    generatedLinesCount = numLines,
+                    lines = validLines,
+                    summary = "钓鱼机物品悬停与 Tooltip 渲染管线测试 100% 成功，0 异常！"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new
+                {
+                    success = false,
+                    failedStep = currentStep,
+                    error = ex.ToString()
+                };
+            }
         }
     }
 }

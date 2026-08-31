@@ -177,21 +177,8 @@ namespace TPML.Content
                 }
             }
 
-            // 2. 扩容 TileID.Sets 中的所有静态数组字段
-            foreach (FieldInfo field in typeof(TileID.Sets).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length >= 693 && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
+            // 2. 递归扩容 TileID.Sets 及所有嵌套类 (如 Wiring, Conversion) 中的静态数组字段
+            ResizeSetsClass(typeof(TileID.Sets), required, 693);
 
             // 3. 全量反射扫描 Main、WorldGen 与 MapHelper 中与 Tile 关联的静态一维/二维数组并统一扩容
             ScanAndResizeStaticArrays(typeof(Main), required);
@@ -229,6 +216,30 @@ namespace TPML.Content
                 {
                     if (Main.tileGlowMask[i] == 0) Main.tileGlowMask[i] = -1;
                 }
+            }
+        }
+
+        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
+        {
+            if (type == null) return;
+            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
+                {
+                    Array arr = field.GetValue(null) as Array;
+                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
+                    {
+                        int newLen = Math.Max(required, arr.Length * 2);
+                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
+                        Array.Copy(arr, newArr, arr.Length);
+                        field.SetValue(null, newArr);
+                    }
+                }
+            }
+
+            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                ResizeSetsClass(nested, required, minMatchLen);
             }
         }
 
@@ -361,7 +372,7 @@ namespace TPML.Content
                 if (!fail && !effectOnly)
                 {
                     TileObjectData data = TileObjectData.GetTileData(tile.type, 0);
-                    if (data != null)
+                    if (data != null && (data.Width > 1 || data.Height > 1))
                     {
                         int fullWidth = data.Width * (data.CoordinateWidth + data.CoordinatePadding);
                         int partX = fullWidth > 0 ? ((tile.frameX % fullWidth) / (data.CoordinateWidth + data.CoordinatePadding)) : 0;
@@ -383,19 +394,52 @@ namespace TPML.Content
                         int originX = i - partX;
                         int originY = j - partY;
 
+                        // 1. 触发 KillMultiTile 释放战利品与实体清理
                         modTile.KillMultiTile(originX, originY, tile.frameX, tile.frameY);
-
-                        // 自动触发可能挂载的 TileEntity 清理
                         foreach (var mte in TileEntityLoader.Entities)
                         {
                             mte.Kill(originX, originY);
                         }
-                    }
 
-                    if (!noItem && modTile.ItemDrop > 0 && modTile.Drop(i, j))
+                        // 2. 掉落物块本体物品（仅在整体破坏时掉落 1 次）
+                        int dropItem = modTile.GetItemDrop(tile.type, tile.frameX, tile.frameY);
+                        if (!noItem && dropItem > 0 && modTile.Drop(originX, originY))
+                        {
+                            IEntitySource src = new EntitySource_TileBreak(originX, originY);
+                            Item.NewItem(src, new Vector2(originX * 16, originY * 16), dropItem, 1);
+                        }
+
+                        // 3. 一键清空整片多方块的所有关联图格，杜绝一格一格残破
+                        for (int ox = 0; ox < data.Width; ox++)
+                        {
+                            for (int oy = 0; oy < data.Height; oy++)
+                            {
+                                int tx = originX + ox;
+                                int ty = originY + oy;
+                                Tile targetTile = Framing.GetTileSafely(tx, ty);
+                                if (targetTile.active() && targetTile.type == tile.type)
+                                {
+                                    targetTile.active(false);
+                                    targetTile.type = 0;
+                                    targetTile.frameX = 0;
+                                    targetTile.frameY = 0;
+                                }
+                            }
+                        }
+
+                        WorldGen.destroyObject = true;
+                        NetMessage.SendTileSquare(-1, originX, originY, data.Width, data.Height);
+                        return;
+                    }
+                    else
                     {
-                        IEntitySource src = new EntitySource_TileBreak(i, j);
-                        Item.NewItem(src, new Vector2(i * 16, j * 16), modTile.ItemDrop, 1);
+                        // 单格物块常规掉落
+                        int dropItem = modTile.GetItemDrop(tile.type, tile.frameX, tile.frameY);
+                        if (!noItem && dropItem > 0 && modTile.Drop(i, j))
+                        {
+                            IEntitySource src = new EntitySource_TileBreak(i, j);
+                            Item.NewItem(src, new Vector2(i * 16, j * 16), dropItem, 1);
+                        }
                     }
                 }
             }
@@ -446,7 +490,8 @@ namespace TPML.Content
             orig(self, myX, myY);
         }
 
-        private static readonly FieldInfo _inBeginField = typeof(SpriteBatch).GetField("inBegin", BindingFlags.NonPublic | BindingFlags.Instance) ??
+        private static readonly FieldInfo _inBeginField = typeof(SpriteBatch).GetField("inBeginEndPair", BindingFlags.NonPublic | BindingFlags.Instance) ??
+                                                         typeof(SpriteBatch).GetField("inBegin", BindingFlags.NonPublic | BindingFlags.Instance) ??
                                                          typeof(SpriteBatch).GetField("_inBegin", BindingFlags.NonPublic | BindingFlags.Instance);
         private static Texture2D _fallbackTexture;
 

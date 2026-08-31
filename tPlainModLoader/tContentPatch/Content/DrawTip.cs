@@ -36,8 +36,14 @@ namespace tContentPatch.Content
 
                 PlayerInput.SetZoom_UI();
                 Main.spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, Main.UIScaleMatrix);
-                Draw(Main.spriteBatch, ss, color, textColor);
-                Main.spriteBatch.End();
+                try
+                {
+                    Draw(Main.spriteBatch, ss, color, textColor);
+                }
+                finally
+                {
+                    Main.spriteBatch.End();
+                }
             }
         }
 
