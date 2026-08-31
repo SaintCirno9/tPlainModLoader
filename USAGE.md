@@ -84,7 +84,7 @@ YourMod/
   <ItemGroup>
     <ProjectReference Include="..\..\tPlainModLoader\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" />
-    <ProjectReference Include="..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" />
+    <ProjectReference Include="..\..\tPlainModLoader\TPML.Runtime\TPML.Runtime.csproj" />
   </ItemGroup>
 
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">

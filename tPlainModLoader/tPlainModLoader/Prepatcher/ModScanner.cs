@@ -72,7 +72,10 @@ namespace tPlainModLoader.Prepatcher
                         foreach (string dllFile in Directory.GetFiles(modSubDir, "*.dll"))
                         {
                             string fileName = Path.GetFileName(dllFile);
-                            if (fileName.Equals("tContentPatch.dll", StringComparison.OrdinalIgnoreCase) ||
+                            if (fileName.Equals("TPML.Runtime.dll", StringComparison.OrdinalIgnoreCase) ||
+                                fileName.Equals("tContentPatch.dll", StringComparison.OrdinalIgnoreCase) ||
+                                fileName.Equals("TPML.Content.dll", StringComparison.OrdinalIgnoreCase) ||
+                                fileName.Equals("TPML.Core.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("CommandHelp.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("0Harmony.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("Newtonsoft.Json.dll", StringComparison.OrdinalIgnoreCase))

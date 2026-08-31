@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\tContentPatch\tContentPatch.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Runtime\TPML.Runtime.csproj" Private="false" />
   </ItemGroup>
 
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickButton 文件夹 -->

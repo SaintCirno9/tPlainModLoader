@@ -3,11 +3,11 @@
   <PropertyGroup>
     <ProjectGuid>{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>tContentPatch</RootNamespace>
-    <AssemblyName>tContentPatch</AssemblyName>
+    <RootNamespace>TPML.Runtime</RootNamespace>
+    <AssemblyName>TPML.Runtime</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\tContentPatch.xml</DocumentationFile>
+    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\TPML.Runtime.xml</DocumentationFile>
     <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
     <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
