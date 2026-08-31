@@ -156,13 +156,13 @@ namespace WandsTool.Content
                 }
 
                 // 4. 电线放置
-                if (wirePlace.Count > 0)
+                if (wirePlace.Count > 0 && player != null)
                 {
                     int processCount = Math.Min(batchSize, wirePlace.Count);
                     for (int i = 0; i < processCount; i++)
                     {
                         tile t = wirePlace.Dequeue();
-                        placeWire(t);
+                        placeWire(t, player);
                     }
                 }
 
@@ -663,35 +663,46 @@ namespace WandsTool.Content
             }
         }
 
-        private static void placeWire(tile t)
+        private static void placeWire(tile t, Player player)
         {
             if (canTile(t) == false) return;
+            Tile existing = Main.tile[t.x, t.y];
+            if (existing == null) return;
 
-            if (t.toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red))
+            TryPlaceOneWire(t, player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red, ItemID.Wire, existing.wire(), WorldGen.PlaceWire, 5);
+            TryPlaceOneWire(t, player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green, ItemID.Wire, existing.wire3(), WorldGen.PlaceWire3, 12);
+            TryPlaceOneWire(t, player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue, ItemID.Wire, existing.wire2(), WorldGen.PlaceWire2, 10);
+            TryPlaceOneWire(t, player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow, ItemID.Wire, existing.wire4(), WorldGen.PlaceWire4, 16);
+            TryPlaceOneWire(t, player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator, ItemID.Actuator, existing.actuator(), WorldGen.PlaceActuator, 8);
+        }
+
+        private static void TryPlaceOneWire(tile t, Player player, Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode mode, int consumeType, bool alreadyPresent, Func<int, int, bool> place, int tileManipulationKind)
+        {
+            if (!t.toolMode.HasFlag(mode) || alreadyPresent) return;
+            if (ModConfig.IsConsumablesItem() && !TryConsumeWireOrActuator(player, consumeType)) return;
+            if (!place(t.x, t.y)) return;
+            WandHistory.AccumulateConsume(consumeType, ModConfig.IsConsumablesItem() ? 1 : 0);
+            NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, tileManipulationKind, t.x, t.y);
+        }
+
+        private static bool TryConsumeWireOrActuator(Player player, int itemType)
+        {
+            if (player?.inventory == null || itemType <= 0) return false;
+            for (int i = 0; i < 58; i++)
             {
-                WorldGen.PlaceWire(t.x, t.y);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 5, t.x, t.y);
+                Item item = player.inventory[i];
+                if (item != null && item.type == itemType && item.stack > 0)
+                {
+                    item.stack--;
+                    if (item.stack <= 0) item.TurnToAir();
+                    return true;
+                }
             }
-            if (t.toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green))
+            if (InventoryFusionManager.ConsumeItem(player, itemType))
             {
-                WorldGen.PlaceWire3(t.x, t.y);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 12, t.x, t.y);
+                return true;
             }
-            if (t.toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue))
-            {
-                WorldGen.PlaceWire2(t.x, t.y);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 10, t.x, t.y);
-            }
-            if (t.toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow))
-            {
-                WorldGen.PlaceWire4(t.x, t.y);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 16, t.x, t.y);
-            }
-            if (t.toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator))
-            {
-                WorldGen.PlaceActuator(t.x, t.y);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 8, t.x, t.y);
-            }
+            return false;
         }
 
         private static void killWire(tile t)
@@ -817,6 +828,7 @@ namespace WandsTool.Content
                 if (canTile(t) == false) continue;
 
                 Tile T = Main.tile[t.x, t.y];
+                if (T == null) continue;
 
                 if (!(T.wire() && toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red)) &&
                     !(T.wire3() && toolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green)) &&

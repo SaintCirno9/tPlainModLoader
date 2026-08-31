@@ -103,7 +103,7 @@ namespace WandsTool.Content
                     TileType = tile.type,
                     FrameX = tile.frameX,
                     FrameY = tile.frameY,
-                    Slope = tile.slope(),
+                    Slope = tile.halfBrick() ? (byte)5 : tile.slope(),
                     TileColor = tile.color(),
                     Wall = tile.wall,
                     WallFrameX = tile.wallFrameX(),
@@ -234,7 +234,8 @@ namespace WandsTool.Content
             {
                 if (tile.type != snap.TileType) return true;
                 if (tile.frameX != snap.FrameX || tile.frameY != snap.FrameY) return true;
-                if (tile.slope() != snap.Slope) return true;
+                byte currentSlope = tile.halfBrick() ? (byte)5 : tile.slope();
+                if (currentSlope != snap.Slope) return true;
                 if (tile.inActive() != snap.WasInActive) return true;
                 if (tile.color() != snap.TileColor) return true;
             }
@@ -263,7 +264,16 @@ namespace WandsTool.Content
                 tile.frameX = snap.FrameX;
                 tile.frameY = snap.FrameY;
                 tile.inActive(snap.WasInActive);
-                tile.slope(snap.Slope); // 0-4 斜坡 / 5 半砖
+                if (snap.Slope == 5)
+                {
+                    tile.slope(0);
+                    tile.halfBrick(true);
+                }
+                else
+                {
+                    tile.halfBrick(false);
+                    tile.slope(snap.Slope);
+                }
                 tile.color(snap.TileColor);
             }
 
