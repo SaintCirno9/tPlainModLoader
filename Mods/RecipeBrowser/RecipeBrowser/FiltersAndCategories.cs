@@ -140,7 +140,18 @@ namespace RecipeBrowser
 
         public string FormatText(string modName)
         {
-            try { return string.Format(name, modName); } catch { return name; }
+            string text;
+            try { text = string.Format(name, modName); }
+            catch { text = name; }
+            if (buttons != null)
+            {
+                for (int i = 0; i < buttons.Count; i++)
+                {
+                    if (buttons[i] != null) buttons[i].hoverText = text;
+                }
+            }
+            if (button != null) button.hoverText = text;
+            return text;
         }
     }
 

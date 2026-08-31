@@ -45,7 +45,7 @@ namespace RecipeBrowser.UIElements
             {
                 if (real && item != null && !item.IsAir)
                 {
-                    Main.LocalPlayer.QuickSpawnItem(null, item.type, item.stack);
+                    Main.LocalPlayer.QuickSpawnItem(null, item);
                 }
                 real = true;
                 item = Main.mouseItem.Clone();
@@ -78,7 +78,7 @@ namespace RecipeBrowser.UIElements
             {
                 if (real)
                 {
-                    Main.LocalPlayer.QuickSpawnItem(null, item.type, item.stack);
+                    Main.LocalPlayer.QuickSpawnItem(null, item);
                 }
                 item.TurnToAir();
                 real = false;

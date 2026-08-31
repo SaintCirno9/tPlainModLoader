@@ -1,7 +1,10 @@
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using RecipeBrowser.UIElements;
 using Terraria;
+using Terraria.GameInput;
 using Terraria.UI;
 
 namespace RecipeBrowser
@@ -81,9 +84,51 @@ namespace RecipeBrowser
 
     public class RecipeBrowserTool : Tool
     {
+        private bool _middleWasDown;
+
         public RecipeBrowserTool()
             : base(typeof(RecipeBrowserUI))
         {
+        }
+
+        internal override void UIUpdate(GameTime gameTime)
+        {
+            base.UIUpdate(gameTime);
+            TryDispatchMiddleClick();
+        }
+
+        /// <summary>
+        /// 原版 UserInterface 只分发左右键；中键需自行落到按钮的 MiddleClick。
+        /// </summary>
+        private void TryDispatchMiddleClick()
+        {
+            if (userInterface?.CurrentState == null) return;
+
+            bool down = Mouse.GetState().MiddleButton == ButtonState.Pressed;
+            bool released = !down && _middleWasDown;
+            _middleWasDown = down;
+            if (!released) return;
+            if (!Main.gameMenu && PlayerInput.IgnoreMouseInterface) return;
+
+            Vector2 pos = Main.MouseScreen;
+            UIElement target = userInterface.CurrentState.GetElementAt(pos);
+            if (target == null) return;
+
+            UIMouseEvent evt = new UIMouseEvent(target, pos);
+            while (target != null)
+            {
+                if (target is UIHoverImageButton hover)
+                {
+                    hover.MiddleClick(evt);
+                    break;
+                }
+                if (target is UISilentImageButton silent)
+                {
+                    silent.MiddleClick(evt);
+                    break;
+                }
+                target = target.Parent;
+            }
         }
     }
 }

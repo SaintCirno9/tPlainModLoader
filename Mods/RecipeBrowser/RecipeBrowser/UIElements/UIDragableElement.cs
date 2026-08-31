@@ -34,6 +34,11 @@ namespace RecipeBrowser.UIElements
                 additionalDragTargets.Add(element);
         }
 
+        public void ClearDragTargets()
+        {
+            additionalDragTargets.Clear();
+        }
+
         public override void LeftMouseDown(UIMouseEvent evt)
         {
             DragStart(evt);

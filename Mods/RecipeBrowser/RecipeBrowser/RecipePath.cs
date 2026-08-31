@@ -58,13 +58,17 @@ namespace RecipeBrowser
         internal static bool allowPurchasable = true;
         internal static Dictionary<int, List<ShopEntry>> purchasable;
         internal static Dictionary<int, List<Recipe>> recipeDictionary;
+        private static int _recipeDictionaryCount;
 
         internal static void Refresh(bool complete = false)
         {
             purchasable = null;
+            mineables = null;
+            bugNetables = null;
             if (complete)
             {
                 recipeDictionary = null;
+                _recipeDictionaryCount = 0;
                 allowLoots = false;
                 allowMissingStations = false;
                 allowPurchasable = false;
@@ -90,6 +94,7 @@ namespace RecipeBrowser
                 if (kvp.Value.Count > 15) toRemove.Add(kvp.Key);
             }
             foreach (int k in toRemove) recipeDictionary.Remove(k);
+            _recipeDictionaryCount = Recipe.numRecipes;
         }
 
         internal static void Adjust(this Dictionary<int, int> d, int key, int adjustment)
@@ -102,7 +107,10 @@ namespace RecipeBrowser
 
         internal static void PrepareGetCraftPaths()
         {
-            if (recipeDictionary == null) InitializeRecipeDictionary();
+            if (recipeDictionary == null || _recipeDictionaryCount != Recipe.numRecipes)
+            {
+                InitializeRecipeDictionary();
+            }
             if (purchasable == null && allowPurchasable) InitializePurchasable();
             if (bugNetables == null && allowBugNetables)
             {
@@ -185,9 +193,9 @@ namespace RecipeBrowser
             }
         }
 
-        public static List<CraftPath> GetCraftPaths(Recipe recipe, CancellationToken token, bool single)
+        public static List<CraftPath> GetCraftPaths(Recipe recipe, CancellationToken token, bool single, Dictionary<int, int> haveItems = null)
         {
-            Dictionary<int, int> haveItems = CalculateHaveItems();
+            if (haveItems == null) haveItems = CalculateHaveItems();
             List<CraftPath> list = new List<CraftPath>();
             CraftPath craftPath = new CraftPath(recipe, haveItems);
             FindCraftPaths(list, craftPath, token, single);
@@ -210,24 +218,33 @@ namespace RecipeBrowser
             return list;
         }
 
+        /// <summary>
+        /// 在主线程拍背包快照，供后台合成路径只读使用。
+        /// </summary>
+        internal static Dictionary<int, int> CaptureHaveItemsSnapshot()
+        {
+            return CalculateHaveItems();
+        }
+
         private static Dictionary<int, int> CalculateHaveItems()
         {
             Dictionary<int, int> dict = new Dictionary<int, int>();
             if (sourceInventory)
             {
+                Player player = Main.LocalPlayer;
+                if (player?.inventory == null) return dict;
                 for (int i = 0; i < 59; i++)
                 {
-                    Item item = (i == 58) ? Main.mouseItem : Main.LocalPlayer.inventory[i];
+                    Item item = (i == 58) ? Main.mouseItem : player.inventory[i];
                     if (item != null && !item.IsAir && item.type > 0)
                     {
                         dict.Adjust(item.type, item.stack);
                     }
                 }
 
-                // 背包融合 (Fusion) 穿透检测
                 try
                 {
-                    var fusionItems = InventoryFusionManager.GetAllFusionItems(Main.LocalPlayer);
+                    var fusionItems = InventoryFusionManager.GetAllFusionItems(player);
                     if (fusionItems != null)
                     {
                         foreach (var fit in fusionItems)

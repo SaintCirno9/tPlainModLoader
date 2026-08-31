@@ -173,15 +173,23 @@ namespace RecipeBrowser
         public async Task ConcurrentTaskHandler()
         {
             List<Task> runningTasks = new List<Task>();
-            try
+            ILogger logger = LogManager.GetLogger("RecipeBrowser");
+            while (concurrentTaskHandlerToken != null && !concurrentTaskHandlerToken.IsCancellationRequested)
             {
-                while (concurrentTaskHandlerToken != null && !concurrentTaskHandlerToken.IsCancellationRequested)
+                try
                 {
                     if (runningTasks.Count >= 4)
                     {
                         Task task = await Task.WhenAny(runningTasks);
                         runningTasks.Remove(task);
-                        try { await task; } catch { }
+                        try
+                        {
+                            await task;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error("并发任务异常", ex);
+                        }
                     }
 
                     if (concurrentTasks.TryDequeue(out var result))
@@ -197,9 +205,24 @@ namespace RecipeBrowser
                         await Task.Delay(100, concurrentTaskHandlerToken.Token);
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    // 单次失败不得退出循环，否则后续队列任务永久停摆
+                    logger.Error("ConcurrentTaskHandler 循环异常", ex);
+                    try
+                    {
+                        await Task.Delay(100, concurrentTaskHandlerToken.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                }
             }
-            catch (OperationCanceledException) { }
-            catch (Exception) { }
         }
 
         public void UpdateUI(GameTime gameTime)

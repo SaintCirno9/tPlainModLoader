@@ -345,9 +345,20 @@ namespace RecipeBrowser
         internal void CloseButtonClicked(UIMouseEvent evt, UIElement listeningElement)
         {
             UnblockInput();
+            ReleaseTextBoxFocus();
             instance.ShowRecipeBrowser = !instance.ShowRecipeBrowser;
             recipeCatalogueUI.CloseButtonClicked();
             bestiaryUI.CloseButtonClicked();
+        }
+
+        internal void ReleaseTextBoxFocus()
+        {
+            recipeCatalogueUI?.itemNameFilter?.Unfocus();
+            recipeCatalogueUI?.itemDescriptionFilter?.Unfocus();
+            itemCatalogueUI?.itemNameFilter?.Unfocus();
+            itemCatalogueUI?.itemDescriptionFilter?.Unfocus();
+            bestiaryUI?.npcNameFilter?.Unfocus();
+            if (Main.blockInput) Main.blockInput = false;
         }
 
         internal void CloseFavoritePanelButtonClicked(UIMouseEvent evt, UIElement listeningElement)
@@ -552,6 +563,7 @@ namespace RecipeBrowser
             }
 
             favoritePanel.RemoveAllChildren();
+            favoritePanel.ClearDragTargets();
             favoritePanel.Append(HideUnlessInventoryToggle);
 
             // 关闭按钮热键提示（对齐原版：动态显示当前绑定键）

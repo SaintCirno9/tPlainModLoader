@@ -81,6 +81,7 @@ namespace RecipeBrowser
             {
                 RecipeCatalogueUI.instance?.InvalidateExtendedCraft();
                 RecipePath.allowMineables = mineables.Selected;
+                RecipePath.PrepareGetCraftPaths();
             };
             mainPanel.Append(mineables);
             left += (int)mineables.MinWidth.Pixels + 10;
@@ -93,6 +94,7 @@ namespace RecipeBrowser
             {
                 RecipeCatalogueUI.instance?.InvalidateExtendedCraft();
                 RecipePath.allowBugNetables = bugnetables.Selected;
+                RecipePath.PrepareGetCraftPaths();
             };
             mainPanel.Append(bugnetables);
             left += (int)bugnetables.MinWidth.Pixels + 10;
@@ -105,6 +107,8 @@ namespace RecipeBrowser
             {
                 RecipeCatalogueUI.instance?.InvalidateExtendedCraft();
                 RecipePath.allowPurchasable = npcShopsCheckbox.Selected;
+                RecipePath.purchasable = null;
+                RecipePath.PrepareGetCraftPaths();
             };
             mainPanel.Append(npcShopsCheckbox);
 

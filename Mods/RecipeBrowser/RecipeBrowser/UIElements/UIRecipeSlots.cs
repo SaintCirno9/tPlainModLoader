@@ -193,11 +193,19 @@ namespace RecipeBrowser.UIElements
                 {
                     craftPathCalculationBegun = true;
                     craftPathCancellationTokenSource = new CancellationTokenSource();
+                    Recipe recipe = Main.recipe[index];
+                    Dictionary<int, int> haveItems = RecipePath.CaptureHaveItemsSnapshot();
                     RecipeBrowserMod.Instance.concurrentTasks.Enqueue(new Task(() =>
                     {
-                        craftPaths = RecipePath.GetCraftPaths(Main.recipe[index], craftPathCancellationTokenSource.Token, single: true);
-                        craftPathCalculated = true;
-                        RecipeCatalogueUI.instance.slowUpdateNeeded = 2;
+                        var token = craftPathCancellationTokenSource.Token;
+                        var paths = RecipePath.GetCraftPaths(recipe, token, single: true, haveItems);
+                        tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+                        {
+                            if (token.IsCancellationRequested) return;
+                            craftPaths = paths;
+                            craftPathCalculated = true;
+                            if (RecipeCatalogueUI.instance != null) RecipeCatalogueUI.instance.slowUpdateNeeded = 2;
+                        });
                     }, craftPathCancellationTokenSource.Token));
                 }
             }

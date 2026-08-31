@@ -104,6 +104,11 @@ namespace RecipeBrowser
         public override void OnEnterWorld(Player player)
         {
             seenTiles = _seenTiles;
+            RecipePath.Refresh();
+            RecipePath.PrepareGetCraftPaths();
+            // Load 时 ItemDropsDB 可能尚未填充，进世界后重建掉落缓存
+            LootCacheManager.Setup();
+            LootCacheManager.itemDrops = null;
 
             // 背包扫描：登记已有物品对应的工作台为已见（对齐原版 OnEnterWorld 逐个 ItemReceived）
             if (RecipeBrowserUI.instance != null)
