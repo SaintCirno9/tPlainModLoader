@@ -43,6 +43,7 @@ namespace OptimizeAndTool.Content.QoL
 
         private static int autoHousingTimer = 0;
         private static bool _registered = false;
+        private static bool _isHoveringOverNPCs = false;
 
         public static void RegisterAll()
         {
@@ -58,6 +59,7 @@ namespace OptimizeAndTool.Content.QoL
             On_NPC.UpdateNPC += Hook_NPC_UpdateNPC;
             On_Main.GUIChatDrawInner += Hook_Main_GUIChatDrawInner;
             On_Player.SetTalkNPC += Hook_Player_SetTalkNPC;
+            On_Main.HoverOverNPCs += Hook_Main_HoverOverNPCs;
             _registered = true;
         }
 
@@ -75,6 +77,7 @@ namespace OptimizeAndTool.Content.QoL
             On_NPC.UpdateNPC -= Hook_NPC_UpdateNPC;
             On_Main.GUIChatDrawInner -= Hook_Main_GUIChatDrawInner;
             On_Player.SetTalkNPC -= Hook_Player_SetTalkNPC;
+            On_Main.HoverOverNPCs -= Hook_Main_HoverOverNPCs;
             _registered = false;
         }
 
@@ -206,12 +209,25 @@ namespace OptimizeAndTool.Content.QoL
 
         #region 2. NPC 视距超远交互与对话停步
 
+        private static void Hook_Main_HoverOverNPCs(On_Main.orig_HoverOverNPCs orig, Main self, Rectangle mouseRectangle)
+        {
+            _isHoveringOverNPCs = true;
+            try
+            {
+                orig(self, mouseRectangle);
+            }
+            finally
+            {
+                _isHoveringOverNPCs = false;
+            }
+        }
+
         private static void Hook_TileReach_GetRanges(On_TileReachCheckSettings.orig_GetRanges orig, ref TileReachCheckSettings self, out int x, out int y)
         {
             orig(ref self, out x, out y);
 
-            // 仅在正在与 NPC 对话时放宽，避免全局放大挖矿/放置/制作站扫描
-            if (EnableInfiniteNPCReach.val && Main.LocalPlayer != null && Main.LocalPlayer.talkNPC >= 0)
+            // 仅在鼠标悬停 NPC 对话气泡检测期或正在与 NPC 对话时放宽至 150 格，避免全局放大挖矿/放置/制作站扫描
+            if (EnableInfiniteNPCReach.val && (_isHoveringOverNPCs || (Main.LocalPlayer != null && Main.LocalPlayer.talkNPC >= 0)))
             {
                 if (x < 150) x = 150;
                 if (y < 150) y = 150;
