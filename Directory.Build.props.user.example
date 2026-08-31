@@ -1,0 +1,10 @@
+<Project>
+  <!-- 
+    本机个性化路径覆盖模板。
+    若本机 Steam/Terraria 安装在非默认路径，复制本文件为同目录下的 Directory.Build.props.user 并修改。
+    Directory.Build.props.user 不会被 Git 追踪。
+  -->
+  <PropertyGroup>
+    <!-- <TerrariaDir>D:\Games\Steam\steamapps\common\Terraria</TerrariaDir> -->
+  </PropertyGroup>
+</Project>

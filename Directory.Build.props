@@ -1,14 +1,10 @@
 <Project>
-  <!--
-    tPlainModLoader 本机环境配置模板(会被子模块下所有工程自动继承)。
-    首次构建前: 复制本文件为同目录下的 Directory.Build.props 并按本机情况修改。
-    Directory.Build.props 不入库; 各属性同时支持同名环境变量覆盖。
-  -->
-  <PropertyGroup>
-    <!-- 原版 Terraria 安装目录(用于编译引用 Terraria.exe 与部署调试), 按实际 Steam 安装位置修改 -->
-    <TerrariaDir Condition="'$(TerrariaDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Terraria</TerrariaDir>
+  <!-- 本地机器路径覆盖（若存在 Directory.Build.props.user 则优先加载本地个性化配置） -->
+  <Import Project="$(MSBuildThisFileDirectory)Directory.Build.props.user" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.props.user')" />
 
-    <!-- 原版 ReLogic.dll 托管程序集路径 (默认使用子模块内 Libs\ReLogic.dll) -->
+  <PropertyGroup>
+    <!-- 原版 Terraria 默认安装路径 (支持环境变量或 .user 文件覆盖) -->
+    <TerrariaDir Condition="'$(TerrariaDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Terraria</TerrariaDir>
     <ReLogicPath Condition="'$(ReLogicPath)' == ''">$(MSBuildThisFileDirectory)Libs\ReLogic.dll</ReLogicPath>
 
     <!-- 构建加速优化 -->
@@ -28,10 +24,16 @@
     <Publicize Include="ReLogic" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
   </ItemGroup>
 
+  <!-- 全局引入 System.Memory 为 net472 提供 Span / ReadOnlySpan 高性能内存操作 -->
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+  </ItemGroup>
+
   <!-- 全局引入 TerrariaHooks 强类型 Hook 支持（排除核心基础设施与生成工具本身） -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'TPML.Core' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'tPlainModLoader' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)tPlainModLoader\TerrariaHooks\TerrariaHooks.csproj" Private="false" />
   </ItemGroup>
+
 
   <!-- 全局注入 C# 现代语法 polyfill（IsExternalInit / RequiredMemberAttribute / CompilerFeatureRequiredAttribute），
        为 net472 补齐 record/init/required 所需的编译器辅助类型；每个程序集编译一份 internal 副本，
@@ -40,3 +42,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills.cs" Link="Polyfills.cs" />
   </ItemGroup>
 </Project>
+
+

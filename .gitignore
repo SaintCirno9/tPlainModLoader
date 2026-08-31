@@ -6,7 +6,7 @@
 /Mods/test1/
 
 # Local machine-specific build configs (not tracked in git)
-Directory.Build.props
+Directory.Build.props.user
 
 # IDE and Editor files
 .vscode/
