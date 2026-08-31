@@ -1,4 +1,3 @@
-using OptimizeAndTool.Content.BigBag;
 using System;
 using System.Collections.Generic;
 using Terraria;
@@ -9,11 +8,10 @@ using Terraria.ID;
 namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
 {
     /// <summary>
-    /// 全场景全物品首见保底掉落门控（基于 HookGen 强类型 On_ 门控）：
-    /// 1. 拦截 ItemDropResolver.ResolveRule（怪物/Boss 掉落池）：未获取物品 100% 必定掉落，多选一池首次全量大爆；
-    /// 2. 拦截 Player.OpenBossBag（专家/大师 Boss 宝藏袋）：专属战利品首开保底；
-    /// 3. 拦截 Player.OpenFishingCrate 及各摸奖袋/锁盒：宝匣与专属战利品首开保底；
-    /// 4. 监听 Player.GetItem：实时收录新发现物品。
+    /// 全场景全物品 100% 必定全量大爆门控（基于 HookGen 强类型 On_ 门控）：
+    /// 1. 拦截 ItemDropResolver.ResolveRule（怪物/Boss 掉落池）：只要满足条件 100% 必定掉落最大数量，多选一池全量大爆；
+    /// 2. 拦截 Player.OpenBossBag（专家/大师 Boss 宝藏袋）：专属战利品永久全量大爆；
+    /// 3. 拦截 Player.OpenFishingCrate 及各摸奖袋/锁盒：宝匣与专属战利品永久全量大爆。
     /// 作者: SaintCirno9
     /// </summary>
     public static class GuaranteedDropHooks
@@ -30,7 +28,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             On_Player.OpenOyster += Hook_OpenOyster;
             On_Player.OpenLockBox += Hook_OpenLockBox;
             On_Player.OpenShadowLockbox += Hook_OpenShadowLockbox;
-            On_Player.GetItem += Hook_GetItem;
             _registered = true;
         }
 
@@ -44,7 +41,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             On_Player.OpenOyster -= Hook_OpenOyster;
             On_Player.OpenLockBox -= Hook_OpenLockBox;
             On_Player.OpenShadowLockbox -= Hook_OpenShadowLockbox;
-            On_Player.GetItem -= Hook_GetItem;
             _registered = false;
         }
 
@@ -67,13 +63,11 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
             if (rule is CommonDrop commonDrop)
             {
                 int itemId = commonDrop.itemId;
-                if (itemId > 0 && !DiscoveredItemTracker.HasDiscovered(info.player, itemId))
+                if (itemId > 0)
                 {
-                    int min = commonDrop.amountDroppedMinimum;
-                    int max = commonDrop.amountDroppedMaximum;
-                    int stack = min >= max ? min : info.rng.Next(min, max + 1);
+                    int stack = commonDrop.amountDroppedMaximum;
+                    if (stack <= 0) stack = 1;
                     CommonCode.DropItemFromNPC(info.npc, itemId, stack);
-                    DiscoveredItemTracker.RecordDiscovered(itemId);
 
                     var result = new ItemDropAttemptResult
                     {
@@ -89,43 +83,33 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 int[] options = optionsRule.dropIds;
                 if (options != null && options.Length > 0)
                 {
-                    List<int> undiscovered = new List<int>();
-                    for (int i = 0; i < options.Length; i++)
+                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
                     {
-                        int id = options[i];
-                        if (id > 0 && !DiscoveredItemTracker.HasDiscovered(info.player, id))
+                        // 全量大爆特爆：掉出该池中所有物品
+                        for (int i = 0; i < options.Length; i++)
                         {
-                            undiscovered.Add(id);
-                        }
-                    }
-
-                    if (undiscovered.Count > 0)
-                    {
-                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                        {
-                            // 全量大爆特爆：掉出该池中所有未获取物品
-                            for (int i = 0; i < undiscovered.Count; i++)
+                            int id = options[i];
+                            if (id > 0)
                             {
-                                int id = undiscovered[i];
                                 CommonCode.DropItemFromNPC(info.npc, id, 1);
-                                DiscoveredItemTracker.RecordDiscovered(id);
                             }
                         }
-                        else
-                        {
-                            // 单件优先：随机掉落 1 件未获取物品
-                            int chosen = undiscovered[info.rng.Next(undiscovered.Count)];
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
-                            DiscoveredItemTracker.RecordDiscovered(chosen);
-                        }
-
-                        var result = new ItemDropAttemptResult
-                        {
-                            State = ItemDropAttemptResultState.Success
-                        };
-                        self.ResolveRuleChains(rule, info, result);
-                        return result;
                     }
+                    else
+                    {
+                        int chosen = options[info.rng.Next(options.Length)];
+                        if (chosen > 0)
+                        {
+                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                        }
+                    }
+
+                    var result = new ItemDropAttemptResult
+                    {
+                        State = ItemDropAttemptResultState.Success
+                    };
+                    self.ResolveRuleChains(rule, info, result);
+                    return result;
                 }
             }
             // C. 多选一不随幸运缩放规则 (OneFromOptionsNotScaledWithLuckDropRule)
@@ -134,41 +118,32 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 int[] options = optionsNotLuckRule.dropIds;
                 if (options != null && options.Length > 0)
                 {
-                    List<int> undiscovered = new List<int>();
-                    for (int i = 0; i < options.Length; i++)
+                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
                     {
-                        int id = options[i];
-                        if (id > 0 && !DiscoveredItemTracker.HasDiscovered(info.player, id))
+                        for (int i = 0; i < options.Length; i++)
                         {
-                            undiscovered.Add(id);
-                        }
-                    }
-
-                    if (undiscovered.Count > 0)
-                    {
-                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                        {
-                            for (int i = 0; i < undiscovered.Count; i++)
+                            int id = options[i];
+                            if (id > 0)
                             {
-                                int id = undiscovered[i];
                                 CommonCode.DropItemFromNPC(info.npc, id, 1);
-                                DiscoveredItemTracker.RecordDiscovered(id);
                             }
                         }
-                        else
-                        {
-                            int chosen = undiscovered[info.rng.Next(undiscovered.Count)];
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
-                            DiscoveredItemTracker.RecordDiscovered(chosen);
-                        }
-
-                        var result = new ItemDropAttemptResult
-                        {
-                            State = ItemDropAttemptResultState.Success
-                        };
-                        self.ResolveRuleChains(rule, info, result);
-                        return result;
                     }
+                    else
+                    {
+                        int chosen = options[info.rng.Next(options.Length)];
+                        if (chosen > 0)
+                        {
+                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                        }
+                    }
+
+                    var result = new ItemDropAttemptResult
+                    {
+                        State = ItemDropAttemptResultState.Success
+                    };
+                    self.ResolveRuleChains(rule, info, result);
+                    return result;
                 }
             }
             // D. 不重复多选规则 (FromOptionsWithoutRepeatsDropRule)
@@ -177,41 +152,32 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 int[] options = withoutRepeatsRule.dropIds;
                 if (options != null && options.Length > 0)
                 {
-                    List<int> undiscovered = new List<int>();
-                    for (int i = 0; i < options.Length; i++)
+                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
                     {
-                        int id = options[i];
-                        if (id > 0 && !DiscoveredItemTracker.HasDiscovered(info.player, id))
+                        for (int i = 0; i < options.Length; i++)
                         {
-                            undiscovered.Add(id);
-                        }
-                    }
-
-                    if (undiscovered.Count > 0)
-                    {
-                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                        {
-                            for (int i = 0; i < undiscovered.Count; i++)
+                            int id = options[i];
+                            if (id > 0)
                             {
-                                int id = undiscovered[i];
                                 CommonCode.DropItemFromNPC(info.npc, id, 1);
-                                DiscoveredItemTracker.RecordDiscovered(id);
                             }
                         }
-                        else
-                        {
-                            int chosen = undiscovered[info.rng.Next(undiscovered.Count)];
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
-                            DiscoveredItemTracker.RecordDiscovered(chosen);
-                        }
-
-                        var result = new ItemDropAttemptResult
-                        {
-                            State = ItemDropAttemptResultState.Success
-                        };
-                        self.ResolveRuleChains(rule, info, result);
-                        return result;
                     }
+                    else
+                    {
+                        int chosen = options[info.rng.Next(options.Length)];
+                        if (chosen > 0)
+                        {
+                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                        }
+                    }
+
+                    var result = new ItemDropAttemptResult
+                    {
+                        State = ItemDropAttemptResultState.Success
+                    };
+                    self.ResolveRuleChains(rule, info, result);
+                    return result;
                 }
             }
 
@@ -586,7 +552,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                         if (itemId > 0 && itemId < ItemID.Count)
                         {
                             self.QuickSpawnItem(source, itemId, 1);
-                            DiscoveredItemTracker.RecordDiscovered(itemId);
                         }
                     }
                 }
@@ -604,7 +569,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                             if (devItemId > 0 && devItemId < ItemID.Count)
                             {
                                 self.QuickSpawnItem(source, devItemId, 1);
-                                DiscoveredItemTracker.RecordDiscovered(devItemId);
                             }
                         }
                     }
@@ -671,7 +635,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                         if (itemId > 0 && itemId < ItemID.Count)
                         {
                             self.QuickSpawnItem(source, itemId, 1);
-                            DiscoveredItemTracker.RecordDiscovered(itemId);
                         }
                     }
                 }
@@ -689,7 +652,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 for (int i = 0; i < worms.Length; i++)
                 {
                     self.QuickSpawnItem(source, worms[i], 1);
-                    DiscoveredItemTracker.RecordDiscovered(worms[i]);
                 }
             }
 
@@ -705,7 +667,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 for (int i = 0; i < pearls.Length; i++)
                 {
                     self.QuickSpawnItem(source, pearls[i], 1);
-                    DiscoveredItemTracker.RecordDiscovered(pearls[i]);
                 }
             }
 
@@ -721,7 +682,6 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 for (int i = 0; i < dungeonWeapons.Length; i++)
                 {
                     self.QuickSpawnItem(source, dungeonWeapons[i], 1);
-                    DiscoveredItemTracker.RecordDiscovered(dungeonWeapons[i]);
                 }
             }
 
@@ -737,31 +697,10 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 for (int i = 0; i < hellWeapons.Length; i++)
                 {
                     self.QuickSpawnItem(source, hellWeapons[i], 1);
-                    DiscoveredItemTracker.RecordDiscovered(hellWeapons[i]);
                 }
             }
 
             orig(self, boxType);
-        }
-
-        #endregion
-
-        #region 4. 实时拾取监听 (Player.GetItem)
-
-        private static Item Hook_GetItem(On_Player.orig_GetItem orig, Player self, Item newItem, GetItemSettings settings)
-        {
-            Item result = orig(self, newItem, settings);
-
-            if (self != null && self == Main.LocalPlayer && newItem != null && !newItem.IsAir && newItem.type > 0)
-            {
-                // 如果物品成功被玩家接收（全部或部分进入背包）
-                if (result == null || result.stack < newItem.stack || result.IsAir)
-                {
-                    DiscoveredItemTracker.RecordDiscovered(newItem.type);
-                }
-            }
-
-            return result;
         }
 
         #endregion

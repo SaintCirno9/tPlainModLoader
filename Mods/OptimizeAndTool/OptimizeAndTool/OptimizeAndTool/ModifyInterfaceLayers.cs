@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using OptimizeAndTool.Content.BigBag;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Storage.Core;
 using OptimizeAndTool.Content.Creative;
 using OptimizeAndTool.Content.QoL.Pipette;
 using OptimizeAndTool.Content.QoL.InfiniteBuff;
@@ -110,28 +111,14 @@ namespace OptimizeAndTool
 
             if (Main.gameMenu)
             {
-                if (bigBagWindow?.IsOpen == true) bigBagWindow.Close();
-                if (AccessoryBagWindow.IsOpen) AccessoryBagWindow.Instance.Close();
-                if (InfiniteBuffWindow.IsWindowOpen) InfiniteBuffWindow.Instance.Close();
+                CloseAllCustomWindows();
                 return;
             }
 
-            // 大背包/随身饰品袋/药水袋/旗帜盒开启时，若物品栏关闭，同步关闭对应扩展窗口
-            if (bigBagWindow?.IsOpen == true && !Main.playerInventory)
+            // 若物品栏关闭，自动关闭所有依附于物品栏生命周期的扩展窗口（大背包、饰品箱、实体收纳袋等）
+            if (!Main.playerInventory)
             {
-                bigBagWindow.Close();
-            }
-            if (AccessoryBagWindow.IsOpen && !Main.playerInventory)
-            {
-                AccessoryBagWindow.Instance.Close();
-            }
-            if (Content.Storage.ItemContainer.PotionBagWindow.IsOpen && !Main.playerInventory)
-            {
-                Content.Storage.ItemContainer.PotionBagWindow.Instance.Close();
-            }
-            if (Content.Storage.ItemContainer.BannerChestWindow.IsOpen && !Main.playerInventory)
-            {
-                Content.Storage.ItemContainer.BannerChestWindow.Instance.Close();
+                CloseInventoryBoundWindows();
             }
 
             ui_game?.Update(gameTime);
@@ -164,19 +151,64 @@ namespace OptimizeAndTool
         }
 
         public static bool BigBagIsOpen => bigBagWindow?.IsOpen == true;
-        public static bool BigBagIsHovering => IsHoveringWindow(bigBagWindow);
-
         public static bool BoxIsOpen => AccessoryBagWindow.IsOpen;
-        public static bool BoxIsHovering => IsHoveringWindow(AccessoryBagWindow.Instance);
-
-        public static bool PotionBagIsOpen => Content.Storage.ItemContainer.PotionBagWindow.IsOpen;
-        public static bool PotionBagIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.PotionBagWindow.Instance);
-
-        public static bool BannerChestIsOpen => Content.Storage.ItemContainer.BannerChestWindow.IsOpen;
-        public static bool BannerChestIsHovering => IsHoveringWindow(Content.Storage.ItemContainer.BannerChestWindow.Instance);
-
         public static bool InfiniteBuffIsOpen => InfiniteBuffWindow.IsWindowOpen;
-        public static bool InfiniteBuffIsHovering => IsHoveringWindow(InfiniteBuffWindow.Instance);
+
+        /// <summary>
+        /// 关闭所有依附于物品栏生命周期的窗口（如大背包、饰品箱及各实体收纳袋）
+        /// </summary>
+        public static void CloseInventoryBoundWindows()
+        {
+            if (ui_game_state?.Children == null) return;
+            List<UIWindow> toClose = new List<UIWindow>();
+            foreach (var elem in ui_game_state.Children)
+            {
+                if (elem is UIWindow win && win.IsOpen && (elem is BigBagWindow || elem is UniversalBagWindow))
+                {
+                    toClose.Add(win);
+                }
+            }
+            for (int i = 0; i < toClose.Count; i++)
+            {
+                toClose[i].Close();
+            }
+        }
+
+        /// <summary>
+        /// 关闭所有已打开的自定义模组窗口
+        /// </summary>
+        public static void CloseAllCustomWindows()
+        {
+            if (ui_game_state?.Children == null) return;
+            List<UIWindow> toClose = new List<UIWindow>();
+            foreach (var elem in ui_game_state.Children)
+            {
+                if (elem is UIWindow win && win.IsOpen)
+                {
+                    toClose.Add(win);
+                }
+            }
+            for (int i = 0; i < toClose.Count; i++)
+            {
+                toClose[i].Close();
+            }
+        }
+
+        /// <summary>
+        /// 统一判定光标是否悬停在当前任何已打开的自定义模组窗口内（大背包、饰品箱、各类收纳袋、物品浏览器、无尽增益等）
+        /// </summary>
+        public static bool IsAnyCustomWindowHovering()
+        {
+            if (ui_game_state?.Children == null) return false;
+            foreach (var elem in ui_game_state.Children)
+            {
+                if (elem is UIWindow win && win.IsOpen && IsHoveringWindow(win))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// 判定光标是否悬停在指定自定义窗口内（结合 IsMouseHovering 与 16px 边框容差，确保滑条与外沿判定 100% 覆盖）

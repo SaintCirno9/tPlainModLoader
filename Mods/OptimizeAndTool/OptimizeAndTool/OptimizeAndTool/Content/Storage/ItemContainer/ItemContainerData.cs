@@ -77,6 +77,26 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public abstract bool MeetEntryCriteria(Item item);
         public bool MeetEntryCriteria(Item item, int targetSlot = -1) => MeetEntryCriteria(item);
 
+        /// <summary>
+        /// 当玩家拾取物品时触发此容器的拦截处理（如自动存入、自动售卖或销毁）
+        /// </summary>
+        /// <param name="player">拾取物品的玩家</param>
+        /// <param name="item">被拾取的物品（若被吸收/处理完毕需设置 stack=0 或 TurnToAir）</param>
+        /// <returns>若成功拦截且物品已被完全消耗返回 true；否则返回 false</returns>
+        public virtual bool OnPickupIntercept(Player player, Item item)
+        {
+            if (!AutoStorage || item == null || item.IsAir || !MeetEntryCriteria(item)) return false;
+
+            int origStack = item.stack;
+            TryDeposit(item, sort: true);
+            int absorbed = origStack - item.stack;
+            if (absorbed > 0)
+            {
+                PopupText.NewText(PopupTextContext.RegularItemPickup, item, player.Center, absorbed, false, false);
+            }
+            return item.stack <= 0;
+        }
+
         public int GetStoredCount()
         {
             if (Slots == null) return 0;

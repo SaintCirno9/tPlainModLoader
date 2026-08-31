@@ -7,23 +7,23 @@ using TPML.Content;
 namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
-    /// 药水袋 UI 窗口快捷操作封装
+    /// 通用容器快捷窗口操作助手
     /// </summary>
-    public static class PotionBagWindow
+    public static class ContainerWindowHelper<T> where T : ItemContainerItem
     {
         public static ItemContainerWindow Instance => ItemContainerWindow.Instance;
-        public static bool IsOpen => ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container is PotionBagItem;
+        public static bool IsOpen => ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container is T;
 
-        public static void Toggle(IItemContainer bag = null)
+        public static void Toggle(IItemContainer container = null)
         {
-            if (bag == null)
+            if (container == null)
             {
-                bag = FindCarriedContainer<PotionBagItem>();
+                container = FindCarriedContainer();
             }
 
-            if (bag != null)
+            if (container != null)
             {
-                ItemContainerWindow.Toggle(bag);
+                ItemContainerWindow.Toggle(container);
             }
             else if (ItemContainerWindow.IsOpen)
             {
@@ -36,7 +36,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (IsOpen) ItemContainerWindow.Instance.Close();
         }
 
-        private static IItemContainer FindCarriedContainer<T>() where T : ItemContainerItem
+        public static IItemContainer FindCarriedContainer()
         {
             Player player = Main.LocalPlayer;
             if (player == null) return null;
@@ -75,71 +75,39 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
     }
 
     /// <summary>
+    /// 药水袋 UI 窗口快捷操作封装
+    /// </summary>
+    public static class PotionBagWindow
+    {
+        public static ItemContainerWindow Instance => ContainerWindowHelper<PotionBagItem>.Instance;
+        public static bool IsOpen => ContainerWindowHelper<PotionBagItem>.IsOpen;
+        public static void Toggle(IItemContainer bag = null) => ContainerWindowHelper<PotionBagItem>.Toggle(bag);
+        public static void Close() => ContainerWindowHelper<PotionBagItem>.Close();
+        public static IItemContainer FindCarriedContainer() => ContainerWindowHelper<PotionBagItem>.FindCarriedContainer();
+    }
+
+    /// <summary>
     /// 旗帜盒 UI 窗口快捷操作封装
     /// </summary>
     public static class BannerChestWindow
     {
-        public static ItemContainerWindow Instance => ItemContainerWindow.Instance;
-        public static bool IsOpen => ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container is BannerChestItem;
+        public static ItemContainerWindow Instance => ContainerWindowHelper<BannerChestItem>.Instance;
+        public static bool IsOpen => ContainerWindowHelper<BannerChestItem>.IsOpen;
+        public static void Toggle(IItemContainer chest = null) => ContainerWindowHelper<BannerChestItem>.Toggle(chest);
+        public static void Close() => ContainerWindowHelper<BannerChestItem>.Close();
+        public static IItemContainer FindCarriedContainer() => ContainerWindowHelper<BannerChestItem>.FindCarriedContainer();
+    }
 
-        public static void Toggle(IItemContainer chest = null)
-        {
-            if (chest == null)
-            {
-                chest = FindCarriedContainer<BannerChestItem>();
-            }
-
-            if (chest != null)
-            {
-                ItemContainerWindow.Toggle(chest);
-            }
-            else if (ItemContainerWindow.IsOpen)
-            {
-                ItemContainerWindow.Instance.Close();
-            }
-        }
-
-        public static void Close()
-        {
-            if (IsOpen) ItemContainerWindow.Instance.Close();
-        }
-
-        private static IItemContainer FindCarriedContainer<T>() where T : ItemContainerItem
-        {
-            Player player = Main.LocalPlayer;
-            if (player == null) return null;
-
-            int targetType = ModContent.ItemType<T>();
-            if (targetType <= 0) return null;
-
-            if (player.inventory != null)
-            {
-                for (int i = 0; i < player.inventory.Length; i++)
-                {
-                    Item it = player.inventory[i];
-                    if (it != null && !it.IsAir && it.type == targetType)
-                    {
-                        return ItemLoader.GetModItem(it) as IItemContainer;
-                    }
-                }
-            }
-
-            Item[][] banks = new[] { player.bank?.item, player.bank2?.item, player.bank3?.item, player.bank4?.item };
-            foreach (var bank in banks)
-            {
-                if (bank == null) continue;
-                for (int i = 0; i < bank.Length; i++)
-                {
-                    Item it = bank[i];
-                    if (it != null && !it.IsAir && it.type == targetType)
-                    {
-                        return ItemLoader.GetModItem(it) as IItemContainer;
-                    }
-                }
-            }
-
-            return null;
-        }
+    /// <summary>
+    /// 随身垃圾桶 UI 窗口快捷操作封装
+    /// </summary>
+    public static class TrashBagWindow
+    {
+        public static ItemContainerWindow Instance => ContainerWindowHelper<TrashBagItem>.Instance;
+        public static bool IsOpen => ContainerWindowHelper<TrashBagItem>.IsOpen;
+        public static void Toggle(IItemContainer bag = null) => ContainerWindowHelper<TrashBagItem>.Toggle(bag);
+        public static void Close() => ContainerWindowHelper<TrashBagItem>.Close();
+        public static IItemContainer FindCarriedContainer() => ContainerWindowHelper<TrashBagItem>.FindCarriedContainer();
     }
 
     /// <summary>

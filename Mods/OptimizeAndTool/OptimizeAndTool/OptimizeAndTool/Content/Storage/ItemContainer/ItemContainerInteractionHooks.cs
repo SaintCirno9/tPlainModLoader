@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.QoL;
 using tContentPatch;
 using Terraria;
@@ -10,17 +11,16 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 {
     /// <summary>
     /// 容器交互门控（基于 HookGen 强类型 On_ 门控）：
-    /// 1. 物品栏右键点击药水袋/旗帜盒开闭对应实体界面
+    /// 1. 物品栏右键点击任意 ItemContainerItem 打开/关闭对应实体界面
     /// 2. 鼠标悬停中键快捷开闭对应实体界面
-    /// 3. 手持药水/旗帜左键点击收纳袋直接存入该实体
+    /// 3. 手持物品左键点击收纳袋直接存入该实体
     /// 4. 容器打开时 Shift+左键 快速存入当前打开的容器实体
-    /// 5. 拾取物品时若背包有对应开启自动收纳的袋子/盒子实体则自动吸入
+    /// 5. 拾取物品时统一派发至各容器的 OnPickupIntercept 进行自动收纳或售卖销毁
+    /// 6. 阻止玩家将非空的容器实体误丢弃
     /// 作者: SaintCirno9
     /// </summary>
     internal static class ItemContainerInteractionHooks
     {
-        public static int PotionBagType => ModContent.ItemType<PotionBagItem>();
-        public static int BannerChestType => ModContent.ItemType<BannerChestItem>();
         private static bool _registered = false;
 
         public static void RegisterAll()
@@ -31,6 +31,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             On_ItemSlot.GetAlternateClickAction += Hook_GetAlternateClickAction;
             On_ItemSlot.MouseHover_ItemArray_int_int += Hook_MouseHover;
             On_Player.GetItem += Hook_GetItem;
+            On_Player.DropSelectedItem += Hook_DropSelectedItem;
             _registered = true;
         }
 
@@ -42,6 +43,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             On_ItemSlot.GetAlternateClickAction -= Hook_GetAlternateClickAction;
             On_ItemSlot.MouseHover_ItemArray_int_int -= Hook_MouseHover;
             On_Player.GetItem -= Hook_GetItem;
+            On_Player.DropSelectedItem -= Hook_DropSelectedItem;
             _registered = false;
         }
 
@@ -50,27 +52,17 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (inv != null && slot >= 0 && slot < inv.Length)
             {
                 Item item = inv[slot];
-                if (item != null && !item.IsAir)
+                if (item != null && !item.IsAir && ItemLoader.GetModItem(item) is ItemContainerItem container)
                 {
-                    int pbType = PotionBagType;
-                    int bcType = BannerChestType;
-
-                    if ((pbType > 0 && item.type == pbType) || (bcType > 0 && item.type == bcType))
+                    if (Main.mouseRight)
                     {
-                        if (Main.mouseRight)
+                        if (Main.mouseRightRelease && Main.player[Main.myPlayer].itemAnimation <= 0)
                         {
-                            if (Main.mouseRightRelease && Main.player[Main.myPlayer].itemAnimation <= 0)
-                            {
-                                Main.mouseRightRelease = false;
-                                IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
-                                if (container != null)
-                                {
-                                    ItemContainerWindow.Toggle(container);
-                                    SoundEngine.PlaySound(SoundID.MenuOpen);
-                                }
-                            }
-                            return;
+                            Main.mouseRightRelease = false;
+                            ItemContainerWindow.Toggle(container);
+                            SoundEngine.PlaySound(SoundID.MenuOpen);
                         }
+                        return;
                     }
                 }
             }
@@ -85,25 +77,18 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 Item item = inv[slot];
                 if (item != null)
                 {
-                    int pbType = PotionBagType;
-                    int bcType = BannerChestType;
-
                     // 1. 手持物品左键点击收纳袋：存入对应容器实体（杜绝触发原版 MouseItemSwap 交换位置）
                     if (!Main.mouseItem.IsAir && Main.mouseLeft && Main.mouseLeftRelease && !ItemSlot.ShiftInUse && !ItemSlot.ControlInUse)
                     {
-                        if ((pbType > 0 && item.type == pbType) || (bcType > 0 && item.type == bcType))
+                        if (ItemLoader.GetModItem(item) is ItemContainerItem container && container.MeetEntryCriteria(Main.mouseItem))
                         {
-                            IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
-                            if (container != null && container.MeetEntryCriteria(Main.mouseItem))
+                            if (container.TryDeposit(Main.mouseItem, sort: true))
                             {
-                                if (container.TryDeposit(Main.mouseItem, sort: true))
-                                {
-                                    SoundEngine.PlaySound(SoundID.Grab);
-                                    if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
-                                    Main.mouseLeftRelease = false;
-                                    Recipe.UpdateRecipeList();
-                                    return;
-                                }
+                                SoundEngine.PlaySound(SoundID.Grab);
+                                if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
+                                Main.mouseLeftRelease = false;
+                                Recipe.UpdateRecipeList();
+                                return;
                             }
                         }
                     }
@@ -160,19 +145,27 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (Terraria.GameInput.PlayerInput.MouseInfo.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed &&
                 Terraria.GameInput.PlayerInput.MouseInfoOld.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
             {
-                int pbType = PotionBagType;
-                int bcType = BannerChestType;
-                if ((pbType > 0 && item.type == pbType) || (bcType > 0 && item.type == bcType))
+                if (ItemLoader.GetModItem(item) is ItemContainerItem container)
                 {
                     Terraria.GameInput.PlayerInput.MouseInfoOld = Terraria.GameInput.PlayerInput.MouseInfo;
-                    IItemContainer container = ItemLoader.GetModItem(item) as IItemContainer;
-                    if (container != null)
-                    {
-                        ItemContainerWindow.Toggle(container);
-                        SoundEngine.PlaySound(SoundID.MenuOpen);
-                    }
+                    ItemContainerWindow.Toggle(container);
+                    SoundEngine.PlaySound(SoundID.MenuOpen);
                 }
             }
+        }
+
+        private static void Hook_DropSelectedItem(On_Player.orig_DropSelectedItem orig, Player self)
+        {
+            if (self.inventory != null && self.selectedItem >= 0 && self.selectedItem < self.inventory.Length)
+            {
+                Item held = self.inventory[self.selectedItem];
+                if (held != null && !held.IsAir && ItemLoader.GetModItem(held) is ItemContainerItem container && container.GetStoredCount() > 0)
+                {
+                    Main.NewText($"[提示] 无法丢弃非空的 [{held.Name}]，请先清空内部存储物。", 255, 200, 100);
+                    return;
+                }
+            }
+            orig(self);
         }
 
         private static Item Hook_GetItem(On_Player.orig_GetItem orig, Player self, Item newItem, GetItemSettings settings)
@@ -185,46 +178,28 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 return orig(self, newItem, settings);
             }
 
-            int pbType = PotionBagType;
-            int bcType = BannerChestType;
-            if (pbType <= 0 && bcType <= 0)
-            {
-                return orig(self, newItem, settings);
-            }
-
-            bool TryAutoStoreInArray(Item[] array)
+            bool TryProcessContainers(Item[] array)
             {
                 if (array == null) return false;
                 for (int i = 0; i < array.Length; i++)
                 {
                     Item it = array[i];
-                    if (it != null && !it.IsAir && (it.type == pbType || it.type == bcType))
+                    if (it != null && !it.IsAir && ItemLoader.GetModItem(it) is ItemContainerItem container)
                     {
-                        IItemContainer container = ItemLoader.GetModItem(it) as IItemContainer;
-                        if (container != null && container.AutoStorage && container.MeetEntryCriteria(newItem))
+                        if (container.OnPickupIntercept(self, newItem))
                         {
-                            int origStack = newItem.stack;
-                            container.TryDeposit(newItem, sort: true);
-                            int absorbed = origStack - newItem.stack;
-                            if (absorbed > 0)
-                            {
-                                PopupText.NewText(PopupTextContext.RegularItemPickup, newItem, self.Center, absorbed, false, false);
-                            }
-                            if (newItem.stack <= 0)
-                            {
-                                return true;
-                            }
+                            return true;
                         }
                     }
                 }
                 return false;
             }
 
-            if (TryAutoStoreInArray(self.inventory) ||
-                (self.bank?.item != null && TryAutoStoreInArray(self.bank.item)) ||
-                (self.bank2?.item != null && TryAutoStoreInArray(self.bank2.item)) ||
-                (self.bank3?.item != null && TryAutoStoreInArray(self.bank3.item)) ||
-                (self.bank4?.item != null && TryAutoStoreInArray(self.bank4.item)))
+            if (TryProcessContainers(self.inventory) ||
+                (self.bank?.item != null && TryProcessContainers(self.bank.item)) ||
+                (self.bank2?.item != null && TryProcessContainers(self.bank2.item)) ||
+                (self.bank3?.item != null && TryProcessContainers(self.bank3.item)) ||
+                (self.bank4?.item != null && TryProcessContainers(self.bank4.item)))
             {
                 return new Item();
             }

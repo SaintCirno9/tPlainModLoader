@@ -166,6 +166,7 @@ namespace OptimizeAndTool.Content.Patch
                 AddContent(new PotionBagItem());
                 AddContent(new BannerChestItem());
                 AddContent(new AccessoryBagItem());
+                AddContent(new TrashBagItem());
             }
             catch (Exception ex)
             {

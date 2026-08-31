@@ -637,7 +637,6 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
-                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }
@@ -656,7 +655,6 @@ namespace OptimizeAndTool.Content.BigBag
                         item.TurnToAir();
                         EnsureTrailingEmptySlots(10);
                         NotifySlotsChanged();
-                        QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                         return true;
                     }
                 }
@@ -672,7 +670,6 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
-                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }
@@ -689,7 +686,6 @@ namespace OptimizeAndTool.Content.BigBag
                     item.TurnToAir();
                     EnsureTrailingEmptySlots(10);
                     NotifySlotsChanged();
-                    QoL.GuaranteedDrop.DiscoveredItemTracker.RecordDiscovered(itemType);
                     return true;
                 }
             }
