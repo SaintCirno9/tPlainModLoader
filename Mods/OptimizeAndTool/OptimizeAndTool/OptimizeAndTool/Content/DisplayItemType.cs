@@ -8,9 +8,12 @@ namespace OptimizeAndTool.Content
         private int r = 85;
         private int g = 85 * 2;
         private int b = 85 * 3;
+        private static bool _tooltipRegistered;
 
         public override void Load()
         {
+            if (_tooltipRegistered) return;
+            _tooltipRegistered = true;
             ItemToolTipAdditional.ItemInfo.Add(item =>
             {
                 if (item == null) return null;

@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.Audio;
+using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.UI;
 using OptimizeAndTool.Content.UI;
@@ -262,25 +263,35 @@ namespace OptimizeAndTool.Content.QoL.Pipette
         /// </summary>
         private static void ReturnBigBagItemToStorage(Player player)
         {
-            if (!isFromBigBag || currentPipetteSlot < 10 || currentPipetteSlot > 49 || bigBagSourceSlot < 0) return;
+            if (!isFromBigBag || currentPipetteSlot < 0 || currentPipetteSlot >= player.inventory.Length || bigBagSourceSlot < 0) return;
+
+            Item[] bagSlots = BigBag.BigBag.Slots;
+            if (bagSlots == null || bigBagSourceSlot >= bagSlots.Length)
+            {
+                isFromBigBag = false;
+                bigBagSourceSlot = -1;
+                return;
+            }
 
             try
             {
                 Item heldItem = player.inventory[currentPipetteSlot] ?? new Item();
-                Item originalItem = (bigBagSourceSlot < BigBag.BigBag.Slots.Length) ? BigBag.BigBag.Slots[bigBagSourceSlot] : new Item();
+                Item originalItem = bagSlots[bigBagSourceSlot] ?? new Item();
 
-                // 还原主背包承载槽位置换前原本存放的物品
                 player.inventory[currentPipetteSlot] = originalItem;
 
-                // 将剩余的手持物块放回大背包原槽位或存入空格/合并
                 if (heldItem != null && !heldItem.IsAir && heldItem.stack > 0)
                 {
-                    BigBag.BigBag.Slots[bigBagSourceSlot] = new Item();
-                    BigBag.BigBag.DepositItem(heldItem, bigBagSourceSlot);
+                    bagSlots[bigBagSourceSlot] = new Item();
+                    if (!BigBag.BigBag.DepositItem(heldItem, bigBagSourceSlot) && !heldItem.IsAir)
+                    {
+                        player.QuickSpawnItem(new TPML.Content.EntitySource_Misc("PipetteReturn"), heldItem.type, heldItem.stack);
+                        heldItem.TurnToAir();
+                    }
                 }
                 else
                 {
-                    BigBag.BigBag.Slots[bigBagSourceSlot] = new Item();
+                    bagSlots[bigBagSourceSlot] = new Item();
                 }
 
                 BigBag.BigBag.NotifySlotsChanged();

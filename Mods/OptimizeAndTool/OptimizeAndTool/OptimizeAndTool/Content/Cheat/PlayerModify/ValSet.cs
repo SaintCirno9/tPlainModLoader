@@ -35,7 +35,7 @@ namespace OptimizeAndTool.Content.Cheat.PlayerModify
 
             if (armorPenetration.val)
             {
-                This.armorPenetration = armorPenetration_val.val;
+                This.armorPenetration += armorPenetration_val.val;
             }
 
             if (maxMinions.val)

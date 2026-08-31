@@ -49,8 +49,8 @@ namespace OptimizeAndTool.Content.QoL
             if (_registered) return;
             IL_WorldGen.ScoreRoom += Hook_ScoreRoom_IL;
             On_Player.Update += Hook_Player_Update;
-            On_TileReachCheckSettings.GetRanges += Hook_TileReach_GetRanges;
             On_NPC.AI_007_TownEntities += Hook_NPC_AI_007_TownEntities;
+            On_TileReachCheckSettings.GetRanges += Hook_TileReach_GetRanges;
             On_ShopHelper.GetShoppingSettings += Hook_ShopHelper_GetShoppingSettings;
             On_ShopHelper.GetTravelingMerchantPrices += Hook_ShopHelper_GetTravelingMerchantPrices;
             On_WorldGen.moveRoom += Hook_WorldGen_moveRoom;
@@ -66,8 +66,8 @@ namespace OptimizeAndTool.Content.QoL
             if (!_registered) return;
             IL_WorldGen.ScoreRoom -= Hook_ScoreRoom_IL;
             On_Player.Update -= Hook_Player_Update;
-            On_TileReachCheckSettings.GetRanges -= Hook_TileReach_GetRanges;
             On_NPC.AI_007_TownEntities -= Hook_NPC_AI_007_TownEntities;
+            On_TileReachCheckSettings.GetRanges -= Hook_TileReach_GetRanges;
             On_ShopHelper.GetShoppingSettings -= Hook_ShopHelper_GetShoppingSettings;
             On_ShopHelper.GetTravelingMerchantPrices -= Hook_ShopHelper_GetTravelingMerchantPrices;
             On_WorldGen.moveRoom -= Hook_WorldGen_moveRoom;
@@ -210,7 +210,8 @@ namespace OptimizeAndTool.Content.QoL
         {
             orig(ref self, out x, out y);
 
-            if (EnableInfiniteNPCReach.val)
+            // 仅在正在与 NPC 对话时放宽，避免全局放大挖矿/放置/制作站扫描
+            if (EnableInfiniteNPCReach.val && Main.LocalPlayer != null && Main.LocalPlayer.talkNPC >= 0)
             {
                 if (x < 150) x = 150;
                 if (y < 150) y = 150;

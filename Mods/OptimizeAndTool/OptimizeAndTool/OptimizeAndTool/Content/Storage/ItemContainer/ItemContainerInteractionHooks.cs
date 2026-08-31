@@ -179,7 +179,8 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         {
             if (self == null || self.whoAmI != Main.myPlayer ||
                 newItem == null || newItem.IsAir || newItem.type <= 0 ||
-                ItemContainerItem.IsTransferringOut)
+                ItemContainerItem.IsTransferringOut ||
+                settings.NoText)
             {
                 return orig(self, newItem, settings);
             }

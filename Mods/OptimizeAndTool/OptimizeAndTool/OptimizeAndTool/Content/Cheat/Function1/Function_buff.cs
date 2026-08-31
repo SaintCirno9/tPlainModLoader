@@ -21,7 +21,7 @@ namespace OptimizeAndTool.Content.Cheat.Function1
 
             if (clearBuff.val)
             {
-                for (int i = 0; i < Player.maxBuffs - 1; ++i)
+                for (int i = 0; i < Player.maxBuffs; ++i)
                 {
                     player.buffType[i] = 0;
                     player.buffTime[i] = 0;

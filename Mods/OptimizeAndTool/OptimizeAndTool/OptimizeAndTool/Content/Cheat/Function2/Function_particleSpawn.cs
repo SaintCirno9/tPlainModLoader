@@ -51,7 +51,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             if (particleSpawn.val == false) return;
 
             if (particleSpawn_set.val < 0) particleSpawn_set.val = 0;
-            else if (particleSpawn_set.val > (int)ParticleOrchestraType.Count) particleSpawn_set.val = (int)ParticleOrchestraType.Count;
+            else if (particleSpawn_set.val >= (int)ParticleOrchestraType.Count) particleSpawn_set.val = (int)ParticleOrchestraType.Count - 1;
             if (particleSpawn_cd.val < 1) particleSpawn_cd.val = 1;
 
             if (Main.mouseLeft == false || This.mouseInterface) return;
@@ -60,7 +60,8 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             Vector2 spawnPos = Main.MouseWorld;
             ParticleOrchestraType type = (ParticleOrchestraType)particleSpawn_set.val;
 
-            Vector2 vector = Vector2.Normalize(Main.MouseWorld - This.Center) * particleSpawn_speed.val;
+            Vector2 delta = Main.MouseWorld - This.Center;
+            Vector2 vector = delta == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(delta) * particleSpawn_speed.val;
 
             ParticleOrchestrator.BroadcastOrRequestParticleSpawn(type, new ParticleOrchestraSettings
             {

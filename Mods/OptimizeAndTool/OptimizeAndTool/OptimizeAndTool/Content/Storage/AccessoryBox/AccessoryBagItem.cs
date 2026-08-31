@@ -576,7 +576,13 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 if (Guid.TryParse(tag.GetString("bagID"), out Guid g)) BagID = g;
             }
 
+            int savedSlots = 0;
+            if (tag.ContainsKey("totalSlots"))
+            {
+                try { savedSlots = tag.GetInt("totalSlots"); } catch { }
+            }
             int cap = Math.Max(10, Math.Min(150, AccessoryBagConfig.TotalSlots.val));
+            if (savedSlots > cap) cap = Math.Min(150, savedSlots);
             personalInventory = new Item[cap];
             hideVisuals = new bool[cap];
             for (int i = 0; i < cap; i++)

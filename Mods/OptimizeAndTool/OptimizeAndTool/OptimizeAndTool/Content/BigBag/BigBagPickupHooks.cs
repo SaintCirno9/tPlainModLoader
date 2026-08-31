@@ -33,7 +33,8 @@ namespace OptimizeAndTool.Content.BigBag
         private static Item Hook_GetItem(On_Player.orig_GetItem orig, Player self, Item newItem, GetItemSettings settings)
         {
             if (self == null || self.whoAmI != Main.myPlayer || ItemContainerItem.IsTransferringOut ||
-                newItem == null || newItem.IsAir || newItem.type <= 0 || !BigBag.EnableBigBag.val)
+                newItem == null || newItem.IsAir || newItem.type <= 0 || !BigBag.EnableBigBag.val ||
+                settings.NoText)
             {
                 return orig(self, newItem, settings);
             }

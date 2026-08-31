@@ -6,6 +6,7 @@ using tContentPatch;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.EnhancedTooltips
 {
@@ -200,7 +201,10 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
         {
             if (numLines < toolTipLine.Length)
             {
-                toolTipLine[numLines] = $"[物品数据] ID: {item.type} | 内部名: {ItemID.Search.GetName(item.type)}";
+                string internalName = item.type >= ItemID.Count
+                    ? (ItemLoader.GetItem(item.type)?.FullName ?? $"ModItem_{item.type}")
+                    : (ItemID.Search.TryGetName(item.type, out string vanillaName) ? vanillaName : item.Name);
+                toolTipLine[numLines] = $"[物品数据] ID: {item.type} | 内部名: {internalName}";
                 lineColors[numLines] = DataColor;
                 numLines++;
             }

@@ -45,7 +45,7 @@ namespace OptimizeAndTool.Content.QoL
             if (!Economy.EnableCoinDropRate.val) return;
             if (This.value > 0f)
             {
-                This.value = (int)(This.value * Economy.CoinDropRate.val);
+                This.value = This.value * Economy.CoinDropRate.val;
             }
         }
     }

@@ -99,10 +99,6 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     return true;
                 }
             }
-            else if (item.buffType > 0 && !Main.vanityPet[item.buffType] && !Main.lightPet[item.buffType])
-            {
-                return true;
-            }
 
             return false;
         }

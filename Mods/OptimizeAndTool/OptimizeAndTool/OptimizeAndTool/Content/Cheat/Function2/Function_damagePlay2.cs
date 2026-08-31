@@ -55,6 +55,13 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                 default: reason = PlayerDeathReason.ByPlayer(255); break;
             }
 
+            if (Main.netMode == 0)
+            {
+                // 单人 SendData 直接 return，改为本地 Hurt
+                ApplyHurtLocal(reason);
+                return;
+            }
+
             if (damagePlay_play.val == -1)
             {
                 for (int i = 0; i < 255; ++i)
@@ -68,6 +75,25 @@ namespace OptimizeAndTool.Content.Cheat.Function2
 
                 NetMessage.SendPlayerHurt(damagePlay_play.val, reason, damagePlay_damage.val, -1, true, true, -1, -1, -1);
             }
+        }
+
+        private static void ApplyHurtLocal(PlayerDeathReason reason)
+        {
+            if (damagePlay_play.val == -1)
+            {
+                for (int i = 0; i < Main.player.Length; ++i)
+                {
+                    Player p = Main.player[i];
+                    if (p == null || !p.active) continue;
+                    p.Hurt(reason, damagePlay_damage.val, -1, true, false, true, -1);
+                }
+                return;
+            }
+
+            if (damagePlay_play.val < 0 || damagePlay_play.val >= Main.player.Length) return;
+            Player target = Main.player[damagePlay_play.val];
+            if (target == null || !target.active) return;
+            target.Hurt(reason, damagePlay_damage.val, -1, true, false, true, -1);
         }
 
         public static List<CommandObject> GetCO()

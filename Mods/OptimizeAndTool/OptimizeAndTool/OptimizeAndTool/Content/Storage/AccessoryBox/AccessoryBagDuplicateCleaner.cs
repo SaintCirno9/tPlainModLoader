@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.DataStructures;
 using TPML.Content;
 
 namespace OptimizeAndTool.Content.Storage.AccessoryBox
@@ -18,16 +19,16 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             if (Main.GameUpdateCount % 30 != 0) return;
 
             HashSet<Guid> seen = new HashSet<Guid>();
-            ScanAndCleanArray(player.inventory, seen);
-            ScanAndCleanArray(player.bank?.item, seen);
-            ScanAndCleanArray(player.bank2?.item, seen);
-            ScanAndCleanArray(player.bank3?.item, seen);
-            ScanAndCleanArray(player.bank4?.item, seen);
+            ScanAndCleanArray(player, player.inventory, seen);
+            ScanAndCleanArray(player, player.bank?.item, seen);
+            ScanAndCleanArray(player, player.bank2?.item, seen);
+            ScanAndCleanArray(player, player.bank3?.item, seen);
+            ScanAndCleanArray(player, player.bank4?.item, seen);
         }
 
-        private static void ScanAndCleanArray(Item[] items, HashSet<Guid> seen)
+        private static void ScanAndCleanArray(Player player, Item[] items, HashSet<Guid> seen)
         {
-            if (items == null) return;
+            if (player == null || items == null) return;
             for (int i = 0; i < items.Length; i++)
             {
                 Item it = items[i];
@@ -38,8 +39,20 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                     {
                         if (seen.Contains(bag.BagID))
                         {
+                            if (bag.personalInventory != null)
+                            {
+                                for (int s = 0; s < bag.personalInventory.Length; s++)
+                                {
+                                    Item inner = bag.personalInventory[s];
+                                    if (inner != null && !inner.IsAir)
+                                    {
+                                        player.QuickSpawnItem(new TPML.Content.EntitySource_Misc("AccessoryBagDuplicate"), inner.type, inner.stack);
+                                        inner.TurnToAir();
+                                    }
+                                }
+                            }
                             it.TurnToAir();
-                            Main.NewText($"[AccessoryBag] 检测到重复饰品袋 {bag.ShortID}，已自动安全清理。", Color.OrangeRed);
+                            Main.NewText($"[AccessoryBag] 检测到重复饰品袋 {bag.ShortID}，袋内物品已掉落并清理空袋。", Color.OrangeRed);
                         }
                         else
                         {

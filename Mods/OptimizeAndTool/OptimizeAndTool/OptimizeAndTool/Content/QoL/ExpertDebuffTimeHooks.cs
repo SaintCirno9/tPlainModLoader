@@ -3,6 +3,7 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.ID;
 using Terraria.UI;
 
 namespace OptimizeAndTool.Content.QoL
@@ -51,12 +52,23 @@ namespace OptimizeAndTool.Content.QoL
 
         private static int Hook_AddBuff_DetermineBuffTimeToAdd(On_Player.orig_AddBuff_DetermineBuffTimeToAdd orig, Player self, int type, int time)
         {
-            if (Enable.val)
+            if (!Enable.val)
             {
-                return time;
+                return orig(self, type, time);
             }
 
-            return orig(self, type, time);
+            // 跳过专家倍率，但保留死灵药剂站延长与 resistCold 对寒冷/冻结的缩短
+            int result = time;
+            if (self.deadCellsPotionStation && BuffID.Sets.BuffTimeIsExtendedByDeadCellsPotionStationBuff[type])
+            {
+                result = (int)(result * 1.2f);
+            }
+            if (self.resistCold)
+            {
+                if (type == BuffID.Chilled) return result / 4;
+                if (type == BuffID.Frozen) return result / 2;
+            }
+            return result;
         }
     }
 

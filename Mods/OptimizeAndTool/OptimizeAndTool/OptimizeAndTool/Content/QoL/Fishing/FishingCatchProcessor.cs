@@ -227,9 +227,15 @@ namespace OptimizeAndTool.Content.QoL.Fishing
             IEntitySource source = player.GetItemSource_OpenItem(item.type);
             for (int i = 0; i < 4; i++)
             {
-                if (coins[i] > 0)
+                if (coins[i] <= 0) continue;
+                int coinType = ItemID.CopperCoin + i;
+                // 钱币 maxStack=100，整段一次生成会写出非法堆叠
+                long remaining = coins[i];
+                while (remaining > 0)
                 {
-                    player.QuickSpawnItem(source, ItemID.CopperCoin + i, (int)coins[i]);
+                    int chunk = remaining > 100 ? 100 : (int)remaining;
+                    player.QuickSpawnItem(source, coinType, chunk);
+                    remaining -= chunk;
                 }
             }
         }

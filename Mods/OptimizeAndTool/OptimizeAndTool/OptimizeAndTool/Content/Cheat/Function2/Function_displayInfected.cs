@@ -62,7 +62,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                 if (displayInfected_taskRuning) return;
                 displayInfected_taskRuning = true;
 
-                Main.NewText("开始查找");
+                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("开始查找"));
 
                 showInfected_x = 0;
                 showInfected_y = 0;
@@ -75,7 +75,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            Main.NewText("取消查找");
+                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("取消查找"));
                             return;
                         }
 
@@ -83,7 +83,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            Main.NewText("完成");
+                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("完成"));
                             return;
                         }
 
@@ -100,21 +100,31 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            Main.NewText("结束, 部分方块为null, 使用点亮全图功能可以加载全部方块");
+                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("结束, 部分方块为null, 使用点亮全图功能可以加载全部方块"));
                             return;
                         }
 
                         Color _c = Color.White;
                         if (Main.IsTileBiomeSightable(tile.type, (short)showInfected_x, (short)showInfected_y, ref _c))
                         {
-                            Main.NewText("发现感染, 在地图上标记");
-                            Main.Pings.Add(new Vector2(showInfected_x, showInfected_y));
+                            int px = showInfected_x;
+                            int py = showInfected_y;
+                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+                            {
+                                Main.NewText("发现感染, 在地图上标记");
+                                Main.Pings.Add(new Vector2(px, py) * 16f);
+                            });
                             await Task.Delay(1000);
                             continue;
                         }
                         else
                         {
-                            if (Main.GameUpdateCount % 120 == 0) Main.Pings.Add(new Vector2(showInfected_x, showInfected_y));
+                            if (Main.GameUpdateCount % 120 == 0)
+                            {
+                                int mx = showInfected_x;
+                                int my = showInfected_y;
+                                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.Pings.Add(new Vector2(mx, my) * 16f));
+                            }
                         }
 
                         ++showInfected_y;

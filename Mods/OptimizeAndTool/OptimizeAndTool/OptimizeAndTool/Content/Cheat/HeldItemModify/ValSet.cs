@@ -1,6 +1,7 @@
 using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
+using System;
 using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
@@ -108,11 +109,11 @@ namespace OptimizeAndTool.Content.Cheat.HeldItemModify
 
             if (useTime.val)
             {
-                item.useTime = useTime_val.val;
+                item.useTime = Math.Max(1, useTime_val.val);
             }
             if (useAnimation.val)
             {
-                item.useAnimation = useAnimation_val.val;
+                item.useAnimation = Math.Max(1, useAnimation_val.val);
             }
             if (shootSpeed.val)
             {

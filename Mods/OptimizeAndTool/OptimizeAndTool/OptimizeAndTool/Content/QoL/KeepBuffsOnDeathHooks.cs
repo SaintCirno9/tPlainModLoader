@@ -1,3 +1,4 @@
+using System;
 using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -49,15 +50,25 @@ namespace OptimizeAndTool.Content.QoL
             };
         }
 
+        [ThreadStatic]
+        private static int[] _buffTypeScratch;
+        [ThreadStatic]
+        private static int[] _buffTimeScratch;
+
         private static void Hook_UpdateDead(On_Player.orig_UpdateDead orig, Player self)
         {
             int[] savedBuffType = null;
             int[] savedBuffTime = null;
 
-            if (Enable.val)
+            if (Enable.val && self?.buffType != null && self.buffTime != null)
             {
-                savedBuffType = (int[])self.buffType.Clone();
-                savedBuffTime = (int[])self.buffTime.Clone();
+                int n = Math.Min(self.buffType.Length, self.buffTime.Length);
+                if (_buffTypeScratch == null || _buffTypeScratch.Length < n) _buffTypeScratch = new int[n];
+                if (_buffTimeScratch == null || _buffTimeScratch.Length < n) _buffTimeScratch = new int[n];
+                Array.Copy(self.buffType, _buffTypeScratch, n);
+                Array.Copy(self.buffTime, _buffTimeScratch, n);
+                savedBuffType = _buffTypeScratch;
+                savedBuffTime = _buffTimeScratch;
             }
 
             try
@@ -66,9 +77,10 @@ namespace OptimizeAndTool.Content.QoL
             }
             finally
             {
-                if (Enable.val && savedBuffType != null)
+                if (Enable.val && savedBuffType != null && self?.buffType != null)
                 {
-                    for (int i = 0; i < self.buffType.Length; i++)
+                    int n = Math.Min(self.buffType.Length, savedBuffType.Length);
+                    for (int i = 0; i < n; i++)
                     {
                         if (savedBuffType[i] > 0)
                         {

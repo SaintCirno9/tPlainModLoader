@@ -53,7 +53,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                 if (chest.item[i].type != 0 && chest.item[i].stack > 0) continue;
 
                 int id = Utils.getRand(1, ids + 1);
-                if (ItemID.Sets.Deprecated[i]) id = 1;//已弃用
+                if (id < 0 || id >= ItemID.Sets.Deprecated.Length || ItemID.Sets.Deprecated[id]) id = 1;//已弃用
 
                 Item item = new Item();
                 item.SetDefaults(id);
