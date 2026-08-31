@@ -39,8 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\tPlainModLoader\TPML.Runtime\TPML.Runtime.csproj" Private="false" />
-    <ProjectReference Include="..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\tPlainModLoader\tPlainModLoader\tPlainModLoader.csproj" Private="false" />
     <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
     <ProjectReference Include="..\..\WandsTool\WandsTool\WandsTool\WandsTool.csproj" Private="false" />
     <ProjectReference Include="..\..\RecipeBrowser\RecipeBrowser\RecipeBrowser.csproj" Private="false" />

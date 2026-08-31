@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectGuid>{45AB3FB8-F6C8-46E2-8FAF-C07353AE018C}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>tPlainModLoader</RootNamespace>
+    <AssemblyName>tPlainModLoader</AssemblyName>
+    <PackageId>tPlainModLoader.Launcher</PackageId>
+    <TargetFramework>net472</TargetFramework>
+    <!-- 宿主进程须为 x86：GAC 中 XNA 4.0 与原版 Terraria 均为 32 位程序集，x64/AnyCPU 进程加载即 BadImageFormatException -->
+    <PlatformTarget>x86</PlatformTarget>
+    <!-- 开启 4GB 虚拟内存感知 (LargeAddressAware)，防止 32 位 CLR 在 2GB 限制下触发 OutOfMemoryException 闪退 -->
+    <LargeAddressAware>true</LargeAddressAware>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <ApplicationIcon>ico_256.ico</ApplicationIcon>
+    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
+    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="HarmonyX" Version="2.16.1" />
+    <ProjectReference Include="..\tPlainModLoader\tPlainModLoader.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- XNA 4.0 仅存在于 GAC（随 XNA Redistributable 安装），无 NuGet 分发，此处使用 GAC 确定性物理路径 -->
+    <Reference Include="Microsoft.Xna.Framework">
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- 内联任务：自动为 32 位 exe 注入 LargeAddressAware (0x0020) 标志，确保获得 4GB 虚拟内存感知 -->
+  <UsingTask TaskName="SetLargeAddressAware" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          if (File.Exists(FilePath))
+          {
+              using (var stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite))
+              using (var reader = new BinaryReader(stream))
+              using (var writer = new BinaryWriter(stream))
+              {
+                  stream.Seek(0x3C, SeekOrigin.Begin);
+                  int peOffset = reader.ReadInt32();
+                  stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
+                  ushort chars = reader.ReadUInt16();
+                  if ((chars & 0x0020) == 0)
+                  {
+                      chars |= 0x0020;
+                      stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
+                      writer.Write(chars);
+                      Log.LogMessage(MessageImportance.High, "[LargeAddressAware] 4GB 虚拟内存感知已注入: " + FilePath);
+                  }
+              }
+          }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="EnableLargeAddressAware" AfterTargets="Build">
+    <SetLargeAddressAware FilePath="$(TargetPath)" />
+  </Target>
+
+  <!-- 构建后部署：产物复制发布到游戏目录下的 tPlainModLoader 文件夹。
+       Mods 为模组放置处（代码按 tContentPatch.dll 同级 Mods 解析），首次部署会顺带迁移已有的 launchConfig.json -->
+  <Target Name="DeployToGameDir" AfterTargets="Build" DependsOnTargets="EnableLargeAddressAware" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
+    <PropertyGroup>
+      <GameDeployDir>$(TerrariaDir)\tPlainModLoader</GameDeployDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(GameDeployDir);$(GameDeployDir)\Mods" />
+    <ItemGroup>
+      <DeployFile Include="$(OutDir)*.exe;$(OutDir)*.dll;$(OutDir)*.exe.config" />
+    </ItemGroup>
+    <Message Importance="High" Text="[DeployToGameDir] 复制部署 %(DeployFile.Filename)%(DeployFile.Extension) -> $(GameDeployDir)" />
+    <Copy SourceFiles="@(DeployFile)" DestinationFolder="$(GameDeployDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ReLogicPath)"
+          DestinationFolder="$(GameDeployDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(ReLogicPath)')" />
+    <Copy SourceFiles="$(OutDir)launchConfig.json"
+          DestinationFiles="$(GameDeployDir)\launchConfig.json"
+          Condition="!Exists('$(GameDeployDir)\launchConfig.json') and Exists('$(OutDir)launchConfig.json')" />
+  </Target>
+
+</Project>

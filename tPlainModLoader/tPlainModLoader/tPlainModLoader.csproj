@@ -1,28 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{45AB3FB8-F6C8-46E2-8FAF-C07353AE018C}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <RootNamespace>tPlainModLoader</RootNamespace>
     <AssemblyName>tPlainModLoader</AssemblyName>
+    <PackageId>tPlainModLoader</PackageId>
     <TargetFramework>net472</TargetFramework>
-    <!-- 宿主进程须为 x86：GAC 中 XNA 4.0 与原版 Terraria 均为 32 位程序集，x64/AnyCPU 进程加载即 BadImageFormatException -->
-    <PlatformTarget>x86</PlatformTarget>
-    <!-- 开启 4GB 虚拟内存感知 (LargeAddressAware)，防止 32 位 CLR 在 2GB 限制下触发 OutOfMemoryException 闪退 -->
-    <LargeAddressAware>true</LargeAddressAware>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <ApplicationIcon>ico_256.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\tPlainModLoader.xml</DocumentationFile>
     <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
     <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="22.7.31.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="HarmonyX" Version="2.16.1" />
-    <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
-    <ProjectReference Include="..\TPML.Runtime\TPML.Runtime.csproj" />
-    <ProjectReference Include="..\TPML.Content\TPML.Content.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,64 +26,57 @@
     <Reference Include="Microsoft.Xna.Framework">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Game">
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Game\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Game.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Graphics">
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Graphics\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Graphics.dll</HintPath>
+    </Reference>
+    <!-- 原版 Terraria exe：路径由 monorepo 根 Directory.Build.props 的 TerrariaDir 注入；Private=false 避免复制游戏文件到输出目录 -->
+    <Reference Include="Terraria">
+      <HintPath>$(TerrariaDir)\Terraria.exe</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
+    <Reference Include="ReLogic">
+      <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\Libs\ReLogic.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
-  <!-- 内联任务：自动为 32 位 exe 注入 LargeAddressAware (0x0020) 标志，确保获得 4GB 虚拟内存感知 -->
-  <UsingTask TaskName="SetLargeAddressAware" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-    <ParameterGroup>
-      <FilePath ParameterType="System.String" Required="true" />
-    </ParameterGroup>
-    <Task>
-      <Using Namespace="System.IO" />
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
-          if (File.Exists(FilePath))
-          {
-              using (var stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite))
-              using (var reader = new BinaryReader(stream))
-              using (var writer = new BinaryWriter(stream))
-              {
-                  stream.Seek(0x3C, SeekOrigin.Begin);
-                  int peOffset = reader.ReadInt32();
-                  stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
-                  ushort chars = reader.ReadUInt16();
-                  if ((chars & 0x0020) == 0)
-                  {
-                      chars |= 0x0020;
-                      stream.Seek(peOffset + 0x16, SeekOrigin.Begin);
-                      writer.Write(chars);
-                      Log.LogMessage(MessageImportance.High, "[LargeAddressAware] 4GB 虚拟内存感知已注入: " + FilePath);
-                  }
-              }
-          }
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
+  <ItemGroup>
+    <ProjectReference Include="..\CommandHelp\CommandHelp.csproj" />
+  </ItemGroup>
 
-  <Target Name="EnableLargeAddressAware" AfterTargets="Build">
-    <SetLargeAddressAware FilePath="$(TargetPath)" />
-  </Target>
+  <ItemGroup>
+    <EmbeddedResource Include="Core\Pinyin\PinyinResource.txt">
+      <LogicalName>TPML.Core.Pinyin.PinyinResource.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Runtime\Resources\TitleLinkButtons.png">
+      <LogicalName>tContentPatch.Resources.TitleLinkButtons.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Runtime\Resources\UI.ModIcon.png">
+      <LogicalName>tContentPatch.Resources.UI.ModIcon.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Runtime\Resources\UI.Workshop.HudModManager.png">
+      <LogicalName>tContentPatch.Resources.UI.Workshop.HudModManager.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 
-  <!-- 构建后部署：产物复制发布到游戏目录下的 tPlainModLoader 文件夹。
-       Mods 为模组放置处（代码按 tContentPatch.dll 同级 Mods 解析），首次部署会顺带迁移已有的 launchConfig.json -->
-  <Target Name="DeployToGameDir" AfterTargets="Build" DependsOnTargets="EnableLargeAddressAware" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
+  <!-- 构建后部署：产物复制发布到游戏目录下的 tPlainModLoader 文件夹 -->
+  <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
       <GameDeployDir>$(TerrariaDir)\tPlainModLoader</GameDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(GameDeployDir);$(GameDeployDir)\Mods" />
     <ItemGroup>
-      <DeployFile Include="$(OutDir)*.exe;$(OutDir)*.dll;$(OutDir)*.exe.config" />
+      <DeployFile Include="$(OutDir)tPlainModLoader.dll;$(OutDir)tPlainModLoader.pdb;$(OutDir)tPlainModLoader.xml" Condition="Exists('%(FullPath)')" />
     </ItemGroup>
-    <Message Importance="High" Text="[DeployToGameDir] 复制部署 %(DeployFile.Filename)%(DeployFile.Extension) -> $(GameDeployDir)" />
     <Copy SourceFiles="@(DeployFile)" DestinationFolder="$(GameDeployDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(ReLogicPath)"
-          DestinationFolder="$(GameDeployDir)"
-          SkipUnchangedFiles="true"
-          Condition="Exists('$(ReLogicPath)')" />
-    <Copy SourceFiles="$(OutDir)launchConfig.json"
-          DestinationFiles="$(GameDeployDir)\launchConfig.json"
-          Condition="!Exists('$(GameDeployDir)\launchConfig.json') and Exists('$(OutDir)launchConfig.json')" />
   </Target>
 
 </Project>

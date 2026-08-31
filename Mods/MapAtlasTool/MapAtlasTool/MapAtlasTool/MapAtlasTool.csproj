@@ -36,9 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Core\TPML.Core.csproj" Private="false" />
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Runtime\TPML.Runtime.csproj" Private="false" />
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\TPML.Content\TPML.Content.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\..\tPlainModLoader\tPlainModLoader\tPlainModLoader.csproj" Private="false" />
   </ItemGroup>
 
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\MapAtlasTool 文件夹 -->

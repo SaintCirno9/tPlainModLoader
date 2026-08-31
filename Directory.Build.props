@@ -15,6 +15,7 @@
          net472 下编译期特性（record/init/required/主构造函数/集合表达式等）可直接使用；
          依赖新版 CLR 的特性（默认接口实现、接口静态抽象成员等）编译器会直接报错拦截 -->
     <LangVersion>14.0</LangVersion>
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
   <!-- 全局引入 Krafs.Publicizer，自动将 Terraria 与 ReLogic 的 internal/private 成员公开给编译器，提供 100% 强类型智能提示与零反射访问 -->
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <!-- 全局引入 TerrariaHooks 强类型 Hook 支持（排除核心基础设施与生成工具本身） -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TPML.TerrariaHooks' and '$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'TPML.Core' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'tPlainModLoader' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TPML.TerrariaHooks' and '$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'tPlainModLoader.Launcher' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)tPlainModLoader\TPML.TerrariaHooks\TPML.TerrariaHooks.csproj" Private="false" />
   </ItemGroup>
 

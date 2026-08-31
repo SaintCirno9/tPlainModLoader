@@ -20,9 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TPML.Core\TPML.Core.csproj" />
     <ProjectReference Include="..\FastWin32-master\FastWin32\FastWin32.csproj" />
-    <ProjectReference Include="..\TPML.Runtime\TPML.Runtime.csproj" />
+    <ProjectReference Include="..\tPlainModLoader\tPlainModLoader.csproj" />
   </ItemGroup>
 
   <!-- 内联任务：自动为 32 位 exe 注入 LargeAddressAware (0x0020) 标志，确保获得 4GB 虚拟内存感知 -->
