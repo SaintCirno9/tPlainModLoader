@@ -290,6 +290,7 @@ namespace TPMLBridge.GABP.Tools
             if (protectSave)
             {
                 TPMLBridgeMod.WorldSaveProtectionEnabled = true;
+                TPMLBridgeMod.PlayerSaveProtectionEnabled = true;
             }
 
             Main.LoadPlayers();
@@ -307,6 +308,7 @@ namespace TPMLBridge.GABP.Tools
 
             if (player == null)
             {
+                if (protectSave) TPMLBridgeMod.ResetSaveProtection();
                 return new { success = false, message = "未找到可用的玩家角色存档，请先创建一个角色。" };
             }
 
@@ -327,6 +329,7 @@ namespace TPMLBridge.GABP.Tools
 
             if (world == null)
             {
+                if (protectSave) TPMLBridgeMod.ResetSaveProtection();
                 return new { success = false, message = "未找到可用的世界存档，请先创建一个世界。" };
             }
 
@@ -347,7 +350,7 @@ namespace TPMLBridge.GABP.Tools
         {
             if (Main.gameMenu)
             {
-                TPMLBridgeMod.WorldSaveProtectionEnabled = false;
+                TPMLBridgeMod.ResetSaveProtection();
                 return new { success = true, inWorld = false, message = "当前已在主菜单中" };
             }
 
@@ -366,8 +369,8 @@ namespace TPMLBridge.GABP.Tools
             ModItemSidecarEngine.ResetContainers();
 
             // 退出自动化测试后复位保护标志，确保玩家后续正常游玩时能够正常保存
-            bool wasProtected = TPMLBridgeMod.WorldSaveProtectionEnabled;
-            TPMLBridgeMod.WorldSaveProtectionEnabled = false;
+            bool wasProtected = TPMLBridgeMod.WorldSaveProtectionEnabled || TPMLBridgeMod.PlayerSaveProtectionEnabled;
+            TPMLBridgeMod.ResetSaveProtection();
 
             return new
             {
@@ -386,15 +389,17 @@ namespace TPMLBridge.GABP.Tools
             if (enabled.HasValue)
             {
                 TPMLBridgeMod.WorldSaveProtectionEnabled = enabled.Value;
+                TPMLBridgeMod.PlayerSaveProtectionEnabled = enabled.Value;
             }
 
             return new
             {
                 success = true,
                 worldSaveProtectionEnabled = TPMLBridgeMod.WorldSaveProtectionEnabled,
+                playerSaveProtectionEnabled = TPMLBridgeMod.PlayerSaveProtectionEnabled,
                 message = TPMLBridgeMod.WorldSaveProtectionEnabled
-                    ? "自动化测试世界存档保护已开启（所有 WorldFile.SaveWorld 写盘调用均被强行拦截）"
-                    : "自动化测试世界存档保护已关闭（允许正常写盘保存）"
+                    ? "自动化测试存档保护已开启（WorldFile.SaveWorld 与 Player.SavePlayer 均被拦截）"
+                    : "自动化测试存档保护已关闭（允许正常写盘保存）"
             };
         }
 

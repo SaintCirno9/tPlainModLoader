@@ -23,6 +23,12 @@ namespace PixelArt.Content
 
             using (System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(filePath))
             {
+                const int maxDim = 2048;
+                if (bitmap.Width > maxDim || bitmap.Height > maxDim)
+                {
+                    throw new Exception($"图片过大 ({bitmap.Width}x{bitmap.Height})，上限 {maxDim}x{maxDim}");
+                }
+
                 width = bitmap.Width;
                 height = bitmap.Height;
 

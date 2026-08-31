@@ -559,7 +559,22 @@ namespace Instavator.Content.Logic
                     }
                 }
 
-                // 2. 清理箱子 2x2 空间中的杂物
+                // 2. 已有箱子则跳过该格，避免静默毁掉玩家箱子与内容
+                bool occupiedByChest = false;
+                for (int cx = chestLeftX; cx <= chestLeftX + 1 && !occupiedByChest; cx++)
+                {
+                    for (int cy = chestTopY; cy <= chestTopY + 1; cy++)
+                    {
+                        Tile cur = Framing.GetTileSafely(cx, cy);
+                        if (cur.active() && (cur.type == TileID.Containers || cur.type == TileID.Containers2 || TileID.Sets.BasicChest[cur.type]))
+                        {
+                            occupiedByChest = true;
+                            break;
+                        }
+                    }
+                }
+                if (occupiedByChest) continue;
+
                 for (int cx = chestLeftX; cx <= chestLeftX + 1; cx++)
                 {
                     for (int cy = chestTopY; cy <= chestTopY + 1; cy++)

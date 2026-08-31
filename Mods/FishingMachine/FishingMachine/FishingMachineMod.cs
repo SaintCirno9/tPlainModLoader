@@ -85,7 +85,7 @@ namespace FishingMachine
     /// </summary>
     public class FishingMachineMain : tContentPatch.PatchMain
     {
-        public override void OnEnterWorldPrefix()
+        public override void OnLeaveWorld()
         {
             FishingMachineUI.Close();
         }

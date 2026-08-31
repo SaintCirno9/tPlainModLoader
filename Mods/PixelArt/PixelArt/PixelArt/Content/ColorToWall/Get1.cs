@@ -34,7 +34,7 @@ namespace PixelArt.Content.ColorToWall
             int difference = -1;
             ColorWall? cw = null;
 
-            for (int i = 1; i < cws.Count; ++i)
+            for (int i = 0; i < cws.Count; ++i)
             {
                 int s = ColorDifference(color, cws[i].color);
                 if (s == 0) return cws[i];

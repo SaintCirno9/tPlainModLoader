@@ -36,6 +36,13 @@ namespace MapAtlasTool.Content.UI
 
         public static bool HasActiveQuery => !string.IsNullOrWhiteSpace(ActiveQuery);
 
+        internal static void ClearSearchState()
+        {
+            ActiveQuery = "";
+            HitChestIndexes.Clear();
+            HitTexts.Clear();
+        }
+
         private const int DebounceFrames = 18;
         private const int MaxStructureEntries = 100;
         private const int MaxChestEntries = 200;

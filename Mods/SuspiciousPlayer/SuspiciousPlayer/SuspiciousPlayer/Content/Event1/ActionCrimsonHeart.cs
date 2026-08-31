@@ -100,7 +100,7 @@ namespace SuspiciousPlayer.Content.Event1
             }
 
             //心脏声音
-            if (Main.GameUpdateCount % 60 * 3 == 0)
+            if (Main.GameUpdateCount % 180 == 0)
             {
                 if (Main.netMode == 2)
                 {

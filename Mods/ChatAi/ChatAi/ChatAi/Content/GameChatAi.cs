@@ -181,15 +181,18 @@ namespace ChatAi.Content
 
             print_oldText = text;
 
-            if (Main.netMode == 0)
+            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
             {
-                Main.NewText(text);
-            }
-            else
-            {
-                NetPacket packet = NetTextModule.SerializeClientMessage(ChatManager.Commands.CreateOutgoingMessage(text));
-                NetManager.Instance.SendToServer(packet);
-            }
+                if (Main.netMode == 0)
+                {
+                    Main.NewText(text);
+                }
+                else
+                {
+                    NetPacket packet = NetTextModule.SerializeClientMessage(ChatManager.Commands.CreateOutgoingMessage(text));
+                    NetManager.Instance.SendToServer(packet);
+                }
+            });
         }
 
         //

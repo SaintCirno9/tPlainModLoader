@@ -218,16 +218,18 @@ namespace PixelArt.Content
                     try
                     {
                         string path = Utils1.Utils.GetFileName();
-                        if (path == null)
+                        tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
                         {
-                            Main.NewText("取消选择");
-                            return;
-                        }
+                            if (path == null)
+                            {
+                                Main.NewText("取消选择");
+                                return;
+                            }
 
-                        LoadPath.val = path;
-                        Main.NewText($"位置:{LoadPath.val}");
-
-                        fun?.Invoke();
+                            LoadPath.val = path;
+                            Main.NewText($"位置:{LoadPath.val}");
+                            fun?.Invoke();
+                        });
                     }
                     finally
                     {
@@ -255,7 +257,8 @@ namespace PixelArt.Content
             {
                 if (t.IsCanceled) return;
                 if (t.Result == null) return;
-                Main.NewText($"{t.Result}");
+                string msg = t.Result;
+                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText($"{msg}"));
             });
         }
 

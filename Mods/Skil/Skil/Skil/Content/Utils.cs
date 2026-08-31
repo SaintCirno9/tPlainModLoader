@@ -161,39 +161,20 @@ namespace Skil.Content
 
         public static Vector2 aimAdvance(Vector2 position, float velocity, Vector2 targetP, Vector2 targetV)//预瞄
         {
-            Vector2 targetP2 = targetP;
-            float len = 0;
-            float lenT = Math.Abs(position.Length() - targetP2.Length());
-
+            if (velocity <= 0.001f) return targetP;
+            Vector2 predicted = targetP;
             for (int i = 0; i < 120; ++i)
             {
-                if (len < lenT)
+                Vector2 toTarget = predicted - position;
+                float dist = toTarget.Length();
+                float travel = velocity * (i + 1);
+                if (travel >= dist)
                 {
-                    len += velocity;
-
-                    targetP2 += targetV;
-
-                    lenT = Math.Abs(position.Length() - targetP2.Length());
+                    return predicted;
                 }
-                else if (len > lenT - 5)
-                {
-                    if (i == 0) return targetP2;
-
-                    Vector2 targetP2_old = targetP2 -= targetV;
-                    float len_old = Math.Abs(len - velocity);
-                    float lenT_old = Math.Abs(position.Length() - targetP2_old.Length());
-                    float gap = Math.Abs(len - lenT);
-                    float gap_old = Math.Abs(len_old - lenT_old);
-
-                    return gap < gap_old ? targetP2 : targetP2_old;
-                }
-                else
-                {
-                    return targetP2;
-                }
+                predicted += targetV;
             }
-
-            return targetP2;
+            return predicted;
         }
 
         public static int getNearbyChestIndex(Vector2 position)

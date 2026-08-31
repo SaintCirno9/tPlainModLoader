@@ -21,7 +21,7 @@ namespace TPMLBridge.GABP
 
         public static Task<T> EnqueueAsync<T>(Func<T> func)
         {
-            var tcs = new TaskCompletionSource<T>();
+            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             _queue.Enqueue(() =>
             {
                 try
@@ -39,7 +39,7 @@ namespace TPMLBridge.GABP
 
         public static Task EnqueueAsync(Action action)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _queue.Enqueue(() =>
             {
                 try

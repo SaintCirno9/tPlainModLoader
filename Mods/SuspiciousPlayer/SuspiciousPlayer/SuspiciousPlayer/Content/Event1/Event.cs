@@ -146,17 +146,11 @@ namespace SuspiciousPlayer.Content.Event1
                 return;
             }
 
-            //距离事件位置最近的为目标
             int index = 0;
-
-            if (Main.GameUpdateCount % 60 == 0)
+            for (int i = 1; i < ps.Count; i++)
             {
-                for (int i = 1; i < ps.Count; i++)
-                {
-                    if (ds[i] < ds[index]) index = i;
-                }
+                if (ds[i] < ds[index]) index = i;
             }
-
             Event.player = ps[index];
 
             //跑出圈外有惩罚哦

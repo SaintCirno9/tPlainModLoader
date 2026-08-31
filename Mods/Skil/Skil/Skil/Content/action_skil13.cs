@@ -49,7 +49,11 @@ namespace Skil.Content
         {
             if (player == null) return;
 
-            if (player.active == false || player.dead == true) a1_skil13_false(player);
+            if (player.active == false || player.dead == true)
+            {
+                a1_skil13_false(player);
+                return;
+            }
 
             if (Sequence.val == null) Sequence.val = "200011";
 

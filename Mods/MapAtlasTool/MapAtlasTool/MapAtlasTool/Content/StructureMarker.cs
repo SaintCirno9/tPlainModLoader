@@ -70,6 +70,7 @@ namespace MapAtlasTool.Content
         private static List<StructurePin> _pins = new List<StructurePin>();
         private static StructurePin[] _pinsSnapshot = Array.Empty<StructurePin>();
         private static volatile bool _isScanning = false;
+        private static volatile bool _rescanQueued = false;
         private static int _cleanTick = 0;
 
 
@@ -122,10 +123,27 @@ namespace MapAtlasTool.Content
             TriggerRescan();
         }
 
+        public override void OnLeaveWorld()
+        {
+            _rescanQueued = false;
+            lock (_pinsLock)
+            {
+                _pins.Clear();
+                _pinsSnapshot = Array.Empty<StructurePin>();
+            }
+            UI.MapAtlasPanel.ClearSearchState();
+            ChestItemIndex.Clear();
+        }
+
         public static void TriggerRescan()
         {
-            if (_isScanning) return; // 去抖
+            if (_isScanning)
+            {
+                _rescanQueued = true;
+                return;
+            }
             _isScanning = true;
+            _rescanQueued = false;
 
             // ---- 主线程内快照（读取游戏状态，避免后台线程并发读取引发撕裂）----
             int maxX = Main.maxTilesX;
@@ -152,6 +170,11 @@ namespace MapAtlasTool.Content
                 finally
                 {
                     _isScanning = false;
+                    if (_rescanQueued)
+                    {
+                        _rescanQueued = false;
+                        RunOnMainThread(TriggerRescan);
+                    }
                 }
             });
         }

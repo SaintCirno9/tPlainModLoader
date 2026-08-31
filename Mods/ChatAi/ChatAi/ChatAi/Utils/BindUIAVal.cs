@@ -26,7 +26,9 @@ namespace ChatAi.Utils
             uv.SetUIVal(gsr.val);
 
             uv.OnUIUpdate += v => gsr.val = v;
-            gsr.OnValUpdate += v => uv.SetUIVal(v);
+            if (gsr.UiSyncHandler != null) gsr.OnValUpdate -= gsr.UiSyncHandler;
+            gsr.UiSyncHandler = v => uv.SetUIVal(v);
+            gsr.OnValUpdate += gsr.UiSyncHandler;
         }
 
         public static void Bind<T, T2>(GetSetReset<T> gsr, GetSetReset<T2> gsr2, IBindUIAVal<T, T2> uv)
@@ -36,7 +38,9 @@ namespace ChatAi.Utils
             uv.SetUIVal2(gsr2.val);
 
             uv.OnUIUpdate2 += v => gsr2.val = v;
-            gsr2.OnValUpdate += v => uv.SetUIVal2(v);
+            if (gsr2.UiSyncHandler != null) gsr2.OnValUpdate -= gsr2.UiSyncHandler;
+            gsr2.UiSyncHandler = v => uv.SetUIVal2(v);
+            gsr2.OnValUpdate += gsr2.UiSyncHandler;
         }
     }
 }

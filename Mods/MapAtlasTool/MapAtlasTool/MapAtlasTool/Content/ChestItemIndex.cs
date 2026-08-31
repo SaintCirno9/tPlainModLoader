@@ -71,6 +71,16 @@ namespace MapAtlasTool.Content
             }
         }
 
+        public static void Clear()
+        {
+            lock (_lock)
+            {
+                _itemToChests = new Dictionary<int, List<int>>();
+                _indexedChests = 0;
+                _totalChests = 0;
+            }
+        }
+
         /// <summary>已索引(有物品数据)箱子数 / 世界有效箱子总数</summary>
         public static (int indexed, int total) GetStats()
         {

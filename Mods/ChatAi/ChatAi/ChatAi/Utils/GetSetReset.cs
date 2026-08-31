@@ -5,6 +5,7 @@ namespace ChatAi.Utils
     public class GetSetReset<T>
     {
         public Action<T> OnValUpdate = null;
+        internal Action<T> UiSyncHandler;
         private T _val;
         public T val
         {

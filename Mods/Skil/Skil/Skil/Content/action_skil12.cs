@@ -65,7 +65,11 @@ namespace Skil.Content
         public static void a1_skil12(Player player)
         {
             if (player == null) return;
-            if (player.active == false || player.dead == true) a1_skil12_false(player);
+            if (player.active == false || player.dead == true)
+            {
+                a1_skil12_false(player);
+                return;
+            }
 
             if (skil12_ps == null) skil12_ps = new List<Projectile>();
 
