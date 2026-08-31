@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using tContentPatch.ModLoad;
+using tContentPatch.Threading;
 using Terraria.GameInput;
 using TPML.Core.Logging;
 
@@ -155,11 +156,16 @@ namespace tContentPatch.Input
         }
 
         /// <summary>
-        /// 将单个快捷键同步到原版 PlayerInput.KnownTriggers 与所有 Profile
+        /// 将单个快捷键同步到原版 PlayerInput.KnownTriggers 与所有 Profile（须在主线程执行）。
         /// </summary>
         private static void SyncKeybindWithPlayerInput(ModKeybind keybind)
         {
             if (PlayerInput.KnownTriggers == null) return;
+            if (!Threading.MainThreadDispatcher.IsMainThread)
+            {
+                Threading.MainThreadDispatcher.Enqueue(() => SyncKeybindWithPlayerInput(keybind));
+                return;
+            }
 
             // 1. 注册到 KnownTriggers
             if (!PlayerInput.KnownTriggers.Contains(keybind.FullName))
@@ -247,11 +253,59 @@ namespace tContentPatch.Input
         }
 
         /// <summary>
-        /// 模组卸载时清空注册表
+        /// 模组卸载时清空注册表，并对称移除已注入到 PlayerInput 的条目。
         /// </summary>
         public static void Unload()
         {
+            foreach (var keybind in _keybinds.Values)
+            {
+                RemoveKeybindFromPlayerInput(keybind);
+            }
             _keybinds.Clear();
+        }
+
+        private static void RemoveKeybindFromPlayerInput(ModKeybind keybind)
+        {
+            if (keybind == null) return;
+            string fullName = keybind.FullName;
+
+            try
+            {
+                PlayerInput.KnownTriggers?.Remove(fullName);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"移除 KnownTriggers 失败 [{fullName}]: {ex.Message}");
+            }
+
+            RemoveFromProfiles(PlayerInput.Profiles, fullName);
+            RemoveFromProfiles(PlayerInput.OriginalProfiles, fullName);
+
+            if (PlayerInput.Triggers != null)
+            {
+                RemoveTriggerKey(PlayerInput.Triggers.Current, fullName);
+                RemoveTriggerKey(PlayerInput.Triggers.Old, fullName);
+                RemoveTriggerKey(PlayerInput.Triggers.JustPressed, fullName);
+                RemoveTriggerKey(PlayerInput.Triggers.JustReleased, fullName);
+            }
+        }
+
+        private static void RemoveFromProfiles(Dictionary<string, PlayerInputProfile> profiles, string fullName)
+        {
+            if (profiles == null) return;
+            foreach (var profile in profiles.Values)
+            {
+                if (profile?.InputModes == null) continue;
+                foreach (var config in profile.InputModes.Values)
+                {
+                    config?.KeyStatus?.Remove(fullName);
+                }
+            }
+        }
+
+        private static void RemoveTriggerKey(TriggersSet set, string key)
+        {
+            set?.KeyStatus?.Remove(key);
         }
     }
 }

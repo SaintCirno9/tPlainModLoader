@@ -61,7 +61,10 @@ namespace tContentPatch.ModLoad
             if (state == LoadState.Unloading) return;
 
             isCancel = true;
-            while (state == LoadState.Loading) ;
+            while (state == LoadState.Loading)
+            {
+                System.Threading.Thread.Sleep(10);
+            }
 
             isCancel = false;
             state = LoadState.None;

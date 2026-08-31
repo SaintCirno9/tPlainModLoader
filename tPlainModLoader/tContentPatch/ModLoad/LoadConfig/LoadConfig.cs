@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using tContentPatch.Utils;
+using TPML.Core.Logging;
 
 namespace tContentPatch.ModLoad
 {
@@ -54,9 +56,10 @@ namespace tContentPatch.ModLoad
 
                     mos.Add(new ModObject(config) { modPath = di.FullName });
                 }
-                catch
+                catch (Exception ex)
                 {
                     addProgress = false;
+                    LogManager.GetLogger("ModLoader").Error($"加载模组配置失败: {di?.Name}", ex);
                 }
                 finally
                 {
@@ -75,7 +78,10 @@ namespace tContentPatch.ModLoad
                     {
                         enabledKeys = MyJson1.Get2<List<string>>(enabledFilePath);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        LogManager.GetLogger("ModLoader").Error($"读取 enabled.json 失败: {enabledFilePath}", ex);
+                    }
                 }
 
                 if (enabledKeys == null)
@@ -104,7 +110,10 @@ namespace tContentPatch.ModLoad
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogManager.GetLogger("ModLoader").Error("应用模组启用状态失败", ex);
+            }
 
             return mos;
         }
@@ -120,7 +129,10 @@ namespace tContentPatch.ModLoad
                     ModInfo mi = MyJson1.Get2<ModInfo>(filePath);
                     mo.info = mi;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    LogManager.GetLogger("ModLoader").Error($"加载模组 info 失败: {mo?.modPath}", ex);
+                }
             }
         }
 

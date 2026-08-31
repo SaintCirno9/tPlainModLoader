@@ -106,13 +106,16 @@ namespace tContentPatch
             Assembly assembly = GetType().Assembly;
             ModObject mo = LoaderControl.GetModObjects()?.FirstOrDefault(i => i.assembly == assembly);
 
-            ModFile.SaveFileTry(FilePath, file =>
+            bool saved = ModFile.SaveFileTry(FilePath, file =>
             {
                 MyJson1.Save(GetSaveData(), file);
                 return true;
             }, mo);
 
-            NeedSave = false;
+            if (saved)
+            {
+                NeedSave = false;
+            }
         }
 
         /// <summary>

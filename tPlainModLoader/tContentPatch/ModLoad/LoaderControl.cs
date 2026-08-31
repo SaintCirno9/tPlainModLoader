@@ -21,6 +21,7 @@ namespace tContentPatch.ModLoad
 
         private static List<ModObject> loadedMod = null;
         private static IModLoader modLoader = null;
+        private static int _loadInFlight;
 
         internal static void SetModLoader(IModLoader modLoader, Intercept intercept)
         {
@@ -49,6 +50,13 @@ namespace tContentPatch.ModLoad
             {
                 Logger.Warn("当前不可加载模组");
                 ContentPatch.PrintTry("当前不可加载模组");
+                return;
+            }
+
+            if (System.Threading.Interlocked.CompareExchange(ref _loadInFlight, 1, 0) != 0)
+            {
+                Logger.Warn("模组正在加载中，已忽略重复请求");
+                ContentPatch.PrintTry("模组正在加载中");
                 return;
             }
 
@@ -92,6 +100,10 @@ namespace tContentPatch.ModLoad
                     OnModLoad_Exception?.Invoke(ex);//失败
 
                     if (Unload() == false) return;
+                }
+                finally
+                {
+                    System.Threading.Interlocked.Exchange(ref _loadInFlight, 0);
                 }
             });
         }

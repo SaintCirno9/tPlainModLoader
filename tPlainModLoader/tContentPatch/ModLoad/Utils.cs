@@ -41,7 +41,8 @@ namespace tContentPatch.ModLoad
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(mess?.Invoke(ex), ex);
+                    string text = mess?.Invoke(ex) ?? ex.Message;
+                    TPML.Core.Logging.LogManager.GetLogger("ModLoader").Error(text, ex);
                 }
             }
         }

@@ -81,7 +81,7 @@ namespace tContentPatch
                 }
 
                 if (Main.netMode != 0 && Main.netMode != 1) return;
-                Main.menuMode = MenuID.Title;
+                Threading.MainThreadDispatcher.Enqueue(() => Main.menuMode = MenuID.Title);
             };
             //取消时
             LoaderControl.OnModLoad_Cancel += (e) => Content.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
@@ -94,10 +94,12 @@ namespace tContentPatch
                 ModLoadException.WaitMenuClose();
                 ModManager.OpenModManagerMenu(null);
             };
-            //卸载异常时
+            //卸载异常时：记录错误并回到模组管理器，禁止杀进程
             LoaderControl.OnModUnload_Exception += (e) =>
             {
-                Environment.Exit(0);
+                Logger.Error($"卸载模组异常，已中止卸载并返回模组管理器: {e?.Message}", e);
+                Content.Menus.ModLoadException.ModLoadException.OpenModLoadExceptionMenu(e);
+                Content.Menus.ModManager.ModManager.OpenModManagerMenu(null);
             };
         }
 

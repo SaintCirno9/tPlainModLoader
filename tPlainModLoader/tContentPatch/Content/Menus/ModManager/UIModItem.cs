@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using tContentPatch.Content.UI;
 using tContentPatch.ModLoad;
+using tContentPatch.Threading;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -50,6 +51,7 @@ namespace tContentPatch.Content.Menus.ModManager
         private UIElement ui_sp_uie = null;
         private UIStackPanel ui_sp_uie_sp = null;
         private UIImage ui_ico = null;
+        private Texture2D _loadedIco = null;
         private UIText ui_mod_name = null;
         private UITextPanel<string> ui_mod_isEnable = null;
         private UIImageButton ui_mod_del = null;
@@ -247,12 +249,41 @@ namespace tContentPatch.Content.Menus.ModManager
                 if (File.Exists(modIcoPath) == false) return;
                 if (new FileInfo(modIcoPath).Length > 1024 * 1024) return;
 
+                byte[] bytes;
                 using (FileStream fs = new FileStream(modIcoPath, FileMode.Open, FileAccess.Read))
                 {
-                    Texture2D ico = Texture2D.FromStream(Main.graphics.GraphicsDevice, fs);
-                    if (ico == null) return;
-                    ui_ico.SetImage(ico);
+                    bytes = new byte[fs.Length];
+                    int read = 0;
+                    while (read < bytes.Length)
+                    {
+                        int n = fs.Read(bytes, read, bytes.Length - read);
+                        if (n <= 0) break;
+                        read += n;
+                    }
                 }
+
+                MainThreadDispatcher.Enqueue(() =>
+                {
+                    try
+                    {
+                        using (var ms = new MemoryStream(bytes))
+                        {
+                            Texture2D ico = Texture2D.FromStream(Main.graphics.GraphicsDevice, ms);
+                            if (ico == null) return;
+                            Texture2D old = _loadedIco;
+                            _loadedIco = ico;
+                            ui_ico.SetImage(ico);
+                            if (old != null && old != defaultIco)
+                            {
+                                try { old.Dispose(); } catch { }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[UIModItem] 加载模组图标失败: {ex.Message}");
+                    }
+                });
             });
         }
     }

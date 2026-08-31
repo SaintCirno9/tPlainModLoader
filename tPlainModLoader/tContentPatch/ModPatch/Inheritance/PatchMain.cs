@@ -18,9 +18,9 @@ namespace tContentPatch
         /// </summary>
         public virtual void OnEnterWorld() { }
         /// <summary>
-        /// 进入世界前, 仅在单人和客户端有效
+        /// 离开世界时（含退回主菜单），仅在单人和客户端有效。
         /// </summary>
-        public virtual void OnEnterWorldPrefix() { }
+        public virtual void OnLeaveWorld() { }
         /// <summary>
         /// <see cref="Main.Update(GameTime)"/>前调用
         /// </summary>

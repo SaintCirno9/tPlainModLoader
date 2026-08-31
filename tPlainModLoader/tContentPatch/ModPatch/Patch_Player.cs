@@ -131,7 +131,7 @@ namespace tContentPatch.ModPatch
 
             if (playerFile?.Player != null)
             {
-                ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player);
+                ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player, playerFile);
             }
 
             mod.ForTry(item => item.SavePlayerPrefix(playerFile, skipMapSave));

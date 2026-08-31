@@ -193,6 +193,9 @@ namespace tContentPatch.ModPatch
         {
             try
             {
+                Threading.MainThreadDispatcher.CaptureMainThread();
+                Threading.MainThreadDispatcher.Pump();
+
                 float delta = gameTime != null ? (float)gameTime.ElapsedGameTime.TotalSeconds : 1f / 60f;
                 PerformanceProfiler.Update(delta);
 
@@ -239,7 +242,7 @@ namespace tContentPatch.ModPatch
             }
             else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
             {
-                mod.ForTry(item => item.OnEnterWorldPrefix());
+                mod.ForTry(item => item.OnLeaveWorld());
                 // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
                 ModItemSidecarEngine.ResetContainers();
                 // 离开世界时自动持久化所有脏模组设置

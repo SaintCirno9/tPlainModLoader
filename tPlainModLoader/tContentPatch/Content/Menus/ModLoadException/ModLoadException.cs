@@ -9,7 +9,7 @@ namespace tContentPatch.Content.Menus.ModLoadException
     internal class ModLoadException : UIState
     {
         private static UIModLoadException uistate = null;
-        private static bool menuIsClose = true;
+        private static volatile bool menuIsClose = true;
 
         public static void OpenModLoadExceptionMenu(Exception ex)
         {
@@ -29,7 +29,10 @@ namespace tContentPatch.Content.Menus.ModLoadException
 
         public static void WaitMenuClose()
         {
-            while (menuIsClose == false) ;
+            while (menuIsClose == false)
+            {
+                System.Threading.Thread.Sleep(50);
+            }
         }
 
         public static void OpenModDirectory()
