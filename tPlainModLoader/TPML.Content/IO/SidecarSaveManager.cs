@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using Terraria;
+using Terraria.IO;
+using Terraria.Utilities;
 
 namespace TPML.Content.IO
 {
@@ -52,16 +54,74 @@ namespace TPML.Content.IO
             return name;
         }
 
+        /// <summary>
+        /// 角色伴随存档路径：优先使用 .plr 文件名（稳定、可区分同名角色），并兼容旧的按显示名命名文件。
+        /// </summary>
         public static string GetPlayerSavePath(Player player)
         {
-            string name = CleanFileName(player?.name ?? "unknown");
-            return Path.Combine(SaveDirectory, $"Player_{name}.tpml_data");
+            return GetPlayerSavePath(player, TryGetPlayerFilePath(player));
+        }
+
+        public static string GetPlayerSavePath(Player player, string playerFilePath)
+        {
+            string nameKey = CleanFileName(player?.name ?? "unknown");
+            string namePath = Path.Combine(SaveDirectory, $"Player_{nameKey}.tpml_data");
+            string fileKey = GetPlayerFileKey(playerFilePath);
+            if (string.IsNullOrEmpty(fileKey) || string.Equals(fileKey, nameKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return namePath;
+            }
+
+            string filePath = Path.Combine(SaveDirectory, $"Player_{CleanFileName(fileKey)}.tpml_data");
+            TryMigrateLegacyPlayerFile(namePath, filePath);
+            return filePath;
         }
 
         public static string GetPlayerSavePath(string playerName)
         {
             string name = CleanFileName(playerName ?? "unknown");
             return Path.Combine(SaveDirectory, $"Player_{name}.tpml_data");
+        }
+
+        private static string TryGetPlayerFilePath(Player player)
+        {
+            try
+            {
+                PlayerFileData active = Main.ActivePlayerFileData;
+                if (active?.Player == player && !string.IsNullOrEmpty(active.Path))
+                {
+                    return active.Path;
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
+        private static string GetPlayerFileKey(string playerFilePath)
+        {
+            if (string.IsNullOrEmpty(playerFilePath)) return null;
+            try
+            {
+                return FileUtilities.GetFileName(playerFilePath, includeExtension: false);
+            }
+            catch
+            {
+                return Path.GetFileNameWithoutExtension(playerFilePath);
+            }
+        }
+
+        private static void TryMigrateLegacyPlayerFile(string namePath, string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath) || !File.Exists(namePath)) return;
+                File.Copy(namePath, filePath, overwrite: false);
+            }
+            catch
+            {
+            }
         }
 
         public static string GetWorldSavePath()

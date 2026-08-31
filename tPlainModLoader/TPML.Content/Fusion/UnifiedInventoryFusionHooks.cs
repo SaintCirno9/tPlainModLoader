@@ -192,6 +192,22 @@ namespace TPML.Content.Fusion
             return false;
         }
 
+        private static int CountInventoryItem(Player player, int type)
+        {
+            int count = 0;
+            if (player?.inventory == null) return 0;
+            int n = Math.Min(58, player.inventory.Length);
+            for (int i = 0; i < n; i++)
+            {
+                Item it = player.inventory[i];
+                if (it != null && it.type == type && it.stack > 0)
+                {
+                    count += it.stack;
+                }
+            }
+            return count;
+        }
+
         /// <summary>
         /// 拦截魔杖挥动放置物块时的消耗逻辑：<br/>
         /// 原版在 ItemCheck 内部硬编码扣除 inventory[0..57]，若背包中无材料而外部融合源中有，在此扣除外部源中的 1 个材料。
@@ -207,25 +223,19 @@ namespace TPML.Content.Fusion
             Item item = self.inventory[self.selectedItem];
             bool shouldCheckWand = false;
             int wandType = 0;
-            bool hadInInventory = false;
+            int inventoryCountBefore = 0;
 
             if (item != null && item.tileWand > 0 && !self.dontConsumeWand && self.itemTimeMax != 0 && self.itemTime == self.itemTimeMax)
             {
                 wandType = item.tileWand;
-                for (int i = 0; i < 58; i++)
-                {
-                    if (self.inventory[i] != null && self.inventory[i].type == wandType && self.inventory[i].stack > 0)
-                    {
-                        hadInInventory = true;
-                        break;
-                    }
-                }
+                inventoryCountBefore = CountInventoryItem(self, wandType);
                 shouldCheckWand = true;
             }
 
             orig(self);
 
-            if (shouldCheckWand && !self.dontConsumeWand && !hadInInventory)
+            // 原版已从背包扣料则不再扣外部源，避免「背包最后 1 个被原版消耗后又从融合源多扣 1」
+            if (shouldCheckWand && !self.dontConsumeWand && CountInventoryItem(self, wandType) >= inventoryCountBefore)
             {
                 InventoryFusionManager.ConsumeItem(self, wandType);
             }

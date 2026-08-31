@@ -283,37 +283,19 @@ namespace TPML.Content.Engine
 
         private static void PatchItemCheck()
         {
-            var target = typeof(Player).GetMethod(
-                nameof(Player.ItemCheck),
-                BindingFlags.Instance | BindingFlags.Public);
+            // 挂在原版真正的使用许可检查上，而不是 ItemCheck 动画峰值（常规路径 itemAnimation 仍为 0，旧条件恒不成立）
+            var target = MethodLookup.Instance(typeof(Player), "ItemCheck_CheckCanUse_Inner", typeof(Item), typeof(bool));
             if (target != null)
             {
-                HookRegistry.AddContent(target, (Action<Action<Player>, Player>)((orig, self) =>
+                HookRegistry.AddContent(target, (Func<Func<Player, Item, bool, bool>, Player, Item, bool, bool>)((orig, self, sItem, ignoreCursed) =>
                 {
-                    if (!Player_ItemCheck_Prefix(self)) return;
-                    orig(self);
+                    bool result = orig(self, sItem, ignoreCursed);
+                    if (!result || self == null || sItem == null || sItem.IsAir) return result;
+                    bool? canUse = ItemLoader.CanUseItem(sItem, self);
+                    return canUse != false;
                 }));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck (CanUseItem 检查)");
+                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_CheckCanUse_Inner (CanUseItem 检查)");
             }
-        }
-
-        private static bool Player_ItemCheck_Prefix(Player __instance)
-        {
-            if (__instance.CCed) return true;
-            Item item = __instance.inventory[__instance.selectedItem];
-            if (item != null && !item.IsAir && __instance.itemAnimation > 0 && __instance.itemAnimation == __instance.itemAnimationMax)
-            {
-                bool? canUse = ItemLoader.CanUseItem(item, __instance);
-                if (canUse == false)
-                {
-                    __instance.itemAnimation = 0;
-                    __instance.itemTime = 0;
-                    return false;
-                }
-
-                ItemLoader.UseItem(item, __instance);
-            }
-            return true;
         }
 
         #endregion

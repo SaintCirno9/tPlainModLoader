@@ -6,7 +6,9 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Tile_Entities;
 using Terraria.ID;
+using Terraria.IO;
 using Terraria.ModLoader.IO;
+using TPML.Core.IO;
 
 namespace TPML.Content.IO
 {
@@ -44,6 +46,7 @@ namespace TPML.Content.IO
     /// </summary>
     public class PlayerSidecarData
     {
+        public int SchemaVersion { get; set; } = 1;
         public string PlayerName { get; set; }
         public List<ModItemSaveEntry> Items { get; set; } = new List<ModItemSaveEntry>();
 
@@ -90,6 +93,7 @@ namespace TPML.Content.IO
     /// </summary>
     public class WorldSidecarData
     {
+        public int SchemaVersion { get; set; } = 1;
         public string WorldName { get; set; }
         public int WorldID { get; set; }
         public List<ModItemSaveEntry> ChestItems { get; set; } = new List<ModItemSaveEntry>();
@@ -109,6 +113,7 @@ namespace TPML.Content.IO
         // 暂存写盘期间置空的槽位（写盘后立即在内存中还原）
         private static readonly Dictionary<string, Item> _playerTempSwap = new Dictionary<string, Item>();
         private static readonly Dictionary<string, Item> _worldTempSwap = new Dictionary<string, Item>();
+        private static readonly object _ioLock = new object();
 
         /// <summary>
         /// 当角色切换、离开世界或重置容器时触发的通知事件
@@ -136,7 +141,71 @@ namespace TPML.Content.IO
         }
 
         public static string GetPlayerSidecarPath(Player player) => SidecarSaveManager.GetPlayerSavePath(player);
+        public static string GetPlayerSidecarPath(Player player, PlayerFileData fileData) =>
+            SidecarSaveManager.GetPlayerSavePath(player, fileData?.Path);
         public static string GetWorldSidecarPath() => SidecarSaveManager.GetWorldSavePath();
+
+        private static PlayerSidecarData TryReadPlayerSidecar(string path, bool backupCorrupt)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            try
+            {
+                string json = File.ReadAllText(path);
+                return JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 读取玩家伴随存档失败: {ex.Message}");
+                if (backupCorrupt)
+                {
+                    string bak = AtomicFile.BackupCorrupt(path);
+                    if (!string.IsNullOrEmpty(bak))
+                    {
+                        ModLoader.Log($"[Sidecar] 已将损坏的玩家伴随存档备份为: {bak}");
+                    }
+                }
+                return null;
+            }
+        }
+
+        private static WorldSidecarData TryReadWorldSidecar(string path, bool backupCorrupt)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            try
+            {
+                string json = File.ReadAllText(path);
+                return JsonConvert.DeserializeObject<WorldSidecarData>(json);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 读取世界伴随存档失败: {ex.Message}");
+                if (backupCorrupt)
+                {
+                    string bak = AtomicFile.BackupCorrupt(path);
+                    if (!string.IsNullOrEmpty(bak))
+                    {
+                        ModLoader.Log($"[Sidecar] 已将损坏的世界伴随存档备份为: {bak}");
+                    }
+                }
+                return null;
+            }
+        }
+
+        private static void WritePlayerSidecar(string path, PlayerSidecarData data)
+        {
+            if (data == null) return;
+            data.SchemaVersion = 1;
+            string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+            AtomicFile.WriteAllText(path, json);
+        }
+
+        private static void WriteWorldSidecar(string path, WorldSidecarData data)
+        {
+            if (data == null) return;
+            data.SchemaVersion = 1;
+            string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+            AtomicFile.WriteAllText(path, json);
+        }
 
         #region 通用槽位与扩展容器序列化引擎
 
@@ -291,32 +360,23 @@ namespace TPML.Content.IO
 
             try
             {
-                string path = GetPlayerSidecarPath(player);
-                PlayerSidecarData data = null;
-                if (File.Exists(path))
+                lock (_ioLock)
                 {
-                    try
+                    string path = GetPlayerSidecarPath(player);
+                    PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
+                    if (data == null)
                     {
-                        string json = File.ReadAllText(path);
-                        data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                        data = new PlayerSidecarData { PlayerName = player.name };
                     }
-                    catch { }
+
+                    if (data.Containers == null)
+                    {
+                        data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
+                    }
+
+                    data.Containers[containerKey] = SerializeSlots(items);
+                    WritePlayerSidecar(path, data);
                 }
-
-                if (data == null)
-                {
-                    data = new PlayerSidecarData { PlayerName = player.name };
-                }
-
-                if (data.Containers == null)
-                {
-                    data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
-                }
-
-                data.Containers[containerKey] = SerializeSlots(items);
-
-                string output = JsonConvert.SerializeObject(data, Formatting.Indented);
-                File.WriteAllText(path, output);
             }
             catch (Exception ex)
             {
@@ -340,26 +400,22 @@ namespace TPML.Content.IO
             try
             {
                 string path = GetPlayerSidecarPath(player);
-                if (File.Exists(path))
+                PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
+                if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries) && entries != null)
                 {
-                    string json = File.ReadAllText(path);
-                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
-                    if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries) && entries != null)
+                    int maxSlot = -1;
+                    for (int i = 0; i < entries.Count; i++)
                     {
-                        int maxSlot = -1;
-                        for (int i = 0; i < entries.Count; i++)
+                        if (entries[i] != null && entries[i].Slot > maxSlot)
                         {
-                            if (entries[i] != null && entries[i].Slot > maxSlot)
-                            {
-                                maxSlot = entries[i].Slot;
-                            }
+                            maxSlot = entries[i].Slot;
                         }
-
-                        int actualCapacity = Math.Max(baseCap, maxSlot + 1);
-                        Item[] slots = new Item[actualCapacity];
-                        DeserializeSlots(entries, slots);
-                        return slots;
                     }
+
+                    int actualCapacity = Math.Max(baseCap, maxSlot + 1);
+                    Item[] slots = new Item[actualCapacity];
+                    DeserializeSlots(entries, slots);
+                    return slots;
                 }
             }
             catch (Exception ex)
@@ -381,49 +437,35 @@ namespace TPML.Content.IO
 
             try
             {
-                string path = GetPlayerSidecarPath(player);
-                PlayerSidecarData data = null;
-                bool fileExists = File.Exists(path);
-                if (fileExists)
+                lock (_ioLock)
                 {
-                    try
+                    string path = GetPlayerSidecarPath(player);
+                    bool fileExists = File.Exists(path);
+                    PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
+
+                    if (value == null)
                     {
-                        string json = File.ReadAllText(path);
-                        data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
+                        if (!fileExists || data == null) return;
+                        if (data.CustomProperties == null || !data.CustomProperties.ContainsKey(key)) return;
+                        data.CustomProperties.Remove(key);
                     }
-                    catch { }
-                }
-
-                if (value == null)
-                {
-                    // 1. 若文件不存在或数据为空，本就无该键，直接短路返回，避免创建多余的空 Sidecar 文件
-                    if (!fileExists || data == null) return;
-
-                    // 2. 若数据中原本就不包含此 key，直接短路返回，避免无意义的序列化与写盘
-                    if (data.CustomProperties == null || !data.CustomProperties.ContainsKey(key)) return;
-
-                    data.CustomProperties.Remove(key);
-                }
-                else
-                {
-                    if (data == null)
+                    else
                     {
-                        data = new PlayerSidecarData { PlayerName = player.name };
+                        if (data == null)
+                        {
+                            data = new PlayerSidecarData { PlayerName = player.name };
+                        }
+
+                        if (data.CustomProperties == null)
+                        {
+                            data.CustomProperties = new Dictionary<string, string>();
+                        }
+
+                        data.CustomProperties[key] = value;
                     }
 
-                    if (data.CustomProperties == null)
-                    {
-                        data.CustomProperties = new Dictionary<string, string>();
-                    }
-
-                    data.CustomProperties[key] = value;
+                    WritePlayerSidecar(path, data);
                 }
-
-                string output = JsonConvert.SerializeObject(data, Formatting.Indented);
-                string tmpPath = path + ".tmp";
-                File.WriteAllText(tmpPath, output);
-                if (File.Exists(path)) File.Delete(path);
-                File.Move(tmpPath, path);
             }
             catch (Exception ex)
             {
@@ -441,14 +483,10 @@ namespace TPML.Content.IO
             try
             {
                 string path = GetPlayerSidecarPath(player);
-                if (File.Exists(path))
+                PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
+                if (data?.CustomProperties != null && data.CustomProperties.TryGetValue(key, out string val))
                 {
-                    string json = File.ReadAllText(path);
-                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
-                    if (data?.CustomProperties != null && data.CustomProperties.TryGetValue(key, out string val))
-                    {
-                        return val;
-                    }
+                    return val;
                 }
             }
             catch (Exception ex)
@@ -466,21 +504,16 @@ namespace TPML.Content.IO
         /// <summary>
         /// 原版写盘前：扫描所有模组物品，生成伴随快照并临时置空原版槽位（防止原版写盘报非法 ID）
         /// </summary>
-        public static void OnPlayerSavePrefix(Player player)
+        public static void OnPlayerSavePrefix(Player player, PlayerFileData fileData = null)
         {
             if (player == null) return;
             _playerTempSwap.Clear();
 
-            string path = GetPlayerSidecarPath(player);
-            PlayerSidecarData data = null;
-            if (File.Exists(path))
+            string path = fileData != null ? GetPlayerSidecarPath(player, fileData) : GetPlayerSidecarPath(player);
+            PlayerSidecarData data;
+            lock (_ioLock)
             {
-                try
-                {
-                    string existingJson = File.ReadAllText(path);
-                    data = JsonConvert.DeserializeObject<PlayerSidecarData>(existingJson);
-                }
-                catch { }
+                data = TryReadPlayerSidecar(path, backupCorrupt: true);
             }
 
             if (data == null)
@@ -621,11 +654,12 @@ namespace TPML.Content.IO
                 ModLoader.Log($"[Sidecar] 收集 ModPlayer 数据异常: {ex.Message}");
             }
 
-            // 保存伴随文件
             try
             {
-                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
-                File.WriteAllText(path, json);
+                lock (_ioLock)
+                {
+                    WritePlayerSidecar(path, data);
+                }
             }
             catch (Exception ex)
             {
@@ -694,13 +728,9 @@ namespace TPML.Content.IO
 
             try
             {
-                if (File.Exists(path))
+                PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
+                if (data?.Items != null)
                 {
-                    string json = File.ReadAllText(path);
-                    PlayerSidecarData data = JsonConvert.DeserializeObject<PlayerSidecarData>(json);
-                    if (data?.Items != null)
-                    {
-
                 foreach (var entry in data.Items)
                 {
                     int type = ItemLoader.ItemType(entry.ModName, entry.ItemName);
@@ -800,8 +830,7 @@ namespace TPML.Content.IO
                             if (player.bank4 != null && index >= 0 && index < player.bank4.item.Length) player.bank4.item[index] = item;
                             break;
                     }
-                        }
-                    }
+                }
 
                     // 自动回填所有已注册 ModPlayer 的自定义数据
                     if (data?.CustomProperties != null)
@@ -1025,9 +1054,10 @@ namespace TPML.Content.IO
 
             try
             {
-                string path = GetWorldSidecarPath();
-                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
-                File.WriteAllText(path, json);
+                lock (_ioLock)
+                {
+                    WriteWorldSidecar(GetWorldSidecarPath(), data);
+                }
             }
             catch (Exception ex)
             {
@@ -1187,8 +1217,7 @@ namespace TPML.Content.IO
 
             try
             {
-                string json = File.ReadAllText(path);
-                WorldSidecarData data = JsonConvert.DeserializeObject<WorldSidecarData>(json);
+                WorldSidecarData data = TryReadWorldSidecar(path, backupCorrupt: true);
                 if (data == null) return;
 
                 void RestoreEntry(ModItemSaveEntry entry)
