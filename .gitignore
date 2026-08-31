@@ -1,6 +1,31 @@
+# Build and Output directories
 **/.vs/
 **/bin/
 **/obj/
 /dll/
 /Mods/test1/
-Directory.Build.props
+
+# Local machine-specific build configs (not tracked in git)
+Directory.Build.props
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Game sidecar runtime test data
+*.tpml_data
+*.tpml_data.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+

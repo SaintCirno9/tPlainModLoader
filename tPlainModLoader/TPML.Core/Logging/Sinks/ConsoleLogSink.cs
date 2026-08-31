@@ -23,9 +23,12 @@ namespace TPML.Core.Logging.Sinks
                     Console.ForegroundColor = GetColorForLevel(entry.Level);
                     Console.WriteLine(formatted);
                 }
+                catch (System.IO.IOException)
+                {
+                }
                 finally
                 {
-                    Console.ForegroundColor = originalColor;
+                    try { Console.ForegroundColor = originalColor; } catch { }
                 }
             }
         }

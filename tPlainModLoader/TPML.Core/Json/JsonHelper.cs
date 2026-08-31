@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using TPML.Core.IO;
 
 namespace TPML.Core.Json
 {
@@ -62,7 +63,7 @@ namespace TPML.Core.Json
                     ? JsonConvert.SerializeObject(val, Formatting.Indented)
                     : JsonConvert.SerializeObject(val);
 
-                File.WriteAllText(filePath, text, Encoding.UTF8);
+                AtomicFile.WriteAllText(filePath, text, Encoding.UTF8);
             }
             catch (Exception ex)
             {

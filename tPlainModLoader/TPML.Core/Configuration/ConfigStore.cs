@@ -38,7 +38,22 @@ namespace TPML.Core.Configuration
 
                 Config = JsonHelper.Get2<T>(_filePath);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[ConfigStore] 加载配置失败 ({_filePath}): {ex.Message}");
+                if (repair != null)
+                {
+                    try
+                    {
+                        Config = repair.Invoke();
+                        JsonHelper.Save(Config, _filePath);
+                    }
+                    catch (Exception repairEx)
+                    {
+                        System.Console.WriteLine($"[ConfigStore] 修复配置失败: {repairEx.Message}");
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -50,7 +65,10 @@ namespace TPML.Core.Configuration
             {
                 JsonHelper.Save(Config, _filePath);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[ConfigStore] 保存配置失败 ({_filePath}): {ex.Message}");
+            }
         }
     }
 }
