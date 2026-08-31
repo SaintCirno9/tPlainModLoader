@@ -42,6 +42,7 @@ namespace TPML.Content
             On_Main.EndDraw += Hook_EndDraw;
             On_WorldGen.KillTile += Hook_KillTile;
             On_WorldGen.TileFrame += Hook_TileFrame;
+            On_Player.PickTile += Hook_PickTile;
             On_Player.TileInteractionsCheck += Hook_TileInteractionsCheck;
             On_Player.TileInteractionsMouseOver += Hook_TileInteractionsMouseOver;
             On_SceneMetrics.Scan += Hook_SceneMetrics_Scan;
@@ -360,6 +361,149 @@ namespace TPML.Content
             }
         }
 
+        public static void KillMultiTileStructure(int i, int j, int type, bool noItem = false)
+        {
+            TileObjectData tileData = TileObjectData.GetTileData(type, 0);
+            if (tileData == null) return;
+
+            Tile originTile = Framing.GetTileSafely(i, j);
+            int frameX = originTile.frameX;
+            int frameY = originTile.frameY;
+            tileData = TileObjectData.GetTileData(originTile) ?? tileData;
+
+            int num4 = frameX % tileData.CoordinateFullWidth;
+            int num5 = frameY % tileData.CoordinateFullHeight;
+            int num6 = num4 / (tileData.CoordinateWidth + tileData.CoordinatePadding);
+            int k = 0;
+            for (int num7 = num5; k + 1 < tileData.Height && tileData.CoordinateHeights != null && k < tileData.CoordinateHeights.Length && num7 - tileData.CoordinateHeights[k] - tileData.CoordinatePadding >= 0; k++)
+            {
+                num7 -= tileData.CoordinateHeights[k] + tileData.CoordinatePadding;
+            }
+            int originX = i - num6;
+            int originY = j - k;
+
+            WorldGen.destroyObject = true;
+
+            // 1. 掉落物块本体物品（仅在多方块原点掉落 1 次）
+            if (!noItem && (tileData.Width != 1 || tileData.Height != 1) && _tilesByType.TryGetValue(type, out ModTile mt))
+            {
+                int dropItem = mt.GetItemDrop(type, frameX, frameY);
+                if (dropItem > 0 && mt.Drop(originX, originY))
+                {
+                    IEntitySource src = new EntitySource_TileBreak(originX, originY);
+                    Item.NewItem(src, new Vector2(originX * 16, originY * 16), dropItem, 1);
+                }
+            }
+
+            // 2. 清空整片多方块区域所有关联图格
+            for (int n = originX; n < originX + tileData.Width; n++)
+            {
+                for (int num8 = originY; num8 < originY + tileData.Height; num8++)
+                {
+                    Tile t = Framing.GetTileSafely(n, num8);
+                    if (t.type == type && t.active())
+                    {
+                        WorldGen.KillTile(n, num8);
+                        t.active(false);
+                        t.type = 0;
+                        t.frameX = 0;
+                        t.frameY = 0;
+                    }
+                }
+            }
+
+            // 3. 触发 KillMultiTile 释放战利品与实体清理
+            if (_tilesByType.TryGetValue(type, out ModTile modTile))
+            {
+                modTile.KillMultiTile(originX, originY, frameX - num4, frameY - num5);
+            }
+            foreach (var mte in TileEntityLoader.Entities)
+            {
+                mte.Kill(originX, originY);
+            }
+
+            WorldGen.destroyObject = false;
+
+            // 4. 网络同步与周围物理更新
+            if (Main.netMode != 0)
+            {
+                NetMessage.SendTileSquare(-1, originX, originY, tileData.Width, tileData.Height);
+            }
+            for (int num9 = originX - 1; num9 < originX + tileData.Width + 2; num9++)
+            {
+                for (int num10 = originY - 1; num10 < originY + tileData.Height + 2; num10++)
+                {
+                    WorldGen.TileFrame(num9, num10);
+                }
+            }
+            TileObject.objectPreview.Active = false;
+        }
+
+        public static void CheckModTile(int i, int j, int type)
+        {
+            if (type < ModTileOffset || WorldGen.destroyObject)
+            {
+                return;
+            }
+            TileObjectData tileData = TileObjectData.GetTileData(type, 0);
+            if (tileData == null)
+            {
+                return;
+            }
+            Tile originTile = Framing.GetTileSafely(i, j);
+            int frameX = originTile.frameX;
+            int frameY = originTile.frameY;
+            int num = frameX / tileData.CoordinateFullWidth;
+            int num2 = frameY / tileData.CoordinateFullHeight;
+            int num3 = tileData.StyleWrapLimit;
+            if (num3 == 0)
+            {
+                num3 = 1;
+            }
+            int styleLineSkip = tileData.StyleLineSkip;
+            if (styleLineSkip == 0) styleLineSkip = 1;
+            int styleMultiplier = tileData.StyleMultiplier;
+            if (styleMultiplier == 0) styleMultiplier = 1;
+            int style = (tileData.StyleHorizontal ? (num2 / styleLineSkip * num3 + num) : (num / styleLineSkip * num3 + num2)) / styleMultiplier;
+            tileData = TileObjectData.GetTileData(originTile) ?? tileData;
+            int num4 = frameX % tileData.CoordinateFullWidth;
+            int num5 = frameY % tileData.CoordinateFullHeight;
+            int num6 = num4 / (tileData.CoordinateWidth + tileData.CoordinatePadding);
+            int k = 0;
+            for (int num7 = num5; k + 1 < tileData.Height && tileData.CoordinateHeights != null && k < tileData.CoordinateHeights.Length && num7 - tileData.CoordinateHeights[k] - tileData.CoordinatePadding >= 0; k++)
+            {
+                num7 -= tileData.CoordinateHeights[k] + tileData.CoordinatePadding;
+            }
+            int x = i;
+            int y = j;
+            i -= num6;
+            j -= k;
+            int x2 = i + tileData.Origin.X;
+            int y2 = j + tileData.Origin.Y;
+            bool flag = false;
+            for (int l = i; l < i + tileData.Width; l++)
+            {
+                for (int m = j; m < j + tileData.Height; m++)
+                {
+                    Tile checkTile = Framing.GetTileSafely(l, m);
+                    if (!checkTile.active() || checkTile.type != type)
+                    {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag)
+                {
+                    break;
+                }
+            }
+            if (flag || !TileObject.CanPlace(x2, y2, type, style, 0, out var _, true, null))
+            {
+                KillMultiTileStructure(x, y, type, false);
+            }
+            TileObject.objectPreview.Active = false;
+        }
+
         #region MonoMod Hooks
 
         private static void Hook_KillTile(On_WorldGen.orig_KillTile orig, int i, int j, bool fail, bool effectOnly, bool noItem)
@@ -369,66 +513,12 @@ namespace TPML.Content
             {
                 modTile.KillTile(i, j, ref fail, ref effectOnly, ref noItem);
 
-                if (!fail && !effectOnly)
+                if (!fail && !effectOnly && !WorldGen.destroyObject)
                 {
                     TileObjectData data = TileObjectData.GetTileData(tile.type, 0);
                     if (data != null && (data.Width > 1 || data.Height > 1))
                     {
-                        int fullWidth = data.Width * (data.CoordinateWidth + data.CoordinatePadding);
-                        int partX = fullWidth > 0 ? ((tile.frameX % fullWidth) / (data.CoordinateWidth + data.CoordinatePadding)) : 0;
-
-                        int fullHeight = 0;
-                        if (data.CoordinateHeights != null && data.CoordinateHeights.Length > 0)
-                        {
-                            for (int h = 0; h < data.CoordinateHeights.Length; h++)
-                            {
-                                fullHeight += data.CoordinateHeights[h] + data.CoordinatePadding;
-                            }
-                        }
-                        else
-                        {
-                            fullHeight = data.Height * 18;
-                        }
-
-                        int partY = fullHeight > 0 ? ((tile.frameY % fullHeight) / (data.CoordinateHeights != null && data.CoordinateHeights.Length > 0 ? (data.CoordinateHeights[0] + data.CoordinatePadding) : 18)) : 0;
-                        int originX = i - partX;
-                        int originY = j - partY;
-
-                        // 1. 触发 KillMultiTile 释放战利品与实体清理
-                        modTile.KillMultiTile(originX, originY, tile.frameX, tile.frameY);
-                        foreach (var mte in TileEntityLoader.Entities)
-                        {
-                            mte.Kill(originX, originY);
-                        }
-
-                        // 2. 掉落物块本体物品（仅在整体破坏时掉落 1 次）
-                        int dropItem = modTile.GetItemDrop(tile.type, tile.frameX, tile.frameY);
-                        if (!noItem && dropItem > 0 && modTile.Drop(originX, originY))
-                        {
-                            IEntitySource src = new EntitySource_TileBreak(originX, originY);
-                            Item.NewItem(src, new Vector2(originX * 16, originY * 16), dropItem, 1);
-                        }
-
-                        // 3. 一键清空整片多方块的所有关联图格，杜绝一格一格残破
-                        for (int ox = 0; ox < data.Width; ox++)
-                        {
-                            for (int oy = 0; oy < data.Height; oy++)
-                            {
-                                int tx = originX + ox;
-                                int ty = originY + oy;
-                                Tile targetTile = Framing.GetTileSafely(tx, ty);
-                                if (targetTile.active() && targetTile.type == tile.type)
-                                {
-                                    targetTile.active(false);
-                                    targetTile.type = 0;
-                                    targetTile.frameX = 0;
-                                    targetTile.frameY = 0;
-                                }
-                            }
-                        }
-
-                        WorldGen.destroyObject = true;
-                        NetMessage.SendTileSquare(-1, originX, originY, data.Width, data.Height);
+                        KillMultiTileStructure(i, j, tile.type, noItem);
                         return;
                     }
                     else
@@ -456,9 +546,18 @@ namespace TPML.Content
                 {
                     return;
                 }
+                if (!noBreak)
+                {
+                    CheckModTile(i, j, tile.type);
+                }
             }
 
             orig(i, j, resetFrame, noBreak);
+        }
+
+        private static void Hook_PickTile(On_Player.orig_PickTile orig, Player self, int x, int y, int pickPower, int dealDamageAsIfBaseNumberIs)
+        {
+            orig(self, x, y, pickPower, dealDamageAsIfBaseNumberIs);
         }
 
         private static void Hook_TileInteractionsCheck(On_Player.orig_TileInteractionsCheck orig, Player self, int myX, int myY)
