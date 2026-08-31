@@ -68,6 +68,16 @@ namespace tPlainModLoader
                 var loaded = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => string.Equals(a.GetName().Name, requestedName, StringComparison.OrdinalIgnoreCase));
                 if (loaded != null) return loaded;
 
+                // 兼容性重定向：旧核心子程序集已合并为统一核心库 TPML
+                if (string.Equals(requestedName, "TPML.Content", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(requestedName, "TPML.Core", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(requestedName, "TPML.Runtime", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(requestedName, "tContentPatch", StringComparison.OrdinalIgnoreCase))
+                {
+                    var tpmlAsm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => string.Equals(a.GetName().Name, "TPML", StringComparison.OrdinalIgnoreCase));
+                    if (tpmlAsm != null) return tpmlAsm;
+                }
+
                 // 2. 从当前工作目录查找
                 string filePath = Path.Combine(Directory.GetCurrentDirectory(), requestedName + ".dll");
                 if (File.Exists(filePath)) return Assembly.LoadFile(filePath);

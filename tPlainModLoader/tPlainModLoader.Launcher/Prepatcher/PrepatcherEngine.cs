@@ -199,14 +199,14 @@ namespace tPlainModLoader.Prepatcher
                 if (itemType == null) return;
 
                 // 纯静态 Cecil 元数据构建，无需 CLR 反射加载目标程序集
-                var tpmlContentRef = terrariaAssembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "TPML.Content");
-                if (tpmlContentRef == null)
+                var tpmlRef = terrariaAssembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "TPML");
+                if (tpmlRef == null)
                 {
-                    tpmlContentRef = new AssemblyNameReference("TPML.Content", new Version(1, 0, 0, 0));
-                    terrariaAssembly.MainModule.AssemblyReferences.Add(tpmlContentRef);
+                    tpmlRef = new AssemblyNameReference("TPML", new Version(1, 0, 0, 0));
+                    terrariaAssembly.MainModule.AssemblyReferences.Add(tpmlRef);
                 }
 
-                var itemLoaderRef = new TypeReference("TPML.Content", "ItemLoader", terrariaAssembly.MainModule, tpmlContentRef);
+                var itemLoaderRef = new TypeReference("TPML.Content", "ItemLoader", terrariaAssembly.MainModule, tpmlRef);
                 var hookRef = new MethodReference("OnSetDefaultsPrefix", terrariaAssembly.MainModule.TypeSystem.Boolean, itemLoaderRef)
                 {
                     HasThis = false
