@@ -175,7 +175,7 @@ namespace WandsTool.Content
                             if (tile != null)
                             {
                                 if (tile.active()) WorldGen.KillTile(x, y, false, false, noItem);
-                                if (tile.wall > 0) WorldGen.KillWall(x, y, false);
+                                if (gameMain.Wand_StructureIncludeWall && tile.wall > 0) WorldGen.KillWall(x, y, false);
                             }
                         }
                     }

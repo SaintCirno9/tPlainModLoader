@@ -79,6 +79,7 @@ namespace WandsTool.Content
         public static StructureMode Wand_StructureMode = StructureMode.None; // 当前蓝图/结构操作模式
         public static StructureMode LastActiveStructureMode = StructureMode.Copy; // 上一个激活的蓝图工具模式（取消放置时精准回退，默认 Copy）
         public static bool Wand_StructureOverwrite = true; // 蓝图放置时是否覆盖已有物块
+        public static bool Wand_StructureIncludeWall = true; // 蓝图操作时是否考虑背景墙（默认开启）
         public static bool Wand_StructureConsumeMaterials = true; // 蓝图放置是否消耗材料（默认开启）
         public static bool Wand_StructureAutoCraft = true; // 缺材料时是否自动消耗背包原材料制造（默认开启）
         public static bool Wand_StructureAutoCraftRequireStation = false; // 自动制造时是否严格要求附近有对应工作台（默认关闭，随身便携加工）

@@ -140,7 +140,10 @@ namespace WandsTool.Content.Structure
                             if (tile != null)
                             {
                                 tile.ClearTile();
-                                tile.wall = 0;
+                                if (gameMain.Wand_StructureIncludeWall)
+                                {
+                                    tile.wall = 0;
+                                }
                             }
                         }
                     }
@@ -355,8 +358,8 @@ namespace WandsTool.Content.Structure
                             tile.ClearTile();
                         }
 
-                        // 若世界已有墙壁与蓝图不同，拆除并回收旧墙壁材料
-                        if (tile.wall > 0 && (!snap.HasWall || tile.wall != snap.WallType))
+                        // 若世界已有墙壁与蓝图不同，拆除并回收旧墙壁材料（仅在考虑背景墙开关开启时）
+                        if (gameMain.Wand_StructureIncludeWall && tile.wall > 0 && (!snap.HasWall || tile.wall != snap.WallType))
                         {
                             if (gameMain.Wand_CollectDrops && !isCutRelocation)
                             {
@@ -399,30 +402,33 @@ namespace WandsTool.Content.Structure
             }
             job.EndPhase();
 
-            // 阶段 2：铺设背景墙（差量铺设：仅在墙壁不一致时写入）
+            // 阶段 2：铺设背景墙（差量铺设：仅在墙壁不一致时写入；若关闭背景墙开关则跳过）
             job.BeginPhase(1, "铺设背景墙", w * h, BudgetWalls);
-            for (int x = 0; x < w; x++)
+            if (gameMain.Wand_StructureIncludeWall)
             {
-                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
-                    int wx = startX + x;
-                    int wy = startY + y;
-                    if (!InBounds(wx, wy)) continue;
-
-                    TileSnapshot snap = data.Tiles[x, y];
-                    Tile t = Main.tile[wx, wy];
-                    if (t == null) continue;
-
-                    if (snap.HasWall)
+                    for (int y = 0; y < h; y++)
                     {
-                        if (t.wall != snap.WallType && (overwrite || t.wall == 0))
-                        {
-                            t.wall = (ushort)snap.WallType;
-                            if (snap.WallColor > 0) t.wallColor(snap.WallColor);
-                        }
-                    }
+                        int wx = startX + x;
+                        int wy = startY + y;
+                        if (!InBounds(wx, wy)) continue;
 
-                    if (job.ShouldYield()) yield return null;
+                        TileSnapshot snap = data.Tiles[x, y];
+                        Tile t = Main.tile[wx, wy];
+                        if (t == null) continue;
+
+                        if (snap.HasWall)
+                        {
+                            if (t.wall != snap.WallType && (overwrite || t.wall == 0))
+                            {
+                                t.wall = (ushort)snap.WallType;
+                                if (snap.WallColor > 0) t.wallColor(snap.WallColor);
+                            }
+                        }
+
+                        if (job.ShouldYield()) yield return null;
+                    }
                 }
             }
             job.EndPhase();
@@ -582,8 +588,11 @@ namespace WandsTool.Content.Structure
 
                     if ((snap.Coating & 1) != 0) t.fullbrightBlock(true);
                     if ((snap.Coating & 2) != 0) t.invisibleBlock(true);
-                    if ((snap.Coating & 4) != 0) t.fullbrightWall(true);
-                    if ((snap.Coating & 8) != 0) t.invisibleWall(true);
+                    if (gameMain.Wand_StructureIncludeWall)
+                    {
+                        if ((snap.Coating & 4) != 0) t.fullbrightWall(true);
+                        if ((snap.Coating & 8) != 0) t.invisibleWall(true);
+                    }
 
                     if (job.ShouldYield()) yield return null;
                 }

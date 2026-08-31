@@ -58,6 +58,13 @@ namespace WandsTool.Content.Structure
                         }
                     }
 
+                    // 若关闭背景墙开关，抓取时不记录任何背景墙
+                    if (!gameMain.Wand_StructureIncludeWall)
+                    {
+                        snap.WallType = 0;
+                        snap.WallColor = 0;
+                    }
+
                     structure.Tiles[x, y] = snap;
 
                     // 抓取标牌文本

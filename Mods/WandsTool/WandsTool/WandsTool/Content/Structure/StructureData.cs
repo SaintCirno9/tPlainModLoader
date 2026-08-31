@@ -278,8 +278,8 @@ namespace WandsTool.Content.Structure
                     bool inWorldBounds = originWorldTile.HasValue && wx >= 0 && wx < Main.maxTilesX && wy >= 0 && wy < Main.maxTilesY;
                     Tile worldTile = inWorldBounds ? Main.tile[wx, wy] : null;
 
-                    // 1. 统计背景墙（若世界该处已有完全相同的墙壁，零消耗免除）
-                    if (snap.HasWall)
+                    // 1. 统计背景墙（若世界该处已有完全相同的墙壁，零消耗免除；若关闭蓝图墙壁开关则不统计）
+                    if (snap.HasWall && gameMain.Wand_StructureIncludeWall)
                     {
                         bool wallAlreadySame = worldTile != null && worldTile.wall == snap.WallType;
                         if (!wallAlreadySame)

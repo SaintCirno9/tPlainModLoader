@@ -148,6 +148,7 @@ namespace WandsTool.Content
         protected wandsPanel_btn1 btn6_flip_h = null;
         protected wandsPanel_btn1 btn6_flip_v = null;
         protected wandsPanel_btn1 btn6_overwrite = null;
+        protected wandsPanel_btn1 btn6_wall = null;
         protected wandsPanel_btn1 btn6_consume = null;
         protected wandsPanel_btn1 btn6_manager = null;
 
@@ -234,6 +235,7 @@ namespace WandsTool.Content
             btn6_flip_h = new wandsPanel_btn1("Images/Item_3612", "水平镜像翻转 [快捷键: H]");
             btn6_flip_v = new wandsPanel_btn1("Images/Item_3625", "垂直翻转 [快捷键: V]");
             btn6_overwrite = new wandsPanel_btn1("Images/Item_4082", "覆盖已有物块开关 (开: 覆盖原有物块 / 关: 仅在空白处放置)");
+            btn6_wall = new wandsPanel_btn1("Images/Item_30", "蓝图考虑墙壁开关 (开: 包含背景墙 / 关: 忽略背景墙)");
             btn6_consume = new wandsPanel_btn1("Images/Item_5010", "材料消耗模式开关 (开: 放置需消耗对应材料 / 关: 免消耗自由摆放)");
             btn6_manager = new wandsPanel_btn1("Images/Item_3611", "📖 蓝图管理器 (在游戏内浏览、载入、保存与管理本地蓝图)");
 
@@ -344,6 +346,11 @@ namespace WandsTool.Content
                 gameMain.Wand_StructureOverwrite = !gameMain.Wand_StructureOverwrite;
                 Main.NewText($"[魔杖] 蓝图覆盖: {(gameMain.Wand_StructureOverwrite ? "开" : "关")}", 255, 255, 150);
             };
+            btn6_wall.OnLeftClick += (e, s) =>
+            {
+                gameMain.Wand_StructureIncludeWall = !gameMain.Wand_StructureIncludeWall;
+                Main.NewText($"[魔杖] 蓝图考虑背景墙: {(gameMain.Wand_StructureIncludeWall ? "开" : "关")}", 255, 255, 150);
+            };
             btn6_consume.OnLeftClick += (e, s) =>
             {
                 gameMain.Wand_StructureConsumeMaterials = !gameMain.Wand_StructureConsumeMaterials;
@@ -410,6 +417,7 @@ namespace WandsTool.Content
             btns_6.Append(btn6_flip_h);
             btns_6.Append(btn6_flip_v);
             btns_6.Append(btn6_overwrite);
+            btns_6.Append(btn6_wall);
             btns_6.Append(btn6_consume);
             btns_6.Append(btn6_manager);
         }
@@ -522,13 +530,14 @@ namespace WandsTool.Content
             btn5_shimmer.isBack = gameMain.Wand_LiquidMode == gameMain.LiquidMode.Shimmer;
             btn5_infinite.isBack = gameMain.Wand_InfiniteLiquid;
 
-            btn6.SetTooltip($"建筑蓝图模式: {gameMain.Wand_StructureMode} [覆盖:{(gameMain.Wand_StructureOverwrite ? "开" : "关")}] [材料消耗:{(gameMain.Wand_StructureConsumeMaterials ? "开" : "关")}]");
+            btn6.SetTooltip($"建筑蓝图模式: {gameMain.Wand_StructureMode} [覆盖:{(gameMain.Wand_StructureOverwrite ? "开" : "关")}] [背景墙:{(gameMain.Wand_StructureIncludeWall ? "开" : "关")}] [材料消耗:{(gameMain.Wand_StructureConsumeMaterials ? "开" : "关")}]");
             btn6_off.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.None;
             btn6_copy.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Copy;
             btn6_cut.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Cut;
             btn6_delete.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Delete;
             btn6_paste.isBack = gameMain.Wand_StructureMode == gameMain.StructureMode.Paste;
             btn6_overwrite.isBack = gameMain.Wand_StructureOverwrite;
+            btn6_wall.isBack = gameMain.Wand_StructureIncludeWall;
             btn6_consume.isBack = gameMain.Wand_StructureConsumeMaterials;
             btn6_manager.isBack = BlueprintManager.IsOpen;
         }
@@ -583,16 +592,17 @@ namespace WandsTool.Content
             layoutCircle.Invoke(8, 6, btn5_shimmer, 96f);
             layoutCircle.Invoke(8, 7, btn5_infinite, 96f);
 
-            layoutCircle.Invoke(10, 0, btn6_off, 96f);
-            layoutCircle.Invoke(10, 1, btn6_copy, 96f);
-            layoutCircle.Invoke(10, 2, btn6_cut, 96f);
-            layoutCircle.Invoke(10, 3, btn6_delete, 96f);
-            layoutCircle.Invoke(10, 4, btn6_paste, 96f);
-            layoutCircle.Invoke(10, 5, btn6_flip_h, 96f);
-            layoutCircle.Invoke(10, 6, btn6_flip_v, 96f);
-            layoutCircle.Invoke(10, 7, btn6_overwrite, 96f);
-            layoutCircle.Invoke(10, 8, btn6_consume, 96f);
-            layoutCircle.Invoke(10, 9, btn6_manager, 96f);
+            layoutCircle.Invoke(11, 0, btn6_off, 96f);
+            layoutCircle.Invoke(11, 1, btn6_copy, 96f);
+            layoutCircle.Invoke(11, 2, btn6_cut, 96f);
+            layoutCircle.Invoke(11, 3, btn6_delete, 96f);
+            layoutCircle.Invoke(11, 4, btn6_paste, 96f);
+            layoutCircle.Invoke(11, 5, btn6_flip_h, 96f);
+            layoutCircle.Invoke(11, 6, btn6_flip_v, 96f);
+            layoutCircle.Invoke(11, 7, btn6_overwrite, 96f);
+            layoutCircle.Invoke(11, 8, btn6_wall, 96f);
+            layoutCircle.Invoke(11, 9, btn6_consume, 96f);
+            layoutCircle.Invoke(11, 10, btn6_manager, 96f);
         }
 
         private void onClick(int index)

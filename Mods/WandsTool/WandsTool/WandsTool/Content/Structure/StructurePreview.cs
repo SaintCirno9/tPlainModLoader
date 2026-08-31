@@ -43,40 +43,43 @@ namespace WandsTool.Content.Structure
             int minTileY = Math.Max(0, (int)Math.Floor(Main.screenPosition.Y / 16f) - startY - 2);
             int maxTileY = Math.Min(data.Height - 1, (int)Math.Ceiling((Main.screenPosition.Y + Main.screenHeight) / 16f) - startY + 2);
 
-            // 2. 第一阶段：绘制真实半透明背景墙纹理
-            for (int x = minTileX; x <= maxTileX; x++)
+            // 2. 第一阶段：绘制真实半透明背景墙纹理（仅在开启蓝图背景墙开关时绘制）
+            if (gameMain.Wand_StructureIncludeWall)
             {
-                for (int y = minTileY; y <= maxTileY; y++)
+                for (int x = minTileX; x <= maxTileX; x++)
                 {
-                    TileSnapshot snap = data.Tiles[x, y];
-                    if (!snap.HasWall || snap.WallType <= 0 || snap.WallType >= TextureAssets.Wall.Length) continue;
-
-                    try
+                    for (int y = minTileY; y <= maxTileY; y++)
                     {
-                        Main.instance.LoadWall(snap.WallType);
-                        Asset<Texture2D> wallAsset = TextureAssets.Wall[snap.WallType];
-                        if (wallAsset?.Value != null)
+                        TileSnapshot snap = data.Tiles[x, y];
+                        if (!snap.HasWall || snap.WallType <= 0 || snap.WallType >= TextureAssets.Wall.Length) continue;
+
+                        try
                         {
-                            Texture2D wallTex = wallAsset.Value;
-                            Vector2 drawPos = new Vector2((startX + x) * 16, (startY + y) * 16) - Main.screenPosition;
+                            Main.instance.LoadWall(snap.WallType);
+                            Asset<Texture2D> wallAsset = TextureAssets.Wall[snap.WallType];
+                            if (wallAsset?.Value != null)
+                            {
+                                Texture2D wallTex = wallAsset.Value;
+                                Vector2 drawPos = new Vector2((startX + x) * 16, (startY + y) * 16) - Main.screenPosition;
 
-                            // 原版墙壁贴图为 32x32 纹理，相对图格偏移 (-8, -8)
-                            int frameX = snap.WallFrameX;
-                            int frameY = snap.WallFrameY;
-                            Rectangle src = new Rectangle(
-                                Math.Max(0, Math.Min(frameX, wallTex.Width - 32)),
-                                Math.Max(0, Math.Min(frameY, wallTex.Height - 32)),
-                                32, 32
-                            );
+                                // 原版墙壁贴图为 32x32 纹理，相对图格偏移 (-8, -8)
+                                int frameX = snap.WallFrameX;
+                                int frameY = snap.WallFrameY;
+                                Rectangle src = new Rectangle(
+                                    Math.Max(0, Math.Min(frameX, wallTex.Width - 32)),
+                                    Math.Max(0, Math.Min(frameY, wallTex.Height - 32)),
+                                    32, 32
+                                );
 
-                            // 缺料格子以红色调渲染（含促动未激活的半透明态）
-                            Color wallCol = (missingMask != null && missingMask[x, y])
-                                ? new Color(255, 80, 80) * 0.55f
-                                : Color.White * 0.55f;
-                            sb.Draw(wallTex, drawPos - new Vector2(8, 8), src, wallCol);
+                                // 缺料格子以红色调渲染（含促动未激活的半透明态）
+                                Color wallCol = (missingMask != null && missingMask[x, y])
+                                    ? new Color(255, 80, 80) * 0.55f
+                                    : Color.White * 0.55f;
+                                sb.Draw(wallTex, drawPos - new Vector2(8, 8), src, wallCol);
+                            }
                         }
+                        catch { }
                     }
-                    catch { }
                 }
             }
 
@@ -233,6 +236,7 @@ namespace WandsTool.Content.Structure
         private static bool _lastAutoCraft = false;
         private static bool _lastReqStation = false;
         private static bool _lastOverwrite = true;
+        private static bool _lastIncludeWall = true;
         private static Point _lastMouseTile = Point.Zero;
         private static StructureCraftingEngine.CraftingPlan _cachedPlan = null;
         private static bool[,] _missingMask = null;
@@ -255,6 +259,7 @@ namespace WandsTool.Content.Structure
             }
 
             bool overwrite = gameMain.Wand_StructureOverwrite;
+            bool includeWall = gameMain.Wand_StructureIncludeWall;
             bool consume = gameMain.Wand_StructureConsumeMaterials && ModConfig.IsConsumablesItem();
             if (!consume)
             {
@@ -268,7 +273,7 @@ namespace WandsTool.Content.Structure
             int invHash = StructureCraftingEngine.GetInventoryHash(player);
 
             if (_cachedPlan == null || _lastInvHash != invHash || _lastData != data || _lastConsume != consume
-                || _lastAutoCraft != autoCraft || _lastReqStation != reqStation || _lastOverwrite != overwrite || _lastMouseTile != mouseTile)
+                || _lastAutoCraft != autoCraft || _lastReqStation != reqStation || _lastOverwrite != overwrite || _lastIncludeWall != includeWall || _lastMouseTile != mouseTile)
             {
                 _cachedPlan = StructureCraftingEngine.BuildPlan(data, player, autoCraft, reqStation, mouseTile, overwrite);
                 _lastInvHash = invHash;
@@ -277,6 +282,7 @@ namespace WandsTool.Content.Structure
                 _lastAutoCraft = autoCraft;
                 _lastReqStation = reqStation;
                 _lastOverwrite = overwrite;
+                _lastIncludeWall = includeWall;
                 _lastMouseTile = mouseTile;
                 _missingMask = BuildMissingMask(data, mouseTile, overwrite, _cachedPlan);
             }
@@ -309,8 +315,8 @@ namespace WandsTool.Content.Structure
                     bool inWorldBounds = wx >= 0 && wx < Main.maxTilesX && wy >= 0 && wy < Main.maxTilesY;
                     Tile worldTile = inWorldBounds ? Main.tile[wx, wy] : null;
 
-                    // 1. 背景墙：与 GetRequiredItems 相同的差量免除规则
-                    if (snap.HasWall)
+                    // 1. 背景墙：与 GetRequiredItems 相同的差量免除规则（仅在开启背景墙开关时）
+                    if (gameMain.Wand_StructureIncludeWall && snap.HasWall)
                     {
                         bool wallAlreadySame = worldTile != null && worldTile.wall == snap.WallType;
                         if (!wallAlreadySame && (overwrite || worldTile == null || worldTile.wall == 0))
@@ -434,7 +440,7 @@ namespace WandsTool.Content.Structure
                 bool reqStation = gameMain.Wand_StructureAutoCraftRequireStation && ModConfig.IsAutoCraftRequireStation();
 
                 string consumeText = !consume ? "关闭 (免消耗自由摆放)" : (autoCraft ? "开启 (缺料自动消耗原料制造)" : "开启 (需备齐成品材料)");
-                sb.AppendLine($"材料消耗: {consumeText} [覆盖:{(overwrite ? "开" : "关")}]");
+                sb.AppendLine($"材料消耗: {consumeText} [覆盖:{(overwrite ? "开" : "关")}] [背景墙:{(gameMain.Wand_StructureIncludeWall ? "开" : "关")}]");
                 sb.AppendLine($"操作: [左键] 确认放置 | [右键] 取消放置");
                 sb.AppendLine($"-------------------");
 
