@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <!-- 全局引入 TerrariaHooks 强类型 Hook 支持（排除核心基础设施与生成工具本身） -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'TPML.Core' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'tPlainModLoader' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)tPlainModLoader\TerrariaHooks\TerrariaHooks.csproj" Private="false" />
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TPML.TerrariaHooks' and '$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'TPML.Core' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'tPlainModLoader' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)tPlainModLoader\TPML.TerrariaHooks\TPML.TerrariaHooks.csproj" Private="false" />
   </ItemGroup>
 
 

@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingMachine", "..\Mods\F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapAtlasTool", "..\Mods\MapAtlasTool\MapAtlasTool\MapAtlasTool\MapAtlasTool.csproj", "{0957943E-47A8-4049-A05A-8CBFF989E0E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerrariaHooks", "TerrariaHooks\TerrariaHooks.csproj", "{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPML.TerrariaHooks", "TPML.TerrariaHooks\TPML.TerrariaHooks.csproj", "{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PotionSlots", "..\Mods\PotionSlots\PotionSlots\PotionSlots.csproj", "{B8A7C6D5-E4F3-42A1-80B9-7C6D5E4F3A2B}"
 EndProject
