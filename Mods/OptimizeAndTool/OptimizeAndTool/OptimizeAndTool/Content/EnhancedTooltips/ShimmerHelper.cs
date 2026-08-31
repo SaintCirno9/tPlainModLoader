@@ -55,19 +55,19 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
             switch (shimmerType)
             {
                 case ItemID.RodofDiscord: // 1326
-                    results = new List<Item> { new Item(ItemID.RodOfHarmony) };
+                    results = new List<Item> { CreateItem(ItemID.RodOfHarmony) };
                     if (!NPC.downedMoonlord) { isLocked = true; lockReason = "需击败月球领主解锁"; }
                     break;
                 case ItemID.Clentaminator: // 779
-                    results = new List<Item> { new Item(ItemID.Clentaminator2) };
+                    results = new List<Item> { CreateItem(ItemID.Clentaminator2) };
                     if (!NPC.downedMoonlord) { isLocked = true; lockReason = "需击败月球领主解锁"; }
                     break;
                 case ItemID.BottomlessBucket: // 3031
-                    results = new List<Item> { new Item(ItemID.BottomlessShimmerBucket) };
+                    results = new List<Item> { CreateItem(ItemID.BottomlessShimmerBucket) };
                     if (!NPC.downedMoonlord) { isLocked = true; lockReason = "需击败月球领主解锁"; }
                     break;
                 case ItemID.BottomlessShimmerBucket: // 5364
-                    results = new List<Item> { new Item(ItemID.BottomlessBucket) };
+                    results = new List<Item> { CreateItem(ItemID.BottomlessBucket) };
                     if (!NPC.downedMoonlord) { isLocked = true; lockReason = "需击败月球领主解锁"; }
                     break;
                 case 3461: // 日耀砖 (按月相蜕变)
@@ -84,12 +84,12 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
                         case MoonPhase.QuarterAtLeft: targetBrick = 5402; break;
                         default: targetBrick = 5406; break;
                     }
-                    results = new List<Item> { new Item(targetBrick) };
+                    results = new List<Item> { CreateItem(targetBrick) };
                     break;
                 default:
                     if (item.createTile == TileID.MusicBoxes)
                     {
-                        results = new List<Item> { new Item(ItemID.MusicBox) };
+                        results = new List<Item> { CreateItem(ItemID.MusicBox) };
                     }
                     break;
             }
@@ -100,7 +100,7 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
                 int directTransform = ShimmerTransforms.GetTransformToItem(shimmerType);
                 if (directTransform > 0)
                 {
-                    results = new List<Item> { new Item(directTransform) };
+                    results = new List<Item> { CreateItem(directTransform) };
                     if (ShimmerTransforms.IsItemTransformLocked(shimmerType))
                     {
                         isLocked = true;
@@ -196,6 +196,13 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
 
             tooltipText = sb.ToString();
             return true;
+        }
+
+        private static Item CreateItem(int type)
+        {
+            Item it = new Item();
+            it.SetDefaults(type);
+            return it;
         }
     }
 }
