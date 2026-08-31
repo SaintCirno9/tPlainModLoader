@@ -72,7 +72,8 @@ namespace tPlainModLoader.Prepatcher
                         foreach (string dllFile in Directory.GetFiles(modSubDir, "*.dll"))
                         {
                             string fileName = Path.GetFileName(dllFile);
-                            if (fileName.Equals("tPlainModLoader.dll", StringComparison.OrdinalIgnoreCase) ||
+                            if (fileName.Equals("TPML.dll", StringComparison.OrdinalIgnoreCase) ||
+                                fileName.Equals("tPlainModLoader.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("tPlainModLoader.exe", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TerrariaHooks.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TPML.TerrariaHooks.dll", StringComparison.OrdinalIgnoreCase) ||

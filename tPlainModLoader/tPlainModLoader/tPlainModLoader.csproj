@@ -4,12 +4,12 @@
     <ProjectGuid>{A7BAD17D-ECAC-4F51-BA57-AD78B9BC02BF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>tPlainModLoader</RootNamespace>
-    <AssemblyName>tPlainModLoader</AssemblyName>
-    <PackageId>tPlainModLoader</PackageId>
+    <AssemblyName>TPML</AssemblyName>
+    <PackageId>TPML</PackageId>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\tPlainModLoader.xml</DocumentationFile>
+    <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\TPML.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -72,7 +72,7 @@
     </PropertyGroup>
     <MakeDir Directories="$(GameDeployDir);$(GameDeployDir)\Mods" />
     <ItemGroup>
-      <DeployFile Include="$(OutDir)tPlainModLoader.dll;$(OutDir)tPlainModLoader.xml" Condition="Exists('%(FullPath)')" />
+      <DeployFile Include="$(OutDir)TPML.dll;$(OutDir)TPML.xml" Condition="Exists('%(FullPath)')" />
     </ItemGroup>
     <Copy SourceFiles="@(DeployFile)" DestinationFolder="$(GameDeployDir)" SkipUnchangedFiles="true" />
   </Target>
