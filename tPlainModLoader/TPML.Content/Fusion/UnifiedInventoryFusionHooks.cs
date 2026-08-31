@@ -210,22 +210,18 @@ namespace TPML.Content.Fusion
 
         /// <summary>
         /// 拦截魔杖挥动放置物块时的消耗逻辑：<br/>
-        /// 原版在 ItemCheck 内部硬编码扣除 inventory[0..57]，若背包中无材料而外部融合源中有，在此扣除外部源中的 1 个材料。
+        /// 1. 原版在 ItemCheck 内部硬编码扣除 inventory[0..57]，若背包中无材料而外部融合源中有，在此扣除外部源中的 1 个材料；<br/>
+        /// 2. 彻底对齐 tModLoader 官方补丁：在 ItemCheck 执行完毕后，若消耗品堆叠归零（stack <= 0），立即调用 TurnToAir() 并同步清理鼠标手持幽灵数据。
         /// </summary>
         private static void Hook_ItemCheck(On_Player.orig_ItemCheck orig, Player self)
         {
-            if (!ShouldFusion(self))
-            {
-                orig(self);
-                return;
-            }
-
-            Item item = self.inventory[self.selectedItem];
+            bool shouldFusion = ShouldFusion(self);
+            Item item = self?.inventory != null && self.selectedItem >= 0 && self.selectedItem < self.inventory.Length ? self.inventory[self.selectedItem] : null;
             bool shouldCheckWand = false;
             int wandType = 0;
             int inventoryCountBefore = 0;
 
-            if (item != null && item.tileWand > 0 && !self.dontConsumeWand && self.itemTimeMax != 0 && self.itemTime == self.itemTimeMax)
+            if (shouldFusion && item != null && item.tileWand > 0 && !self.dontConsumeWand && self.itemTimeMax != 0 && self.itemTime == self.itemTimeMax)
             {
                 wandType = item.tileWand;
                 inventoryCountBefore = CountInventoryItem(self, wandType);
@@ -235,9 +231,26 @@ namespace TPML.Content.Fusion
             orig(self);
 
             // 原版已从背包扣料则不再扣外部源，避免「背包最后 1 个被原版消耗后又从融合源多扣 1」
-            if (shouldCheckWand && !self.dontConsumeWand && CountInventoryItem(self, wandType) >= inventoryCountBefore)
+            if (shouldFusion && shouldCheckWand && !self.dontConsumeWand && CountInventoryItem(self, wandType) >= inventoryCountBefore)
             {
                 InventoryFusionManager.ConsumeItem(self, wandType);
+            }
+
+            // 修复原版 ItemCheck 消耗物品时遗漏 TurnToAir() 导致 stack == 0 幽灵物品残留的 Bug（对齐 tModLoader 官方修复）
+            if (item != null && item.type > 0 && item.stack <= 0)
+            {
+                item.TurnToAir();
+            }
+            if (self != null && self.whoAmI == Main.myPlayer)
+            {
+                if (Main.mouseItem != null && Main.mouseItem.type > 0 && Main.mouseItem.stack <= 0)
+                {
+                    Main.mouseItem.TurnToAir();
+                }
+                if (self.inventory != null && self.inventory.Length > 58 && self.inventory[58] != null && self.inventory[58].type > 0 && self.inventory[58].stack <= 0)
+                {
+                    self.inventory[58].TurnToAir();
+                }
             }
         }
 

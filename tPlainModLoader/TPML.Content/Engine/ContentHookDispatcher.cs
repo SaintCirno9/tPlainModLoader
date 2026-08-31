@@ -289,8 +289,14 @@ namespace TPML.Content.Engine
             {
                 HookRegistry.AddContent(target, (Func<Func<Player, Item, bool, bool>, Player, Item, bool, bool>)((orig, self, sItem, ignoreCursed) =>
                 {
+                    // 彻底对齐 tML 官方 CombinedHooks.CanUseItem 规则：空物品或堆叠 <= 0 的幽灵物品直接禁止使用
+                    if (sItem == null || sItem.IsAir || sItem.stack <= 0 || sItem.type <= 0)
+                    {
+                        return false;
+                    }
+
                     bool result = orig(self, sItem, ignoreCursed);
-                    if (!result || self == null || sItem == null || sItem.IsAir) return result;
+                    if (!result || self == null) return result;
                     bool? canUse = ItemLoader.CanUseItem(sItem, self);
                     return canUse != false;
                 }));
@@ -389,6 +395,16 @@ namespace TPML.Content.Engine
         private static void Player_Update_Postfix(Player __instance, int i)
         {
             if (__instance != Main.LocalPlayer) return;
+
+            // 保持鼠标物品与 58 槽位无 stack <= 0 幽灵残留（对齐 tML）
+            if (Main.mouseItem != null && Main.mouseItem.type > 0 && Main.mouseItem.stack <= 0)
+            {
+                Main.mouseItem.TurnToAir();
+            }
+            if (__instance.inventory != null && __instance.inventory.Length > 58 && __instance.inventory[58] != null && __instance.inventory[58].type > 0 && __instance.inventory[58].stack <= 0)
+            {
+                __instance.inventory[58].TurnToAir();
+            }
 
             if (__instance.HeldItem != null && !__instance.HeldItem.IsAir)
             {
