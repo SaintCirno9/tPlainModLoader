@@ -45,6 +45,7 @@ namespace tPlainModLoader
                     string s = Path.Combine(dir, i);
                     if (File.Exists(s) == false) continue;
                     file = s;
+                    break;
                 }
 
                 if (file == null) throw new Exception($"在目录中找不到启动文件[{dir}]");

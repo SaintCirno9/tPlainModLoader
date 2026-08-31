@@ -38,8 +38,15 @@ namespace tPlainModLoaderInjector
 
         public static void Run()
         {
-            Console.InputEncoding = Encoding.Unicode;//为啥是这格式啊
-            Console.OutputEncoding = Encoding.Unicode;
+            try
+            {
+                Console.InputEncoding = Encoding.UTF8;
+                Console.OutputEncoding = Encoding.UTF8;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"设置控制台编码失败（已忽略）: {ex.Message}");
+            }
 
             while (true)
             {

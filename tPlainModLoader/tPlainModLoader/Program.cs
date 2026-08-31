@@ -76,7 +76,7 @@ namespace tPlainModLoader
                 "如果tPML崩溃了请冷静, 这是正常现象", "你让我怎么棱镜!", "按[Alt]和[F4]免费领取天顶剑", "Null", "1.4.5现已更新!",
                 "修修补补又一年", "传奇BUG王[c/FF69B4:404]", "世纪之花灯泡",
                 "哈!哈!你发现了彩蛋!"};
-            Console.Title = titles[new Random().Next(0, titles.Length - 1)];
+            Console.Title = titles[new Random().Next(0, titles.Length)];
 
             while (true) Thread.Sleep(1);
         }
@@ -107,7 +107,7 @@ namespace tPlainModLoader
             Type type = typeof(ContentPatch);
             ContentPatch cp = (ContentPatch)Activator.CreateInstance(type, true);
 
-            while (cp.CanInitialize() == false) ;
+            while (cp.CanInitialize() == false) Thread.Sleep(1);
 
             try
             {

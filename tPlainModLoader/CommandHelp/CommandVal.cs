@@ -1,4 +1,6 @@
-﻿namespace CommandHelp
+﻿using System.Globalization;
+
+namespace CommandHelp
 {
     public class CommandFalse : CommandKeyVal
     {
@@ -14,7 +16,7 @@
     {
         public override string Text => "<int>";
 
-        protected override int ArgConvertThrow(string arg) => int.Parse(arg);
+        protected override int ArgConvertThrow(string arg) => int.Parse(arg, CultureInfo.InvariantCulture);
 
         protected override int GetDefault() => default;
     }
@@ -23,7 +25,7 @@
     {
         public override string Text => "<float>";
 
-        protected override float ArgConvertThrow(string arg) => float.Parse(arg);
+        protected override float ArgConvertThrow(string arg) => float.Parse(arg, CultureInfo.InvariantCulture);
 
         protected override float GetDefault() => default;
     }

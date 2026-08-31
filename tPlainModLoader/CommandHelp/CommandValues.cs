@@ -26,7 +26,9 @@ namespace CommandHelp
 
         public override CommandObject Parse(string command)
         {
-            if (_args == null) ParseFormat(command);
+            // 每次解析都重置，避免可变参数空指令复用上一次的 _args
+            _args = null;
+            ParseFormat(command);
 
             T[] value = new T[_argCount];
 

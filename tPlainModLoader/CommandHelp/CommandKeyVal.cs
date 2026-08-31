@@ -22,8 +22,8 @@ namespace CommandHelp
         {
             if (command == "" && IsVariable)
             {
+                // 可变参数缺省时保留构造传入的值，勿覆盖为 null
                 IsDefault = true;
-                _val = GetDefault();
                 return this;
             }
 
