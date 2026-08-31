@@ -14,8 +14,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>ico_256.ico</ApplicationIcon>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

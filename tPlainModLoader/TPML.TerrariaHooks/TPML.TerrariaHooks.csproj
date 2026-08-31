@@ -8,8 +8,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,8 +10,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile Condition="'$(Configuration)' == 'Debug'">bin\Debug\tPlainModLoader.xml</DocumentationFile>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -74,7 +72,7 @@
     </PropertyGroup>
     <MakeDir Directories="$(GameDeployDir);$(GameDeployDir)\Mods" />
     <ItemGroup>
-      <DeployFile Include="$(OutDir)tPlainModLoader.dll;$(OutDir)tPlainModLoader.pdb;$(OutDir)tPlainModLoader.xml" Condition="Exists('%(FullPath)')" />
+      <DeployFile Include="$(OutDir)tPlainModLoader.dll;$(OutDir)tPlainModLoader.xml" Condition="Exists('%(FullPath)')" />
     </ItemGroup>
     <Copy SourceFiles="@(DeployFile)" DestinationFolder="$(GameDeployDir)" SkipUnchangedFiles="true" />
   </Target>

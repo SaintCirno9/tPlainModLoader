@@ -6,8 +6,6 @@
 //   - 声明 record / init / required 的程序集在自身副本上即可解析；
 //   - 跨程序集使用（对象初始化器 new Record { X = 5 } 等）经实测同样可用。
 // 注意：类型名与命名空间是编译器约定，禁止修改；本文件勿加入公共 API 文档范围。
-// ---------------------------------------------------------------------------
-#nullable disable
 namespace System.Runtime.CompilerServices
 {
     /// <summary>init 访问器与 record 需要（C# 9）。</summary>

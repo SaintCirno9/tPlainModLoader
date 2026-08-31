@@ -15,7 +15,11 @@
          net472 下编译期特性（record/init/required/主构造函数/集合表达式等）可直接使用；
          依赖新版 CLR 的特性（默认接口实现、接口静态抽象成员等）编译器会直接报错拦截 -->
     <LangVersion>14.0</LangVersion>
+    <!-- 全局开启 PDB 内嵌模式：符号直接打包进 DLL 内部，既保留异常堆栈精准行号，又消除外部独立 .pdb 文件 -->
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1605</WarningsNotAsErrors>
   </PropertyGroup>
 
   <!-- 全局引入 Krafs.Publicizer，自动将 Terraria 与 ReLogic 的 internal/private 成员公开给编译器，提供 100% 强类型智能提示与零反射访问 -->
@@ -28,6 +32,11 @@
   <!-- 全局引入 System.Memory 为 net472 提供 Span / ReadOnlySpan 高性能内存操作 -->
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.5" />
+  </ItemGroup>
+
+  <!-- 全局引入 tPlainModLoader 统一核心类库（排除核心自身、引导器与生成工具等基础设施） -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'tPlainModLoader' and '$(MSBuildProjectName)' != 'tPlainModLoader.Launcher' and '$(MSBuildProjectName)' != 'tPlainModLoaderInjector' and '$(MSBuildProjectName)' != 'TPML.HookGen' and '$(MSBuildProjectName)' != 'TPML.TerrariaHooks' and '$(MSBuildProjectName)' != 'TerrariaHooks' and '$(MSBuildProjectName)' != 'FastWin32' and '$(MSBuildProjectName)' != 'CommandHelp' and '$(MSBuildProjectName)' != '批量生成'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)tPlainModLoader\tPlainModLoader\tPlainModLoader.csproj" Private="false" />
   </ItemGroup>
 
   <!-- 全局引入 TerrariaHooks 强类型 Hook 支持（排除核心基础设施与生成工具本身） -->

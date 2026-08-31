@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ProjectGuid>{9EDB6614-8022-472D-956C-64C4EAA482BA}</ProjectGuid>
@@ -7,8 +7,6 @@
     <AssemblyName>WandsTool</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,7 +39,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\tPlainModLoader\tPlainModLoader.csproj" Private="false" />
     <ProjectReference Include="..\..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
   </ItemGroup>
 
@@ -59,7 +56,6 @@
     <Message Importance="High" Text="[DeployToGameDir] 部署模组 $(MSBuildProjectName) -> $(ModDeployDir)" />
     <ItemGroup>
       <ModDeployFile Include="$(TargetPath)" />
-      <ModDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
       <ModDeployFile Include="$(ModSourceDir)\info.json" Condition="Exists('$(ModSourceDir)\info.json')" />
       <ModDeployFile Include="$(ModSourceDir)\ico.png" Condition="Exists('$(ModSourceDir)\ico.png')" />
     </ItemGroup>

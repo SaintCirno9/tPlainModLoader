@@ -13,8 +13,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ApplicationIcon>ico2_256.ico</ApplicationIcon>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
     <!-- 保持上游行为：Debug 产物输出到主工程 bin，便于一并启动调试 -->
     <OutputPath Condition="'$(Configuration)' == 'Debug'">..\tPlainModLoader\bin\Debug\</OutputPath>
   </PropertyGroup>

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ProjectGuid>{5CE623EC-BDD6-4A59-ACFE-1D9FF2E369FE}</ProjectGuid>
@@ -7,8 +7,6 @@
     <AssemblyName>QuickSetting</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DebugType Condition="'$(Configuration)' == 'Debug'">full</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'Release'">pdbonly</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,7 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\tPlainModLoader\tPlainModLoader.csproj" Private="false" />
   </ItemGroup>
 
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickSetting 文件夹 -->
@@ -50,7 +47,6 @@
     <Message Importance="High" Text="[DeployToGameDir] 部署模组 $(MSBuildProjectName) -> $(ModDeployDir)" />
     <ItemGroup>
       <ModDeployFile Include="$(TargetPath)" />
-      <ModDeployFile Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
       <ModDeployFile Include="$(ModSourceDir)\info.json" Condition="Exists('$(ModSourceDir)\info.json')" />
       <ModDeployFile Include="$(ModSourceDir)\ico.png" Condition="Exists('$(ModSourceDir)\ico.png')" />
     </ItemGroup>
