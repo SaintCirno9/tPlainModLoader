@@ -154,7 +154,7 @@ namespace tContentPatch
             Content.DedServConsoleCommand.RegisterAll();
             Content.Network.RegisterNetModule.RegisterAll();
             Content.TitleInfo.RegisterAll();
-            Content.Menus.Patch_UIWorkshopHub.Patch.RegisterAll();
+            Content.Menus.Patch_MainMenu.Patch_MainMenu.RegisterAll();
             Content.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
             Content.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
             Content.Menus.ModSetSwitch.Patch.RegisterAll();
