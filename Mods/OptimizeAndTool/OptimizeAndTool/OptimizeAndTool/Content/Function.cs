@@ -45,6 +45,7 @@ namespace OptimizeAndTool.Content
             cos.AddRange(ItemMaxStackPatch.GetCO());
             cos.AddRange(UncapMaxLifePatch.GetCO());
             cos.AddRange(PortableCraftingStation.GetCO());
+            cos.AddRange(UniversalCraftingEnvironment.GetCO());
             cos.AddRange(PortableContainer.GetCO());
             cos.AddRange(InfinitePotionAndBuff.GetCO());
             cos.AddRange(TownNPCOptimization.GetCO());
@@ -114,6 +115,7 @@ namespace OptimizeAndTool.Content
             uis.AddRange(ItemMaxStackPatch.GetUI());
             uis.AddRange(UncapMaxLifePatch.GetUI());
             uis.AddRange(PortableCraftingStation.GetUI());
+            uis.AddRange(UniversalCraftingEnvironment.GetUI());
             uis.AddRange(PortableContainer.GetUI());
 
             // 5. 药水与随身增益

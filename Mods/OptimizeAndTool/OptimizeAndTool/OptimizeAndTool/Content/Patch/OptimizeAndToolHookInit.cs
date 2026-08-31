@@ -36,6 +36,7 @@ namespace OptimizeAndTool.Content.Patch
             Cheat.HeldItemModify.SmartSelectRangeHooks.RegisterAll();
             QoL.KeepRunningWhenUnfocused.RegisterAll();
             QoL.PortableCraftingStation.RegisterAll();
+            QoL.UniversalCraftingEnvironmentHooks.RegisterAll();
 
             // 批次 2: 背包与存储系统
             BigBag.BigBagPickupHooks.RegisterAll();
@@ -137,6 +138,7 @@ namespace OptimizeAndTool.Content.Patch
             BigBag.BigBagPickupHooks.UnregisterAll();
 
             // 批次 1 注销
+            QoL.UniversalCraftingEnvironmentHooks.UnregisterAll();
             QoL.PortableCraftingStation.UnregisterAll();
             QoL.KeepRunningWhenUnfocused.UnregisterAll();
             Cheat.HeldItemModify.SmartSelectRangeHooks.UnregisterAll();
