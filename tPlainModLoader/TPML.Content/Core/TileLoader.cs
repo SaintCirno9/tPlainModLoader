@@ -451,21 +451,12 @@ namespace TPML.Content
                 return;
             }
             Tile originTile = Framing.GetTileSafely(i, j);
+            if (!originTile.active() || originTile.type != type) return;
+
             int frameX = originTile.frameX;
             int frameY = originTile.frameY;
-            int num = frameX / tileData.CoordinateFullWidth;
-            int num2 = frameY / tileData.CoordinateFullHeight;
-            int num3 = tileData.StyleWrapLimit;
-            if (num3 == 0)
-            {
-                num3 = 1;
-            }
-            int styleLineSkip = tileData.StyleLineSkip;
-            if (styleLineSkip == 0) styleLineSkip = 1;
-            int styleMultiplier = tileData.StyleMultiplier;
-            if (styleMultiplier == 0) styleMultiplier = 1;
-            int style = (tileData.StyleHorizontal ? (num2 / styleLineSkip * num3 + num) : (num / styleLineSkip * num3 + num2)) / styleMultiplier;
             tileData = TileObjectData.GetTileData(originTile) ?? tileData;
+
             int num4 = frameX % tileData.CoordinateFullWidth;
             int num5 = frameY % tileData.CoordinateFullHeight;
             int num6 = num4 / (tileData.CoordinateWidth + tileData.CoordinatePadding);
@@ -474,32 +465,41 @@ namespace TPML.Content
             {
                 num7 -= tileData.CoordinateHeights[k] + tileData.CoordinatePadding;
             }
-            int x = i;
-            int y = j;
-            i -= num6;
-            j -= k;
-            int x2 = i + tileData.Origin.X;
-            int y2 = j + tileData.Origin.Y;
-            bool flag = false;
-            for (int l = i; l < i + tileData.Width; l++)
+            int originX = i - num6;
+            int originY = j - k;
+
+            // 1. 检查多方块内部所有格子是否依然完整存在
+            bool missingPart = false;
+            for (int l = originX; l < originX + tileData.Width; l++)
             {
-                for (int m = j; m < j + tileData.Height; m++)
+                for (int m = originY; m < originY + tileData.Height; m++)
                 {
                     Tile checkTile = Framing.GetTileSafely(l, m);
                     if (!checkTile.active() || checkTile.type != type)
                     {
-                        flag = true;
+                        missingPart = true;
                         break;
                     }
                 }
-                if (flag)
+                if (missingPart) break;
+            }
+
+            // 2. 检查多方块底部地面是否有实体物块支撑
+            bool lostSupport = false;
+            int groundY = originY + tileData.Height;
+            for (int ox = 0; ox < tileData.Width; ox++)
+            {
+                Tile groundTile = Framing.GetTileSafely(originX + ox, groundY);
+                if (!groundTile.nactive() || (!Main.tileSolid[groundTile.type] && !Main.tileSolidTop[groundTile.type]))
                 {
+                    lostSupport = true;
                     break;
                 }
             }
-            if (flag || !TileObject.CanPlace(x2, y2, type, style, 0, out var _, true, null))
+
+            if (missingPart || lostSupport)
             {
-                KillMultiTileStructure(x, y, type, false);
+                KillMultiTileStructure(originX, originY, type, false);
             }
             TileObject.objectPreview.Active = false;
         }

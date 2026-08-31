@@ -89,6 +89,13 @@ namespace TPMLBridge.GABP.Tools
                     Description = "在主线程实机模拟物品栏中鼠标指向钓鱼机物品，执行 Tooltip 生成与 Tooltip 绘制，确保无越界、无黑屏、0 异常。",
                     Tags = new List<string> { "diagnostic", "automation", "fishing_machine", "tooltip" },
                     InputSchema = new { type = "object", properties = new { } }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/test_manual_placement",
+                    Description = "在主线程模拟玩家手持钓鱼机物品并手动点击放置，检测 TileObject.CanPlace 与放置后稳定性。",
+                    Tags = new List<string> { "diagnostic", "automation", "fishing_machine" },
+                    InputSchema = new { type = "object", properties = new { } }
                 }
             };
         }
@@ -123,6 +130,10 @@ namespace TPMLBridge.GABP.Tools
                 case "tpml/test_fishing_machine_hover":
                 {
                     return await MainThreadQueue.EnqueueAsync(TestFishingMachineHover);
+                }
+                case "tpml/test_manual_placement":
+                {
+                    return await MainThreadQueue.EnqueueAsync(TestManualPlacement);
                 }
                 default:
                     return null;
@@ -635,6 +646,103 @@ namespace TPMLBridge.GABP.Tools
                     error = ex.ToString()
                 };
             }
+        }
+
+        private static object TestManualPlacement()
+        {
+            var steps = new List<Dictionary<string, object>>();
+            bool allPassed = true;
+
+            int itemId = ItemLoader.ItemType("FishingMachine", "FishingMachine");
+            int tileType = ModContent.TileType<FishingMachine.Content.Tiles.FishingMachineTile>();
+
+            Player player = Main.LocalPlayer;
+            int playerTileX = (int)(player.position.X / 16f);
+            int playerTileY = (int)(player.position.Y / 16f);
+
+            int targetX = playerTileX + 3;
+            int targetY = playerTileY;
+
+            // 1. 准备地面（2格石块）并清空上方 2x2 空间
+            for (int dx = -1; dx <= 2; dx++)
+            {
+                WorldGen.PlaceTile(targetX + dx, targetY + 1, TileID.Stone, false, true);
+                for (int dy = -3; dy <= 0; dy++)
+                {
+                    WorldGen.KillTile(targetX + dx, targetY + dy, false, false, true);
+                }
+            }
+
+            // 2. 模拟手持物品
+            player.inventory[player.selectedItem].SetDefaults(itemId);
+            player.inventory[player.selectedItem].stack = 5;
+
+            Player.tileTargetX = targetX;
+            Player.tileTargetY = targetY;
+
+            // 3. 测试 TileObject.CanPlace
+            bool canPlace = TileObject.CanPlace(targetX, targetY, tileType, 0, player.direction, out TileObject objectData, false, null);
+            steps.Add(new Dictionary<string, object>
+            {
+                ["step"] = "1. TileObject.CanPlace",
+                ["canPlace"] = canPlace,
+                ["objectDataType"] = objectData.type,
+                ["passed"] = canPlace
+            });
+            if (!canPlace) allPassed = false;
+
+            // 4. 测试 TileObject.Place
+            bool placeSuccess = canPlace && TileObject.Place(objectData);
+            if (placeSuccess)
+            {
+                var data = TileObjectData.GetTileData(tileType, 0, 0);
+                if (data?.HookPostPlaceMyPlayer.hook != null)
+                {
+                    data.HookPostPlaceMyPlayer.hook(targetX, targetY, tileType, 0, player.direction, 0);
+                }
+            }
+
+            int originX = targetX - 1;
+            int originY = targetY - 1;
+
+            // 5. 检查方块是否安好且未被误删
+            bool topLeftActive = Framing.GetTileSafely(originX, originY).active() && Framing.GetTileSafely(originX, originY).type == tileType;
+            bool bottomRightActive = Framing.GetTileSafely(targetX, targetY).active() && Framing.GetTileSafely(targetX, targetY).type == tileType;
+            bool teBound = TileEntity.ByID.Values.Any(te => te.Position.X == originX && te.Position.Y == originY);
+
+            steps.Add(new Dictionary<string, object>
+            {
+                ["step"] = "2. TileObject.Place & StabilityCheck",
+                ["placeSuccess"] = placeSuccess,
+                ["topLeftActive"] = topLeftActive,
+                ["bottomRightActive"] = bottomRightActive,
+                ["teBound"] = teBound,
+                ["passed"] = placeSuccess && topLeftActive && bottomRightActive && teBound
+            });
+            if (!placeSuccess || !topLeftActive || !bottomRightActive || !teBound) allPassed = false;
+
+            // 6. 测试多方块物理破坏与掉落（测试主动挖掘与支撑破坏）
+            WorldGen.KillTile(targetX, targetY, false, false, false);
+            bool tileDestroyed = !Framing.GetTileSafely(targetX, targetY).active() && !Framing.GetTileSafely(originX, originY).active();
+            bool teRemoved = !TileEntity.ByID.Values.Any(te => te.Position.X == originX && te.Position.Y == originY);
+
+            steps.Add(new Dictionary<string, object>
+            {
+                ["step"] = "3. TileDestructionCheck",
+                ["tileDestroyed"] = tileDestroyed,
+                ["teRemoved"] = teRemoved,
+                ["passed"] = tileDestroyed && teRemoved
+            });
+            if (!tileDestroyed || !teRemoved) allPassed = false;
+
+            return new
+            {
+                success = allPassed,
+                targetX,
+                targetY,
+                steps,
+                summary = allPassed ? "手动放置模拟与物块稳定性测试 100% 通过！" : "手动放置测试失败"
+            };
         }
     }
 }
