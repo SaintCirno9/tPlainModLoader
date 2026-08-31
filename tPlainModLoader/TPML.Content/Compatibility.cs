@@ -28,8 +28,38 @@ namespace Terraria.ModLoader
         public static T GetModPlayer<T>(this Terraria.Player player) where T : TPML.Content.ModPlayer
             => TPML.Content.ModPlayerExtensions.GetModPlayer<T>(player);
 
+        public static bool TryGetModPlayer<T>(this Terraria.Player player, out T result) where T : TPML.Content.ModPlayer
+            => TPML.Content.ModPlayerExtensions.TryGetModPlayer(player, out result);
+
         public static Terraria.DataStructures.IEntitySource GetSource_Misc(this Terraria.Player player, string context)
             => TPML.Content.ModPlayerExtensions.GetSource_Misc(player, context);
+
+        public static bool HasBuff(this Terraria.Player player, int type)
+            => TPML.Content.PlayerExtensions.HasBuff(player, type);
+
+        public static bool CanAfford(this Terraria.Player player, long price, int customCurrency = -1)
+            => TPML.Content.PlayerExtensions.CanAfford(player, price, customCurrency);
+    }
+
+    public static class ItemExtensions
+    {
+        public static void CloneDefaults(this Terraria.Item item, int typeToClone)
+            => TPML.Content.ItemExtensions.CloneDefaults(item, typeToClone);
+
+        public static TPML.Content.ModItem GetModItem(this Terraria.Item item)
+            => TPML.Content.ItemExtensions.GetModItem(item);
+
+        public static T GetModItem<T>(this Terraria.Item item) where T : TPML.Content.ModItem
+            => TPML.Content.ItemExtensions.GetModItem<T>(item);
+
+        public static bool IsNotSameTypePrefixAndStack(this Terraria.Item item, Terraria.Item compareItem)
+            => TPML.Content.ItemExtensions.IsNotSameTypePrefixAndStack(item, compareItem);
+    }
+
+    public static class NPCExtensions
+    {
+        public static bool HasBuff(this Terraria.NPC npc, int type)
+            => TPML.Content.NPCExtensions.HasBuff(npc, type);
     }
 
     public static class ModContent

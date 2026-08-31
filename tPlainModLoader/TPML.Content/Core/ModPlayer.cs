@@ -84,6 +84,19 @@ namespace TPML.Content
     {
         private static readonly Dictionary<Player, Dictionary<Type, ModPlayer>> _playerMods = new Dictionary<Player, Dictionary<Type, ModPlayer>>();
 
+        /// <summary>
+        /// 对齐 tML <c>Player.TryGetModPlayer</c>：只查询已绑定实例，失败返回 false，不兜底实例化。
+        /// </summary>
+        public static bool TryGetModPlayer<T>(this Player player, out T result) where T : ModPlayer
+        {
+            result = null;
+            if (player == null) return false;
+            if (!_playerMods.TryGetValue(player, out var map)) return false;
+            if (!map.TryGetValue(typeof(T), out var existing) || existing is not T typed) return false;
+            result = typed;
+            return true;
+        }
+
         public static T GetModPlayer<T>(this Player player) where T : ModPlayer
         {
             if (player == null) return null;
