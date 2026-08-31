@@ -85,12 +85,14 @@ namespace TPML.Content
             {
                 int newLen = Math.Max(required, TextureAssets.Item.Length * 2);
                 Array.Resize(ref TextureAssets.Item, newLen);
+                Texture2D fallback = TextureAssets.Item[0]?.Value ?? TileLoader.GetFallbackTexture();
                 for (int i = 0; i < TextureAssets.Item.Length; i++)
                 {
                     if (TextureAssets.Item[i] == null)
                     {
                         var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
                         _assetNameField?.SetValue(emptyAsset, string.Empty);
+                        _assetValueField?.SetValue(emptyAsset, fallback);
                         _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
                         TextureAssets.Item[i] = emptyAsset;
                     }
@@ -206,9 +208,12 @@ namespace TPML.Content
                 Assembly asm = item.GetType().Assembly;
                 string[] resNames = asm.GetManifestResourceNames();
                 string targetRes = null;
+                string normalizedTex = texPath?.Replace('/', '.')?.Replace('\\', '.');
+
                 foreach (var res in resNames)
                 {
-                    if (res.Equals($"{item.Name}.png", StringComparison.OrdinalIgnoreCase) ||
+                    if ((!string.IsNullOrEmpty(normalizedTex) && (res.Equals(normalizedTex, StringComparison.OrdinalIgnoreCase) || res.Equals(normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex, StringComparison.OrdinalIgnoreCase))) ||
+                        res.Equals($"{item.Name}.png", StringComparison.OrdinalIgnoreCase) ||
                         res.EndsWith($".{item.Name}.png", StringComparison.OrdinalIgnoreCase) ||
                         res.Equals($"{item.Name}.rawimg", StringComparison.OrdinalIgnoreCase) ||
                         res.EndsWith($".{item.Name}.rawimg", StringComparison.OrdinalIgnoreCase))
@@ -254,7 +259,7 @@ namespace TPML.Content
                     }
                 }
 
-                if (texture == null && item.Mod != null)
+                if (texture == null && item.Mod != null && !string.IsNullOrEmpty(texPath))
                 {
                     string cleanPath = texPath.Replace('\\', '/');
                     if (item.Mod.HasAsset(cleanPath + ".png"))

@@ -13,6 +13,8 @@ namespace FishingMachine.Content.Items
     /// </summary>
     public class FishingMachine : ModItem
     {
+        public override string Texture => "FishingMachine/Resources/FishingMachine";
+
         public override void SetStaticDefaults()
         {
             ItemLoader.SetDisplayName(Type, "自动钓鱼机");
@@ -33,30 +35,8 @@ namespace FishingMachine.Content.Items
             Item.consumable = true;
             Item.rare = 3; // 橙色稀有度 (Orange)
             Item.value = Item.buyPrice(0, 1, 0, 0); // 1金币
+            Item.createTile = ModContent.TileType<FishingMachineTile>();
             Item.UseSound = SoundID.Item1;
-        }
-
-        public override bool? UseItem(Player player)
-        {
-            if (player.whoAmI == Main.myPlayer)
-            {
-                int tileX = Player.tileTargetX;
-                int tileY = Player.tileTargetY;
-
-                // 尝试在此处放置 2x2 自动钓鱼机
-                if (FishingMachineTileManager.CanPlace(tileX, tileY))
-                {
-                    FishingMachineTileManager.Place(tileX, tileY);
-                    Item held = player.inventory[player.selectedItem];
-                    if (held != null && held.type == Type && !held.IsAir)
-                    {
-                        held.stack--;
-                        if (held.stack <= 0) held.TurnToAir();
-                    }
-                    return true;
-                }
-            }
-            return false;
         }
 
         public override void AddRecipes()

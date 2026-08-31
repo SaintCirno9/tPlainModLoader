@@ -1,4 +1,3 @@
-using FishingMachine.Content.IO;
 using FishingMachine.Content.Tiles;
 using FishingMachine.UI;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,7 +16,8 @@ using TPML.Core.Logging;
 namespace FishingMachine
 {
     /// <summary>
-    /// FishingMachine 模组内容注册管理器
+    /// FishingMachine 模组主类 (TPML.Content.Mod)
+    /// 自动钓鱼机全部内容由 ContentHost 自动扫描并注册 (ModItem, ModTile, ModTileEntity)
     /// 作者: SaintCirno9
     /// </summary>
     public class FishingMachineMod : Mod
@@ -27,95 +27,7 @@ namespace FishingMachine
 
         public override void Load()
         {
-            // 注册自动钓鱼机 ModItem
-            AddContent(new Content.Items.FishingMachine());
-        }
-    }
-
-    /// <summary>
-    /// tPlainModLoader 原生 Mod 加载器入口
-    /// </summary>
-    public class FishingMachineTPMLEntry : tContentPatch.Mod
-    {
-        private static readonly ILogger Logger = LogManager.GetLogger("FishingMachine");
-        public static FishingMachineMod ModInstance { get; private set; }
-
-        public override void Load()
-        {
-            try
-            {
-                Logger.Info("===== 开始载入 FishingMachine 模组 =====");
-
-                // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
-                ModInstance = ContentHost.Find<FishingMachineMod>();
-
-                // 注册 MonoMod 强类型门控
-                HookFishingMachineKillTile.RegisterAll();
-
-                Logger.Info("===== FishingMachine 模组加载成功 =====");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("FishingMachine 载入失败", ex);
-            }
-        }
-
-        public override void Unload()
-        {
-            HookFishingMachineKillTile.UnregisterAll();
-        }
-    }
-
-    /// <summary>
-    /// 挂钩主循环更新、世界物块绘制与交互面板
-    /// </summary>
-    public class FishingMachineMain : tContentPatch.PatchMain
-    {
-        private static bool _texturesLoaded = false;
-
-        public override void UpdatePrefix(Microsoft.Xna.Framework.GameTime gameTime)
-        {
-            // 更新世界中所有放置的钓鱼机实体
-            FishingMachineTileManager.UpdateAll();
-
-            if (!_texturesLoaded && Main.instance?.GraphicsDevice != null)
-            {
-                _texturesLoaded = true;
-                LoadEmbeddedTextures();
-            }
-        }
-
-        public override void DoDrawPostfix(Microsoft.Xna.Framework.GameTime gameTime)
-        {
-            // 在原版物块绘制完成后再覆盖显示自动钓鱼机本体，避免被底层方块贴图盖住
-            if (!Main.gameMenu && Main.spriteBatch != null)
-            {
-                FishingMachineTileManager.DrawAll(Main.spriteBatch);
-            }
-        }
-
-        public override void OnEnterWorldPrefix()
-        {
-            FishingMachineTileManager.ClearAll();
-            FishingMachineUI.Close();
-        }
-
-        public override void OnEnterWorld()
-        {
-            FishingMachineSaveManager.LoadMachines();
-        }
-
-        public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
-        {
-            int index = gameInterfaceLayers.FindIndex(layer => layer.Name.Equals("Vanilla: Cursor"));
-            if (index != -1)
-            {
-                gameInterfaceLayers.Insert(index, new LegacyGameInterfaceLayer("FishingMachine: GUI", () =>
-                {
-                    FishingMachineUI.Draw(Main.spriteBatch);
-                    return true;
-                }, InterfaceScaleType.UI));
-            }
+            LoadEmbeddedTextures();
         }
 
         private static void LoadEmbeddedTextures()
@@ -123,8 +35,7 @@ namespace FishingMachine
             try
             {
                 Assembly asm = Assembly.GetExecutingAssembly();
-                FishingMachineTileManager.TileTexture = LoadTexture(asm, "FishingMachine.Resources.AutofisherTile.png");
-                FishingMachineTileManager.HighlightTexture = LoadTexture(asm, "FishingMachine.Resources.Autofisher_Highlight.png");
+                FishingMachineTile.HighlightTexture = LoadTexture(asm, "FishingMachine.Resources.Autofisher_Highlight.png");
 
                 FishingMachineUI.SlotPoleTexture = LoadTexture(asm, "FishingMachine.Resources.Slot_FishingPole.png");
                 FishingMachineUI.SlotBaitTexture = LoadTexture(asm, "FishingMachine.Resources.Slot_Bait.png");
@@ -157,7 +68,44 @@ namespace FishingMachine
     }
 
     /// <summary>
-    /// 挂钩玩家鼠标世界交互（右键打开机器、选定水域钓点）
+    /// tPlainModLoader 原生 Mod 加载器入口
+    /// </summary>
+    public class FishingMachineTPMLEntry : tContentPatch.Mod
+    {
+        private static readonly ILogger Logger = LogManager.GetLogger("FishingMachine");
+
+        public override void Load()
+        {
+            Logger.Info("===== FishingMachine 模组加载成功 =====");
+        }
+    }
+
+    /// <summary>
+    /// 挂钩 UI 图层绘制与世界生命周期
+    /// </summary>
+    public class FishingMachineMain : tContentPatch.PatchMain
+    {
+        public override void OnEnterWorldPrefix()
+        {
+            FishingMachineUI.Close();
+        }
+
+        public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)
+        {
+            int index = gameInterfaceLayers.FindIndex(layer => layer.Name.Equals("Vanilla: Cursor"));
+            if (index != -1)
+            {
+                gameInterfaceLayers.Insert(index, new LegacyGameInterfaceLayer("FishingMachine: GUI", () =>
+                {
+                    FishingMachineUI.Draw(Main.spriteBatch);
+                    return true;
+                }, InterfaceScaleType.UI));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 挂钩玩家鼠标世界交互（选定水域钓点）
     /// </summary>
     public class FishingMachinePlayerInteraction : tContentPatch.PatchPlayer
     {
@@ -168,9 +116,14 @@ namespace FishingMachine
             int tileX = Player.tileTargetX;
             int tileY = Player.tileTargetY;
 
-            // 1. 选择水域模式下的交互处理
+            // 选择水域模式下的交互处理
             if (FishingMachineUI.SelectPoolMode && FishingMachineUI.CurrentEntity != null)
             {
+                if (This.mouseInterface || FishingMachineUI.IsMouseHoveringUI)
+                {
+                    return; // 鼠标位于 UI 交互范围内，阻断世界选水点击穿透
+                }
+
                 if (Main.mouseLeft && Main.mouseLeftRelease)
                 {
                     Tile target = Framing.GetTileSafely(tileX, tileY);
@@ -197,34 +150,7 @@ namespace FishingMachine
                     Main.mouseRightRelease = false;
                     This.mouseInterface = true;
                 }
-                return;
             }
-
-            // 2. 右键点击物块打开/关闭钓鱼机界面
-            if (Main.mouseRight && Main.mouseRightRelease && !Main.playerInventory)
-            {
-                if (FishingMachineTileManager.CheckRightClick(tileX, tileY))
-                {
-                    Main.mouseRightRelease = false;
-                    This.mouseInterface = true;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 挂钩世界保存与读取，还原所有机器及其内部物品
-    /// </summary>
-    public class FishingMachineWorldHook : tContentPatch.PatchWorldFile
-    {
-        public override void SaveWorldPrefix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)
-        {
-            FishingMachineSaveManager.SaveMachines();
-        }
-
-        public override void LoadWorldPostfix()
-        {
-            FishingMachineSaveManager.LoadMachines();
         }
     }
 }

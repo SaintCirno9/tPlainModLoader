@@ -16,6 +16,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Xna.Framework">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
@@ -43,6 +44,7 @@
     <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
     <ProjectReference Include="..\..\WandsTool\WandsTool\WandsTool\WandsTool.csproj" Private="false" />
     <ProjectReference Include="..\..\RecipeBrowser\RecipeBrowser\RecipeBrowser.csproj" Private="false" />
+    <ProjectReference Include="..\..\FishingMachine\FishingMachine\FishingMachine.csproj" Private="false" />
   </ItemGroup>
 
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">

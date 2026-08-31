@@ -206,6 +206,8 @@ namespace TPML.Content
                 RecipeLoader.Clear();
                 ModPlayerExtensions.ClearInstances();
                 ItemLoader.Clear();
+                TileLoader.Clear();
+                TileEntityLoader.Clear();
                 ModContent.Clear();
             }
             catch (Exception ex)

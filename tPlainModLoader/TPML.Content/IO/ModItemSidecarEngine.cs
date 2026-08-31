@@ -60,6 +60,32 @@ namespace TPML.Content.IO
     }
 
     /// <summary>
+    /// 单个模组物块伴随持久化条目
+    /// </summary>
+    public class ModTileSaveEntry
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public string ModName { get; set; }
+        public string TileName { get; set; }
+        public short FrameX { get; set; }
+        public short FrameY { get; set; }
+        public byte Color { get; set; }
+    }
+
+    /// <summary>
+    /// 单个模组物块实体 (ModTileEntity) 伴随持久化条目
+    /// </summary>
+    public class ModTileEntitySaveEntry
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public string ModName { get; set; }
+        public string EntityName { get; set; }
+        public string CustomData { get; set; }
+    }
+
+    /// <summary>
     /// 世界伴随存档数据结构
     /// </summary>
     public class WorldSidecarData
@@ -68,6 +94,8 @@ namespace TPML.Content.IO
         public int WorldID { get; set; }
         public List<ModItemSaveEntry> ChestItems { get; set; } = new List<ModItemSaveEntry>();
         public List<ModItemSaveEntry> TileEntityItems { get; set; } = new List<ModItemSaveEntry>();
+        public List<ModTileSaveEntry> ModTiles { get; set; } = new List<ModTileSaveEntry>();
+        public List<ModTileEntitySaveEntry> ModTileEntities { get; set; } = new List<ModTileEntitySaveEntry>();
     }
 
     /// <summary>
@@ -823,12 +851,22 @@ namespace TPML.Content.IO
 
         #region 世界物理宝箱与展示架持久化
 
+        private struct TileStateSnapshot
+        {
+            public ushort Type;
+            public short FrameX;
+            public short FrameY;
+            public byte Color;
+        }
+        private static readonly Dictionary<Point16, TileStateSnapshot> _worldTileTempSwap = new Dictionary<Point16, TileStateSnapshot>();
+
         /// <summary>
-        /// 世界写盘前：扫描所有箱子与展示架中的模组物品，生成伴随快照并临时置空槽位
+        /// 世界写盘前：扫描所有箱子与展示架中的模组物品及全图 ModTile / ModTileEntity，生成伴随快照并临时置空槽位与图格
         /// </summary>
         public static void OnWorldSavePrefix()
         {
             _worldTempSwap.Clear();
+            _worldTileTempSwap.Clear();
 
             WorldSidecarData data = new WorldSidecarData
             {
@@ -884,37 +922,103 @@ namespace TPML.Content.IO
                 }
             }
 
-            // 2. 扫描 TileEntity (展示框、武器架、展示假人、帽子架、盛餐盘等)
+            // 2. 扫描 TileEntity (原版展示柜与模组 ModTileEntity)
             if (TileEntity.ByID != null)
             {
                 foreach (var kvp in TileEntity.ByID)
                 {
-                    int id = kvp.Key;
-                    TileEntity te = kvp.Value;
-                    if (te == null) continue;
+                    try
+                    {
+                        int id = kvp.Key;
+                        TileEntity te = kvp.Value;
+                        if (te == null) continue;
 
-                    if (te is TEItemFrame frame)
-                    {
-                        ExtractTileEntityItem(frame.item, $"te_itemframe_{id}", it => frame.item = it, data.TileEntityItems);
+                        if (te is ModTileEntity mte)
+                        {
+                            string customData = null;
+                            try
+                            {
+                                TagCompound tag = new TagCompound();
+                                mte.SaveData(tag);
+                                if (tag.Count > 0) customData = JsonConvert.SerializeObject(tag);
+                            }
+                            catch { }
+
+                            data.ModTileEntities.Add(new ModTileEntitySaveEntry
+                            {
+                                X = mte.Position.X,
+                                Y = mte.Position.Y,
+                                ModName = mte.Mod?.Name ?? "TPML",
+                                EntityName = mte.Name,
+                                CustomData = customData
+                            });
+                        }
+                        else if (te is TEItemFrame frame)
+                        {
+                            ExtractTileEntityItem(frame.item, $"te_itemframe_{id}", it => frame.item = it, data.TileEntityItems);
+                        }
+                        else if (te is TEWeaponsRack weaponRack)
+                        {
+                            ExtractTileEntityItem(weaponRack.item, $"te_weaponrack_{id}", it => weaponRack.item = it, data.TileEntityItems);
+                        }
+                        else if (te is TEFoodPlatter foodPlatter)
+                        {
+                            ExtractTileEntityItem(foodPlatter.item, $"te_foodplatter_{id}", it => foodPlatter.item = it, data.TileEntityItems);
+                        }
+                        else if (te is TEDisplayDoll doll)
+                        {
+                            ExtractTileEntityArray(doll._equip, $"te_displaydoll_{id}_equip", data.TileEntityItems);
+                            ExtractTileEntityArray(doll._dyes, $"te_displaydoll_{id}_dye", data.TileEntityItems);
+                            ExtractTileEntityArray(doll._misc, $"te_displaydoll_{id}_misc", data.TileEntityItems);
+                        }
+                        else if (te is TEHatRack hatRack)
+                        {
+                            ExtractTileEntityArray(hatRack._items, $"te_hatrack_{id}_item", data.TileEntityItems);
+                            ExtractTileEntityArray(hatRack._dyes, $"te_hatrack_{id}_dye", data.TileEntityItems);
+                        }
                     }
-                    else if (te is TEWeaponsRack weaponRack)
+                    catch (Exception ex)
                     {
-                        ExtractTileEntityItem(weaponRack.item, $"te_weaponrack_{id}", it => weaponRack.item = it, data.TileEntityItems);
+                        ModLoader.Log($"[SidecarSave] 序列化 TileEntity 异常: {ex.Message}");
                     }
-                    else if (te is TEFoodPlatter foodPlatter)
+                }
+            }
+
+            // 3. 扫描世界中的 ModTile 并临时置空防止 .wld 异常
+            if (Main.tile != null)
+            {
+                for (int x = 0; x < Main.maxTilesX; x++)
+                {
+                    for (int y = 0; y < Main.maxTilesY; y++)
                     {
-                        ExtractTileEntityItem(foodPlatter.item, $"te_foodplatter_{id}", it => foodPlatter.item = it, data.TileEntityItems);
-                    }
-                    else if (te is TEDisplayDoll doll)
-                    {
-                        ExtractTileEntityArray(doll._equip, $"te_displaydoll_{id}_equip", data.TileEntityItems);
-                        ExtractTileEntityArray(doll._dyes, $"te_displaydoll_{id}_dye", data.TileEntityItems);
-                        ExtractTileEntityArray(doll._misc, $"te_displaydoll_{id}_misc", data.TileEntityItems);
-                    }
-                    else if (te is TEHatRack hatRack)
-                    {
-                        ExtractTileEntityArray(hatRack._items, $"te_hatrack_{id}_item", data.TileEntityItems);
-                        ExtractTileEntityArray(hatRack._dyes, $"te_hatrack_{id}_dye", data.TileEntityItems);
+                        Tile t = Main.tile[x, y];
+                        if (t.active() && t.type >= TileLoader.ModTileOffset)
+                        {
+                            ModTile modTile = TileLoader.GetTile(t.type);
+                            if (modTile != null)
+                            {
+                                data.ModTiles.Add(new ModTileSaveEntry
+                                {
+                                    X = x,
+                                    Y = y,
+                                    ModName = modTile.Mod?.Name ?? "TPML",
+                                    TileName = modTile.Name,
+                                    FrameX = t.frameX,
+                                    FrameY = t.frameY,
+                                    Color = t.color()
+                                });
+
+                                _worldTileTempSwap[new Point16(x, y)] = new TileStateSnapshot
+                                {
+                                    Type = t.type,
+                                    FrameX = t.frameX,
+                                    FrameY = t.frameY,
+                                    Color = t.color()
+                                };
+
+                                t.active(false);
+                            }
+                        }
                     }
                 }
             }
@@ -1004,61 +1108,77 @@ namespace TPML.Content.IO
         }
 
         /// <summary>
-        /// 世界写盘后：立即在内存中还原箱子与展示架槽位
+        /// 世界写盘后：立即在内存中还原箱子、展示架与 ModTile 图格
         /// </summary>
         public static void OnWorldSavePostfix()
         {
-            if (_worldTempSwap.Count == 0) return;
-
-            foreach (var kvp in _worldTempSwap)
+            // 还原世界宝箱与展示架槽位
+            if (_worldTempSwap.Count > 0)
             {
-                string loc = kvp.Key;
-                Item it = kvp.Value;
+                foreach (var kvp in _worldTempSwap)
+                {
+                    string loc = kvp.Key;
+                    Item it = kvp.Value;
 
-                if (loc.StartsWith("chest_") && Main.chest != null)
-                {
-                    string[] parts = loc.Split('_');
-                    if (parts.Length == 3 && int.TryParse(parts[1], out int c) && int.TryParse(parts[2], out int s))
+                    if (loc.StartsWith("chest_") && Main.chest != null)
                     {
-                        if (c >= 0 && c < Main.chest.Length && Main.chest[c]?.item != null && s >= 0 && s < Main.chest[c].item.Length)
+                        string[] parts = loc.Split('_');
+                        if (parts.Length == 3 && int.TryParse(parts[1], out int c) && int.TryParse(parts[2], out int s))
                         {
-                            Main.chest[c].item[s] = it;
+                            if (c >= 0 && c < Main.chest.Length && Main.chest[c]?.item != null && s >= 0 && s < Main.chest[c].item.Length)
+                            {
+                                Main.chest[c].item[s] = it;
+                            }
+                        }
+                    }
+                    else if (loc.StartsWith("te_") && TileEntity.ByID != null)
+                    {
+                        string[] parts = loc.Split('_');
+                        if (parts.Length == 3 && int.TryParse(parts[2], out int id) && TileEntity.ByID.TryGetValue(id, out TileEntity te))
+                        {
+                            if (te is TEItemFrame frame) frame.item = it;
+                            else if (te is TEWeaponsRack rack) rack.item = it;
+                            else if (te is TEFoodPlatter platter) platter.item = it;
+                        }
+                        else if (parts.Length == 5 && int.TryParse(parts[2], out int teId) && int.TryParse(parts[4], out int idx) && TileEntity.ByID.TryGetValue(teId, out TileEntity arrayTe))
+                        {
+                            if (arrayTe is TEDisplayDoll doll)
+                            {
+                                if (parts[3] == "equip" && idx >= 0 && idx < doll._equip.Length) doll._equip[idx] = it;
+                                else if (parts[3] == "dye" && idx >= 0 && idx < doll._dyes.Length) doll._dyes[idx] = it;
+                                else if (parts[3] == "misc" && idx >= 0 && idx < doll._misc.Length) doll._misc[idx] = it;
+                            }
+                            else if (arrayTe is TEHatRack hatRack)
+                            {
+                                if (parts[3] == "item" && idx >= 0 && idx < hatRack._items.Length) hatRack._items[idx] = it;
+                                else if (parts[3] == "dye" && idx >= 0 && idx < hatRack._dyes.Length) hatRack._dyes[idx] = it;
+                            }
                         }
                     }
                 }
-                else if (loc.StartsWith("te_") && TileEntity.ByID != null)
-                {
-                    string[] parts = loc.Split('_');
-                    // te_itemframe_{id}, te_weaponrack_{id}, te_foodplatter_{id}
-                    if (parts.Length == 3 && int.TryParse(parts[2], out int id) && TileEntity.ByID.TryGetValue(id, out TileEntity te))
-                    {
-                        if (te is TEItemFrame frame) frame.item = it;
-                        else if (te is TEWeaponsRack rack) rack.item = it;
-                        else if (te is TEFoodPlatter platter) platter.item = it;
-                    }
-                    // te_displaydoll_{id}_equip_{i}, te_displaydoll_{id}_dye_{i}, te_displaydoll_{id}_misc_{i}, te_hatrack_{id}_item_{i}
-                    else if (parts.Length == 5 && int.TryParse(parts[2], out int teId) && int.TryParse(parts[4], out int idx) && TileEntity.ByID.TryGetValue(teId, out TileEntity arrayTe))
-                    {
-                        if (arrayTe is TEDisplayDoll doll)
-                        {
-                            if (parts[3] == "equip" && idx >= 0 && idx < doll._equip.Length) doll._equip[idx] = it;
-                            else if (parts[3] == "dye" && idx >= 0 && idx < doll._dyes.Length) doll._dyes[idx] = it;
-                            else if (parts[3] == "misc" && idx >= 0 && idx < doll._misc.Length) doll._misc[idx] = it;
-                        }
-                        else if (arrayTe is TEHatRack hatRack)
-                        {
-                            if (parts[3] == "item" && idx >= 0 && idx < hatRack._items.Length) hatRack._items[idx] = it;
-                            else if (parts[3] == "dye" && idx >= 0 && idx < hatRack._dyes.Length) hatRack._dyes[idx] = it;
-                        }
-                    }
-                }
+                _worldTempSwap.Clear();
             }
 
-            _worldTempSwap.Clear();
+            // 还原 ModTile 图格
+            if (_worldTileTempSwap.Count > 0)
+            {
+                foreach (var kvp in _worldTileTempSwap)
+                {
+                    Point16 pos = kvp.Key;
+                    TileStateSnapshot snap = kvp.Value;
+                    Tile t = Framing.GetTileSafely(pos.X, pos.Y);
+                    t.active(true);
+                    t.type = snap.Type;
+                    t.frameX = snap.FrameX;
+                    t.frameY = snap.FrameY;
+                    t.color(snap.Color);
+                }
+                _worldTileTempSwap.Clear();
+            }
         }
 
         /// <summary>
-        /// 世界加载完成后：从伴随文件回填世界所有箱子与展示架中的模组物品
+        /// 世界加载完成后：从伴随文件回填世界所有箱子、展示架与 ModTile / ModTileEntity
         /// </summary>
         public static void OnWorldLoaded()
         {
@@ -1147,6 +1267,50 @@ namespace TPML.Content.IO
                 if (data.TileEntityItems != null)
                 {
                     foreach (var entry in data.TileEntityItems) RestoreEntry(entry);
+                }
+
+                // 回填 ModTile
+                if (data.ModTiles != null)
+                {
+                    foreach (var tileEntry in data.ModTiles)
+                    {
+                        int type = TileLoader.TileType(tileEntry.ModName, tileEntry.TileName);
+                        if (type > 0)
+                        {
+                            Tile t = Framing.GetTileSafely(tileEntry.X, tileEntry.Y);
+                            t.active(true);
+                            t.type = (ushort)type;
+                            t.frameX = tileEntry.FrameX;
+                            t.frameY = tileEntry.FrameY;
+                            t.color(tileEntry.Color);
+                        }
+                    }
+                }
+
+                // 回填 ModTileEntity
+                if (data.ModTileEntities != null)
+                {
+                    foreach (var entEntry in data.ModTileEntities)
+                    {
+                        int entType = TileEntityLoader.TileEntityType($"{entEntry.ModName}/{entEntry.EntityName}");
+                        ModTileEntity template = TileEntityLoader.GetEntity(entType);
+                        if (template != null)
+                        {
+                            int id = template.Place(entEntry.X, entEntry.Y);
+                            if (TileEntity.ByID.TryGetValue(id, out TileEntity placedTe) && placedTe is ModTileEntity placedMte)
+                            {
+                                if (!string.IsNullOrEmpty(entEntry.CustomData))
+                                {
+                                    try
+                                    {
+                                        TagCompound tag = JsonConvert.DeserializeObject<TagCompound>(entEntry.CustomData);
+                                        if (tag != null) placedMte.LoadData(tag);
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)

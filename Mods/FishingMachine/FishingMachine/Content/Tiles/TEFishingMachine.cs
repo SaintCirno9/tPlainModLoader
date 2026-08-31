@@ -6,17 +6,18 @@ using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.GameContent.FishDropRules;
 using Terraria.ID;
+using TPML.Content;
+using TPML.Content.IO;
 
 namespace FishingMachine.Content.Tiles
 {
     /// <summary>
-    /// 自动钓鱼机实体 (TileEntity)
+    /// 自动钓鱼机物块实体 (ModTileEntity)
     /// 负责水域探测、原版渔获表判定、自动垂钓、战利品仓储、分类与自由过滤、相邻宝箱输送
     /// 作者: SaintCirno9
     /// </summary>
-    public class TEFishingMachine
+    public class TEFishingMachine : ModTileEntity
     {
-        public Point16 Position;
         public Item fishingPole = new Item();
         public Item bait = new Item();
         public Item accessory = new Item();
@@ -50,18 +51,35 @@ namespace FishingMachine.Content.Tiles
 
         private int pondRefreshTimer = 0;
         private int biomeRefreshTimer = 0;
+        private int waterScanCooldown = 0; // FM-8: 水体探测失败降频冷却
         private readonly Player _biomePlayer = new Player();
 
-        public TEFishingMachine(Point16 pos)
+        public TEFishingMachine()
         {
-            Position = pos;
             for (int i = 0; i < fish.Length; i++)
             {
                 fish[i] = new Item();
             }
         }
 
-        public void Update()
+        public static int Hook_AfterPlacement(int i, int j, int type, int style, int direction, int alternate)
+        {
+            if (Main.netMode == 1)
+            {
+                NetMessage.SendTileSquare(Main.myPlayer, i - 1, j - 1, 2, 2);
+                NetMessage.SendData(86, -1, -1, null, ModContent.TileEntityType<TEFishingMachine>(), i - 1, j - 1);
+                return -1;
+            }
+
+            int id = ModContent.GetInstance<TEFishingMachine>()?.Place(i - 1, j - 1) ?? -1;
+            if (id >= 0 && TileEntity.ByID.TryGetValue(id, out var te) && te is TEFishingMachine machine)
+            {
+                machine.FindNearbyWater();
+            }
+            return id;
+        }
+
+        public override void Update()
         {
             EnsureSlots();
 
@@ -81,9 +99,20 @@ namespace FishingMachine.Content.Tiles
 
             if (locatePoint.X < 0 || locatePoint.Y < 0 || Framing.GetTileSafely(locatePoint.X, locatePoint.Y).liquid == 0)
             {
-                FindNearbyWater();
-                if (locatePoint.X < 0)
+                if (waterScanCooldown <= 0)
                 {
+                    FindNearbyWater();
+                    if (locatePoint.X < 0)
+                    {
+                        waterScanCooldown = 60; // 失败后 60 tick 冷却，避免每帧全区域重扫 (FM-8)
+                        statusTip = "未在周围 20 格内探测到有效水体";
+                        lastFishingPower = 0;
+                        return;
+                    }
+                }
+                else
+                {
+                    waterScanCooldown--;
                     statusTip = "未在周围 20 格内探测到有效水体";
                     lastFishingPower = 0;
                     return;
@@ -174,9 +203,6 @@ namespace FishingMachine.Content.Tiles
             }
         }
 
-        /// <summary>
-        /// 在机器周围 20 格内寻找第一处水体并按连通区域统计
-        /// </summary>
         public void FindNearbyWater()
         {
             int originX = Position.X;
@@ -203,9 +229,6 @@ namespace FishingMachine.Content.Tiles
             locatePoint = Point16.NegativeOne;
         }
 
-        /// <summary>
-        /// 重新统计当前水域大小与液体类型
-        /// </summary>
         public void RefreshPond()
         {
             if (locatePoint.X < 0 || locatePoint.Y < 0) return;
@@ -254,9 +277,6 @@ namespace FishingMachine.Content.Tiles
             }
         }
 
-        /// <summary>
-        /// 构建与原版完全一致的一次垂钓结算上下文
-        /// </summary>
         public FishingAttempt GetFisher()
         {
             if (biomeRefreshTimer <= 0)
@@ -320,6 +340,9 @@ namespace FishingMachine.Content.Tiles
                 fisher.fishingLevel = (int)(fisher.fishingLevel * (1.1 + Main.rand.NextFloat() * 0.3));
             }
 
+            // FM-4: 折算后增加 <= 0 截断防御，消除 150 / fishingLevel 除零异常
+            if (fisher.fishingLevel <= 0) return fisher;
+
             fisher.heightLevel = 0;
             if (Main.remixWorld)
             {
@@ -364,9 +387,8 @@ namespace FishingMachine.Content.Tiles
             return fisher;
         }
 
-        private void ExecuteFishingCheck(FishingAttempt fisher)
+        public void ExecuteFishingCheck(FishingAttempt fisher)
         {
-            // 松露虫特殊逻辑：在海洋中垂钓可引出猪鲨公爵
             if (fisher.playerFishingConditions.BaitItemType == ItemID.TruffleWorm)
             {
                 if ((fisher.X < 380 || fisher.X > Main.maxTilesX - 380) && fisher.waterTilesCount > 1000 && NPC.CountNPCS(NPCID.DukeFishron) < 3)
@@ -387,7 +409,6 @@ namespace FishingMachine.Content.Tiles
                 }
             }
 
-            // 咬钩率校验
             int biteChance = (fisher.fishingLevel + 75) / 2;
             if (Main.rand.Next(100) > biteChance)
             {
@@ -395,7 +416,6 @@ namespace FishingMachine.Content.Tiles
                 return;
             }
 
-            // 血月敌怪生成判定
             RollEnemySpawn(ref fisher, _biomePlayer);
             if (fisher.rolledEnemySpawn > 0)
             {
@@ -404,7 +424,6 @@ namespace FishingMachine.Content.Tiles
                 return;
             }
 
-            // 原版渔获掉落表检索
             FishingContext context = BuildFishingContext(fisher);
             int caughtType = Main.FishDropsDB.TryGetItemDropType(context);
             if (caughtType <= 0)
@@ -413,7 +432,6 @@ namespace FishingMachine.Content.Tiles
                 return;
             }
 
-            // 过滤规则校验
             if (!ShouldAcceptCatch(caughtType))
             {
                 statusTip = $"已按过滤规则丢弃: {Lang.GetItemNameValue(caughtType)}";
@@ -421,28 +439,23 @@ namespace FishingMachine.Content.Tiles
                 return;
             }
 
-            // 计算成堆物品堆叠数
             int stack = BuildCatchStack(caughtType, fisher.fishingLevel);
-            bool added = AddItemToInventory(caughtType, stack);
-            if (!added)
+            int addedStack = AddItemToInventory(caughtType, stack);
+            if (addedStack <= 0)
             {
                 statusTip = "战利品仓已满，本次渔获已丢失";
                 return;
             }
 
             TryConsumeBait();
-            statusTip = $"捕获: {Lang.GetItemNameValue(caughtType)} x{stack}";
+            statusTip = $"捕获: {Lang.GetItemNameValue(caughtType)} x{addedStack}";
             SoundPlayHelper.PlayCatchSound();
 
-            // 生成传输粒子视觉效果
             Vector2 waterPos = new Vector2(locatePoint.X * 16 + 8, locatePoint.Y * 16 + 8);
             Vector2 machinePos = new Vector2(Position.X * 16 + 16, Position.Y * 16 + 16);
             TriggerChestTransferVisual(waterPos, machinePos, caughtType);
         }
 
-        /// <summary>
-        /// 根据机器所在位置刷新用于原版生物群系判定的伪装玩家
-        /// </summary>
         private void RefreshBiome()
         {
             _biomePlayer.width = 20;
@@ -450,6 +463,14 @@ namespace FishingMachine.Content.Tiles
             _biomePlayer.position = new Vector2(Position.X * 16f - 8f, Position.Y * 16f - 16f);
             _biomePlayer.UpdateSceneMetrics();
             _biomePlayer.UpdateBiomes();
+
+            // FM-2: 同步本地玩家的幸运值与药水加成
+            Player local = Main.LocalPlayer;
+            if (local != null && local.active)
+            {
+                _biomePlayer.luck = local.luck;
+                _biomePlayer.cratePotion = local.cratePotion;
+            }
         }
 
         private PlayerFishingConditions GetFishingConditions()
@@ -570,11 +591,12 @@ namespace FishingMachine.Content.Tiles
         private static void FishingCheck_RollDropLevels(int fishingLevel, Player player,
             out bool common, out bool uncommon, out bool rare, out bool veryrare, out bool legendary, out bool crate)
         {
-            int num = 150 / fishingLevel;
-            int num2 = 150 * 2 / fishingLevel;
-            int num3 = 150 * 7 / fishingLevel;
-            int num4 = 150 * 15 / fishingLevel;
-            int num5 = 150 * 30 / fishingLevel;
+            int safeLevel = Math.Max(1, fishingLevel);
+            int num = 150 / safeLevel;
+            int num2 = 150 * 2 / safeLevel;
+            int num3 = 150 * 7 / safeLevel;
+            int num4 = 150 * 15 / safeLevel;
+            int num5 = 150 * 30 / safeLevel;
             int num6 = 10;
             if (player.cratePotion) num6 += 15;
 
@@ -599,7 +621,8 @@ namespace FishingMachine.Content.Tiles
             if (Main.anglerQuestFinished || !NPC.AnyNPCs(NPCID.Angler)) return;
 
             int quest = Main.anglerQuestItemNetIDs[Main.anglerQuest];
-            if (!player.HasItem(quest))
+            Player local = Main.LocalPlayer;
+            if (local != null && !local.HasItem(quest))
             {
                 fisher.questFish = quest;
             }
@@ -632,7 +655,7 @@ namespace FishingMachine.Content.Tiles
             bool desert = player.ZoneDesert;
             if (dungeon) desert = false;
             bool remixOcean = Main.remixWorld && fisher.heightLevel == 1 &&
-                              fisher.Y >= Main.rockLayer && Main.rand.Next(3) == 0;
+                               fisher.Y >= Main.rockLayer && Main.rand.Next(3) == 0;
 
             return new FishingContext
             {
@@ -693,11 +716,12 @@ namespace FishingMachine.Content.Tiles
         }
 
         /// <summary>
-        /// 将钓起的物品存入机器背包
+        /// 将钓起的物品存入机器背包，返回实际入库的数量 (FM-5)
         /// </summary>
-        public bool AddItemToInventory(int itemType, int stack)
+        public int AddItemToInventory(int itemType, int stack)
         {
-            if (itemType <= 0 || stack <= 0) return false;
+            if (itemType <= 0 || stack <= 0) return 0;
+            int initialStack = stack;
 
             for (int i = 0; i < fish.Length; i++)
             {
@@ -706,7 +730,7 @@ namespace FishingMachine.Content.Tiles
                     int add = Math.Min(stack, fish[i].maxStack - fish[i].stack);
                     fish[i].stack += add;
                     stack -= add;
-                    if (stack <= 0) return true;
+                    if (stack <= 0) return initialStack;
                 }
             }
 
@@ -717,26 +741,23 @@ namespace FishingMachine.Content.Tiles
                     fish[i] = new Item();
                     fish[i].SetDefaults(itemType);
                     fish[i].stack = stack;
-                    return true;
+                    return initialStack;
                 }
             }
 
-            return false;
+            return initialStack - stack;
         }
 
-        /// <summary>
-        /// 一键拿取全部非收藏战利品至玩家背包
-        /// </summary>
         public void LootAll(Player player)
         {
             for (int i = 0; i < fish.Length; i++)
             {
                 if (fish[i] == null || fish[i].IsAir || fish[i].favorited) continue;
 
-                Item left = player.GetItem(fish[i], GetItemSettings.PickupItemFromWorld);
+                Item left = player.GetItem(fish[i], GetItemSettings.LootAllFromChest);
                 if (left.stack <= 0)
                 {
-                    fish[i].TurnToAir();
+                    fish[i] = new Item();
                 }
                 else
                 {
@@ -746,9 +767,6 @@ namespace FishingMachine.Content.Tiles
             Recipe.UpdateRecipeList();
         }
 
-        /// <summary>
-        /// 自动将机器内部非收藏战利品输送至相邻宝箱
-        /// </summary>
         private void AutoDepositManipulation()
         {
             List<int> nearby = new List<int>();
@@ -793,7 +811,6 @@ namespace FishingMachine.Content.Tiles
                     int stackBefore = fish[i].stack;
                     bool moved = false;
 
-                    // 1. 优先合并到已有相同物品
                     for (int j = 0; j < chest.item.Length; j++)
                     {
                         Item cItem = chest.item[j];
@@ -811,7 +828,6 @@ namespace FishingMachine.Content.Tiles
                         }
                     }
 
-                    // 2. 存入空槽
                     if (fish[i].stack > 0)
                     {
                         for (int j = 0; j < chest.item.Length; j++)
@@ -900,9 +916,6 @@ namespace FishingMachine.Content.Tiles
             return false;
         }
 
-        /// <summary>
-        /// 切换自由过滤名单
-        /// </summary>
         public bool ToggleExcludedItem(int itemType)
         {
             if (itemType <= 0) return false;
@@ -917,9 +930,6 @@ namespace FishingMachine.Content.Tiles
             return true;
         }
 
-        /// <summary>
-        /// 机器被破坏时掉落内部所有物资
-        /// </summary>
         public void DropContents()
         {
             IEntitySource src = new EntitySource_TileBreak(Position.X, Position.Y);
@@ -948,6 +958,64 @@ namespace FishingMachine.Content.Tiles
                 Main.item[idx].Prefix(item.prefix);
             }
         }
+
+        #region Sidecar TagCompound 持久化
+
+        public override void SaveData(TagCompound tag)
+        {
+            tag["fishingPole"] = fishingPole ?? new Item();
+            tag["bait"] = bait ?? new Item();
+            tag["accessory"] = accessory ?? new Item();
+
+            var fishEntries = ModItemSidecarEngine.SerializeSlots(fish);
+            tag["fish"] = Newtonsoft.Json.JsonConvert.SerializeObject(fishEntries);
+
+            tag["CatchCrates"] = CatchCrates;
+            tag["CatchAccessories"] = CatchAccessories;
+            tag["CatchTools"] = CatchTools;
+            tag["CatchWhiteRarityCatches"] = CatchWhiteRarityCatches;
+            tag["CatchNormalCatches"] = CatchNormalCatches;
+            tag["AutoDeposit"] = AutoDeposit;
+            tag["InfiniteBait"] = InfiniteBait;
+            tag["ExcludedItems"] = ExcludedItems;
+
+            tag["locatePointX"] = locatePoint.X;
+            tag["locatePointY"] = locatePoint.Y;
+        }
+
+        public override void LoadData(TagCompound tag)
+        {
+            if (tag.ContainsKey("fishingPole")) fishingPole = tag.Get<Item>("fishingPole") ?? new Item();
+            if (tag.ContainsKey("bait")) bait = tag.Get<Item>("bait") ?? new Item();
+            if (tag.ContainsKey("accessory")) accessory = tag.Get<Item>("accessory") ?? new Item();
+
+            if (tag.ContainsKey("fish"))
+            {
+                try
+                {
+                    string json = tag.GetString("fish");
+                    var entries = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ContainerSlotEntry>>(json);
+                    ModItemSidecarEngine.DeserializeSlots(entries, fish);
+                }
+                catch { }
+            }
+
+            if (tag.ContainsKey("CatchCrates")) CatchCrates = tag.GetBool("CatchCrates");
+            if (tag.ContainsKey("CatchAccessories")) CatchAccessories = tag.GetBool("CatchAccessories");
+            if (tag.ContainsKey("CatchTools")) CatchTools = tag.GetBool("CatchTools");
+            if (tag.ContainsKey("CatchWhiteRarityCatches")) CatchWhiteRarityCatches = tag.GetBool("CatchWhiteRarityCatches");
+            if (tag.ContainsKey("CatchNormalCatches")) CatchNormalCatches = tag.GetBool("CatchNormalCatches");
+            if (tag.ContainsKey("AutoDeposit")) AutoDeposit = tag.GetBool("AutoDeposit");
+            if (tag.ContainsKey("InfiniteBait")) InfiniteBait = tag.GetBool("InfiniteBait");
+            if (tag.ContainsKey("ExcludedItems")) ExcludedItems = tag.Get<List<int>>("ExcludedItems") ?? new List<int>();
+
+            if (tag.ContainsKey("locatePointX") && tag.ContainsKey("locatePointY"))
+            {
+                locatePoint = new Point16(tag.GetInt("locatePointX"), tag.GetInt("locatePointY"));
+            }
+        }
+
+        #endregion
     }
 
     internal static class SoundPlayHelper

@@ -27,6 +27,9 @@ namespace FishingMachine.UI
         public const float UIWidth = 460f;
         public const float UIHeight = 440f;
 
+        public static Rectangle PanelBounds => new Rectangle((int)UIPosition.X, (int)UIPosition.Y, (int)UIWidth, (int)UIHeight);
+        public static bool IsMouseHoveringUI => IsVisible && PanelBounds.Contains(Main.mouseX, Main.mouseY);
+
         public static Texture2D SlotPoleTexture;
         public static Texture2D SlotBaitTexture;
         public static Texture2D SlotAccTexture;
@@ -106,7 +109,7 @@ namespace FishingMachine.UI
 
             HandleDragging();
 
-            Rectangle bgRect = new Rectangle((int)UIPosition.X, (int)UIPosition.Y, (int)UIWidth, (int)UIHeight);
+            Rectangle bgRect = PanelBounds;
             if (bgRect.Contains(Main.mouseX, Main.mouseY))
             {
                 player.mouseInterface = true;
@@ -120,7 +123,7 @@ namespace FishingMachine.UI
 
             // 标题
             string title = "自动钓鱼机 (FishingMachine)";
-            Terraria.Utils.DrawBorderStringFourWay(sb, font, title, UIPosition.X + 16, UIPosition.Y + 14, Color.Cyan, Color.Black, Vector2.Zero, 0.95f);
+            Terraria.Utils.DrawBorderStringFourWay(sb, font, title, UIPosition.X + 16, UIPosition.Y + 12, Color.Cyan, Color.Black, Vector2.Zero, 0.95f);
 
             // 关闭按钮
             Rectangle closeBtn = new Rectangle((int)(UIPosition.X + UIWidth - 32), (int)(UIPosition.Y + 10), 22, 22);
@@ -134,18 +137,21 @@ namespace FishingMachine.UI
                 return;
             }
 
-            // 状态栏
-            string status = $"[c/FFFFFF:状态:] [c/77FFAA:{CurrentEntity.statusTip}]";
-            Terraria.Utils.DrawBorderStringFourWay(sb, font, status, UIPosition.X + 16, UIPosition.Y + 40, Color.White, Color.Black, Vector2.Zero, 0.8f);
+            // 状态栏 (去除任何裸露代码标签，优雅排版)
+            string label = "状态: ";
+            string statusText = CurrentEntity.statusTip ?? "空闲";
+            Terraria.Utils.DrawBorderStringFourWay(sb, font, label, UIPosition.X + 16, UIPosition.Y + 38, Color.White, Color.Black, Vector2.Zero, 0.85f);
+            Vector2 labelSize = font.MeasureString(label) * 0.85f;
+            Terraria.Utils.DrawBorderStringFourWay(sb, font, statusText, UIPosition.X + 16 + labelSize.X, UIPosition.Y + 38, new Color(120, 255, 180), Color.Black, Vector2.Zero, 0.85f);
 
             // 顶部装备槽位
             float slotY = UIPosition.Y + 68f;
-            DrawEquipSlot(sb, UIPosition.X + 20, slotY, "请放入钓竿", ref CurrentEntity.fishingPole, SlotPoleTexture, (it) => it.fishingPole > 0);
-            DrawEquipSlot(sb, UIPosition.X + 80, slotY, "请放入鱼饵", ref CurrentEntity.bait, SlotBaitTexture, (it) => it.bait > 0, allowStackOne: true);
-            DrawEquipSlot(sb, UIPosition.X + 140, slotY, "请放入钓鱼饰品", ref CurrentEntity.accessory, SlotAccTexture, (it) => it.accessory);
+            DrawEquipSlot(sb, UIPosition.X + 20, slotY, 46, "请放入钓竿", ref CurrentEntity.fishingPole, SlotPoleTexture, (it) => it.fishingPole > 0);
+            DrawEquipSlot(sb, UIPosition.X + 74, slotY, 46, "请放入鱼饵", ref CurrentEntity.bait, SlotBaitTexture, (it) => it.bait > 0, allowStackOne: true);
+            DrawEquipSlot(sb, UIPosition.X + 128, slotY, 46, "请放入钓鱼饰品", ref CurrentEntity.accessory, SlotAccTexture, (it) => it.accessory);
 
             // 顶部四大功能图标按钮
-            DrawIconButton(sb, UIPosition.X + 220, slotY, 44,
+            DrawIconButton(sb, UIPosition.X + 210, slotY, 44,
                 FisherLootAll, FisherLootAllHover, false,
                 "一键拿取非收藏战利品",
                 () =>
@@ -154,7 +160,7 @@ namespace FishingMachine.UI
                     SoundEngine.PlaySound(SoundID.Grab);
                 });
 
-            DrawIconButton(sb, UIPosition.X + 270, slotY, 44,
+            DrawIconButton(sb, UIPosition.X + 265, slotY, 44,
                 SelectPoolOff, SelectPoolOn, SelectPoolMode,
                 SelectPoolMode ? "正在选择水域: 点击场景中的液体来指定钓点 (右键取消)" : "选择水域: 点击场景中的液体来指定钓点",
                 () =>
@@ -174,7 +180,7 @@ namespace FishingMachine.UI
                     SoundEngine.PlaySound(SoundID.MenuTick);
                 });
 
-            DrawIconButton(sb, UIPosition.X + 370, slotY, 44,
+            DrawIconButton(sb, UIPosition.X + 375, slotY, 44,
                 ChestAutoDeposit, ChestAutoDepositHover, CurrentEntity.AutoDeposit,
                 CurrentEntity.AutoDeposit ? "自动存箱: 开启 (自动输送非收藏战利品至相邻宝箱)" : "自动存箱: 关闭 (点击开启自动输送)",
                 () =>
@@ -198,7 +204,7 @@ namespace FishingMachine.UI
 
                     float x = gridStartX + c * (slotSize + slotGap);
                     float y = gridStartY + r * (slotSize + slotGap);
-                    DrawFishSlot(sb, x, y, slotSize, index);
+                    DrawFishSlot(sb, x, y, slotSize, index, player);
                 }
             }
 
@@ -243,11 +249,7 @@ namespace FishingMachine.UI
 
         private static void DrawSelectPoolCursorTip(SpriteBatch sb)
         {
-            if (Main.mouseX >= UIPosition.X && Main.mouseX <= UIPosition.X + UIWidth &&
-                Main.mouseY >= UIPosition.Y && Main.mouseY <= UIPosition.Y + UIHeight)
-            {
-                return;
-            }
+            if (IsMouseHoveringUI) return;
 
             DynamicSpriteFont font = FontAssets.MouseText.Value;
             string tip = "点击世界中的液体选定钓点 (右键取消)";
@@ -257,20 +259,22 @@ namespace FishingMachine.UI
             Terraria.Utils.DrawBorderStringFourWay(sb, font, tip, pos.X, pos.Y, Color.Cyan, Color.Black, Vector2.Zero, 0.85f);
         }
 
-        private static void DrawEquipSlot(SpriteBatch sb, float x, float y, string emptyTip, ref Item item, Texture2D bgTex, Func<Item, bool> validator, bool allowStackOne = false)
+        private static void DrawEquipSlot(SpriteBatch sb, float x, float y, float size, string emptyTip, ref Item item, Texture2D bgTex, Func<Item, bool> validator, bool allowStackOne = false)
         {
-            Rectangle rect = new Rectangle((int)x, (int)y, 44, 44);
+            Rectangle rect = new Rectangle((int)x, (int)y, (int)size, (int)size);
             bool hover = rect.Contains(Main.mouseX, Main.mouseY);
 
-            sb.Draw(TextureAssets.InventoryBack.Value, rect, hover ? new Color(150, 180, 220) : new Color(80, 100, 130));
+            // 槽位底框
+            sb.Draw(TextureAssets.InventoryBack.Value, rect, hover ? new Color(160, 200, 240) : new Color(80, 100, 130));
 
             if (item != null && !item.IsAir)
             {
-                ItemSlot.Draw(sb, ref item, 14, new Vector2(x, y));
+                DrawItemInSlot(sb, item, x, y, size);
             }
             else if (bgTex != null)
             {
-                sb.Draw(bgTex, new Vector2(x + 6, y + 6), Color.White * 0.45f);
+                Vector2 texPos = new Vector2(rect.Center.X - bgTex.Width / 2f, rect.Center.Y - bgTex.Height / 2f);
+                sb.Draw(bgTex, texPos, Color.White * 0.45f);
             }
 
             if (hover)
@@ -305,7 +309,7 @@ namespace FishingMachine.UI
             }
         }
 
-        private static void DrawFishSlot(SpriteBatch sb, float x, float y, float size, int index)
+        private static void DrawFishSlot(SpriteBatch sb, float x, float y, float size, int index, Player player)
         {
             Rectangle rect = new Rectangle((int)x, (int)y, (int)size, (int)size);
             bool hover = rect.Contains(Main.mouseX, Main.mouseY);
@@ -325,7 +329,7 @@ namespace FishingMachine.UI
 
             if (item != null && !item.IsAir)
             {
-                ItemSlot.Draw(sb, ref CurrentEntity.fish[index], 14, new Vector2(x, y));
+                DrawItemInSlot(sb, item, x, y, size);
 
                 if (excluded && DisabledItem != null)
                 {
@@ -366,10 +370,28 @@ namespace FishingMachine.UI
                             SoundEngine.PlaySound(SoundID.MenuTick);
                         }
                     }
+                    else if (ItemSlot.ShiftInUse)
+                    {
+                        // Shift 点击快速存入玩家背包
+                        if (item != null && !item.IsAir)
+                        {
+                            Item left = player.GetItem(item, GetItemSettings.QuickTransferFromSlot);
+                            if (left.stack <= 0)
+                            {
+                                CurrentEntity.fish[index] = new Item();
+                            }
+                            else
+                            {
+                                CurrentEntity.fish[index] = left;
+                            }
+                            SoundEngine.PlaySound(SoundID.Grab);
+                            Recipe.UpdateRecipeList();
+                        }
+                    }
                     else
                     {
-                        Terraria.Utils.Swap(ref CurrentEntity.fish[index], ref Main.mouseItem);
-                        SoundEngine.PlaySound(SoundID.Grab);
+                        // 鼠标左键常规交互：同类合并堆叠或交换
+                        HandleSlotLeftClick(index);
                     }
                     Main.mouseLeftRelease = false;
                 }
@@ -379,6 +401,70 @@ namespace FishingMachine.UI
                     StackOneItemToSlot(index);
                     Main.mouseRightRelease = false;
                 }
+            }
+        }
+
+        private static void HandleSlotLeftClick(int index)
+        {
+            Item slot = CurrentEntity.fish[index];
+            Item mouse = Main.mouseItem;
+
+            if (slot == null) slot = CurrentEntity.fish[index] = new Item();
+            if (mouse == null) mouse = Main.mouseItem = new Item();
+
+            if (!slot.IsAir && !mouse.IsAir && slot.type == mouse.type && slot.stack < slot.maxStack)
+            {
+                // 合并堆叠
+                int transfer = Math.Min(mouse.stack, slot.maxStack - slot.stack);
+                slot.stack += transfer;
+                mouse.stack -= transfer;
+                if (mouse.stack <= 0) mouse.TurnToAir();
+                SoundEngine.PlaySound(SoundID.Grab);
+            }
+            else
+            {
+                // 正常交换
+                Terraria.Utils.Swap(ref CurrentEntity.fish[index], ref Main.mouseItem);
+                SoundEngine.PlaySound(SoundID.Grab);
+            }
+        }
+
+        private static void DrawItemInSlot(SpriteBatch sb, Item item, float x, float y, float size)
+        {
+            if (item == null || item.IsAir) return;
+
+            Texture2D tex = TextureAssets.Item[item.type].Value;
+            if (tex == null) return;
+
+            Rectangle frame = Main.itemAnimations[item.type] != null
+                ? Main.itemAnimations[item.type].GetFrame(tex)
+                : tex.Frame();
+
+            float maxDimension = Math.Max(frame.Width, frame.Height);
+            // 饱满自适应缩放（留出 8px 边距）
+            float scale = (size - 8f) / Math.Max(maxDimension, 1f);
+            if (scale > 1.15f) scale = 1.15f;
+
+            Vector2 center = new Vector2(x + size / 2f, y + size / 2f);
+            Vector2 origin = frame.Size() / 2f;
+
+            // 绘制物品
+            Color drawColor = item.GetAlpha(Color.White);
+            sb.Draw(tex, center, frame, drawColor, 0f, origin, scale, SpriteEffects.None, 0f);
+
+            if (item.color != default(Color))
+            {
+                sb.Draw(tex, center, frame, item.GetColor(Color.White), 0f, origin, scale, SpriteEffects.None, 0f);
+            }
+
+            // 堆叠数字
+            if (item.stack > 1)
+            {
+                DynamicSpriteFont font = FontAssets.ItemStack.Value;
+                string text = item.stack.ToString();
+                Vector2 textSize = font.MeasureString(text) * 0.85f;
+                Vector2 textPos = new Vector2(x + size - textSize.X - 3f, y + size - textSize.Y - 1f);
+                Terraria.Utils.DrawBorderStringFourWay(sb, font, text, textPos.X, textPos.Y, Color.White, Color.Black, Vector2.Zero, 0.85f);
             }
         }
 

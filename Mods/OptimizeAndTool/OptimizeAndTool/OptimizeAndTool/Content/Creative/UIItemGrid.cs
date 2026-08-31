@@ -39,12 +39,19 @@ namespace OptimizeAndTool.Content.Creative
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            //让没在显示区域的控件不要绘制, 防止一次加载太多资源导致卡顿
+            // 让没在显示区域的控件不要绘制, 防止一次加载太多资源导致卡顿
             if (IsOverflowHidden(this, Parent)) return;
 
-            HandleItemSlotLogic();
-            Vector2 position = GetDimensions().Center() + new Vector2(52f, 52f) * -0.5f * Terraria.Main.inventoryScale;
-            ItemSlot.Draw(spriteBatch, ref _item, _itemSlotContext, position);
+            try
+            {
+                HandleItemSlotLogic();
+                Vector2 position = GetDimensions().Center() + new Vector2(52f, 52f) * -0.5f * Terraria.Main.inventoryScale;
+                ItemSlot.Draw(spriteBatch, ref _item, _itemSlotContext, position);
+            }
+            catch
+            {
+                TPML.Content.TileLoader.ResetSpriteBatchIfInBegin();
+            }
         }
 
         private bool IsOverflowHidden(Terraria.UI.UIElement uie, Terraria.UI.UIElement parent)

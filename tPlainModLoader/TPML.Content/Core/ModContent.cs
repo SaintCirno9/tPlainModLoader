@@ -21,6 +21,7 @@ namespace TPML.Content
         private static readonly Dictionary<Type, int> _npcTypes = new Dictionary<Type, int>();
         private static readonly Dictionary<Type, int> _buffTypes = new Dictionary<Type, int>();
         private static readonly Dictionary<Type, int> _tileTypes = new Dictionary<Type, int>();
+        private static readonly Dictionary<Type, int> _tileEntityTypes = new Dictionary<Type, int>();
         private static readonly Dictionary<Type, int> _wallTypes = new Dictionary<Type, int>();
 
         public static IReadOnlyCollection<Mod> Mods => _mods.Values;
@@ -52,6 +53,16 @@ namespace TPML.Content
             if (type != null) _itemTypes[type] = id;
         }
 
+        public static void RegisterTileType(Type type, int id)
+        {
+            if (type != null) _tileTypes[type] = id;
+        }
+
+        public static void RegisterTileEntityType(Type type, int id)
+        {
+            if (type != null) _tileEntityTypes[type] = id;
+        }
+
         public static void Clear()
         {
             _instances.Clear();
@@ -62,6 +73,7 @@ namespace TPML.Content
             _npcTypes.Clear();
             _buffTypes.Clear();
             _tileTypes.Clear();
+            _tileEntityTypes.Clear();
             _wallTypes.Clear();
         }
 
@@ -144,6 +156,61 @@ namespace TPML.Content
         public static int ItemType(string modName, string itemName) => ItemLoader.ItemType(modName, itemName);
         public static int ItemType(string fullName) => ItemLoader.ItemType(fullName);
         public static ModItem GetModItem(int type) => ItemLoader.GetModItem(type);
+
+        public static int TileType<T>() where T : ModTile
+        {
+            if (_tileTypes.TryGetValue(typeof(T), out int id))
+                return id;
+
+            foreach (var kvp in _tileTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _tileTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
+
+            var instance = GetInstance<T>();
+            if (instance != null)
+            {
+                _tileTypes[typeof(T)] = instance.Type;
+                return instance.Type;
+            }
+
+            return 0;
+        }
+
+        public static int TileType(string modName, string tileName) => TileLoader.TileType(modName, tileName);
+        public static int TileType(string fullName) => TileLoader.TileType(fullName);
+        public static ModTile GetModTile(int type) => TileLoader.GetTile(type);
+
+        public static int TileEntityType<T>() where T : ModTileEntity
+        {
+            if (_tileEntityTypes.TryGetValue(typeof(T), out int id))
+                return id;
+
+            foreach (var kvp in _tileEntityTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _tileEntityTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
+
+            var instance = GetInstance<T>();
+            if (instance != null)
+            {
+                _tileEntityTypes[typeof(T)] = instance.Type;
+                return instance.Type;
+            }
+
+            return 0;
+        }
+
+        public static int TileEntityType(string fullName) => TileEntityLoader.TileEntityType(fullName);
+        public static ModTileEntity GetModTileEntity(int type) => TileEntityLoader.GetEntity(type);
 
         public static IEnumerable<T> GetContent<T>() where T : class
         {
