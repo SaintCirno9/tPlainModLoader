@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace tContentPatch.ModLoad
@@ -78,13 +78,14 @@ namespace tContentPatch.ModLoad
         {
             if (loadInstance.IsLoading())
             {
-                loadInstance.ProgressBar(out val, out max);
+                loadInstance.ProgressBar(out int subVal, out int subMax);
+                val = subMax > 0 ? (int)(50.0 * Math.Min(subVal, subMax) / subMax) : 0;
             }
             else
             {
-                val = progressV;
-                max = progressMax;
+                val = 50 + (progressMax > 0 ? (int)(50.0 * Math.Min(progressV, progressMax) / progressMax) : 0);
             }
+            max = 100;
         }
     }
 }

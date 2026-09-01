@@ -19,12 +19,8 @@ namespace FargoItems
         {
             try
             {
-                Logger.Info("===== 开始载入 FargoItems Mod =====");
-
                 // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
                 ModInstance = TPML.Content.ContentHost.Find<FargoItemsMod>();
-
-                Logger.Info("===== 模组物品注册完成 =====");
             }
             catch (Exception ex)
             {
@@ -34,7 +30,6 @@ namespace FargoItems
 
         public override void Unload()
         {
-            Logger.Info("FargoItems 模组已卸载");
         }
     }
 
