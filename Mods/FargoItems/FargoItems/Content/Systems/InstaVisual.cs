@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Instavator.Content.Items;
-using Instavator.Content.Logic;
+using FargoItems.Content.Items;
+using FargoItems.Content.Logic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.UI;
 using TPML.Content;
 
-namespace Instavator.Content.Systems
+namespace FargoItems.Content.Systems
 {
     /// <summary>
     /// 直通车选区半透明高亮预览渲染系统
@@ -49,7 +49,7 @@ namespace Instavator.Content.Systems
             Color boxColor;
 
             int type = heldItem.type;
-            if (type == ModContent.ItemType<Instavator.Content.Items.Instavator>())
+            if (type == ModContent.ItemType<FargoItems.Content.Items.Instavator>())
             {
                 blockWidth = 7;
                 targetEndY = Main.maxTilesY - 40;

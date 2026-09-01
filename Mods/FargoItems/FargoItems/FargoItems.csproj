@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ProjectGuid>{D3E2A1B0-9C8D-4E7F-6A5B-1C0D9E8F7A6B}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Instavator</RootNamespace>
-    <AssemblyName>Instavator</AssemblyName>
+    <RootNamespace>FargoItems</RootNamespace>
+    <AssemblyName>FargoItems</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -43,7 +43,7 @@
     <EmbeddedResource Include="Resources\*.png" />
   </ItemGroup>
 
-  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\Instavator 文件夹 -->
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\FargoItems 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
       <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>

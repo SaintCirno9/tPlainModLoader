@@ -3,26 +3,26 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using TPML.Content;
 using TPML.Core.Logging;
-using Instavator.Content.Logic;
+using FargoItems.Content.Logic;
 
-namespace Instavator
+namespace FargoItems
 {
     /// <summary>
     /// tPlainModLoader 原生 Mod 加载器入口
     /// </summary>
-    public class InstavatorTPMLEntry : tContentPatch.Mod
+    public class FargoItemsTPMLEntry : tContentPatch.Mod
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("Instavator");
-        public static InstavatorMod ModInstance { get; private set; }
+        private static readonly ILogger Logger = LogManager.GetLogger("FargoItems");
+        public static FargoItemsMod ModInstance { get; private set; }
 
         public override void Load()
         {
             try
             {
-                Logger.Info("===== 开始载入 Instavator Mod =====");
+                Logger.Info("===== 开始载入 FargoItems Mod =====");
 
                 // 内容模组由统一 ContentHost 自动注册并触发 Load，入口只保留旧引擎钩子职责
-                ModInstance = TPML.Content.ContentHost.Find<InstavatorMod>();
+                ModInstance = TPML.Content.ContentHost.Find<FargoItemsMod>();
 
                 Logger.Info("===== 模组物品注册完成 =====");
             }
@@ -34,14 +34,14 @@ namespace Instavator
 
         public override void Unload()
         {
-            Logger.Info("Instavator 模组已卸载");
+            Logger.Info("FargoItems 模组已卸载");
         }
     }
 
     /// <summary>
     /// 玩家进入世界通知与材质状态保障
     /// </summary>
-    public class InstavatorPlayerNotice : tContentPatch.PatchPlayer
+    public class FargoItemsPlayerNotice : tContentPatch.PatchPlayer
     {
         private bool _announced = false;
 
@@ -50,7 +50,7 @@ namespace Instavator
             if (!_announced && This.whoAmI == Main.myPlayer && !Main.gameMenu)
             {
                 _announced = true;
-                Main.NewText($"[Instavator] 地狱直通车已就绪！3 款直通车配方已载入 (配方总数: {Recipe.numRecipes})", 255, 180, 80);
+                Main.NewText($"[FargoItems] 地狱直通车已就绪！3 款直通车配方已载入 (配方总数: {Recipe.numRecipes})", 255, 180, 80);
                 
                 // 保证材质在世界加载后完全绑定
                 ItemLoader.ReloadTextures();
@@ -61,7 +61,7 @@ namespace Instavator
     /// <summary>
     /// 主循环前置贴图就绪保障
     /// </summary>
-    public class InstavatorPatchMain : tContentPatch.PatchMain
+    public class FargoItemsPatchMain : tContentPatch.PatchMain
     {
         private static bool _texturesReady = false;
 
@@ -83,10 +83,10 @@ namespace Instavator
     /// <summary>
     /// TPML 原生 Mod 内容定义
     /// </summary>
-    public class InstavatorMod : TPML.Content.Mod
+    public class FargoItemsMod : TPML.Content.Mod
     {
-        public override string Name => "Instavator";
-        public override string DisplayName => "地狱直通车 (Instavator)";
+        public override string Name => "FargoItems";
+        public override string DisplayName => "Fargo's Items";
 
         public override void Load()
         {

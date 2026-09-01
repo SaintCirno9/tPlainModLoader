@@ -1,4 +1,4 @@
-namespace Instavator.Content.Logic
+﻿namespace FargoItems.Content.Logic
 {
     /// <summary>
     /// 防止一次按键保持期间重复启动直通车。

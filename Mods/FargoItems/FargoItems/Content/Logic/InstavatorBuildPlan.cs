@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace Instavator.Content.Logic
+namespace FargoItems.Content.Logic
 {
     /// <summary>
     /// 直通车一次建造的不可变坐标计划。计划只依赖使用瞬间的目标坐标，不读取实时鼠标状态。

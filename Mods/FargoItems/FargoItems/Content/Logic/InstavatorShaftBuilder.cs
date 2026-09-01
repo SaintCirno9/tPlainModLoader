@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -7,7 +7,7 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using TPML.Core.Logging;
 
-namespace Instavator.Content.Logic
+namespace FargoItems.Content.Logic
 {
     /// <summary>
     /// 地狱直通车世界采掘与垂直通道快速建造引擎。
@@ -16,7 +16,7 @@ namespace Instavator.Content.Logic
     /// </summary>
     public static class InstavatorShaftBuilder
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("Instavator");
+        private static readonly ILogger Logger = LogManager.GetLogger("FargoItems");
         private const int MaxCellsPerUpdate = 512;
         private const int LiquidSettlePasses = 6;
         private static BuildJob _activeJob;
@@ -383,11 +383,11 @@ namespace Instavator.Content.Logic
             {
                 if (placedChestsCount > 0)
                 {
-                    Main.NewText($"[Instavator] 直通车建造完成！深度: {LastBuildSummary.TotalDepth} 格，已将沿途所有宝箱战利品与矿石物资存入身旁的 {placedChestsCount} 个黑曜石箱中！", 255, 200, 80);
+                    Main.NewText($"[FargoItems] 直通车建造完成！深度: {LastBuildSummary.TotalDepth} 格，已将沿途所有宝箱战利品与矿石物资存入身旁的 {placedChestsCount} 个黑曜石箱中！", 255, 200, 80);
                 }
                 else
                 {
-                    Main.NewText($"[Instavator] 直通车建造完成！深度: {LastBuildSummary.TotalDepth} 格", 255, 200, 80);
+                    Main.NewText($"[FargoItems] 直通车建造完成！深度: {LastBuildSummary.TotalDepth} 格", 255, 200, 80);
                 }
             }
         }

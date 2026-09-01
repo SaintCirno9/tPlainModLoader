@@ -1,7 +1,7 @@
 {
-  "key": "Fargo.Instavator",
+  "key": "FargoItems",
   "version": "1.0.0",
   "isEnable": true,
-  "dllPath": "Instavator.dll",
+  "dllPath": "FargoItems.dll",
   "frontModKeys": []
 }

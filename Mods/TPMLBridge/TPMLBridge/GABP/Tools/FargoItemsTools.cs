@@ -13,10 +13,10 @@ using TPML.Content.UI;
 namespace TPMLBridge.GABP.Tools
 {
     /// <summary>
-    /// Instavator 地狱直通车原生模组测试、建造快照与矿道物理扫描工具
+    /// FargoItems 地狱直通车原生模组测试、建造快照与矿道物理扫描工具
     /// 作者: SaintCirno9
     /// </summary>
-    public static class InstavatorTools
+    public static class FargoItemsTools
     {
         public static List<GABPToolDescriptor> GetDescriptors()
         {

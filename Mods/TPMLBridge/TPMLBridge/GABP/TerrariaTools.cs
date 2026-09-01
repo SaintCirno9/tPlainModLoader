@@ -20,7 +20,7 @@ namespace TPMLBridge.GABP
             list.AddRange(LifecycleTools.GetDescriptors());
             list.AddRange(PlayerInventoryTools.GetDescriptors());
             list.AddRange(CreativeInventoryTools.GetDescriptors());
-            list.AddRange(InstavatorTools.GetDescriptors());
+            list.AddRange(FargoItemsTools.GetDescriptors());
             list.AddRange(ItemContainerTools.GetDescriptors());
             list.AddRange(AccessoryBagTools.GetDescriptors());
             list.AddRange(SidecarTools.GetDescriptors());
@@ -45,8 +45,8 @@ namespace TPMLBridge.GABP
             result = await CreativeInventoryTools.HandleAsync(name, args);
             if (result != null) return result;
 
-            // 4. Instavator 直通车与矿道物理扫描工具
-            result = await InstavatorTools.HandleAsync(name, args);
+            // 4. FargoItems 直通车与矿道物理扫描工具
+            result = await FargoItemsTools.HandleAsync(name, args);
             if (result != null) return result;
 
             // 5. 药水袋与旗帜盒收纳容器工具

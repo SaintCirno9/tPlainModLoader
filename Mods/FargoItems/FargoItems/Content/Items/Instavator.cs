@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using Instavator.Content.Logic;
-using Instavator.Content.Systems;
+﻿using System.Collections.Generic;
+using FargoItems.Content.Logic;
+using FargoItems.Content.Systems;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
@@ -9,7 +9,7 @@ using Terraria.ID;
 using TPML.Content;
 using TPML.Content.UI;
 
-namespace Instavator.Content.Items
+namespace FargoItems.Content.Items
 {
     /// <summary>
     /// 地狱直通车 (Instavator)

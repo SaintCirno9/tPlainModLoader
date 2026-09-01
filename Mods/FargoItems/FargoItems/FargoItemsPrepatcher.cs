@@ -1,17 +1,17 @@
-using System;
+﻿using System;
 using System.Linq;
 using Mono.Cecil;
 using tContentPatch.Prepatcher;
 using TPML.Core.Logging;
 
-namespace Instavator
+namespace FargoItems
 {
     /// <summary>
     /// Item.SetDefaults 早期预修补：禁用 JIT 内联与优化，确保 Harmony 拦截 100% 生效
     /// </summary>
-    public class InstavatorItemSetDefaultsPrepatcher : IPrepatcher
+    public class FargoItemsItemSetDefaultsPrepatcher : IPrepatcher
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("InstavatorPrepatcher");
+        private static readonly ILogger Logger = LogManager.GetLogger("FargoItemsPrepatcher");
         public void EarlyPatch(AssemblyDefinition terrariaAssembly)
         {
             try
