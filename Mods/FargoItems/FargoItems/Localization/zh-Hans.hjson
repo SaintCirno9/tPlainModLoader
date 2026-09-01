@@ -1,0 +1,618 @@
+Mods: {
+	FargoItems: {
+		Items: {
+			Abeemination2: {
+				DisplayName: 令人憎恶的蜜蜂
+				Tooltip: 在任何地下生物群落中召唤蜂后
+			}
+
+			AbominationnBody: {
+				DisplayName: 憎恶之躯
+				// Tooltip: ""
+			}
+
+			AbominationnMask: {
+				DisplayName: 憎恶面具
+				// Tooltip: ""
+			}
+
+			AbominationnPants: {
+				DisplayName: 憎恶裤子
+				// Tooltip: ""
+			}
+
+			AbominationnScythe: {
+				DisplayName: 憎恶之镰
+				// Tooltip: ""
+			}
+
+			AltarExterminator: {
+				DisplayName: 祭坛终结者
+				Tooltip:
+				'''
+				破坏所有自然生成的恶魔祭坛和猩红祭坛
+				会导致新三矿大量生成和幻灵大量生成等后果
+				“也叫幻灵制造者”
+				'''
+			}
+
+			AutoHouse: {
+				DisplayName: 快速房屋
+				Tooltip: 快速建造一间NPC房屋
+			}
+
+			BoneQuiver: {
+				DisplayName: 无尽骨箭袋
+				// Tooltip: ""
+			}
+
+			BoomShuriken: {
+				DisplayName: 爆炸手里剑
+				Tooltip:
+				'''
+				接触物块时立即爆炸，破坏物块
+				破坏能力和使用速度取决于背包里最强镐的镐力和使用速度，使用速度还会受挖掘速度加成
+				“挖穿任何东西的最快方式永远是把它们炸飞！”
+				'''
+			}
+
+			BrittleBone: {
+				DisplayName: 易碎骨头
+				// Tooltip: ""
+			}
+
+			CelestialSigil2: {
+				DisplayName: 天魔印记
+				Tooltip: 立即召唤月亮领主
+			}
+
+			ChlorophytePouch: {
+				DisplayName: 无尽叶绿弹袋
+				Tooltip: 追杀敌人
+			}
+
+			ChlorophyteQuiver: {
+				DisplayName: 无尽叶绿箭袋
+				Tooltip: 撞墙后弹回
+			}
+
+			CityBuster: {
+				DisplayName: 城市克星
+				Tooltip:
+				'''
+				大面积破坏物块
+				不会破坏背景墙
+				不会破坏重要区域
+				风险自担
+				'''
+			}
+
+			ClusterRocket1Box: {
+				// Tooltip: ""
+				DisplayName: 无尽一级集束火箭盒
+			}
+
+			ClusterRocket2Box: {
+				// Tooltip: ""
+				DisplayName: 无尽二级集束火箭盒
+			}
+
+			CorruptRenewal: {
+				DisplayName: 腐化领域
+				Tooltip: 使一大片区域变为腐化之地
+			}
+
+			CorruptRenewalSupreme: {
+				DisplayName: 腐化维度
+				Tooltip: 使整个世界变为腐化之地
+			}
+
+			CrimsonRenewal: {
+				DisplayName: 猩红领域
+				Tooltip: 使一大片区域变为猩红之地
+			}
+
+			CrimsonRenewalSupreme: {
+				DisplayName: 猩红维度
+				Tooltip: 使整个世界变为猩红之地
+			}
+
+			CrystalPouch: {
+				DisplayName: 无尽水晶弹袋
+				Tooltip: 碰撞时产生水晶碎片
+			}
+
+			CursedPouch: {
+				DisplayName: 无尽诅咒弹袋
+				// Tooltip: ""
+			}
+
+			CursedQuiver: {
+				DisplayName: 无尽诅咒箭袋
+				// Tooltip: ""
+			}
+
+			DeerThing2: {
+				DisplayName: 不寻常的鹿头骨
+				Tooltip: 在任何生物群落中召唤独眼巨鹿
+			}
+
+			DevianttBody: {
+				DisplayName: 戴薇安的身体
+				// Tooltip: ""
+			}
+
+			DevianttMask: {
+				DisplayName: 戴薇安的面具
+				// Tooltip: ""
+			}
+
+			DevianttPants: {
+				DisplayName: 戴薇安的裤子
+				// Tooltip: ""
+			}
+
+			DirtRenewal: {
+				DisplayName: 森林领域
+				Tooltip: 使一大片区域变为森林环境
+			}
+
+			DirtRenewalSupreme: {
+				DisplayName: 森林维度
+				Tooltip: 使整个世界变为森林环境
+			}
+
+			DoubleObsidianInstabridge: {
+				DisplayName: 双重黑曜石速建平台
+				Tooltip:
+				'''
+				建造2条横跨整个世界的黑曜石平台
+				同时清除平台之间和平台上方的区域
+				下方的平台出现在鼠标位置
+				不会破坏重要区域
+				风险自担
+				'''
+			}
+
+			DoubleObsidianInstavator: {
+				DisplayName: 双轨黑曜石直通车
+				Tooltip: 丢出一颗炸弹，瞬间垂直挖掘11格双通道直通车至地狱
+				配备双侧黑曜石砖护壁与双轨绳索
+			}
+
+			DryRocketBox: {
+				// Tooltip: ""
+				DisplayName: 无尽干火箭盒
+			}
+
+			ExplosivePouch: {
+				DisplayName: 无尽爆破弹袋
+				Tooltip: 碰撞时爆炸
+			}
+
+			FlameQuiver: {
+				DisplayName: 无尽烈焰箭袋
+				// Tooltip: ""
+			}
+
+			FrostburnQuiver: {
+				DisplayName: 无尽霜冻箭袋
+				// Tooltip: ""
+			}
+
+			GelPack: {
+				DisplayName: 无尽凝胶包
+				// Tooltip: ""
+			}
+
+			GoldenPouch: {
+				DisplayName: 无尽金弹袋
+				Tooltip: 杀死的敌人会掉落更多的钱
+			}
+
+			GoreySpine: {
+				DisplayName: 大脑物质
+				Tooltip: 在任何生物群落中召唤克苏鲁之脑
+			}
+
+			GraveBuster: {
+				DisplayName: 墓碑克星
+				Tooltip: 大面积破坏墓碑
+			}
+
+			HalfInstavator: {
+				DisplayName: 半程直通车
+				Tooltip: 丢出一颗炸弹，垂直挖掘至岩石层半程深度
+				下方有重要建筑时请勿使用
+			}
+
+			HallowRenewal: {
+				DisplayName: 神圣领域
+				Tooltip: 使一大片区域变为神圣之地
+			}
+
+			HallowRenewalSupreme: {
+				DisplayName: 神圣维度
+				Tooltip: 使整个世界变为神圣之地
+			}
+
+			HellfireQuiver: {
+				DisplayName: 无尽狱炎箭袋
+				// Tooltip: ""
+			}
+
+			HolyQuiver: {
+				DisplayName: 无尽圣箭袋
+				Tooltip: 碰撞时召唤陨星
+			}
+
+			HoneyRocketBox: {
+				// Tooltip: ""
+				DisplayName: 无尽蜂蜜火箭盒
+			}
+
+			IchorPouch: {
+				DisplayName: 无尽灵液弹袋
+				Tooltip: 降低目标的防御力
+			}
+
+			IchorQuiver: {
+				DisplayName: 无尽灵液箭袋
+				Tooltip: 降低目标的防御力
+			}
+
+			InstaBridge: {
+				DisplayName: 速建平台
+				Tooltip:
+				'''
+				建造一条横跨整个世界的平台
+				同时清除平台正上方的区域
+				平台出现在鼠标位置
+				不会破坏重要区域
+				右键单击会清除这片区域但不放置平台
+				风险自担
+				'''
+			}
+
+			InstaPond: {
+				DisplayName: 快速湖泊
+				Tooltip:
+				'''
+				投下一颗炸弹，在其下方形成一片150×50的水体
+				不会破坏重要区域
+				风险自担
+				'''
+			}
+
+			InstaTrack: {
+				DisplayName: 速建轨道
+				Tooltip:
+				'''
+				建造一条横跨整个世界的矿车轨道
+				同时清除轨道正上方的区域
+				轨道出现在鼠标位置
+				不会破坏重要区域
+				风险自担
+				'''
+			}
+
+			InstantResearch: {
+				DisplayName: 一键研究
+				Tooltip:
+				'''
+				调 试 用 物 品
+				研究所有物品
+				'''
+				ResearchText: 已研究{0
+			}
+
+			Instavator: {
+				DisplayName: 地狱直通车
+				Tooltip: 丢出一颗炸弹，瞬间垂直挖掘至地狱底层并铺设护壁与绳索
+				下方有重要建筑时请勿使用
+			}
+
+			JesterQuiver: {
+				DisplayName: 无尽小丑箭袋
+				// Tooltip: ""
+			}
+
+			KohaCrystal: {
+				DisplayName: 祛魔水晶
+				Tooltip: 撤销一次魔力水晶的使用
+			}
+
+			LavaRocketBox: {
+				DisplayName: 无尽熔岩火箭盒
+				// Tooltip: ""
+			}
+
+			LihzahrdInstactuationBomb: {
+				DisplayName: 丛林神庙炸弹
+				Tooltip:
+				'''
+				站在丛林祭坛前使用时，清除丛林蜥蜴祭坛周围的空间
+				虚化丛林蜥蜴砖并摧毁其他物块
+				仅能在世纪之花被击败后，在丛林神庙中使用
+				'''
+			}
+
+			LihzahrdPowerCell2: {
+				DisplayName: 蜥蜴电池包
+				Tooltip: 在没有祭坛的情况下召唤石巨人
+			}
+
+			LumberHat: {
+				DisplayName: 伐木工帽
+				// Tooltip: ""
+			}
+
+			LumberjackBody: {
+				DisplayName: 伐木工身体
+				// Tooltip: ""
+			}
+
+			LumberjackMask: {
+				DisplayName: 伐木工面具
+				// Tooltip: ""
+			}
+
+			LumberjackPants: {
+				DisplayName: 伐木工裤
+				// Tooltip: ""
+			}
+
+			LuminitePouch: {
+				DisplayName: 无尽夜明弹袋
+				Tooltip: “鬼怪排成行，一发百中……”
+			}
+
+			LuminiteQuiver: {
+				DisplayName: 无尽夜明箭袋
+				Tooltip: “以音速射下它们！”
+			}
+
+			MapViewer: {
+				DisplayName: 失落的王之地图
+				Tooltip: 点亮整个地图
+			}
+
+			MechEye: {
+				DisplayName: 某种金属眼睛
+				Tooltip: 召唤双子魔眼
+			}
+
+			MechSkull: {
+				DisplayName: 某种金属头骨
+				Tooltip: 召唤机械骷髅王
+			}
+
+			MechWorm: {
+				DisplayName: 某种金属蠕虫
+				Tooltip: 召唤毁灭者
+			}
+
+			MeteorPouch: {
+				DisplayName: 无尽流星弹袋
+				// Tooltip: ""
+			}
+
+			MiniDirtInstaBridge: {
+				DisplayName: 迷你泥土平台
+				Tooltip:
+				'''
+				在光标处建造一条小型泥土平台
+				不会破坏任何方块
+				'''
+			}
+
+			MiniInstaBridge: {
+				DisplayName: 迷你速建平台
+				Tooltip:
+				'''
+				在鼠标的高度建造一条长平台
+				不会破坏任何方块
+				'''
+			}
+
+			MiniNuke1Box: {
+				DisplayName: 无尽一级迷你核弹盒
+				// Tooltip: ""
+			}
+
+			MiniNuke2Box: {
+				DisplayName: 无尽二级迷你核弹盒
+				// Tooltip: ""
+			}
+
+			MushroomRenewal: {
+				DisplayName: 发光蘑菇领域
+				Tooltip: 使一大片区域变为发光蘑菇地
+			}
+
+			MushroomRenewalSupreme: {
+				DisplayName: 发光蘑菇维度
+				Tooltip: 使整个世界变为发光蘑菇地
+			}
+
+			MutantBody: {
+				DisplayName: 突变躯体
+				// Tooltip: ""
+			}
+
+			MutantMask: {
+				DisplayName: 突变面具
+				// Tooltip: ""
+			}
+
+			MutantPants: {
+				DisplayName: 突变裤
+				// Tooltip: ""
+			}
+
+			NanoPouch: {
+				DisplayName: 无尽纳米弹袋
+				Tooltip: 造成困惑
+			}
+
+			ObsidianInstaBridge: {
+				DisplayName: 黑曜石速建平台
+				Tooltip:
+				'''
+				建造一条横跨整个世界的黑曜石平台
+				同时清除平台正上方的区域
+				平台出现在鼠标位置
+				不会破坏重要区域
+				风险自担
+				'''
+			}
+
+			OmniBridgifier: {
+				DisplayName: 万能平台转化器
+				Tooltip:
+				'''
+				可以被无限次重复使用
+				把你所站的平台升级为带有万能增益站的平台
+				不会建造平台
+				'''
+			}
+
+			PartyPouch: {
+				DisplayName: 无尽派对弹袋
+				Tooltip: 碰撞时爆炸成彩纸
+			}
+
+			PortableSundial: {
+				DisplayName: 便携式日晷
+				Tooltip:
+				'''
+				左键单击可立即切换时间
+				可以在黎明，中午，黄昏和午夜之间切换时间
+				右键点击可激活魔法日晷效果
+				有Boss存活时使用速度会变慢
+				切换到黎明会重置旅行商人的商店
+				'''
+			}
+
+			PurityRenewal: {
+				DisplayName: 纯净领域
+				Tooltip: 净化一大片区域
+			}
+
+			PurityRenewalSupreme: {
+				DisplayName: 纯净维度
+				Tooltip: 净化整个世界
+			}
+
+			PylonCleaner: {
+				DisplayName: 洁晶灵
+				Tooltip:
+				'''
+				净化所有晶塔周围的区域
+				在神圣晶塔处使用蓝溶液，蘑菇晶塔处使用深蓝溶液，其他晶塔处使用绿溶液
+				'''
+			}
+
+			Rocket1Box: {
+				DisplayName: 无尽一级火箭盒
+				// Tooltip: ""
+			}
+
+			Rocket2Box: {
+				DisplayName: 无尽二级火箭盒
+				// Tooltip: ""
+			}
+
+			Rocket3Box: {
+				DisplayName: 无尽三级火箭盒
+				// Tooltip: ""
+			}
+
+			Rocket4Box: {
+				DisplayName: 无尽四级火箭盒
+				// Tooltip: ""
+			}
+
+			SandRenewal: {
+				DisplayName: 沙漠领域
+				Tooltip: 使一大片区域变为沙漠环境
+			}
+
+			SandRenewalSupreme: {
+				DisplayName: 沙漠维度
+				Tooltip: 使整个世界变为沙漠环境
+			}
+
+			SilverPouch: {
+				DisplayName: 无尽银弹袋
+				// Tooltip: ""
+			}
+
+			SlimyCrown: {
+				DisplayName: 黏糊糊的诏书
+				Tooltip: 召唤史莱姆王
+			}
+
+			SnowRenewal: {
+				DisplayName: 冰雪领域
+				Tooltip: 使一大片区域变为雪原环境
+			}
+
+			SnowRenewalSupreme: {
+				DisplayName: 冰雪维度
+				Tooltip: 使整个世界变为雪原环境
+			}
+
+			StarPouch: {
+				DisplayName: 无尽星星袋
+				// Tooltip: ""
+			}
+
+			SuspiciousEye: {
+				DisplayName: 似乎可疑的眼药水
+				Tooltip: 召唤克苏鲁之眼
+			}
+
+			TruffleWorm2: {
+				DisplayName: 浓缩松露虫精华
+				Tooltip: 不钓鱼就召唤猪龙鱼公爵
+			}
+
+			TungstenPouch: {
+				DisplayName: 无尽钨弹袋
+				// Tooltip: ""
+			}
+
+			UnholyQuiver: {
+				DisplayName: 无尽邪箭袋
+				// Tooltip: ""
+			}
+
+			VelocityPouch: {
+				DisplayName: 无尽高速弹袋
+				// Tooltip: ""
+			}
+
+			VenomPouch: {
+				DisplayName: 无尽毒液弹袋
+				Tooltip: 对目标施放酸性毒液
+			}
+
+			VenomQuiver: {
+				DisplayName: 无尽毒液箭袋
+				// Tooltip: ""
+			}
+
+			WetRocketBox: {
+				DisplayName: 无尽潮湿火箭盒
+				// Tooltip: ""
+			}
+
+			WormyFood: {
+				DisplayName: 腐烂诱饵
+				Tooltip: 在任何生物群落中召唤世界吞噬怪
+			}
+
+		}
+	}
+}

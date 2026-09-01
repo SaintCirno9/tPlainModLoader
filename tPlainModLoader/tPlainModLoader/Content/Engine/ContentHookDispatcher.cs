@@ -268,79 +268,74 @@ namespace TPML.Content.Engine
 
         private static void PatchItemShoot()
         {
-            var target = MethodLookup.Instance(typeof(Player), nameof(Player.ItemCheck_Shoot), typeof(int), typeof(Item), typeof(int), typeof(bool));
-            if (target != null)
-            {
-                HookRegistry.AddContent(target, (Action<Action<Player, int, Item, int, bool>, Player, int, Item, int, bool>)((orig, self, i, sItem, weaponDamage, withAudioVisualFeedback) =>
-                {
-                    if (!Player_ItemCheck_Shoot_Prefix(self, i, sItem, weaponDamage)) return;
-                    orig(self, i, sItem, weaponDamage, withAudioVisualFeedback);
-                }));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_Shoot (物品射击与动作拦截)");
-            }
+            On_Player.ItemCheck_Shoot += Hook_ItemCheck_Shoot;
+            ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_Shoot (物品射击与动作拦截)");
         }
 
-        private static bool Player_ItemCheck_Shoot_Prefix(Player __instance, int i, Item sItem, int weaponDamage)
+        private static void Hook_ItemCheck_Shoot(On_Player.orig_ItemCheck_Shoot orig, Player player, int i, Item item, int weaponDamage, bool withAudioVisualFeedback)
         {
-            if (sItem == null || sItem.IsAir) return true;
-            var modItem = ItemLoader.GetItem(sItem.type);
-            if (modItem != null)
+            if (item != null && !item.IsAir && item.type >= ItemLoader.ModItemOffset)
             {
-                Vector2 position = __instance.RotatedRelativePoint(__instance.MountedCenter, true);
-                Vector2 velocity = Vector2.Normalize(Main.MouseWorld - position) * (sItem.shootSpeed > 0 ? sItem.shootSpeed : 5f);
-                var source = new EntitySource_ItemUse_WithAmmo(__instance, sItem, 0);
-                bool canShootVanilla = ItemLoader.Shoot(sItem, __instance, source, position, velocity, sItem.shoot, weaponDamage, sItem.knockBack);
-                if (!canShootVanilla)
-                {
-                    return false; // 拦截原版弹幕生成
-                }
+                return; // 模组物品统一由 StartActualUse 触发发射与扣料，拦截原版避免重复
             }
-            return true;
+            orig(player, i, item, weaponDamage, withAudioVisualFeedback);
         }
 
         private static void PatchItemUse()
         {
-            var target = typeof(Player).GetMethod(
-                nameof(Player.ItemCheck_StartActualUse),
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (target != null)
-            {
-                HookRegistry.AddContent(target, (Action<Action<Player, Item>, Player, Item>)((orig, self, sItem) =>
-                {
-                    orig(self, sItem);
-                    Player_ItemCheck_StartActualUse_Postfix(self, sItem);
-                }));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_StartActualUse (物品使用逻辑)");
-            }
+            On_Player.ItemCheck_StartActualUse += Hook_ItemCheck_StartActualUse;
+            ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_StartActualUse (物品使用逻辑)");
         }
 
-        private static void Player_ItemCheck_StartActualUse_Postfix(Player __instance, Item sItem)
+        private static void Hook_ItemCheck_StartActualUse(On_Player.orig_ItemCheck_StartActualUse orig, Player player, Item item)
         {
-            if (sItem == null || sItem.IsAir) return;
-            ItemLoader.UseItem(sItem, __instance);
+            orig(player, item);
+            if (item == null || item.IsAir) return;
+
+            ItemLoader.UseItem(item, player);
+
+            // 当物品配置了自定义弹幕发射且属于模组物品时，在开始实际使用时分发 ItemLoader.Shoot
+            if (item.shoot > 0 && item.type >= ItemLoader.ModItemOffset && player.whoAmI == Main.myPlayer)
+            {
+                Vector2 position = player.RotatedRelativePoint(player.MountedCenter, true);
+                Vector2 mouseDir = Main.MouseWorld - position;
+                Vector2 velocity = mouseDir != Vector2.Zero ? Vector2.Normalize(mouseDir) * (item.shootSpeed > 0 ? item.shootSpeed : 5f) : Vector2.Zero;
+                var source = new EntitySource_ItemUse_WithAmmo(player, item, 0);
+                int weaponDamage = player.GetWeaponDamage(item);
+                bool canShootVanilla = ItemLoader.Shoot(item, player, source, position, velocity, item.shoot, weaponDamage, item.knockBack);
+                if (canShootVanilla)
+                {
+                    Projectile.NewProjectile(source, position, velocity, item.shoot, weaponDamage, item.knockBack, player.whoAmI);
+                }
+                if (item.consumable && item.useAmmo == 0 && ItemLoader.ConsumeItem(item, player))
+                {
+                    item.stack--;
+                    if (item.stack <= 0)
+                    {
+                        item.TurnToAir();
+                    }
+                }
+            }
         }
 
         private static void PatchItemCheck()
         {
-            // 挂在原版真正的使用许可检查上，而不是 ItemCheck 动画峰值（常规路径 itemAnimation 仍为 0，旧条件恒不成立）
-            var target = MethodLookup.Instance(typeof(Player), "ItemCheck_CheckCanUse_Inner", typeof(Item), typeof(bool));
-            if (target != null)
-            {
-                HookRegistry.AddContent(target, (Func<Func<Player, Item, bool, bool>, Player, Item, bool, bool>)((orig, self, sItem, ignoreCursed) =>
-                {
-                    // 彻底对齐 tML 官方 CombinedHooks.CanUseItem 规则：空物品或堆叠 <= 0 的幽灵物品直接禁止使用
-                    if (sItem == null || sItem.IsAir || sItem.stack <= 0 || sItem.type <= 0)
-                    {
-                        return false;
-                    }
+            On_Player.ItemCheck_CheckCanUse_Inner += Hook_ItemCheck_CheckCanUse_Inner;
+            ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_CheckCanUse_Inner (CanUseItem 检查)");
+        }
 
-                    bool result = orig(self, sItem, ignoreCursed);
-                    if (!result || self == null) return result;
-                    bool? canUse = ItemLoader.CanUseItem(sItem, self);
-                    return canUse != false;
-                }));
-                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Player.ItemCheck_CheckCanUse_Inner (CanUseItem 检查)");
+        private static bool Hook_ItemCheck_CheckCanUse_Inner(On_Player.orig_ItemCheck_CheckCanUse_Inner orig, Player player, Item item, bool ignoreCursed)
+        {
+            // 彻底对齐 tML 官方 CombinedHooks.CanUseItem 规则：空物品或堆叠 <= 0 的幽灵物品直接禁止使用
+            if (item == null || item.IsAir || item.stack <= 0 || item.type <= 0)
+            {
+                return false;
             }
+
+            bool result = orig(player, item, ignoreCursed);
+            if (!result || player == null) return result;
+            bool? canUse = ItemLoader.CanUseItem(item, player);
+            return canUse != false;
         }
 
         #endregion

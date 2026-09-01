@@ -1,0 +1,618 @@
+Mods: {
+	FargoItems: {
+		Items: {
+			Abeemination2: {
+				DisplayName: A Bee In My Nation
+				Tooltip: Summons Queen Bee in any underground biome
+			}
+
+			AbominationnBody: {
+				DisplayName: Abominationn Body
+				Tooltip: ""
+			}
+
+			AbominationnMask: {
+				DisplayName: Abominationn Mask
+				Tooltip: ""
+			}
+
+			AbominationnPants: {
+				DisplayName: Abominationn Pants
+				Tooltip: ""
+			}
+
+			AbominationnScythe: {
+				DisplayName: Abominationn's Scythe
+				Tooltip: ""
+			}
+
+			AltarExterminator: {
+				DisplayName: Altar Exterminator
+				Tooltip:
+				'''
+				Destroys all natural Demon Altars and Crimson Altars
+				'Also known as the Wraithmaker 200'
+				'''
+			}
+
+			AutoHouse: {
+				DisplayName: InstaHouse
+				Tooltip: Places an NPC house instantly
+			}
+
+			BoneQuiver: {
+				DisplayName: Endless Bone Quiver
+				Tooltip: ""
+			}
+
+			BoomShuriken: {
+				DisplayName: Boom Shuriken
+				Tooltip:
+				'''
+				Instantly explodes when hitting tiles, breaking blocks
+				Uses your best pickaxe's mining power
+				Throwing speed scales with your best pickaxe's mining speed and other mining speed bonuses
+				'The fastest way to dig through anything is always to blow it up!'
+				'''
+			}
+
+			BrittleBone: {
+				DisplayName: Brittle Bone
+				Tooltip: ""
+			}
+
+			CelestialSigil2: {
+				DisplayName: Celestially Sigil
+				Tooltip: Summons the Moon Lord instantly
+			}
+
+			ChlorophytePouch: {
+				DisplayName: Endless Chlorophyte Pouch
+				Tooltip: Chases after your enemy
+			}
+
+			ChlorophyteQuiver: {
+				DisplayName: Endless Chlorophyte Quiver
+				Tooltip: Bounces back after hitting a wall
+			}
+
+			CityBuster: {
+				DisplayName: City Buster
+				Tooltip:
+				'''
+				Destroys a large area
+				Will not remove background walls
+				Avoids breaking areas denoted as important
+				Use at your own risk
+				'''
+			}
+
+			ClusterRocket1Box: {
+				Tooltip: ""
+				DisplayName: Endless Cluster Rocket I Box
+			}
+
+			ClusterRocket2Box: {
+				Tooltip: ""
+				DisplayName: Endless Cluster Rocket II Box
+			}
+
+			CorruptRenewal: {
+				DisplayName: Corruption Renewal
+				Tooltip: Corrupts a large radius
+			}
+
+			CorruptRenewalSupreme: {
+				DisplayName: Corruption Renewal Supreme
+				Tooltip: Corrupts the entire world
+			}
+
+			CrimsonRenewal: {
+				DisplayName: Crimson Renewal
+				Tooltip: Crimsons a large radius
+			}
+
+			CrimsonRenewalSupreme: {
+				DisplayName: Crimson Renewal Supreme
+				Tooltip: Crimsons the entire world
+			}
+
+			CrystalPouch: {
+				DisplayName: Endless Crystal Pouch
+				Tooltip: Creates several crystal shards on impact
+			}
+
+			CursedPouch: {
+				DisplayName: Endless Cursed Pouch
+				Tooltip: ""
+			}
+
+			CursedQuiver: {
+				DisplayName: Endless Cursed Quiver
+				Tooltip: ""
+			}
+
+			DeerThing2: {
+				DisplayName: Unusual Deer Skull
+				Tooltip: Summons Deerclops in any biome
+			}
+
+			DevianttBody: {
+				DisplayName: Deviantt Body
+				Tooltip: ""
+			}
+
+			DevianttMask: {
+				DisplayName: Deviantt Mask
+				Tooltip: ""
+			}
+
+			DevianttPants: {
+				DisplayName: Deviantt Pants
+				Tooltip: ""
+			}
+
+			DirtRenewal: {
+				DisplayName: Forest Renewal
+				Tooltip: Dirts a large radius
+			}
+
+			DirtRenewalSupreme: {
+				DisplayName: Forest Renewal Supreme
+				Tooltip: Dirts the entire world
+			}
+
+			DoubleObsidianInstabridge: {
+				DisplayName: Double Obsidian Instabridge
+				Tooltip:
+				'''
+				Creates 2 bridges of obsidian platforms across the whole world
+				Also clears the area between and above the platforms
+				The bottom bridge appears at your cursor
+				Avoids breaking areas denoted as important
+				Use at your own risk
+				'''
+			}
+
+			DoubleObsidianInstavator: {
+				DisplayName: Double Obsidian Instavator
+				Tooltip: Drops a bomb that creates a double hellevator with obsidian bricks and dual ropes
+				Do not use if any important building is below
+			}
+
+			DryRocketBox: {
+				Tooltip: ""
+				DisplayName: Endless Dry Rocket Box
+			}
+
+			ExplosivePouch: {
+				DisplayName: Endless Explosive Pouch
+				Tooltip: Explodes on impact
+			}
+
+			FlameQuiver: {
+				DisplayName: Endless Flame Quiver
+				Tooltip: ""
+			}
+
+			FrostburnQuiver: {
+				DisplayName: Endless Frostburn Quiver
+				Tooltip: ""
+			}
+
+			GelPack: {
+				DisplayName: Endless Gel Pack
+				Tooltip: ""
+			}
+
+			GoldenPouch: {
+				DisplayName: Endless Golden Pouch
+				Tooltip: Enemies killed will drop more money
+			}
+
+			GoreySpine: {
+				DisplayName: Brain Matter
+				Tooltip: Summons the Brain of Cthulhu in any biome
+			}
+
+			GraveBuster: {
+				DisplayName: Grave Buster
+				Tooltip: Destroys tombstones in a large area
+			}
+
+			HalfInstavator: {
+				DisplayName: Half Instavator
+				Tooltip: Drops a bomb that creates a shaft down to the cavern layer
+				Do not use if any important building is below
+			}
+
+			HallowRenewal: {
+				DisplayName: Hallowed Renewal
+				Tooltip: Hallows a large radius
+			}
+
+			HallowRenewalSupreme: {
+				DisplayName: Hallowed Renewal Supreme
+				Tooltip: Hallows the entire world
+			}
+
+			HellfireQuiver: {
+				DisplayName: Endless Hellfire Quiver
+				Tooltip: ""
+			}
+
+			HolyQuiver: {
+				DisplayName: Endless Holy Quiver
+				Tooltip: Summons falling stars on impact
+			}
+
+			HoneyRocketBox: {
+				Tooltip: ""
+				DisplayName: Endless Honey Rocket Box
+			}
+
+			IchorPouch: {
+				DisplayName: Endless Ichor Pouch
+				Tooltip: Decreases target's defense
+			}
+
+			IchorQuiver: {
+				DisplayName: Endless Ichor Quiver
+				Tooltip: Decreases target's defense
+			}
+
+			InstaBridge: {
+				DisplayName: Instabridge
+				Tooltip:
+				'''
+				Creates a bridge of platforms across the whole world
+				Also clears the area right above the platforms
+				The bridge appears at your cursor
+				Avoids breaking areas denoted as important
+				Right Click to clear the area without placing a bridge
+				Use at your own risk
+				'''
+			}
+
+			InstaPond: {
+				DisplayName: Instalake
+				Tooltip:
+				'''
+				Drops a bomb that creates a 150x50 body of water below it
+				Avoids breaking areas denoted as important
+				Use at your own risk
+				'''
+			}
+
+			InstaTrack: {
+				DisplayName: Instatrack
+				Tooltip:
+				'''
+				Creates a minecart track across the whole world
+				Also clears the area right above the tracks
+				The track appears at your cursor
+				Avoids breaking areas denoted as important
+				Use at your own risk
+				'''
+			}
+
+			InstantResearch: {
+				DisplayName: Instant Research
+				Tooltip:
+				'''
+				DEBUG ITEM
+				Researches everything
+				'''
+				ResearchText: researched {0
+			}
+
+			Instavator: {
+				DisplayName: Instavator
+				Tooltip: Drops a bomb that creates a hellevator instantly
+				Do not use if any important building is below
+			}
+
+			JesterQuiver: {
+				DisplayName: Endless Jester's Quiver
+				Tooltip: ""
+			}
+
+			KohaCrystal: {
+				DisplayName: Koha Crystal
+				Tooltip: Decreases the amount of Mana Crystals you have by 1
+			}
+
+			LavaRocketBox: {
+				DisplayName: Endless Lava Rocket Box
+				Tooltip: ""
+			}
+
+			LihzahrdInstactuationBomb: {
+				DisplayName: Lihzahrd Instactuation Bomb
+				Tooltip:
+				'''
+				Clears a space around the Lihzahrd Altar when used while standing in front of it
+				Actuates Lihzahrd Brick and destroys others
+				Only works in the Jungle Temple and after Plantera is defeated
+				'''
+			}
+
+			LihzahrdPowerCell2: {
+				DisplayName: Lihzahrd Battery Pack
+				Tooltip: Summons the Golem without an altar
+			}
+
+			LumberHat: {
+				DisplayName: Lumberjack's Hat
+				Tooltip: ""
+			}
+
+			LumberjackBody: {
+				DisplayName: Lumberjack Body
+				Tooltip: ""
+			}
+
+			LumberjackMask: {
+				DisplayName: Lumberjack Mask
+				Tooltip: ""
+			}
+
+			LumberjackPants: {
+				DisplayName: Lumberjack Pants
+				Tooltip: ""
+			}
+
+			LuminitePouch: {
+				DisplayName: Endless Luminite Pouch
+				Tooltip: "'Line 'em up and knock 'em down...'"
+			}
+
+			LuminiteQuiver: {
+				DisplayName: Endless Luminite Quiver
+				Tooltip: "'Shooting them down at the speed of sound!'"
+			}
+
+			MapViewer: {
+				DisplayName: The Ancient Master's Map of the Lost King's Great Ancestors
+				Tooltip: Reveals the map
+			}
+
+			MechEye: {
+				DisplayName: Some Kind of Metallic Eye
+				Tooltip: Summons the Twins
+			}
+
+			MechSkull: {
+				DisplayName: Some Kind of Metallic Skull
+				Tooltip: Summons Skeletron Prime
+			}
+
+			MechWorm: {
+				DisplayName: Some Kind of Metallic Worm
+				Tooltip: Summons the Destroyer
+			}
+
+			MeteorPouch: {
+				DisplayName: Endless Meteor Pouch
+				Tooltip: ""
+			}
+
+			MiniDirtInstaBridge: {
+				DisplayName: Mini Dirt Instabridge
+				Tooltip:
+				'''
+				Creates a small bridge of dirt at your cursor
+				Will not break any blocks
+				'''
+			}
+
+			MiniInstaBridge: {
+				DisplayName: Mini Instabridge
+				Tooltip:
+				'''
+				Creates a long bridge of platforms at your cursor
+				Will not break any blocks
+				'''
+			}
+
+			MiniNuke1Box: {
+				DisplayName: Endless Mini Nuke I Box
+				Tooltip: ""
+			}
+
+			MiniNuke2Box: {
+				DisplayName: Endless Mini Nuke II Box
+				Tooltip: ""
+			}
+
+			MushroomRenewal: {
+				DisplayName: Mushroom Renewal
+				Tooltip: Shroomifies a large radius
+			}
+
+			MushroomRenewalSupreme: {
+				DisplayName: Mushroom Renewal Supreme
+				Tooltip: Shroomifies the entire world
+			}
+
+			MutantBody: {
+				DisplayName: Mutant Body
+				Tooltip: ""
+			}
+
+			MutantMask: {
+				DisplayName: Mutant Mask
+				Tooltip: ""
+			}
+
+			MutantPants: {
+				DisplayName: Mutant Pants
+				Tooltip: ""
+			}
+
+			NanoPouch: {
+				DisplayName: Endless Nano Pouch
+				Tooltip: Causes confusion
+			}
+
+			ObsidianInstaBridge: {
+				DisplayName: Obsidian Instabridge
+				Tooltip:
+				'''
+				Creates a bridge of obsidian platforms across the whole world
+				Also clears the area right above the platforms
+				The bridge appears at your cursor
+				Avoids breaking areas denoted as important
+				Use at your own risk
+				'''
+			}
+
+			OmniBridgifier: {
+				DisplayName: Omni-Bridgifier
+				Tooltip:
+				'''
+				Can be reused infinitely
+				Upgrades the platform you are standing on to use Omnistations
+				Does NOT build a platform!
+				'''
+			}
+
+			PartyPouch: {
+				DisplayName: Endless Party Pouch
+				Tooltip: Explodes into confetti on impact
+			}
+
+			PortableSundial: {
+				DisplayName: Portable Sundial
+				Tooltip:
+				'''
+				Left click to instantly change time
+				Time cycles between dawn, noon, dusk, and midnight
+				Right click to activate the Enchanted Sundial effect
+				Slower use speed when a boss is alive
+				Cycling to dawn will reset travelling merchant's shops
+				'''
+			}
+
+			PurityRenewal: {
+				DisplayName: Purity Renewal
+				Tooltip: Cleanses a large radius
+			}
+
+			PurityRenewalSupreme: {
+				DisplayName: Purity Renewal Supreme
+				Tooltip: Cleanses the entire world
+			}
+
+			PylonCleaner: {
+				DisplayName: Pylon Cleaner
+				Tooltip:
+				'''
+				Purifies the area around every pylon
+				Will use Blue Solution on Hallow Pylon and Green Solution on others
+				'''
+			}
+
+			Rocket1Box: {
+				DisplayName: Endless Rocket I Box
+				Tooltip: ""
+			}
+
+			Rocket2Box: {
+				DisplayName: Endless Rocket II Box
+				Tooltip: ""
+			}
+
+			Rocket3Box: {
+				DisplayName: Endless Rocket III Box
+				Tooltip: ""
+			}
+
+			Rocket4Box: {
+				DisplayName: Endless Rocket IV Box
+				Tooltip: ""
+			}
+
+			SandRenewal: {
+				DisplayName: Desert Renewal
+				Tooltip: Sands a large radius
+			}
+
+			SandRenewalSupreme: {
+				DisplayName: Desert Renewal Supreme
+				Tooltip: Sands the entire world
+			}
+
+			SilverPouch: {
+				DisplayName: Endless Silver Pouch
+				Tooltip: ""
+			}
+
+			SlimyCrown: {
+				DisplayName: Slimy Decree
+				Tooltip: Summons King Slime
+			}
+
+			SnowRenewal: {
+				DisplayName: Snow Renewal
+				Tooltip: Snows a large radius
+			}
+
+			SnowRenewalSupreme: {
+				DisplayName: Snow Renewal Supreme
+				Tooltip: Snows the entire world
+			}
+
+			StarPouch: {
+				DisplayName: Endless Star Pouch
+				Tooltip: ""
+			}
+
+			SuspiciousEye: {
+				DisplayName: Suspicious Looking Eyedrops
+				Tooltip: Summons the Eye of Cthulhu
+			}
+
+			TruffleWorm2: {
+				DisplayName: Concentrated Truffle Worm Oil
+				Tooltip: Summons Duke Fishron without fishing
+			}
+
+			TungstenPouch: {
+				DisplayName: Endless Tungsten Pouch
+				Tooltip: ""
+			}
+
+			UnholyQuiver: {
+				DisplayName: Endless Unholy Quiver
+				Tooltip: ""
+			}
+
+			VelocityPouch: {
+				DisplayName: Endless High Velocity Pouch
+				Tooltip: ""
+			}
+
+			VenomPouch: {
+				DisplayName: Endless Venom Pouch
+				Tooltip: Inflicts target with venom
+			}
+
+			VenomQuiver: {
+				DisplayName: Endless Venom Quiver
+				Tooltip: ""
+			}
+
+			WetRocketBox: {
+				DisplayName: Endless Wet Rocket Box
+				Tooltip: ""
+			}
+
+			WormyFood: {
+				DisplayName: Rotting Bait
+				Tooltip: Summons the Eater of Worlds in any biome
+			}
+
+		}
+	}
+}

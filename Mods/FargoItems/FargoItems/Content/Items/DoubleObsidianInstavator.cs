@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using FargoItems.Content.Logic;
 using FargoItems.Content.Systems;
 using Microsoft.Xna.Framework;
@@ -55,14 +55,6 @@ namespace FargoItems.Content.Items
                 Vector2 target = Main.MouseWorld;
                 if (InstavatorShaftBuilder.TryStartDoubleObsidianInstavator(player, target))
                 {
-                    if (Item.consumable)
-                    {
-                        Item.stack--;
-                        if (Item.stack <= 0)
-                        {
-                            Item.TurnToAir();
-                        }
-                    }
                     return true;
                 }
                 return false;
@@ -81,14 +73,14 @@ namespace FargoItems.Content.Items
             int singleInstavatorId = ModContent.ItemType<Instavator>();
             if (singleInstavatorId > 0)
             {
-                CreateRecipe(1)
+                ModRecipe.Create(Type, 1)
                     .AddIngredient(singleInstavatorId, 2)
                     .AddTile(TileID.Anvils)
                     .Register();
             }
 
             // 合成配方 2: 原材料直接合成
-            CreateRecipe(1)
+            ModRecipe.Create(Type, 1)
                 .AddIngredient(ItemID.Dynamite, 100)
                 .AddIngredient(ItemID.ObsidianSkinPotion, 20)
                 .AddIngredient(ItemID.Torch, 198)

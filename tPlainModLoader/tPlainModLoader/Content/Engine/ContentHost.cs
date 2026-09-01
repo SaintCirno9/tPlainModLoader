@@ -27,6 +27,8 @@ namespace TPML.Content
             if (_initialized) return;
             MonoModHooks.Initialize();
             ContentHookDispatcher.Initialize();
+            PlayerLoader.InitializeHooks();
+            ProjectileLoader.InitializeHooks();
             _initialized = true;
         }
 

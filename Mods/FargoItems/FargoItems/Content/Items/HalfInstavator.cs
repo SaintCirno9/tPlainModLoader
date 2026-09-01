@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using FargoItems.Content.Logic;
 using FargoItems.Content.Systems;
 using Microsoft.Xna.Framework;
@@ -55,14 +55,6 @@ namespace FargoItems.Content.Items
                 Vector2 target = Main.MouseWorld;
                 if (InstavatorShaftBuilder.TryStartHalfInstavator(player, target))
                 {
-                    if (Item.consumable)
-                    {
-                        Item.stack--;
-                        if (Item.stack <= 0)
-                        {
-                            Item.TurnToAir();
-                        }
-                    }
                     return true;
                 }
                 return false;
@@ -77,7 +69,7 @@ namespace FargoItems.Content.Items
 
         public override void AddRecipes()
         {
-            CreateRecipe(1)
+            ModRecipe.Create(Type, 1)
                 .AddIngredient(ItemID.Dynamite, 25)
                 .AddIngredient(ItemID.ObsidianSkinPotion, 5)
                 .AddIngredient(ItemID.Torch, 50)

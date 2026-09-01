@@ -136,6 +136,34 @@ namespace TPML.Content
     public static class ModPlayerExtensions
     {
         private static readonly Dictionary<Player, Dictionary<Type, ModPlayer>> _playerMods = new Dictionary<Player, Dictionary<Type, ModPlayer>>();
+        private static readonly Dictionary<Player, List<ModPlayer>> _playerModList = new Dictionary<Player, List<ModPlayer>>();
+
+        public static bool TryGetActiveModPlayers(this Player player, out List<ModPlayer> list)
+        {
+            list = null;
+            if (player == null) return false;
+            return _playerModList.TryGetValue(player, out list);
+        }
+
+        private static void CacheInstance(Player player, Type type, ModPlayer instance)
+        {
+            if (!_playerMods.TryGetValue(player, out var map))
+            {
+                map = new Dictionary<Type, ModPlayer>();
+                _playerMods[player] = map;
+            }
+            map[type] = instance;
+
+            if (!_playerModList.TryGetValue(player, out var list))
+            {
+                list = new List<ModPlayer>();
+                _playerModList[player] = list;
+            }
+            if (!list.Contains(instance))
+            {
+                list.Add(instance);
+            }
+        }
 
         /// <summary>
         /// 对齐 tML <c>Player.TryGetModPlayer</c>：只查询已绑定实例，失败返回 false，不兜底实例化。
@@ -154,13 +182,7 @@ namespace TPML.Content
         {
             if (player == null) return null;
 
-            if (!_playerMods.TryGetValue(player, out var map))
-            {
-                map = new Dictionary<Type, ModPlayer>();
-                _playerMods[player] = map;
-            }
-
-            if (map.TryGetValue(typeof(T), out var existing))
+            if (_playerMods.TryGetValue(player, out var map) && map.TryGetValue(typeof(T), out var existing))
             {
                 return (T)existing;
             }
@@ -174,7 +196,7 @@ namespace TPML.Content
                     instance.Player = player;
                     instance.Mod = match.Mod;
                     instance.Initialize();
-                    map[typeof(T)] = instance;
+                    CacheInstance(player, typeof(T), instance);
                     return instance;
                 }
             }
@@ -185,7 +207,7 @@ namespace TPML.Content
                 var instance = (T)Activator.CreateInstance(typeof(T), true);
                 instance.Player = player;
                 instance.Initialize();
-                map[typeof(T)] = instance;
+                CacheInstance(player, typeof(T), instance);
                 return instance;
             }
             catch { }
@@ -197,13 +219,7 @@ namespace TPML.Content
         {
             if (player == null || type == null) return null;
 
-            if (!_playerMods.TryGetValue(player, out var map))
-            {
-                map = new Dictionary<Type, ModPlayer>();
-                _playerMods[player] = map;
-            }
-
-            if (map.TryGetValue(type, out var existing))
+            if (_playerMods.TryGetValue(player, out var map) && map.TryGetValue(type, out var existing))
             {
                 return existing;
             }
@@ -216,7 +232,7 @@ namespace TPML.Content
                     instance.Player = player;
                     instance.Mod = mp.Mod;
                     instance.Initialize();
-                    map[type] = instance;
+                    CacheInstance(player, type, instance);
                     return instance;
                 }
             }
@@ -226,7 +242,7 @@ namespace TPML.Content
                 var instance = (ModPlayer)Activator.CreateInstance(type, true);
                 instance.Player = player;
                 instance.Initialize();
-                map[type] = instance;
+                CacheInstance(player, type, instance);
                 return instance;
             }
             catch { }
@@ -237,6 +253,7 @@ namespace TPML.Content
         internal static void ClearInstances()
         {
             _playerMods.Clear();
+            _playerModList.Clear();
         }
 
         public static IEntitySource GetSource_Misc(this Entity entity, string context)

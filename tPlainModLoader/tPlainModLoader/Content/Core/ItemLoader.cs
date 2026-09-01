@@ -615,18 +615,53 @@ namespace TPML.Content
         public static bool? UseItem(Item item, Player player)
         {
             if (item == null || item.IsAir) return null;
+            bool? result = null;
+
             ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
             if (modItem != null)
             {
-                modItem.UseItem(player);
+                result = modItem.UseItem(player);
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
             {
-                gItem.UseItem(item, player);
+                bool? gResult = gItem.UseItem(item, player);
+                if (gResult.HasValue)
+                {
+                    result = result ?? gResult;
+                }
             }
 
-            return null;
+            if (result == true && item.consumable && ConsumeItem(item, player))
+            {
+                item.stack--;
+                if (item.stack <= 0)
+                {
+                    item.TurnToAir();
+                }
+            }
+
+            return result;
+        }
+
+        public static bool ConsumeItem(Item item, Player player)
+        {
+            if (item == null || item.IsAir) return true;
+
+            ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
+            if (modItem != null)
+            {
+                if (!modItem.ConsumeItem(player))
+                    return false;
+            }
+
+            foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
+            {
+                if (!gItem.ConsumeItem(item, player))
+                    return false;
+            }
+
+            return true;
         }
 
         public static void HoldItem(Item item, Player player)

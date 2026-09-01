@@ -40,7 +40,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\**\*.png" />
     <EmbeddedResource Include="Resources\*.png" />
+    <EmbeddedResource Include="Content\**\*.png" />
+    <EmbeddedResource Include="Localization\*.hjson" />
   </ItemGroup>
 
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\FargoItems 文件夹 -->

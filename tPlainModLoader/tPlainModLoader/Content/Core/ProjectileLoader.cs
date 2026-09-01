@@ -35,9 +35,82 @@ namespace TPML.Content
         public static int NextProjID => _nextProjID;
         public static IReadOnlyCollection<ModProjectile> Projectiles => _projsByType.Values;
 
+        private static bool _hooksInitialized = false;
+
+        public static void InitializeHooks()
+        {
+            if (_hooksInitialized) return;
+
+            On_Projectile.SetDefaults += Hook_SetDefaults;
+            On_Projectile.AI += Hook_AI;
+            On_Projectile.Kill += Hook_Kill;
+
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_SetDefaults(On_Projectile.orig_SetDefaults orig, Projectile self, int Type)
+        {
+            orig(self, Type);
+            if (Type >= ModProjectileOffset)
+            {
+                SetDefaults(self);
+            }
+            else
+            {
+                _modProjInstances.Remove(self);
+            }
+        }
+
+        private static void Hook_AI(On_Projectile.orig_AI orig, Projectile self)
+        {
+            ModProjectile modProj = GetModProjectile(self);
+            if (modProj != null)
+            {
+                if (modProj.PreAI())
+                {
+                    int savedType = self.type;
+                    orig(self);
+                    if (self.type != savedType && savedType >= ModProjectileOffset)
+                    {
+                        self.type = savedType;
+                    }
+                    modProj.AI();
+                }
+                modProj.PostAI();
+                return;
+            }
+            orig(self);
+        }
+
+        private static void Hook_Kill(On_Projectile.orig_Kill orig, Projectile self)
+        {
+            if (self != null)
+            {
+                ModProjectile modProj = GetModProjectile(self);
+                if (modProj != null)
+                {
+                    try
+                    {
+                        modProj.OnKill(self.timeLeft);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLoader.Log($"[ProjectileLoader] {modProj.Name}.OnKill 异常: {ex}");
+                    }
+                    finally
+                    {
+                        _modProjInstances.Remove(self);
+                    }
+                }
+            }
+            orig(self);
+        }
+
         public static int Register(ModProjectile proj)
         {
             if (proj == null) return 0;
+
+            InitializeHooks();
 
             int type = _nextProjID++;
             proj.SetType(type);
@@ -208,16 +281,21 @@ namespace TPML.Content
 
         public static ModProjectile GetModProjectile(Projectile proj)
         {
-            if (proj == null || proj.type < ProjectileID.Count) return null;
+            if (proj == null) return null;
             if (_modProjInstances.TryGetValue(proj, out ModProjectile instance))
             {
-                return instance;
+                if (instance.Type == proj.type || proj.type >= ModProjectileOffset)
+                {
+                    return instance;
+                }
+                _modProjInstances.Remove(proj);
             }
-            if (_projsByType.TryGetValue(proj.type, out ModProjectile template))
+            if (proj.type >= ModProjectileOffset && _projsByType.TryGetValue(proj.type, out ModProjectile template))
             {
                 ModProjectile newInst = template.Clone(proj);
                 newInst.Projectile = proj;
                 newInst.SetType(proj.type);
+                _modProjInstances.Remove(proj);
                 _modProjInstances.Add(proj, newInst);
                 return newInst;
             }

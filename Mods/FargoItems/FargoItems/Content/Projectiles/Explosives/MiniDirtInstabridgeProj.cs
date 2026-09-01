@@ -1,0 +1,90 @@
+using FargoItems.Content.Items.Explosives;
+
+using Microsoft.Xna.Framework;
+using System.Linq;
+using Terraria;
+using Terraria.Audio;
+using Terraria.ID;
+using TPML.Content;
+
+namespace FargoItems.Content.Projectiles.Explosives
+{
+    public class MiniDirtInstabridgeProj : ModProjectile
+    {
+        public override void SetStaticDefaults()
+        {
+            // DisplayName.SetDefault("Mini Instabridge");
+        }
+
+        public override void SetDefaults()
+        {
+            Projectile.width = 20;
+            Projectile.height = 36;
+            Projectile.aiStyle = 16;
+            Projectile.friendly = true;
+            Projectile.penetrate = -1;
+            Projectile.timeLeft = 1;
+        }
+
+        public override bool? CanDamage()
+        {
+            return false;
+        }
+
+        public override void OnKill(int timeLeft)
+        {
+            Vector2 position = Projectile.Center;
+            SoundEngine.PlaySound(SoundID.Item14, position);
+
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+            {
+                return;
+            }
+
+            var logger = TPML.Core.Logging.LogManager.GetLogger("MiniDirtBridge");
+            // All the way across
+            const int length = 150;
+            bool goLeft = Projectile.Center.X < Main.player[Projectile.owner].Center.X;
+            int min = goLeft ? -length : 0;
+            int max = goLeft ? 0 : length;
+
+            logger.Info($"[MiniDirtBridge] 触发 OnKill, 坐标: ({position.X:F1}, {position.Y:F1}) [图格: {(int)(position.X / 16f)}, {(int)(position.Y / 16f)}], 方向: {(goLeft ? "左" : "右")}, 长度: {length}");
+
+            int[] deletableTiles = [ 
+                TileID.Cactus,
+                TileID.Trees,
+                TileID.CorruptThorns,
+                TileID.CrimsonThorns,
+                TileID.JungleThorns
+            ];
+
+            for (int x = min; x < max; x++)
+            {
+                int xPosition = (int)(x + position.X / 16.0f);
+                int yPosition = (int)(position.Y / 16.0f);
+
+                if (xPosition < 0 || xPosition >= Main.maxTilesX || yPosition < 0 || yPosition >= Main.maxTilesY)
+                    continue;
+
+                Tile tile = Main.tile[xPosition, yPosition];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                if (deletableTiles.Contains(tile.type))
+                {
+                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
+                }
+
+                // Spawn dirt blocks
+                WorldGen.PlaceTile(xPosition, yPosition, TileID.Dirt, forced: true);
+                WorldGen.SquareTileFrame(xPosition, yPosition, true);
+
+                if (Main.netMode == NetmodeID.Server)
+                    NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
+            }
+            logger.Info("[MiniDirtBridge] ★ 泥土平台生成完毕！");
+        }
+    }
+}
