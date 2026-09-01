@@ -126,7 +126,7 @@ namespace tContentPatch.ModLoad
 
                 loadedMod = null;
                 modLoader.Unload();
-                Input.KeybindLoader.Unload();
+                TPML.Content.KeybindLoader.Unload();
 
                 Logger.Info("卸载模组完成");
                 ContentPatch.PrintTry("卸载完成");

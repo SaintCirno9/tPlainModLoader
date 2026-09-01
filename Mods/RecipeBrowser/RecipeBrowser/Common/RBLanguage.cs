@@ -272,11 +272,18 @@ namespace RecipeBrowser.Common
             }
 
             // 尝试直接从原版 Language 获取
-            string vanillaVal = Language.GetTextValue(fullKey, args);
-            if (!string.IsNullOrEmpty(vanillaVal) && vanillaVal != fullKey)
+            try
             {
-                return vanillaVal;
+                if (Language.Exists(fullKey))
+                {
+                    if (args != null && args.Length > 0)
+                    {
+                        return Language.GetTextValue(fullKey, args);
+                    }
+                    return Language.GetTextValue(fullKey);
+                }
             }
+            catch { }
 
             return key;
         }

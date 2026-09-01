@@ -1,0 +1,57 @@
+using System.ComponentModel;
+using System.Runtime.Serialization;
+using Terraria;
+using TPML.Content;
+
+namespace Fargowiltas.Common.Configs
+{
+    public sealed class FargoClientConfig : ModConfig
+    {
+        public static FargoClientConfig Instance = new FargoClientConfig();
+        public override void OnLoaded()
+        {
+            Instance = this;
+        }
+        public override ConfigScope Mode => ConfigScope.ClientSide;
+
+        [DefaultValue(true)]
+        public bool ExpandedTooltips;
+
+        [DefaultValue(true)]
+        public bool ExactTooltips;
+
+        [DefaultValue(true)]
+        public bool AnimatedRecipeGroups;
+
+        [DefaultValue(false)]
+        public bool HideUnlimitedBuffs;
+
+        [DefaultValue(false)]
+        public bool DoubleTapDashDisabled;
+
+        [DefaultValue(false)]
+        public bool DoubleTapSetBonusDisabled;
+
+        [DefaultValue(true)]
+        public bool MultiplayerDeathSpectate;
+
+        [DefaultValue(1f)]
+        [Slider]
+        public float TransparentFriendlyProjectiles;
+
+        [DefaultValue(0.75f)]
+        [Slider]
+        public float DebuffOpacity;
+
+        [DefaultValue(0.75f)]
+        [Slider]
+        public float DebuffFaderRatio;
+        
+
+        [OnDeserialized]
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
+            TransparentFriendlyProjectiles = Utils.Clamp(TransparentFriendlyProjectiles, 0f, 1f);
+        }
+    }
+}

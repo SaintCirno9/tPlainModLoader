@@ -55,5 +55,22 @@ namespace TPML.Content
             long coinsBank4 = Utils.CoinsCount(out overFlowing, player.bank4.item);
             return Utils.CoinsCombineStacks(out overFlowing, coinsInv, coinsBank, coinsBank2, coinsBank3, coinsBank4) >= price;
         }
+
+        public static Terraria.DataStructures.IEntitySource GetSource_OpenItem(this Player player, int itemType) => new EntitySource_Misc("OpenItem");
+        public static Terraria.DataStructures.IEntitySource GetSource_ItemUse(this Player player, Item item) => new Terraria.DataStructures.EntitySource_ItemUse(player, item);
+        public static Terraria.DataStructures.IEntitySource GetSource_ItemUse(this Player player, int itemType) => new EntitySource_Misc("ItemUse");
+        public static Terraria.DataStructures.IEntitySource GetSource_FromThis(this Player player, string context = null) => new EntitySource_Misc(context ?? "Player");
+        public static Terraria.DataStructures.IEntitySource GetSource_Misc(this Player player, string context) => new EntitySource_Misc(context);
+        public static Terraria.DataStructures.IEntitySource GetSource_Buff(this Player player, int buffIndex) => new EntitySource_Misc("Buff");
+        public static int equippedWings(this Player player) => player.wings;
+
+        public static StatModifier GetDamage(this Player player, DamageClass damageClass) => StatModifier.Default;
+        public static StatModifier GetTotalDamage(this Player player, DamageClass damageClass) => StatModifier.Default;
+        public static float GetTotalCritChance(this Player player, DamageClass damageClass) => player.GetCritChance(damageClass);
+        public static float GetCritChance(this Player player, DamageClass damageClass) => 4f;
+        public static float GetAttackSpeed(this Player player, DamageClass damageClass) => 1f;
+
+        public static ExtraJumpState GetJumpState<T>(this Player player) where T : ExtraJump => default;
+        public static ExtraJumpState GetJumpState(this Player player, ExtraJump jump) => default;
     }
 }

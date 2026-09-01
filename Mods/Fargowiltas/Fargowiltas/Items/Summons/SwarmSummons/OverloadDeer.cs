@@ -1,0 +1,29 @@
+using Fargowiltas.NPCs;
+using Microsoft.Xna.Framework;
+using Terraria;
+using Terraria.ID;
+using Terraria.Localization;
+using TPML.Content;
+
+namespace Fargowiltas.Items.Summons.SwarmSummons
+{
+    public class OverloadDeer : SwarmSummonBase
+    {
+        public OverloadDeer() : base(NPCID.Deerclops, nameof(OverloadDeer), 50, "DeerThing2")
+        {
+        }
+
+        public override void SetStaticDefaults()
+        {
+			// DisplayName.SetDefault("Deer Amalgamation");
+			// Tooltip.SetDefault("Summons several Deerclops\nOnly Treasure Bags will be dropped");
+
+			FargoSets.Items.SortingPriorityBossSpawns[Type] = FargoSets.Items.SortingPriorityBossSpawns[ItemID.DeerThing]; // 5
+		}
+
+        public override bool CanUseItem(Player player)
+        {
+            return !Fargowiltas.SwarmActive;
+        }
+    }
+}

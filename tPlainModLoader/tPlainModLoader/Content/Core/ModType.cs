@@ -17,12 +17,20 @@ namespace TPML.Content
         {
             Mod = mod;
             Load();
+            OnLoaded();
         }
 
         /// <summary>
         /// 无参加载生命周期，方便 tML 风格子类覆写
         /// </summary>
         public virtual void Load()
+        {
+        }
+
+        /// <summary>
+        /// 模组加载完毕后触发（对齐 tML OnLoaded）
+        /// </summary>
+        public virtual void OnLoaded()
         {
         }
 

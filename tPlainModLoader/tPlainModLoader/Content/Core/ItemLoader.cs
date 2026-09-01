@@ -58,6 +58,7 @@ namespace TPML.Content
 
             try
             {
+                ResolveItemLocalization(item);
                 Item sample = new Item();
                 sample.type = type;
                 SetDefaults(sample);
@@ -186,11 +187,25 @@ namespace TPML.Content
                 {
                     EnsureArraySizes(id);
                 }
-                if (Lang._itemTooltipCache != null && id < Lang._itemTooltipCache.Length && Lang._itemTooltipCache[id] != null)
+                if (Lang._itemTooltipCache != null && id < Lang._itemTooltipCache.Length && Lang._itemTooltipCache[id] != null && Lang._itemTooltipCache[id] != ItemTooltip.None)
                 {
                     return Lang._itemTooltipCache[id];
                 }
-                return ItemTooltip.None;
+                if (id >= ModItemOffset)
+                {
+                    string tooltip = GetTooltip(id);
+                    if (!string.IsNullOrEmpty(tooltip))
+                    {
+                        string[] lines = tooltip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        var tipObj = ItemTooltip.FromHardcodedText(lines);
+                        if (Lang._itemTooltipCache != null && id < Lang._itemTooltipCache.Length)
+                        {
+                            Lang._itemTooltipCache[id] = tipObj;
+                        }
+                        return tipObj;
+                    }
+                }
+                return orig(id);
             };
 
             On_Lang.GetItemName += (orig, id) =>
@@ -347,6 +362,68 @@ namespace TPML.Content
             return item;
         }
 
+        public static void ResolveItemLocalization(ModItem item)
+        {
+            if (item == null) return;
+            int type = item.Type;
+            string modName = item.Mod?.Name ?? "Fargowiltas";
+            string itemName = item.Name;
+
+            string displayName = null;
+            string[] nameKeys = new[]
+            {
+                $"Mods.{modName}.Items.{itemName}.DisplayName",
+                $"Mods.{modName}.ItemName.{itemName}",
+                $"ItemName.{type}",
+                $"Mods.{modName}.{itemName}"
+            };
+
+            foreach (var key in nameKeys)
+            {
+                if (Language.Exists(key))
+                {
+                    string val = Language.GetTextValue(key);
+                    if (!string.IsNullOrEmpty(val) && val != key)
+                    {
+                        displayName = val;
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = System.Text.RegularExpressions.Regex.Replace(itemName, "([a-z])([A-Z])", "$1 $2");
+            }
+            SetDisplayName(type, displayName);
+
+            string tooltip = null;
+            string[] tipKeys = new[]
+            {
+                $"Mods.{modName}.Items.{itemName}.Tooltip",
+                $"Mods.{modName}.ItemTooltip.{itemName}",
+                $"ItemTooltip.{type}"
+            };
+
+            foreach (var key in tipKeys)
+            {
+                if (Language.Exists(key))
+                {
+                    string val = Language.GetTextValue(key);
+                    if (!string.IsNullOrEmpty(val) && val != key)
+                    {
+                        tooltip = val;
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                SetTooltip(type, tooltip);
+            }
+        }
+
         public static void SetDisplayName(int type, string name)
         {
             _displayNames[type] = name;
@@ -357,7 +434,22 @@ namespace TPML.Content
             }
         }
 
-        public static string GetDisplayName(int type) => _displayNames.TryGetValue(type, out string name) ? name : string.Empty;
+        public static string GetDisplayName(int type)
+        {
+            if (_displayNames.TryGetValue(type, out string name) && !string.IsNullOrEmpty(name))
+            {
+                return name;
+            }
+            if (_itemsByType.TryGetValue(type, out ModItem item))
+            {
+                ResolveItemLocalization(item);
+                if (_displayNames.TryGetValue(type, out string resolvedName))
+                {
+                    return resolvedName;
+                }
+            }
+            return string.Empty;
+        }
 
         public static void SetTooltip(int type, string tooltip)
         {
@@ -377,7 +469,22 @@ namespace TPML.Content
             }
         }
 
-        public static string GetTooltip(int type) => _tooltips.TryGetValue(type, out string tip) ? tip : string.Empty;
+        public static string GetTooltip(int type)
+        {
+            if (_tooltips.TryGetValue(type, out string tip) && !string.IsNullOrEmpty(tip))
+            {
+                return tip;
+            }
+            if (_itemsByType.TryGetValue(type, out ModItem item))
+            {
+                ResolveItemLocalization(item);
+                if (_tooltips.TryGetValue(type, out string resolvedTip))
+                {
+                    return resolvedTip;
+                }
+            }
+            return string.Empty;
+        }
 
         public static void EnsureTextureLoaded(int type)
         {
@@ -494,14 +601,12 @@ namespace TPML.Content
             ModItem modItem = GetModItem(item) ?? GetModItem(item.type);
             if (modItem != null)
             {
-                bool? canUse = modItem.CanUseItem(player);
-                if (canUse == false) return false;
+                if (!modItem.CanUseItem(player)) return false;
             }
 
             foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
             {
-                bool? gCanUse = gItem.CanUseItem(item, player);
-                if (gCanUse == false) return false;
+                if (!gItem.CanUseItem(item, player)) return false;
             }
 
             return null;

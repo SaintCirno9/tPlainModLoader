@@ -53,6 +53,21 @@ namespace TPML.Content
             if (type != null) _itemTypes[type] = id;
         }
 
+        public static void RegisterNPCType(Type type, int id)
+        {
+            if (type != null) _npcTypes[type] = id;
+        }
+
+        public static void RegisterProjectileType(Type type, int id)
+        {
+            if (type != null) _projTypes[type] = id;
+        }
+
+        public static void RegisterBuffType(Type type, int id)
+        {
+            if (type != null) _buffTypes[type] = id;
+        }
+
         public static void RegisterTileType(Type type, int id)
         {
             if (type != null) _tileTypes[type] = id;
@@ -123,10 +138,20 @@ namespace TPML.Content
             return false;
         }
 
+        public static bool TryFind<T>(string modName, string name, out T value) where T : class
+        {
+            return TryFind<T>($"{modName}/{name}", out value);
+        }
+
         public static T Find<T>(string fullName) where T : class
         {
             if (TryFind<T>(fullName, out T val)) return val;
             throw new KeyNotFoundException($"未找到内容: {fullName}");
+        }
+
+        public static T Find<T>(string modName, string name) where T : class
+        {
+            return Find<T>($"{modName}/{name}");
         }
 
         public static int ItemType<T>() where T : ModItem
@@ -156,6 +181,92 @@ namespace TPML.Content
         public static int ItemType(string modName, string itemName) => ItemLoader.ItemType(modName, itemName);
         public static int ItemType(string fullName) => ItemLoader.ItemType(fullName);
         public static ModItem GetModItem(int type) => ItemLoader.GetModItem(type);
+
+        public static int NPCType<T>() where T : ModNPC
+        {
+            if (_npcTypes.TryGetValue(typeof(T), out int id))
+                return id;
+
+            foreach (var kvp in _npcTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _npcTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
+
+            var instance = GetInstance<T>();
+            if (instance != null)
+            {
+                _npcTypes[typeof(T)] = instance.Type;
+                return instance.Type;
+            }
+
+            return 0;
+        }
+
+        public static int NPCType(string modName, string npcName) => NPCLoader.NPCType(modName, npcName);
+        public static int NPCType(string fullName) => NPCLoader.NPCType(fullName);
+        public static ModNPC GetModNPC(int type) => NPCLoader.GetModNPC(type);
+
+        public static int ProjectileType<T>() where T : ModProjectile
+        {
+            if (_projTypes.TryGetValue(typeof(T), out int id))
+                return id;
+
+            foreach (var kvp in _projTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _projTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
+
+            var instance = GetInstance<T>();
+            if (instance != null)
+            {
+                _projTypes[typeof(T)] = instance.Type;
+                return instance.Type;
+            }
+
+            return 0;
+        }
+
+        public static int ProjectileType(string modName, string projName) => ProjectileLoader.ProjectileType(modName, projName);
+        public static int ProjectileType(string fullName) => ProjectileLoader.ProjectileType(fullName);
+        public static ModProjectile GetModProjectile(int type) => ProjectileLoader.GetModProjectile(type);
+
+        public static int BuffType<T>() where T : ModBuff
+        {
+            if (_buffTypes.TryGetValue(typeof(T), out int id))
+                return id;
+
+            foreach (var kvp in _buffTypes)
+            {
+                if (kvp.Key.FullName == typeof(T).FullName || kvp.Key.Name == typeof(T).Name)
+                {
+                    _buffTypes[typeof(T)] = kvp.Value;
+                    return kvp.Value;
+                }
+            }
+
+            var instance = GetInstance<T>();
+            if (instance != null)
+            {
+                _buffTypes[typeof(T)] = instance.Type;
+                return instance.Type;
+            }
+
+            return 0;
+        }
+
+        public static int BuffType(string modName, string buffName) => BuffLoader.BuffType(modName, buffName);
+        public static int BuffType(string fullName) => BuffLoader.BuffType(fullName);
+        public static ModBuff GetModBuff(int type) => BuffLoader.GetBuff(type);
+
+        public static int GetModHeadSlot(string headTexture) => NPCLoader.GetHeadSlot(headTexture);
 
         public static int TileType<T>() where T : ModTile
         {

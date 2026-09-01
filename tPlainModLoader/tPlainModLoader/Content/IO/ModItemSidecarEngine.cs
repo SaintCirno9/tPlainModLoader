@@ -762,7 +762,7 @@ namespace TPML.Content.IO
                         }
                         catch (Exception ex)
                         {
-                            ModLoader.Log($"[Sidecar] 反序列化物品自定义数据异常: {ex.Message}");
+                            ModLoader.Log($"[Sidecar] 反序列化物品 [{item?.Name ?? "null"}] (Type={type}) 自定义数据异常: {ex}");
                         }
                     }
 

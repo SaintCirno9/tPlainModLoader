@@ -51,6 +51,26 @@ namespace TPML.Content
         {
         }
 
+        public virtual void PreWorldGen()
+        {
+        }
+
+        public virtual void NetReceive(System.IO.BinaryReader reader)
+        {
+        }
+
+        public virtual void NetSend(System.IO.BinaryWriter writer)
+        {
+        }
+
+        public virtual void TileCountsAvailable(System.ReadOnlySpan<int> tileCounts)
+        {
+        }
+
+        public virtual void AddRecipeGroups()
+        {
+        }
+
         public virtual void AddRecipes()
         {
         }

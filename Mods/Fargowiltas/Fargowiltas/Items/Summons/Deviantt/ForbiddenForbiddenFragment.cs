@@ -1,0 +1,18 @@
+using Terraria.ID;
+
+namespace Fargowiltas.Items.Summons.Deviantt
+{
+    public class ForbiddenForbiddenFragment : BaseSummon
+    {
+        public override int NPCType => NPCID.SandElemental;
+        
+        public override void SetStaticDefaults()
+        {
+            base.SetStaticDefaults();
+			// DisplayName.SetDefault("Forbidden Forbidden Fragment");
+			// Tooltip.SetDefault("Summons Sand Elemental");
+
+			FargoSets.Items.SortingPriorityBossSpawns[Type] = 6; // Places it right after Gelatin Crystal
+		}
+    }
+}

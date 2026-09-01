@@ -454,7 +454,10 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             AutoSortEnabled = tag.GetBool("autoSort");
 
             InitSlots();
-            for (int i = 0; i < Capacity; i++) Slots[i] = new Item();
+            if (Slots != null)
+            {
+                for (int i = 0; i < Slots.Length; i++) Slots[i] = new Item();
+            }
 
             if (tag.TryGetValue("items", out object obj))
             {
@@ -476,7 +479,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                             if (resolved > 0) id = resolved;
                         }
 
-                        if (id > 0 && slot >= 0 && slot < Capacity)
+                        if (id > 0 && Slots != null && slot >= 0 && slot < Slots.Length)
                         {
                             Item it = new Item();
                             it.SetDefaults(id);
@@ -505,7 +508,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                             if (resolved > 0) id = resolved;
                         }
 
-                        if (id > 0 && slot >= 0 && slot < Capacity)
+                        if (id > 0 && Slots != null && slot >= 0 && slot < Slots.Length)
                         {
                             Item it = new Item();
                             it.SetDefaults(id);

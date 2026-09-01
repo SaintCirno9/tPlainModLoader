@@ -72,8 +72,61 @@ namespace TPML.Content
         {
         }
 
+        public virtual void PostUpdateBuffs()
+        {
+        }
+
+        public virtual void UpdateDead()
+        {
+        }
+
+        public virtual bool PreModifyLuck(ref float luck)
+        {
+            return true;
+        }
+
+        public virtual void ModifyLuck(ref float luck)
+        {
+        }
+
+        public virtual void ModifyScreenPosition()
+        {
+        }
+
+        public virtual void SyncPlayer(int toWho, int fromWho, bool newPlayer)
+        {
+        }
+
+        public virtual void CopyClientState(ModPlayer targetCopy)
+        {
+        }
+
+        public virtual void SendClientChanges(ModPlayer clientPlayer)
+        {
+        }
+
+        public virtual void ModifyStartingInventory(IReadOnlyDictionary<string, List<Item>> itemsByMod, bool mediumCoreDeath)
+        {
+        }
+
+        public virtual IEnumerable<Item> AddStartingItems(bool mediumCoreDeath)
+        {
+            yield break;
+        }
+
+        public virtual void OnEnterWorld()
+        {
+        }
+
         public virtual void OnEnterWorld(Player player)
         {
+            OnEnterWorld();
+        }
+
+        public virtual void ModifyMaxStats(out StatModifier health, out StatModifier mana)
+        {
+            health = StatModifier.Default;
+            mana = StatModifier.Default;
         }
     }
 
@@ -198,6 +251,6 @@ namespace TPML.Content
     public class EntitySource_Misc : IEntitySource
     {
         public string Context { get; }
-        public EntitySource_Misc(string context) => Context = context;
+        public EntitySource_Misc(string context = null) => Context = context ?? "Misc";
     }
 }

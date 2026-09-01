@@ -41,6 +41,13 @@ namespace TPML.Content
             Assets = new Assets.ModAssetRepository(this);
         }
 
+        public virtual uint ExtraPlayerBuffSlots => 0;
+
+        public virtual ModPacket GetPacket(int capacity = 256)
+        {
+            return new ModPacket(this, capacity);
+        }
+
         public virtual void Load()
         {
         }
@@ -89,7 +96,8 @@ namespace TPML.Content
             if (content == null || !content.IsLoadingEnabled(this))
                 return;
 
-            if (_content.Any(existing => existing.GetType() == content.GetType()))
+            string contentName = (content as ModType)?.Name ?? content.GetType().FullName;
+            if (_content.Any(existing => existing.GetType() == content.GetType() && ((existing as ModType)?.Name ?? existing.GetType().FullName) == contentName))
                 return;
 
             _content.Add(content);
@@ -101,6 +109,16 @@ namespace TPML.Content
         public IEnumerable<ILoadable> GetContent()
         {
             return _content;
+        }
+
+        public int AddNPCHeadTexture(int npcType, string headTexture)
+        {
+            return NPCLoader.RegisterHeadSlot(headTexture);
+        }
+
+        public int AddNPCBossHeadTexture(int npcType, string bossHeadTexture)
+        {
+            return NPCLoader.RegisterHeadSlot(bossHeadTexture);
         }
     }
 }

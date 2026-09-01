@@ -42,7 +42,7 @@ namespace Instavator.Content.Items
             Item.noMelee = true;
         }
 
-        public override bool? CanUseItem(Player player)
+        public override bool CanUseItem(Player player)
         {
             return InstavatorShaftBuilder.CanUse(player);
         }

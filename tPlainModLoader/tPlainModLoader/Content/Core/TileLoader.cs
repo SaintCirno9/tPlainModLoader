@@ -211,11 +211,38 @@ namespace TPML.Content
                 _tileCountsField?.SetValue(Main.SceneMetrics, newArr);
             }
 
-            if (Main.tileGlowMask != null)
+            // 5. 扩容配方系统与玩家临近物块数组 (防止 UpdateRecipeList 访问 player.adjTile 或 TileUsedInRecipes 发生 IndexOutOfRangeException)
+            if (Recipe.TileUsedInRecipes != null && Recipe.TileUsedInRecipes.Length <= required)
             {
-                for (int i = 693; i < Main.tileGlowMask.Length; i++)
+                int newLen = Math.Max(required, Recipe.TileUsedInRecipes.Length * 2);
+                Array.Resize(ref Recipe.TileUsedInRecipes, newLen);
+            }
+
+            if (Recipe.TileCountsAs != null && Recipe.TileCountsAs.Length <= required)
+            {
+                int newLen = Math.Max(required, Recipe.TileCountsAs.Length * 2);
+                Array.Resize(ref Recipe.TileCountsAs, newLen);
+            }
+
+            ScanAndResizeStaticArrays(typeof(Recipe), required);
+            ScanAndResizeStaticArrays(typeof(Terraria.GameContent.UI.NewCraftingUI), required);
+
+            if (Main.player != null)
+            {
+                for (int i = 0; i < Main.player.Length; i++)
                 {
-                    if (Main.tileGlowMask[i] == 0) Main.tileGlowMask[i] = -1;
+                    var p = Main.player[i];
+                    if (p != null && (p.adjTile == null || p.adjTile.Length <= required))
+                    {
+                        int curLen = p.adjTile?.Length ?? 0;
+                        int newLen = Math.Max(required, Math.Max(curLen * 2, 800));
+                        bool[] newAdj = new bool[newLen];
+                        if (p.adjTile != null)
+                        {
+                            Array.Copy(p.adjTile, newAdj, p.adjTile.Length);
+                        }
+                        p.adjTile = newAdj;
+                    }
                 }
             }
         }

@@ -9,13 +9,10 @@ using Microsoft.Xna.Framework.Graphics;
 using RecipeBrowser.Common;
 using RecipeBrowser.TagHandlers;
 using RecipeBrowser.UIElements;
-using tContentPatch.Input;
 using Terraria;
 using Terraria.UI.Chat;
 using TPML.Content;
 using TPML.Core.Logging;
-using KeybindLoader = tContentPatch.Input.KeybindLoader;
-using ModKeybind = tContentPatch.Input.ModKeybind;
 
 namespace RecipeBrowser
 {

@@ -1,4 +1,4 @@
-using tContentPatch.Input;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL.Pipette
 {

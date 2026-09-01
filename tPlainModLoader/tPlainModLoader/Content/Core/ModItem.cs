@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.DataStructures;
 using TPML.Content.UI;
@@ -36,9 +37,9 @@ namespace TPML.Content
         {
         }
 
-        public virtual bool? CanUseItem(Player player)
+        public virtual bool CanUseItem(Player player)
         {
-            return null;
+            return true;
         }
 
         public virtual bool? UseItem(Player player)
@@ -49,6 +50,44 @@ namespace TPML.Content
         public virtual bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
             return true;
+        }
+
+        public virtual void PickAmmo(Item weapon, Player player, ref int type, ref float speed, ref StatModifier damage, ref float knockback)
+        {
+        }
+
+        public virtual bool AltFunctionUse(Player player)
+        {
+            return false;
+        }
+
+        public virtual bool CanRightClick()
+        {
+            return false;
+        }
+
+        public virtual void RightClick(Player player)
+        {
+        }
+
+        public virtual void UseStyle(Player player, Rectangle heldItemFrame)
+        {
+        }
+
+        public virtual void UseItemFrame(Player player)
+        {
+        }
+
+        public virtual void HoldStyle(Player player, Rectangle heldItemFrame)
+        {
+        }
+
+        public virtual void OnHitNPC(Player player, NPC target, int damage, float knockBack, bool crit)
+        {
+        }
+
+        public virtual void ModifyHitNPC(Player player, NPC target, ref int damage, ref float knockBack, ref bool crit)
+        {
         }
 
         public virtual void HoldItem(Player player)
@@ -68,6 +107,46 @@ namespace TPML.Content
         }
 
         public virtual void AddRecipes()
+        {
+        }
+
+        public virtual bool ConsumeItem(Player player)
+        {
+            return true;
+        }
+
+        public virtual bool CanConsumeAmmo(Item weapon, Player player)
+        {
+            return true;
+        }
+
+        public virtual void OnConsumeAmmo(Item weapon, Player player)
+        {
+        }
+
+        public virtual void PostUpdate()
+        {
+        }
+
+        public virtual void Update(ref float gravity, ref float maxFallSpeed)
+        {
+        }
+
+        public virtual bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
+        {
+            return true;
+        }
+
+        public virtual void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
+        {
+        }
+
+        public virtual bool PreDrawInWorld(SpriteBatch spriteBatch, Color lightColor, Color alphaColor, ref float rotation, ref float scale, int whoAmI)
+        {
+            return true;
+        }
+
+        public virtual void PostDrawInWorld(SpriteBatch spriteBatch, Color lightColor, Color alphaColor, float rotation, float scale, int whoAmI)
         {
         }
 

@@ -1,12 +1,12 @@
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
-using tContentPatch.Input;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.UI;
+using TPML.Content;
 using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.Patch_UIManageControls

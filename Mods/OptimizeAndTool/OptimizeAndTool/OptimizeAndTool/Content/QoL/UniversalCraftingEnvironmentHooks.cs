@@ -64,7 +64,7 @@ namespace OptimizeAndTool.Content.QoL
 
             // 无视生物群落（雪地、墓地、火炬神恩惠、天顶种子Mechdusa）与液体环境（水、岩浆、蜂蜜）
             // 仅保留制作站图格（requiredTile）的要求
-            if (self.requiredTile >= 0 && (player.adjTile == null || !player.adjTile[self.requiredTile]))
+            if (self.requiredTile >= 0 && (player.adjTile == null || self.requiredTile >= player.adjTile.Length || !player.adjTile[self.requiredTile]))
             {
                 if (missingObjects != null)
                 {

@@ -1,4 +1,5 @@
 using Terraria;
+using Microsoft.Xna.Framework;
 
 namespace TPML.Content
 {
@@ -29,6 +30,23 @@ namespace TPML.Content
         public static ModItem GetModItem(this Item item) => ItemLoader.GetModItem(item);
 
         /// <summary>
+        /// 对齐 tML 属性 <c>item.ModItem</c> 的方法形式。
+        /// </summary>
+        public static ModItem ModItem(this Item item) => item.GetModItem();
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Item, System.Collections.Concurrent.ConcurrentDictionary<System.Type, object>> _globalInstances = new System.Runtime.CompilerServices.ConditionalWeakTable<Item, System.Collections.Concurrent.ConcurrentDictionary<System.Type, object>>();
+
+        /// <summary>
+        /// 对齐 tML <c>Item.GetGlobalItem&lt;T&gt;()</c>：获取挂载在 Item 上的 GlobalItem 实例。
+        /// </summary>
+        public static T GetGlobalItem<T>(this Item item) where T : class, new()
+        {
+            if (item == null) return null;
+            var dict = _globalInstances.GetOrCreateValue(item);
+            return (T)dict.GetOrAdd(typeof(T), _ => new T());
+        }
+
+        /// <summary>
         /// 获取绑定在此 Item 实例上的指定类型 ModItem；失败返回 null。
         /// </summary>
         public static T GetModItem<T>(this Item item) where T : ModItem => ItemLoader.GetModItem<T>(item);
@@ -41,5 +59,8 @@ namespace TPML.Content
             if (item == null) return compareItem != null;
             return item.IsNotTheSameAs(compareItem);
         }
+
+        public static bool wet(this Item item) => false;
+        public static bool lavaWet(this Item item) => false;
     }
 }

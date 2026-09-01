@@ -206,6 +206,10 @@ namespace TPML.Content
                 RecipeLoader.Clear();
                 ModPlayerExtensions.ClearInstances();
                 ItemLoader.Clear();
+                NPCLoader.Clear();
+                ProjectileLoader.Clear();
+                BuffLoader.Clear();
+                KeybindLoader.Clear();
                 TileLoader.Clear();
                 TileEntityLoader.Clear();
                 ModContent.Clear();

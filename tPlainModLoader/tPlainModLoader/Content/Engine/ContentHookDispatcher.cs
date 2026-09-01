@@ -26,6 +26,7 @@ namespace TPML.Content.Engine
         public static readonly List<ModPlayer> ActiveModPlayers = new List<ModPlayer>();
         public static readonly List<ModSystem> ActiveModSystems = new List<ModSystem>();
         public static readonly List<GlobalItem> ActiveGlobalItems = new List<GlobalItem>();
+        public static readonly List<GlobalNPC> ActiveGlobalNPCs = new List<GlobalNPC>();
 
         private static bool _firstInvDrawLogged = false;
 
@@ -70,6 +71,10 @@ namespace TPML.Content.Engine
                 {
                     ActiveGlobalItems.Add(gItem);
                 }
+                else if (item is GlobalNPC gNpc && !ActiveGlobalNPCs.Contains(gNpc))
+                {
+                    ActiveGlobalNPCs.Add(gNpc);
+                }
             }
 
             if (!_patchesApplied)
@@ -84,6 +89,7 @@ namespace TPML.Content.Engine
             ActiveModPlayers.Clear();
             ActiveModSystems.Clear();
             ActiveGlobalItems.Clear();
+            ActiveGlobalNPCs.Clear();
             TPML.Content.Fusion.InventoryFusionManager.Clear();
             TPML.Content.Fusion.UnifiedInventoryFusionHooks.UnregisterAll();
             HookRegistry.Clear(HookScope.Content);
@@ -125,6 +131,7 @@ namespace TPML.Content.Engine
             PatchPlayerPickup();
             PatchUpdateHooks();
             PatchInterfaceLayers();
+            PatchDrawExceptions();
             PatchLang();
             PatchPopupText();
 
@@ -210,6 +217,38 @@ namespace TPML.Content.Engine
         {
             if (item == null || item.IsAir) return;
 
+            // 1. 若模组物品原生 Tooltip 行未被原版载入，动态补充 HJSON / ModItem 描述行
+            if (item.type >= ItemLoader.ModItemOffset)
+            {
+                string tooltip = ItemLoader.GetTooltip(item.type);
+                if (!string.IsNullOrEmpty(tooltip))
+                {
+                    string[] rawLines = tooltip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    foreach (var l in rawLines)
+                    {
+                        if (!string.IsNullOrWhiteSpace(l))
+                        {
+                            bool exists = false;
+                            for (int k = 0; k < numLines; k++)
+                            {
+                                if (toolTipLine[k] == l)
+                                {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists && numLines < toolTipLine.Length)
+                            {
+                                toolTipLine[numLines] = l;
+                                lineColors[numLines] = Microsoft.Xna.Framework.Color.White;
+                                numLines++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. 分发 ModItem.ModifyTooltips 与 GlobalItem.ModifyTooltips
             var list = new List<TooltipLine>();
             ItemLoader.ModifyTooltips(item, list);
 
@@ -372,6 +411,21 @@ namespace TPML.Content.Engine
 
         private static void Player_Update_Prefix(Player __instance, int i)
         {
+            if (__instance == null) return;
+
+            // 确保玩家 adjTile 数组容量满足模组物块需求，防止 UpdateRecipeList 判定配方时越界
+            if (__instance.adjTile == null || __instance.adjTile.Length <= TileLoader.TileCount)
+            {
+                int req = Math.Max(TileLoader.TileCount + 64, 800);
+                int cur = __instance.adjTile?.Length ?? 0;
+                bool[] newAdj = new bool[Math.Max(req, cur * 2)];
+                if (__instance.adjTile != null)
+                {
+                    Array.Copy(__instance.adjTile, newAdj, __instance.adjTile.Length);
+                }
+                __instance.adjTile = newAdj;
+            }
+
             if (__instance != Main.LocalPlayer) return;
 
             for (int idx = 0; idx < ActiveModPlayers.Count; idx++)
@@ -594,6 +648,38 @@ namespace TPML.Content.Engine
                     ModLoader.Log($"  - 图层: [{l.Name}]");
                 }
                 _firstInvDrawLogged = true;
+            }
+        }
+
+        private static void PatchDrawExceptions()
+        {
+            var drawExTarget = typeof(TimeLogger).GetMethod(nameof(TimeLogger.DrawException), BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            if (drawExTarget != null)
+            {
+                HookRegistry.AddContent(drawExTarget, (Action<Action<Exception>, Exception>)((orig, ex) =>
+                {
+                    Logger.Error($"[TimeLogger.DrawException] 捕获到 UI/绘制管线异常:\n{ex}");
+                    orig(ex);
+                }));
+                ModLoader.Log("[ContentHookDispatcher] 已挂钩 TimeLogger.DrawException (全局绘制异常捕获与日志记录)");
+            }
+
+            var drawInvTarget = typeof(Main).GetMethod("DrawInventory", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (drawInvTarget != null)
+            {
+                HookRegistry.AddContent(drawInvTarget, (Action<Action<Main>, Main>)((orig, self) =>
+                {
+                    try
+                    {
+                        orig(self);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"[Main.DrawInventory] 物品栏绘制异常:\n{ex}");
+                        throw;
+                    }
+                }));
+                ModLoader.Log("[ContentHookDispatcher] 已挂钩 Main.DrawInventory (物品栏绘制异常捕获)");
             }
         }
 

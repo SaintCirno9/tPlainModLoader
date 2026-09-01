@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
+using Terraria.Localization;
 
 namespace TPML.Content
 {
@@ -19,6 +20,37 @@ namespace TPML.Content
 
         public int ItemDrop { get; set; } = 0;
         public int DustType { get; set; } = 0;
+        public int[] AdjTiles { get; set; } = Array.Empty<int>();
+        public int AnimationFrameHeight { get; set; } = 0;
+
+        public LocalizedText CreateMapEntryName() => Language.GetText($"Mods.{Mod?.Name ?? "TPML"}.Tiles.{Name}.MapEntry");
+        public void AddMapEntry(Color color, LocalizedText text = null) { }
+
+        public void AddToArray(ref int[] array)
+        {
+            if (array == null)
+            {
+                array = new int[] { Type };
+                return;
+            }
+            Array.Resize(ref array, array.Length + 1);
+            array[array.Length - 1] = Type;
+        }
+
+        public void AddToArray(ref bool[] array)
+        {
+            if (array == null)
+            {
+                array = new bool[Type + 1];
+                array[Type] = true;
+                return;
+            }
+            if (Type >= array.Length)
+            {
+                Array.Resize(ref array, Type + 64);
+            }
+            array[Type] = true;
+        }
 
         public override void Load(Mod mod)
         {
@@ -130,6 +162,50 @@ namespace TPML.Content
         /// 自定义 TileFrame 逻辑。返回 false 可阻止原版 TileFrame 处理
         /// </summary>
         public virtual bool TileFrame(int i, int j, ref bool resetFrame, ref bool noBreak)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// 玩家靠近物块时的环境影响钩子
+        /// </summary>
+        public virtual void NearbyEffects(int i, int j, bool closer)
+        {
+        }
+
+        /// <summary>
+        /// 自定义物块发光
+        /// </summary>
+        public virtual void ModifyLight(int i, int j, ref float r, ref float g, ref float b)
+        {
+        }
+
+        /// <summary>
+        /// 物块被挖掘时生成的粒子数量
+        /// </summary>
+        public virtual void NumDust(int i, int j, bool fail, ref int num)
+        {
+        }
+
+        /// <summary>
+        /// 电路触发钩子
+        /// </summary>
+        public virtual void HitWire(int i, int j)
+        {
+        }
+
+        /// <summary>
+        /// 是否允许破坏物块
+        /// </summary>
+        public virtual bool CanKillTile(int i, int j, ref bool blockDamaged)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// 是否允许被炸药破坏
+        /// </summary>
+        public virtual bool CanExplode(int i, int j)
         {
             return true;
         }

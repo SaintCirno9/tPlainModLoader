@@ -69,7 +69,7 @@ namespace tContentPatch
             //加载完成时
             LoaderControl.OnModLoad_Ok += () =>
             {
-                Input.KeybindLoader.SyncWithPlayerInput();
+                TPML.Content.KeybindLoader.SyncWithPlayerInput();
 
                 try
                 {

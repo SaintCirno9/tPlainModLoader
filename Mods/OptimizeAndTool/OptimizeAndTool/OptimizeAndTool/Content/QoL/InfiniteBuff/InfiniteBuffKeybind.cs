@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using tContentPatch.Input;
 using Terraria.GameInput;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL.InfiniteBuff
 {

@@ -1,7 +1,6 @@
 using System;
 using Microsoft.Xna.Framework.Input;
 using tContentPatch;
-using tContentPatch.Input;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -22,14 +21,14 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     /// </summary>
     public static class AccessoryBagInteractionHooks
     {
-        public static tContentPatch.Input.ModKeybind QuickHoverKey { get; private set; }
-        public static tContentPatch.Input.ModKeybind ToggleBagKey { get; private set; }
+        public static ModKeybind QuickHoverKey { get; private set; }
+        public static ModKeybind ToggleBagKey { get; private set; }
         private static bool _registered = false;
 
         static AccessoryBagInteractionHooks()
         {
-            QuickHoverKey = tContentPatch.Input.KeybindLoader.RegisterKeybind("OptimizeAndTool", "QuickHoverAccessoryBag", "OemCloseBrackets", "悬停饰品快捷转移 (AccessoryBag)");
-            ToggleBagKey = tContentPatch.Input.KeybindLoader.RegisterKeybind("OptimizeAndTool", "ToggleAccessoryBag", "P", "打开/关闭随身饰品袋 (AccessoryBag)");
+            QuickHoverKey = KeybindLoader.RegisterKeybind("OptimizeAndTool", "QuickHoverAccessoryBag", "OemCloseBrackets", "悬停饰品快捷转移 (AccessoryBag)");
+            ToggleBagKey = KeybindLoader.RegisterKeybind("OptimizeAndTool", "ToggleAccessoryBag", "P", "打开/关闭随身饰品袋 (AccessoryBag)");
         }
 
         public static void RegisterAll()

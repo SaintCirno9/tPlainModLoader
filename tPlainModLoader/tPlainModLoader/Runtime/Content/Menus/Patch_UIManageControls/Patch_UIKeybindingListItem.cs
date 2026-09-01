@@ -1,6 +1,6 @@
 using System;
-using tContentPatch.Input;
 using Terraria.GameContent.UI.Elements;
+using TPML.Content;
 using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.Patch_UIManageControls
