@@ -72,8 +72,6 @@ namespace TPML.Core.Logging.Sinks
             try
             {
                 if (!File.Exists(currentLogPath)) return;
-                FileInfo info = new FileInfo(currentLogPath);
-                if (info.Length < 4 * 1024 * 1024) return;
 
                 string dir = Path.GetDirectoryName(currentLogPath);
                 string name = Path.GetFileNameWithoutExtension(currentLogPath);
