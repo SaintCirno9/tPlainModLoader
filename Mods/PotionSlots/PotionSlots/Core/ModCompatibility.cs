@@ -1,4 +1,4 @@
-using Terraria.ModLoader;
+using TPML.Content;
 
 namespace PotionSlots.Core
 {
@@ -8,7 +8,7 @@ namespace PotionSlots.Core
         {
             get
             {
-                return ModLoader.TryGetMod("BankButtons", out _);
+                return ModContent.TryGetMod("BankButtons", out _);
             }
         }
     }

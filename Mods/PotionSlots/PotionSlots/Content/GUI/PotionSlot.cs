@@ -6,7 +6,7 @@ using ReLogic.Content;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
-using Terraria.ModLoader;
+using TPML.Content;
 using Terraria.UI;
 
 namespace PotionSlots.Content.GUI

@@ -1,4 +1,4 @@
-using Terraria.ModLoader;
+using TPML.Content;
 
 namespace PotionSlots.Core
 {

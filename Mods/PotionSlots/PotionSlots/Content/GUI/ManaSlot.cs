@@ -1,7 +1,7 @@
 using System;
 using PotionSlots.Core;
 using Terraria;
-using Terraria.ModLoader;
+using TPML.Content;
 
 namespace PotionSlots.Content.GUI
 {

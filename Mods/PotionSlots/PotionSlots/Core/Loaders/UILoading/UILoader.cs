@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.ModLoader;
+using TPML.Content;
 using Terraria.UI;
 
 namespace PotionSlots.Core.Loaders.UILoading
