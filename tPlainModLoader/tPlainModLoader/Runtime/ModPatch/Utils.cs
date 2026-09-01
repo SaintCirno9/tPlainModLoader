@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using tContentPatch.Utils;
 
@@ -36,11 +36,15 @@ namespace tContentPatch.ModPatch
             if (list == null || action == null) return;
             try
             {
-                foreach (T item in list)
+                int count = list.Count;
+                if (count == 0) return;
+
+                T[] snapshot = list.ToArray();
+                for (int i = 0; i < snapshot.Length; i++)
                 {
                     try
                     {
-                        action(item);
+                        action(snapshot[i]);
                     }
                     catch (Exception ex)
                     {
@@ -62,13 +66,16 @@ namespace tContentPatch.ModPatch
             if (list == null || action == null) return true;
             try
             {
-                bool result = true;
+                int count = list.Count;
+                if (count == 0) return true;
 
-                foreach (T item in list)
+                bool result = true;
+                T[] snapshot = list.ToArray();
+                for (int i = 0; i < snapshot.Length; i++)
                 {
                     try
                     {
-                        result &= action(item);
+                        result &= action(snapshot[i]);
                     }
                     catch (Exception ex)
                     {
