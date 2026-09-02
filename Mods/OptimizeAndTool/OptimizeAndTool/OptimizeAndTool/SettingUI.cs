@@ -1,4 +1,4 @@
-﻿using OptimizeAndTool.Content;
+using OptimizeAndTool.Content;
 using OptimizeAndTool.Content.Cheat.Function1;
 using OptimizeAndTool.Content.Cheat.HeldItemModify;
 using OptimizeAndTool.Content.Cheat.PlayerModify;
@@ -157,6 +157,7 @@ namespace OptimizeAndTool
             public bool GemTreeFullGemDrops = true;
             public bool RemoveGraveyardVisuals = true;
             public bool AntiGriefExplosions = true;
+            public bool UnsafeWallDrops = true;
 
             // 基础作弊 (Cheat.Function1)
             public bool NoDead = false;
@@ -384,6 +385,7 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.val = data.GemTreeFullGemDrops;
             QoLValSet.removeGraveyardVisuals.val = data.RemoveGraveyardVisuals;
             QoLValSet.antiGriefExplosions.val = data.AntiGriefExplosions;
+            QoLValSet.unsafeWallDrops.val = data.UnsafeWallDrops;
 
             // 基础作弊 (Cheat.Function1)
             Content.Cheat.Function1.Function.noDead.val = data.NoDead;
@@ -568,6 +570,7 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.OnValUpdate += _ => NeedSave = true;
             QoLValSet.removeGraveyardVisuals.OnValUpdate += _ => NeedSave = true;
             QoLValSet.antiGriefExplosions.OnValUpdate += _ => NeedSave = true;
+            QoLValSet.unsafeWallDrops.OnValUpdate += _ => NeedSave = true;
 
             // 基础作弊
             Content.Cheat.Function1.Function.noDead.OnValUpdate += _ => NeedSave = true;
@@ -769,6 +772,7 @@ namespace OptimizeAndTool
                 GemTreeFullGemDrops = QoLValSet.gemTreeFullGemDrops.val,
                 RemoveGraveyardVisuals = QoLValSet.removeGraveyardVisuals.val,
                 AntiGriefExplosions = QoLValSet.antiGriefExplosions.val,
+                UnsafeWallDrops = QoLValSet.unsafeWallDrops.val,
 
                 // 基础作弊
                 NoDead = Content.Cheat.Function1.Function.noDead.val,
@@ -964,6 +968,7 @@ namespace OptimizeAndTool
             QoLValSet.gemTreeFullGemDrops.Reset();
             QoLValSet.removeGraveyardVisuals.Reset();
             QoLValSet.antiGriefExplosions.Reset();
+            QoLValSet.unsafeWallDrops.Reset();
 
             Content.Cheat.Function1.Function.noDead.Reset();
             Content.Cheat.Function1.Function.manaMax.Reset();

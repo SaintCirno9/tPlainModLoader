@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using OptimizeAndTool.Content.Storage.ItemContainer;
 using TPML;
 using TPML.Patch;
@@ -57,6 +57,7 @@ namespace OptimizeAndTool.Content.Patch
             // 批次 4: 物块破坏与防作祟
             QoL.VeinMining.PlayerPickTileHooks.RegisterAll();
             Cheat.QoL.AntiGriefHooks.RegisterAll();
+            Cheat.QoL.UnsafeWallDropHooks.RegisterAll();
 
             // 批次 5.1: 世界规则与生态优化
             Cheat.QoL.EcologyHooks.RegisterAll();
@@ -118,6 +119,7 @@ namespace OptimizeAndTool.Content.Patch
             Cheat.QoL.EcologyHooks.UnregisterAll();
 
             // 批次 4 注销
+            Cheat.QoL.UnsafeWallDropHooks.UnregisterAll();
             Cheat.QoL.AntiGriefHooks.UnregisterAll();
             QoL.VeinMining.PlayerPickTileHooks.UnregisterAll();
 

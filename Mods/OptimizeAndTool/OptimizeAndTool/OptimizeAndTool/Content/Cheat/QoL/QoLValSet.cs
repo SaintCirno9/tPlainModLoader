@@ -38,6 +38,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         // 5. 防非玩家爆炸物破坏地形
         public static GetSetReset<bool> antiGriefExplosions = new GetSetReset<bool>(true, true);
 
+        // 6. 背景墙与掉落增强
+        public static GetSetReset<bool> unsafeWallDrops = new GetSetReset<bool>(true, true);
+
         public static List<CommandObject> GetCO()
         {
             List<CommandObject> cos = new List<CommandObject>
@@ -56,6 +59,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 CommandBuild.get2("gemTreeFullGemDrops", gemTreeFullGemDrops),
                 CommandBuild.get2("removeGraveyardVisuals", removeGraveyardVisuals),
                 CommandBuild.get2("antiGriefExplosions", antiGriefExplosions),
+                CommandBuild.get2("unsafeWallDrops", unsafeWallDrops),
             };
 
             return cos;
@@ -88,6 +92,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
 
                 // 防爆炸
                 UIBuild.get2(antiGriefExplosions, "拦截小丑、机械骷髅王炸弹、陷阱爆炸物及非玩家敌怪爆炸破坏地图方块", "Images/Item_166", "防敌怪爆炸物破坏地形"),
+
+                // 危险墙掉落
+                UIBuild.get2(unsafeWallDrops, "摧毁天然危险背景墙（蜘蛛墙、地牢墙、神庙墙、地下沙漠砂岩墙及天然环境岩壁等）必定掉落对应危险墙物品", "Images/Item_5363", "天然危险墙掉落对应物品"),
             };
 
             return uis;
