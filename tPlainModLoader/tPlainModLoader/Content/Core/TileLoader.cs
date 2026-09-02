@@ -30,7 +30,8 @@ namespace TPML.Content
         private static readonly Dictionary<int, ModTile> _tilesByType = new Dictionary<int, ModTile>();
         private static readonly Dictionary<string, int> _tilesByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        private static bool _hooksInitialized = false;
+        private static volatile bool _hooksInitialized = false;
+        private static readonly object _hookInitLock = new object();
 
         public static int TileCount => _nextTileID;
         public static IReadOnlyCollection<ModTile> Tiles => _tilesByType.Values;
@@ -39,16 +40,21 @@ namespace TPML.Content
         {
             if (_hooksInitialized) return;
 
-            On_Main.DoDraw += Hook_DoDraw;
-            On_Main.EndDraw += Hook_EndDraw;
-            On_WorldGen.KillTile += Hook_KillTile;
-            On_WorldGen.TileFrame += Hook_TileFrame;
-            On_Player.PickTile += Hook_PickTile;
-            On_Player.TileInteractionsCheck += Hook_TileInteractionsCheck;
-            On_Player.TileInteractionsMouseOver += Hook_TileInteractionsMouseOver;
-            On_SceneMetrics.Scan += Hook_SceneMetrics_Scan;
+            lock (_hookInitLock)
+            {
+                if (_hooksInitialized) return;
 
-            _hooksInitialized = true;
+                On_Main.DoDraw += Hook_DoDraw;
+                On_Main.EndDraw += Hook_EndDraw;
+                On_WorldGen.KillTile += Hook_KillTile;
+                On_WorldGen.TileFrame += Hook_TileFrame;
+                On_Player.PickTile += Hook_PickTile;
+                On_Player.TileInteractionsCheck += Hook_TileInteractionsCheck;
+                On_Player.TileInteractionsMouseOver += Hook_TileInteractionsMouseOver;
+                On_SceneMetrics.Scan += Hook_SceneMetrics_Scan;
+
+                _hooksInitialized = true;
+            }
         }
 
         public static int Register(ModTile tile)

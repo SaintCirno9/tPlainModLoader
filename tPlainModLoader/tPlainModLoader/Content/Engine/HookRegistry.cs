@@ -23,9 +23,19 @@ namespace TPML.Content.Engine
             public HookScope Scope;
         }
 
+        private static readonly object _syncLock = new object();
         private static readonly List<RegisteredHook> _hooks = new List<RegisteredHook>();
 
-        public static int Count => _hooks.Count;
+        public static int Count
+        {
+            get
+            {
+                lock (_syncLock)
+                {
+                    return _hooks.Count;
+                }
+            }
+        }
 
         /// <summary>
         /// 注册一个框架级 On 风格 detour 并立即生效。detour 委托形状：(orig, 方法参数...)。
@@ -53,7 +63,10 @@ namespace TPML.Content.Engine
             try
             {
                 var hook = new Hook(target, detour);
-                _hooks.Add(new RegisteredHook { Hook = hook, Scope = scope });
+                lock (_syncLock)
+                {
+                    _hooks.Add(new RegisteredHook { Hook = hook, Scope = scope });
+                }
                 return hook;
             }
             catch (Exception ex)
@@ -68,21 +81,24 @@ namespace TPML.Content.Engine
         /// </summary>
         public static void Clear(HookScope scope)
         {
-            for (int i = _hooks.Count - 1; i >= 0; i--)
+            lock (_syncLock)
             {
-                if (_hooks[i].Scope != scope) continue;
+                for (int i = _hooks.Count - 1; i >= 0; i--)
+                {
+                    if (_hooks[i].Scope != scope) continue;
 
-                try
-                {
-                    _hooks[i].Hook.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    ModLoader.Log($"[HookRegistry] 反注册异常: {ex.GetType().Name}: {ex.Message}");
-                }
-                finally
-                {
-                    _hooks.RemoveAt(i);
+                    try
+                    {
+                        _hooks[i].Hook.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLoader.Log($"[HookRegistry] 反注册异常: {ex.GetType().Name}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        _hooks.RemoveAt(i);
+                    }
                 }
             }
         }
@@ -92,18 +108,21 @@ namespace TPML.Content.Engine
         /// </summary>
         public static void ClearAll()
         {
-            for (int i = _hooks.Count - 1; i >= 0; i--)
+            lock (_syncLock)
             {
-                try
+                for (int i = _hooks.Count - 1; i >= 0; i--)
                 {
-                    _hooks[i].Hook.Dispose();
+                    try
+                    {
+                        _hooks[i].Hook.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLoader.Log($"[HookRegistry] 反注册异常: {ex.GetType().Name}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    ModLoader.Log($"[HookRegistry] 反注册异常: {ex.GetType().Name}: {ex.Message}");
-                }
+                _hooks.Clear();
             }
-            _hooks.Clear();
         }
     }
 }

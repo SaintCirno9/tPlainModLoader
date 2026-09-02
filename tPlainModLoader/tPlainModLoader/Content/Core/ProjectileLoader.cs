@@ -38,20 +38,26 @@ namespace TPML.Content
         public static int NextProjID => _nextProjID;
         public static IReadOnlyCollection<ModProjectile> Projectiles => _projsByType.Values;
 
-        private static bool _hooksInitialized = false;
+        private static volatile bool _hooksInitialized = false;
+        private static readonly object _hookInitLock = new object();
 
         public static void InitializeHooks()
         {
             if (_hooksInitialized) return;
 
-            On_Projectile.Update += Hook_Update;
-            On_Projectile.SetDefaults += Hook_SetDefaults;
-            On_Projectile.AI += Hook_AI;
-            On_Projectile.Kill += Hook_Kill;
-            On_Projectile.NewProjectile_IEntitySource_float_float_float_float_int_int_float_int_float_float_float_NewProjectileModifier += Hook_NewProjectile;
-            On_Projectile.AI_203_GetLightningColor += Hook_AI_203_GetLightningColor;
+            lock (_hookInitLock)
+            {
+                if (_hooksInitialized) return;
 
-            _hooksInitialized = true;
+                On_Projectile.Update += Hook_Update;
+                On_Projectile.SetDefaults += Hook_SetDefaults;
+                On_Projectile.AI += Hook_AI;
+                On_Projectile.Kill += Hook_Kill;
+                On_Projectile.NewProjectile_IEntitySource_float_float_float_float_int_int_float_int_float_float_float_NewProjectileModifier += Hook_NewProjectile;
+                On_Projectile.AI_203_GetLightningColor += Hook_AI_203_GetLightningColor;
+
+                _hooksInitialized = true;
+            }
         }
 
         private static void Hook_Update(On_Projectile.orig_Update orig, Projectile self, int i)

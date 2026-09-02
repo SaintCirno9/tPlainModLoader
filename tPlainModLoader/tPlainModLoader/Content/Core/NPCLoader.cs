@@ -39,17 +39,23 @@ namespace TPML.Content
         public static int NextNPCID => _nextNPCID;
         public static IReadOnlyCollection<ModNPC> NPCs => _npcsByType.Values;
 
-        private static bool _hooksInitialized = false;
+        private static volatile bool _hooksInitialized = false;
+        private static readonly object _hookInitLock = new object();
 
         public static void InitializeHooks()
         {
             if (_hooksInitialized) return;
 
-            On_NPC.UpdateNPC += Hook_UpdateNPC;
-            On_NPC.SetDefaults += Hook_SetDefaults;
-            On_NPC.NewNPC += Hook_NewNPC;
+            lock (_hookInitLock)
+            {
+                if (_hooksInitialized) return;
 
-            _hooksInitialized = true;
+                On_NPC.UpdateNPC += Hook_UpdateNPC;
+                On_NPC.SetDefaults += Hook_SetDefaults;
+                On_NPC.NewNPC += Hook_NewNPC;
+
+                _hooksInitialized = true;
+            }
         }
 
         private static void Hook_UpdateNPC(On_NPC.orig_UpdateNPC orig, NPC self, int i)

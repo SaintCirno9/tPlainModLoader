@@ -18,10 +18,16 @@ namespace TPML.Content.Engine
         private static bool _initialized = false;
         private static bool _patchesApplied = false;
 
-        public static readonly List<ModPlayer> ActiveModPlayers = new List<ModPlayer>();
-        public static readonly List<ModSystem> ActiveModSystems = new List<ModSystem>();
-        public static readonly List<GlobalItem> ActiveGlobalItems = new List<GlobalItem>();
-        public static readonly List<GlobalNPC> ActiveGlobalNPCs = new List<GlobalNPC>();
+        private static readonly object _syncLock = new object();
+        private static readonly List<ModPlayer> _modPlayers = new List<ModPlayer>();
+        private static readonly List<ModSystem> _modSystems = new List<ModSystem>();
+        private static readonly List<GlobalItem> _globalItems = new List<GlobalItem>();
+        private static readonly List<GlobalNPC> _globalNPCs = new List<GlobalNPC>();
+
+        public static ModPlayer[] ActiveModPlayers { get; private set; } = Array.Empty<ModPlayer>();
+        public static ModSystem[] ActiveModSystems { get; private set; } = Array.Empty<ModSystem>();
+        public static GlobalItem[] ActiveGlobalItems { get; private set; } = Array.Empty<GlobalItem>();
+        public static GlobalNPC[] ActiveGlobalNPCs { get; private set; } = Array.Empty<GlobalNPC>();
 
         private static readonly ILogger Logger = LogManager.GetLogger("ContentHookDispatcher");
 
@@ -43,24 +49,29 @@ namespace TPML.Content.Engine
         {
             if (!_initialized) Initialize();
 
-            foreach (var item in contents)
+            lock (_syncLock)
             {
-                if (item is ModPlayer player && !ActiveModPlayers.Contains(player))
+                foreach (var item in contents)
                 {
-                    ActiveModPlayers.Add(player);
+                    if (item is ModPlayer player && !_modPlayers.Contains(player))
+                    {
+                        _modPlayers.Add(player);
+                    }
+                    else if (item is ModSystem system && !_modSystems.Contains(system))
+                    {
+                        _modSystems.Add(system);
+                    }
+                    else if (item is GlobalItem gItem && !_globalItems.Contains(gItem))
+                    {
+                        _globalItems.Add(gItem);
+                    }
+                    else if (item is GlobalNPC gNpc && !_globalNPCs.Contains(gNpc))
+                    {
+                        _globalNPCs.Add(gNpc);
+                    }
                 }
-                else if (item is ModSystem system && !ActiveModSystems.Contains(system))
-                {
-                    ActiveModSystems.Add(system);
-                }
-                else if (item is GlobalItem gItem && !ActiveGlobalItems.Contains(gItem))
-                {
-                    ActiveGlobalItems.Add(gItem);
-                }
-                else if (item is GlobalNPC gNpc && !ActiveGlobalNPCs.Contains(gNpc))
-                {
-                    ActiveGlobalNPCs.Add(gNpc);
-                }
+
+                CommitSnapshotsInternal();
             }
 
             if (!_patchesApplied)
@@ -70,12 +81,32 @@ namespace TPML.Content.Engine
             }
         }
 
+        public static void CommitSnapshots()
+        {
+            lock (_syncLock)
+            {
+                CommitSnapshotsInternal();
+            }
+        }
+
+        private static void CommitSnapshotsInternal()
+        {
+            ActiveModPlayers = _modPlayers.ToArray();
+            ActiveModSystems = _modSystems.ToArray();
+            ActiveGlobalItems = _globalItems.ToArray();
+            ActiveGlobalNPCs = _globalNPCs.ToArray();
+        }
+
         public static void Clear()
         {
-            ActiveModPlayers.Clear();
-            ActiveModSystems.Clear();
-            ActiveGlobalItems.Clear();
-            ActiveGlobalNPCs.Clear();
+            lock (_syncLock)
+            {
+                _modPlayers.Clear();
+                _modSystems.Clear();
+                _globalItems.Clear();
+                _globalNPCs.Clear();
+                CommitSnapshotsInternal();
+            }
             TPML.Content.Fusion.InventoryFusionManager.Clear();
             TPML.Content.Fusion.UnifiedInventoryFusionHooks.UnregisterAll();
             HookRegistry.Clear(HookScope.Content);
@@ -114,7 +145,7 @@ namespace TPML.Content.Engine
             orig();
             KeybindLoader.Update();
             TriggersSet triggers = PlayerInput.Triggers.Current;
-            for (int idx = 0; idx < ActiveModPlayers.Count; idx++)
+            for (int idx = 0; idx < ActiveModPlayers.Length; idx++)
             {
                 ActiveModPlayers[idx].ProcessTriggers(triggers);
             }

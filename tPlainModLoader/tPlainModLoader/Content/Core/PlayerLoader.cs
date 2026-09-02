@@ -20,7 +20,8 @@ namespace TPML.Content
     public static class PlayerLoader
     {
         private static readonly ILogger Logger = LogManager.GetLogger("PlayerLoader");
-        private static bool _hooksInitialized = false;
+        private static volatile bool _hooksInitialized = false;
+        private static readonly object _hookInitLock = new object();
 
         /// <summary>
         /// 集中注册所有 Player 相关的强类型 HookGen 钩子（单点入口，杜绝重复拦截）
@@ -29,23 +30,28 @@ namespace TPML.Content
         {
             if (_hooksInitialized) return;
 
-            On_Player.ResetEffects += Hook_ResetEffects;
-            On_Player.Update += Hook_Update;
-            On_Player.UpdateEquips += Hook_UpdateEquips;
-            On_Player.UpdateArmorSets += Hook_UpdateArmorSets;
-            On_Player.SavePlayer += Hook_SavePlayer;
-            On_Player.LoadPlayer += Hook_LoadPlayer;
-            On_PlayerFileData.SetAsActive += Hook_SetAsActive;
-            On_Player.DropTombstone += Hook_DropTombstone;
-            On_Player.AdjTiles += Hook_AdjTiles;
-            On_Player.KillMe += Hook_KillMe;
-            On_Player.GetItem += Hook_GetItem;
-            On_Player.ItemCheck_Shoot += Hook_ItemCheck_Shoot;
-            On_Player.ItemCheck_StartActualUse += Hook_ItemCheck_StartActualUse;
-            On_Player.ItemCheck_CheckCanUse_Inner += Hook_ItemCheck_CheckCanUse_Inner;
+            lock (_hookInitLock)
+            {
+                if (_hooksInitialized) return;
 
-            _hooksInitialized = true;
-            Logger.Info("PlayerLoader 强类型生命周期钩子全部初始化完成");
+                On_Player.ResetEffects += Hook_ResetEffects;
+                On_Player.Update += Hook_Update;
+                On_Player.UpdateEquips += Hook_UpdateEquips;
+                On_Player.UpdateArmorSets += Hook_UpdateArmorSets;
+                On_Player.SavePlayer += Hook_SavePlayer;
+                On_Player.LoadPlayer += Hook_LoadPlayer;
+                On_PlayerFileData.SetAsActive += Hook_SetAsActive;
+                On_Player.DropTombstone += Hook_DropTombstone;
+                On_Player.AdjTiles += Hook_AdjTiles;
+                On_Player.KillMe += Hook_KillMe;
+                On_Player.GetItem += Hook_GetItem;
+                On_Player.ItemCheck_Shoot += Hook_ItemCheck_Shoot;
+                On_Player.ItemCheck_StartActualUse += Hook_ItemCheck_StartActualUse;
+                On_Player.ItemCheck_CheckCanUse_Inner += Hook_ItemCheck_CheckCanUse_Inner;
+
+                _hooksInitialized = true;
+                Logger.Info("PlayerLoader 强类型生命周期钩子全部初始化完成");
+            }
         }
 
         #region Hook Handlers
@@ -173,7 +179,7 @@ namespace TPML.Content
             bool continueKill = true;
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
-            for (int idx = 0; idx < activePlayers.Count; idx++)
+            for (int idx = 0; idx < activePlayers.Length; idx++)
             {
                 var mp = activePlayers[idx];
                 mp.Player = self;
@@ -194,7 +200,7 @@ namespace TPML.Content
 
             orig(self, damageSource, dmg, hitDirection, pvp);
 
-            for (int idx = 0; idx < activePlayers.Count; idx++)
+            for (int idx = 0; idx < activePlayers.Length; idx++)
             {
                 var mp = activePlayers[idx];
                 mp.Player = self;
@@ -217,7 +223,7 @@ namespace TPML.Content
             }
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
-            for (int idx = 0; idx < activePlayers.Count; idx++)
+            for (int idx = 0; idx < activePlayers.Length; idx++)
             {
                 var mp = activePlayers[idx];
                 mp.Player = self;

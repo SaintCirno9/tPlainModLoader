@@ -40,16 +40,22 @@ namespace TPML.Content
         public static int NextItemID => _nextItemID;
         public static IReadOnlyCollection<ModItem> Items => _itemsByType.Values;
 
-        private static bool _hooksInitialized = false;
+        private static volatile bool _hooksInitialized = false;
+        private static readonly object _hookInitLock = new object();
 
         public static void InitializeHooks()
         {
             if (_hooksInitialized) return;
 
-            On_Item.SetDefaults += Hook_SetDefaults;
-            On_Item.NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool += Hook_NewItem;
+            lock (_hookInitLock)
+            {
+                if (_hooksInitialized) return;
 
-            _hooksInitialized = true;
+                On_Item.SetDefaults += Hook_SetDefaults;
+                On_Item.NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool += Hook_NewItem;
+
+                _hooksInitialized = true;
+            }
         }
 
         private static void Hook_SetDefaults(On_Item.orig_SetDefaults orig, Item self, int type, Terraria.GameContent.Items.ItemVariant variant)

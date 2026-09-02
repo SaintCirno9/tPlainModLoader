@@ -114,7 +114,7 @@ namespace tContentPatch.ModPatch
             }
 
             var activeSystems = ContentHookDispatcher.ActiveModSystems;
-            for (int idx = 0; idx < activeSystems.Count; idx++)
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
                 try
                 {
@@ -137,7 +137,7 @@ namespace tContentPatch.ModPatch
             if (gameInterfaceLayers == null) return;
 
             var activeSystems = ContentHookDispatcher.ActiveModSystems;
-            for (int idx = 0; idx < activeSystems.Count; idx++)
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
                 try
                 {
@@ -191,7 +191,7 @@ namespace tContentPatch.ModPatch
 
             GameTime gt = gameTime ?? new GameTime();
             var activeSystems = ContentHookDispatcher.ActiveModSystems;
-            for (int idx = 0; idx < activeSystems.Count; idx++)
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
                 var sys = activeSystems[idx];
                 try

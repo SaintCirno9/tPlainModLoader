@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,40 +13,47 @@ namespace TPML.Content
     /// </summary>
     public static class ModContent
     {
+        private static readonly object _registryLock = new object();
         private static readonly Dictionary<Type, object> _instances = new Dictionary<Type, object>();
         private static readonly Dictionary<string, Mod> _mods = new Dictionary<string, Mod>(StringComparer.OrdinalIgnoreCase);
         private static readonly List<ILoadable> _allContent = new List<ILoadable>();
 
-        private static readonly Dictionary<Type, int> _itemTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _projTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _npcTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _buffTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _tileTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _tileEntityTypes = new Dictionary<Type, int>();
-        private static readonly Dictionary<Type, int> _wallTypes = new Dictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _itemTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _projTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _npcTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _buffTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _tileTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _tileEntityTypes = new ConcurrentDictionary<Type, int>();
+        private static readonly ConcurrentDictionary<Type, int> _wallTypes = new ConcurrentDictionary<Type, int>();
 
         public static IReadOnlyCollection<Mod> Mods => _mods.Values;
 
         public static void RegisterMod(Mod mod)
         {
             if (mod == null) return;
-            if (_mods.TryGetValue(mod.Name, out Mod existing) && !ReferenceEquals(existing, mod))
-                return;
+            lock (_registryLock)
+            {
+                if (_mods.TryGetValue(mod.Name, out Mod existing) && !ReferenceEquals(existing, mod))
+                    return;
 
-            _mods[mod.Name] = mod;
-            _instances[mod.GetType()] = mod;
+                _mods[mod.Name] = mod;
+                _instances[mod.GetType()] = mod;
+            }
             Localization.LocalizationLoader.LoadModLocalization(mod);
         }
 
         public static void RegisterContent(ILoadable content)
         {
             if (content == null) return;
-            if (_allContent.Any(existing => ReferenceEquals(existing, content) ||
-                                             existing.GetType() == content.GetType()))
-                return;
+            lock (_registryLock)
+            {
+                if (_allContent.Any(existing => ReferenceEquals(existing, content) ||
+                                                 existing.GetType() == content.GetType()))
+                    return;
 
-            _allContent.Add(content);
-            _instances[content.GetType()] = content;
+                _allContent.Add(content);
+                _instances[content.GetType()] = content;
+            }
         }
 
         public static void RegisterItemType(Type type, int id)
@@ -80,9 +88,12 @@ namespace TPML.Content
 
         public static void Clear()
         {
-            _instances.Clear();
-            _mods.Clear();
-            _allContent.Clear();
+            lock (_registryLock)
+            {
+                _instances.Clear();
+                _mods.Clear();
+                _allContent.Clear();
+            }
             _itemTypes.Clear();
             _projTypes.Clear();
             _npcTypes.Clear();
@@ -94,17 +105,20 @@ namespace TPML.Content
 
         public static T GetInstance<T>() where T : class
         {
-            if (_instances.TryGetValue(typeof(T), out object val))
+            lock (_registryLock)
             {
-                return (T)val;
-            }
-
-            foreach (var item in _allContent)
-            {
-                if (item is T match || item.GetType().FullName == typeof(T).FullName)
+                if (_instances.TryGetValue(typeof(T), out object val))
                 {
-                    _instances[typeof(T)] = item;
-                    return item as T;
+                    return (T)val;
+                }
+
+                foreach (var item in _allContent)
+                {
+                    if (item is T match || item.GetType().FullName == typeof(T).FullName)
+                    {
+                        _instances[typeof(T)] = item;
+                        return item as T;
+                    }
                 }
             }
 
