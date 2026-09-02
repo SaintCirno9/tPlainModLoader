@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using PixelArt.Content.UI;
 using PixelArt.Utils.quickBuild;
 using ReLogic.Content;
@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace PixelArt.Content
 {
-    public partial class PixelArt : PatchMain
+    public partial class PixelArt : TPML.Content.ModSystem
     {
         public override void OnEnterWorld()
         {

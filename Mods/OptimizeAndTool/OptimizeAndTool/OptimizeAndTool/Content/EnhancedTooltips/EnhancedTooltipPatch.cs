@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
     /// 增强提示与随身饰品袋套装激活点亮渲染管道
     /// 作者: SaintCirno9
     /// </summary>
-    public class EnhancedTooltipPatch : PatchMain
+    public class EnhancedTooltipPatch : TPML.Content.ModSystem
     {
         public static readonly Color AmmoColor = new Color(60, 160, 90);
         public static readonly Color DataColor = Color.Gray;

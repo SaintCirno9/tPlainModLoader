@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
@@ -9,7 +9,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
     /// 生态与植被增强门控（草药极速生长/开花/补种、树木生长/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ 门控）
     /// 作者: SaintCirno9
     /// </summary>
-    public class EcologyHooks : PatchMain
+    public class EcologyHooks : TPML.Content.ModSystem
     {
         private static bool _registered = false;
 

@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using tContentPatch;
 using Terraria;
@@ -11,7 +11,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
     /// 脱战 1.5s 极速复活 & 复活/进世界自动重新召唤仆从与哨兵
     /// 作者: SaintCirno9
     /// </summary>
-    internal class Patch_RespawnAndMinion : PatchPlayer
+    internal class Patch_RespawnAndMinion : TPML.Content.ModPlayer
     {
         private static bool _wasDead = false;
 
@@ -107,7 +107,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         /// <summary>
         /// 进世界生命周期监听
         /// </summary>
-        internal class Patch_RespawnAndMinion_Main : PatchMain
+        internal class Patch_RespawnAndMinion_Main : TPML.Content.ModSystem
         {
             public override void OnEnterWorld()
             {

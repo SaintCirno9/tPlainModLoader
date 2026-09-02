@@ -8,7 +8,7 @@ using Terraria.UI;
 
 namespace PixelArt
 {
-    public class ModifyInterfaceLayers : PatchMain
+    public class ModifyInterfaceLayers : TPML.Content.ModSystem
     {
         public static UIState ui_state { get; private set; } = null;
         private static UserInterface ui = null;

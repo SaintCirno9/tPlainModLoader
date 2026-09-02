@@ -11,9 +11,9 @@ using Terraria.UI;
 namespace Skil.Content.skil15
 {
     //和圣骑士锤无关的下落
-    internal class skil15_4 : PatchPlayer
+    internal class skil15_4 : TPML.Content.ModPlayer
     {
-        private class enterWorld : PatchMain
+        private class enterWorld : TPML.Content.ModSystem
         {
             public override void OnEnterWorld()
             {

@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using OptimizeAndTool.Content.Cheat.Function1;
 using System;
@@ -13,7 +13,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
     /// Alt + 右键微距精准传送（智能吸附空位，防滑出小角落）
     /// 作者: SaintCirno9
     /// </summary>
-    internal class Patch_AltRightClickTeleport : PatchPlayer
+    internal class Patch_AltRightClickTeleport : TPML.Content.ModPlayer
     {
         private static bool _wasRightDown = false;
 

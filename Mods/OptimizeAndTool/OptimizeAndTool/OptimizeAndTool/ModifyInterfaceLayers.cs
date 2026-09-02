@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool
 {
-    public class ModifyInterfaceLayers : PatchMain
+    public class ModifyInterfaceLayers : TPML.Content.ModSystem
     {
         public static UIState ui_menu_state { get; private set; } = null;
         private static UserInterface ui_menu = null;

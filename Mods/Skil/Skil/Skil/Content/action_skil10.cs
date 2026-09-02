@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace Skil.Content
 {
-    public class skil10 : PatchPlayer
+    public class skil10 : TPML.Content.ModPlayer
     {
         //技能10, 一堆物品聚合在一起爆炸
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

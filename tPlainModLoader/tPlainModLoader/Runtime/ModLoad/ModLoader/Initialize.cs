@@ -42,10 +42,6 @@ namespace tContentPatch.ModLoad
 
                     Utils.ForHelp(mo.inheritance_netPacket, item => item.Initialize(), ex => exMess(mo, ex));
 
-                    Utils.ForHelp(mo.inheritance_patchMain, item => item.Initialize(), ex => exMess(mo, ex));
-
-                    Utils.ForHelp(mo.inheritance_patchPlayer, item => item.Initialize(), ex => exMess(mo, ex));
-
                     Utils.ForHelp(mo.inheritance_patchNPC, item => item.Initialize(), ex => exMess(mo, ex));
 
                     Utils.ForHelp(mo.inheritance_patchItem, item => item.Initialize(), ex => exMess(mo, ex));
@@ -90,8 +86,6 @@ namespace tContentPatch.ModLoad
 
                     try
                     {
-                        ContentPatch.typePatch.Get<PatchMain>().AddRange(mo.inheritance_patchMain);
-                        ContentPatch.typePatch.Get<PatchPlayer>().AddRange(mo.inheritance_patchPlayer);
                         ContentPatch.typePatch.Get<PatchNPC>().AddRange(mo.inheritance_patchNPC);
                         ContentPatch.typePatch.Get<PatchItem>().AddRange(mo.inheritance_patchItem);
                         ContentPatch.typePatch.Get<PatchProjectile>().AddRange(mo.inheritance_patchProjectile);

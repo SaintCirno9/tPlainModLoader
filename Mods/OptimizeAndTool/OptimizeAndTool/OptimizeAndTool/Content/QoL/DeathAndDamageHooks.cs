@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -87,7 +87,7 @@ namespace OptimizeAndTool.Content.QoL
     /// <summary>
     /// 墓碑拦截：CanDropTombstone 返回 false 即跳过 Player.DropTombstone（仅影响墓碑，不影响掉钱）
     /// </summary>
-    internal class Patch_NoTombstone : PatchPlayer
+    internal class Patch_NoTombstone : TPML.Content.ModPlayer
     {
         public override bool CanDropTombstone(Player This, long coinsOwned, NetworkText deathText, int hitDirection)
         {

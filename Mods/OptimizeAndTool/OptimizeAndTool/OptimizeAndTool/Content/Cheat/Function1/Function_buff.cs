@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal partial class Function_buff : PatchMain
+    internal partial class Function_buff : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> clearBuff = new GetSetReset<bool>();
         public static GetSetReset<bool> addBuff_Invisibility = new GetSetReset<bool>();

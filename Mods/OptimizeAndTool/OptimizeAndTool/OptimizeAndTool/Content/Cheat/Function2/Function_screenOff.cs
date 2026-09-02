@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -14,7 +14,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// 屏幕偏移
     /// </summary>
-    internal class Function_screenOff : PatchMain
+    internal class Function_screenOff : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
         public static GetSetReset<float> MoveSpeed = new GetSetReset<float>(16, 16);

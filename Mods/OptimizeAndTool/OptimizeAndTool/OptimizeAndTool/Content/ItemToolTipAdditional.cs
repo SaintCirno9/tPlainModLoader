@@ -12,7 +12,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content
 {
-    public class ItemToolTipAdditional : PatchMain
+    public class ItemToolTipAdditional : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
 

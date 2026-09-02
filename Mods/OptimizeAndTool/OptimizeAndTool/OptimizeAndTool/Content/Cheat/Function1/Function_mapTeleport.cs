@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal partial class Function_mapTeleport : PatchPlayer
+    internal partial class Function_mapTeleport : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> mapTeleport = new GetSetReset<bool>();
 

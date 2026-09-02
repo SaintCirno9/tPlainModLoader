@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using tContentPatch;
@@ -14,7 +14,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     /// 随身饰品袋玩家属性挂载、外观渲染与垃圾桶防误丢生命周期处理
     /// 作者: SaintCirno9
     /// </summary>
-    public class AccessoryBagPlayer : PatchPlayer
+    public class AccessoryBagPlayer : TPML.Content.ModPlayer
     {
         public override void UpdateEquipsPrefix(Player This, int playerI)
         {

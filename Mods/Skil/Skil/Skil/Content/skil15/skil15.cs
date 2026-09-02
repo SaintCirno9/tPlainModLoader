@@ -8,7 +8,7 @@ using Terraria.UI;
 namespace Skil.Content.skil15
 {
     //圣骑士锤相关
-    internal class skil15 : PatchMain
+    internal class skil15 : TPML.Content.ModSystem
     {
         private static readonly bool[] IsGoHome = new bool[Main.projectile.Length - 1];
 

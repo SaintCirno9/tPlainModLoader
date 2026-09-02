@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -14,7 +14,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// //NoPublic
     /// </summary>
-    internal class Function_newItemToPlay : PatchMain
+    internal class Function_newItemToPlay : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> nitp = new GetSetReset<bool>();
         public static GetSetReset<int> nitp_play = new GetSetReset<int>(-1, -1);

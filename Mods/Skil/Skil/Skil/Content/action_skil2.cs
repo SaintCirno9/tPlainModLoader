@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace Skil.Content
 {
-    public class skil2 : PatchPlayer
+    public class skil2 : TPML.Content.ModPlayer
     {
         //技能2, 召唤一个眼球发射射弹
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

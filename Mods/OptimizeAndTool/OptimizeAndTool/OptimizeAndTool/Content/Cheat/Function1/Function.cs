@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal partial class Function : PatchPlayer
+    internal partial class Function : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> noDead = new GetSetReset<bool>();
         public static GetSetReset<bool> manaMax = new GetSetReset<bool>();

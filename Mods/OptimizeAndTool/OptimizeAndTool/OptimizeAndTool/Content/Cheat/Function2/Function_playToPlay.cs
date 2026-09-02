@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -13,7 +13,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// //NoPublic
     /// </summary>
-    internal class Function_playToPlay : PatchPlayer
+    internal class Function_playToPlay : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> playToPlay = new GetSetReset<bool>();
         public static GetSetReset<int> playToPlay_play = new GetSetReset<int>(-1, -1);

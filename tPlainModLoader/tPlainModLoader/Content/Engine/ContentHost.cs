@@ -89,7 +89,7 @@ namespace TPML.Content
                         {
                             try
                             {
-                                var loadable = (ILoadable)Activator.CreateInstance(type);
+                                var loadable = (ILoadable)Activator.CreateInstance(type, true);
                                 mod.AddContent(loadable);
                             }
                             catch (Exception ex)
@@ -137,7 +137,7 @@ namespace TPML.Content
 
                 try
                 {
-                    Mod mod = (Mod)Activator.CreateInstance(type);
+                    Mod mod = (Mod)Activator.CreateInstance(type, true);
                     registered.Add(Register(mod));
                 }
                 catch (Exception ex)
@@ -146,7 +146,43 @@ namespace TPML.Content
                 }
             }
 
+            // 若程序集内未显式继承 TPML.Content.Mod，但包含 ILoadable（如 ModPlayer/ModSystem/ModItem），自动创建承载 Mod
+            if (registered.Count == 0)
+            {
+                bool hasLoadables = false;
+                foreach (Type type in types)
+                {
+                    if (type.IsClass && !type.IsAbstract && typeof(ILoadable).IsAssignableFrom(type) && !typeof(Mod).IsAssignableFrom(type))
+                    {
+                        hasLoadables = true;
+                        break;
+                    }
+                }
+
+                if (hasLoadables)
+                {
+                    string modName = assembly.GetName().Name;
+                    var autoMod = new AssemblyWrapperMod(modName, assembly);
+                    registered.Add(Register(autoMod));
+                }
+            }
+
             return registered;
+        }
+
+        /// <summary>
+        /// 自动包装程序集为轻量 Mod 容器
+        /// </summary>
+        internal sealed class AssemblyWrapperMod : Mod
+        {
+            public AssemblyWrapperMod(string name, Assembly assembly)
+            {
+                Name = name;
+                DisplayName = name;
+                Logger = LogManager.GetLogger(name);
+                Code = assembly;
+                Assets = new Assets.ModAssetRepository(this);
+            }
         }
 
         /// <summary>

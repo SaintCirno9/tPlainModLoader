@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace Skil.Content
 {
-    public class skil11 : PatchPlayer
+    public class skil11 : TPML.Content.ModPlayer
     {
         //技能11, 雷云
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
 namespace OptimizeAndTool.Content.Creative
 {
-    public class itemsSort_initialize : PatchMain
+    public class itemsSort_initialize : TPML.Content.ModSystem
     {
         public override void OnEnterWorld()
         {

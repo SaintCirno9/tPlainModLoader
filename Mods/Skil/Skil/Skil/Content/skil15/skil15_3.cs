@@ -10,7 +10,7 @@ using Terraria.UI;
 namespace Skil.Content.skil15
 {
     //旋转射出圣骑士锤
-    internal class skil15_3 : PatchPlayer
+    internal class skil15_3 : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
         public static GetSetReset<bool> NoTp = new GetSetReset<bool>();

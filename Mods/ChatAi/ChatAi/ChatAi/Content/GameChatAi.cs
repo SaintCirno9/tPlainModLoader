@@ -1,4 +1,4 @@
-﻿using ChatAi.Content.UI;
+using ChatAi.Content.UI;
 using ChatAi.Utils;
 using ChatAi.Utils.quickBuild;
 using Microsoft.Xna.Framework;
@@ -199,7 +199,7 @@ namespace ChatAi.Content
 
         private static int notEnable_time = 0;
 
-        private class notEnableCount : PatchMain
+        private class notEnableCount : TPML.Content.ModSystem
         {
             public override void UpdatePostfix(GameTime gameTime)
             {

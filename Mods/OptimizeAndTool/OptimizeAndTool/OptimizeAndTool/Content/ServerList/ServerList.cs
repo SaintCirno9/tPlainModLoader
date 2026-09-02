@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -11,7 +11,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.ServerList
 {
-    internal class ServerList : PatchMain
+    internal class ServerList : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
         public static Action OnSave = null;
@@ -57,7 +57,7 @@ namespace OptimizeAndTool.Content.ServerList
 
             if (Main.menuMode == 13 && Enable.val)
             {
-                if (uistate.Parent == null) ModifyInterfaceLayers.ui_menu_state.Append(uistate);
+                if (uistate.Parent == null) OptimizeAndTool.ModifyInterfaceLayers.ui_menu_state.Append(uistate);
             }
             else
             {

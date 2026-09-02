@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Utils;
@@ -11,7 +11,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function_displayPlayMap : PatchMain
+    internal class Function_displayPlayMap : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> displayPlayMap = new GetSetReset<bool>(true, true);
         public static GetSetReset<int> displayPlayMap_mapStyle1_extraSize = new GetSetReset<int>(20, 20);

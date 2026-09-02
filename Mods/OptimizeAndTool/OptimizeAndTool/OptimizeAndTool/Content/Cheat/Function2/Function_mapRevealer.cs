@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -12,7 +12,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    public class Function_mapRevealer : PatchPlayer
+    public class Function_mapRevealer : TPML.Content.ModPlayer
     {
         public class mapRevealer_Unload : Mod
         {
@@ -22,7 +22,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             }
         }
 
-        public class playState : PatchMain
+        public class playState : TPML.Content.ModSystem
         {
             public static bool _Update_noPlay = true;
             public static bool Update_noPlay = true;

@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Content.EnhancedTooltips;
 using OptimizeAndTool.Content.Optimize.ReduceMouseLag;
@@ -17,7 +17,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content
 {
-    internal partial class Function : PatchPlayer
+    internal partial class Function : TPML.Content.ModPlayer
     {
         public static List<CommandObject> GetCO()
         {

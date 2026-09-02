@@ -1,4 +1,4 @@
-using tContentPatch;
+﻿using tContentPatch;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -9,7 +9,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
     /// 魔镜 / 回程药水 / 海螺 / 手机瞬传（消除施法前摇延迟）
     /// 作者: SaintCirno9
     /// </summary>
-    internal class InstantRecallPlayer : PatchPlayer
+    internal class InstantRecallPlayer : TPML.Content.ModPlayer
     {
         public override void UpdatePrefix(Player This, int playerI)
         {

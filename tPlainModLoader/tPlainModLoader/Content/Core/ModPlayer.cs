@@ -133,10 +133,30 @@ namespace TPML.Content
         }
 
         public virtual bool CanDropTombstone(long coinsOwned, NetworkText deathText, int hitDirection) => true;
+        public virtual bool CanDropTombstone(Player player, long coinsOwned, NetworkText deathText, int hitDirection) => CanDropTombstone(coinsOwned, deathText, hitDirection);
         public virtual void UpdateArmorSets(int playerIndex) { }
-        public virtual void SavePlayer(PlayerFileData playerFile, bool skipMapSave) { }
-        public virtual void LoadPlayer(PlayerFileData playerFile) { }
-        public virtual void SetAsActive(PlayerFileData playerFile) { }
+        public virtual void UpdateArmorSetsPostfix(Player player, int playerIndex) => UpdateArmorSets(playerIndex);
+        public virtual void SavePlayer(PlayerFileData playerFile, bool skipMapSave)
+        {
+            SavePlayerPrefix(playerFile, skipMapSave);
+            SavePlayerPostfix(playerFile, skipMapSave);
+        }
+        public virtual void SavePlayerPrefix(PlayerFileData playerFile, bool skipMapSave) { }
+        public virtual void SavePlayerPostfix(PlayerFileData playerFile, bool skipMapSave) { }
+        public virtual void LoadPlayer(PlayerFileData playerFile)
+        {
+            LoadPlayerPostfix(playerFile);
+        }
+        public virtual void LoadPlayerPostfix(PlayerFileData playerFile) { }
+        public virtual void SetAsActive(PlayerFileData playerFile)
+        {
+            SetAsActivePostfix(playerFile);
+        }
+        public virtual void SetAsActivePostfix(PlayerFileData playerFile) { }
+        public virtual void UpdatePrefix(Player player, int playerIndex) { }
+        public virtual void UpdatePostfix(Player player, int playerIndex) { }
+        public virtual void UpdateEquipsPrefix(Player player, int playerIndex) { }
+        public virtual void UpdateEquipsPostfix(Player player, int playerIndex) { }
     }
 
     /// <summary>

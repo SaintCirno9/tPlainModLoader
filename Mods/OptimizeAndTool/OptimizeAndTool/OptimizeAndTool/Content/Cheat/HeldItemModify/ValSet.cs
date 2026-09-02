@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.HeldItemModify
 {
-    internal class ValSet : PatchPlayer
+    internal class ValSet : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> useTime = new GetSetReset<bool>();
         public static GetSetReset<int> useTime_val = new GetSetReset<int>();

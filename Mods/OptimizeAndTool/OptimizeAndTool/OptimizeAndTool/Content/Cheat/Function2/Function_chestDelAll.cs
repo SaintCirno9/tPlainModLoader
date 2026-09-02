@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// //NoPublic
     /// </summary>
-    internal class Function_chestDelAll : PatchPlayer
+    internal class Function_chestDelAll : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> chestDelAll = new GetSetReset<bool>();
 

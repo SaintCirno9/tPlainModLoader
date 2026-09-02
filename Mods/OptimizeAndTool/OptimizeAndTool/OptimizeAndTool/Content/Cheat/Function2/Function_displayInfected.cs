@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function_displayInfected : PatchPlayer
+    internal class Function_displayInfected : TPML.Content.ModPlayer
     {
         public class displayInfected_Unload : Mod
         {

@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace Skil.Content
 {
-    public class skil7 : PatchPlayer
+    public class skil7 : TPML.Content.ModPlayer
     {
         //技能7, 超级星星炮的额外攻击射弹在周围生成
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

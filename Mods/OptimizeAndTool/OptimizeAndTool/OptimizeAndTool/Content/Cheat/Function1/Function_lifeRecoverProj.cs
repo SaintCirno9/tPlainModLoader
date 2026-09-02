@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal partial class Function_lifeRecoverProj : PatchPlayer
+    internal partial class Function_lifeRecoverProj : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> lifeRecoverProj = new GetSetReset<bool>();
         public static GetSetReset<int> lifeRecoverProj_val = new GetSetReset<int>(16, 16);

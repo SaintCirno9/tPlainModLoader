@@ -5,7 +5,6 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.IO;
 using Terraria.Localization;
-using tContentPatch.ModPatch;
 using TPML.Content.Engine;
 using TPML.Content.IO;
 using TPML.Core.Diagnostics;
@@ -69,8 +68,20 @@ namespace TPML.Content
             // 确保玩家 adjTile 数组容量满足模组物块需求，防止 UpdateRecipeList 判定配方时越界
             EnsureAdjTileCapacity(self);
 
-            // 分发遗留 PatchPlayer.UpdatePrefix
-            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdatePrefix(self, i));
+            var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    mp.UpdatePrefix(self, i);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.UpdatePrefix 异常: {ex.Message}", ex);
+                }
+            }
 
             // 分发 ModPlayer.PreUpdate
             PreUpdate(self);
@@ -91,8 +102,19 @@ namespace TPML.Content
                 self.controlUseItem = false;
             }
 
-            // 分发遗留 PatchPlayer.UpdatePostfix
-            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdatePostfix(self, i));
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    mp.UpdatePostfix(self, i);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.UpdatePostfix 异常: {ex.Message}", ex);
+                }
+            }
 
             // 分发 ModPlayer.PostUpdate
             PostUpdate(self);
@@ -100,16 +122,43 @@ namespace TPML.Content
 
         private static void Hook_UpdateEquips(On_Player.orig_UpdateEquips orig, Player self, int i)
         {
-            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateEquipsPrefix(self, i));
+            var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    mp.UpdateEquipsPrefix(self, i);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.UpdateEquipsPrefix 异常: {ex.Message}", ex);
+                }
+            }
+
             orig(self, i);
-            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateEquipsPostfix(self, i));
+
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    mp.UpdateEquipsPostfix(self, i);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.UpdateEquipsPostfix 异常: {ex.Message}", ex);
+                }
+            }
+
             PostUpdateEquips(self);
         }
 
         private static void Hook_UpdateArmorSets(On_Player.orig_UpdateArmorSets orig, Player self, int i)
         {
             orig(self, i);
-            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateArmorSetsPostfix(self, i));
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
             for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -135,7 +184,6 @@ namespace TPML.Content
                 {
                     ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player, playerFile);
                 }
-                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SavePlayerPrefix(playerFile, skipMapSave));
             }
 
             orig(playerFile, skipMapSave, canBeSkipped);
@@ -146,7 +194,6 @@ namespace TPML.Content
                 {
                     ModItemSidecarEngine.OnPlayerSavePostfix(playerFile.Player);
                 }
-                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SavePlayerPostfix(playerFile, skipMapSave));
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
                 for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -171,7 +218,6 @@ namespace TPML.Content
             if (result?.Player != null)
             {
                 ModItemSidecarEngine.OnPlayerLoaded(result.Player);
-                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.LoadPlayerPostfix(result));
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
                 for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -199,7 +245,6 @@ namespace TPML.Content
                 // 激活新角色前，先广播重置并清理上一个角色的扩展容器内存驻留状态
                 ModItemSidecarEngine.ResetContainers();
                 ModItemSidecarEngine.OnPlayerLoaded(self.Player);
-                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SetAsActivePostfix(self));
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
                 for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -220,7 +265,7 @@ namespace TPML.Content
 
         private static void Hook_DropTombstone(On_Player.orig_DropTombstone orig, Player self, long coinsOwned, NetworkText deathText, int hitDirection)
         {
-            bool canDrop = tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.CanDropTombstone(self, coinsOwned, deathText, hitDirection));
+            bool canDrop = true;
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
             for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -229,7 +274,7 @@ namespace TPML.Content
                 mp.Player = self;
                 try
                 {
-                    if (!mp.CanDropTombstone(coinsOwned, deathText, hitDirection))
+                    if (!mp.CanDropTombstone(coinsOwned, deathText, hitDirection) || !mp.CanDropTombstone(self, coinsOwned, deathText, hitDirection))
                     {
                         canDrop = false;
                     }

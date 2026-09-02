@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -11,7 +11,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function_mouseToPlayAngle : PatchMain
+    internal class Function_mouseToPlayAngle : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> mtpa = new GetSetReset<bool>();
         public static GetSetReset<int> mtpa_play = new GetSetReset<int>(-1, -1);

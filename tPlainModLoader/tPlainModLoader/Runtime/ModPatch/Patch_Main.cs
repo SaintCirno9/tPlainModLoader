@@ -70,22 +70,17 @@ namespace tContentPatch.ModPatch
 
                 UpdatePrefix_CanUpdateGameplay();
 
-                if (PerformanceProfiler.IsEnabled)
+                var activeSystems = ContentHookDispatcher.ActiveModSystems;
+                for (int idx = 0; idx < activeSystems.Length; idx++)
                 {
-                    for (int i = 0; i < mod.Count; i++)
+                    try
                     {
-                        var item = mod[i];
-                        if (item == null) continue;
-                        using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePrefix"))
-                        {
-                            try { item.UpdatePrefix(gameTime); }
-                            catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
-                        }
+                        activeSystems[idx].UpdatePrefix(gameTime);
                     }
-                }
-                else
-                {
-                    mod.ForTry(item => item.UpdatePrefix(gameTime));
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModSystem.UpdatePrefix 异常: {ex.Message}", ex);
+                    }
                 }
             }
             catch (Exception ex)
@@ -95,30 +90,24 @@ namespace tContentPatch.ModPatch
 
             orig(self, gameTime);
 
-            if (PerformanceProfiler.IsEnabled)
-            {
-                for (int i = 0; i < mod.Count; i++)
-                {
-                    var item = mod[i];
-                    if (item == null) continue;
-                    using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePostfix"))
-                    {
-                        try { item.UpdatePostfix(gameTime); }
-                        catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
-                    }
-                }
-            }
-            else
-            {
-                mod.ForTry(item => item.UpdatePostfix(gameTime));
-            }
-
-            var activeSystems = ContentHookDispatcher.ActiveModSystems;
-            for (int idx = 0; idx < activeSystems.Length; idx++)
+            var systems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < systems.Length; idx++)
             {
                 try
                 {
-                    activeSystems[idx].PostUpdateEverything();
+                    systems[idx].UpdatePostfix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.UpdatePostfix 异常: {ex.Message}", ex);
+                }
+            }
+
+            for (int idx = 0; idx < systems.Length; idx++)
+            {
+                try
+                {
+                    systems[idx].PostUpdateEverything();
                 }
                 catch (Exception ex)
                 {
@@ -149,13 +138,23 @@ namespace tContentPatch.ModPatch
                 }
             }
 
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].SetupDrawInterfaceLayersPostfix(gameInterfaceLayers);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"执行 ModSystem.SetupDrawInterfaceLayersPostfix 异常: {ex.Message}", ex);
+                }
+            }
+
             if (Main.playerInventory && !_firstInvDrawLogged)
             {
                 Logger.Info($"[Patch_Main] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}");
                 _firstInvDrawLogged = true;
             }
-
-            SetupDrawInterfaceLayersPostfix();
         }
 
         private static int _preUpdateScrollWheelForUI = 0;
@@ -164,11 +163,19 @@ namespace tContentPatch.ModPatch
         {
             _preUpdateScrollWheelForUI = PlayerInput.ScrollWheelDeltaForUI;
 
-            mod.ForTry(item =>
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
-                PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
-                item.UpdateUIStatesPrefix(gameTime);
-            });
+                try
+                {
+                    PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
+                    activeSystems[idx].UpdateUIStatesPrefix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.UpdateUIStatesPrefix 异常: {ex.Message}", ex);
+                }
+            }
 
             PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
 
@@ -180,17 +187,23 @@ namespace tContentPatch.ModPatch
                 scrollWheel = _preUpdateScrollWheelForUI;
             }
 
-            mod.ForTry(item =>
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
-                if (PlayerInput.ScrollWheelDeltaForUI == 0 && scrollWheel != 0)
+                try
                 {
-                    PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                    if (PlayerInput.ScrollWheelDeltaForUI == 0 && scrollWheel != 0)
+                    {
+                        PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                    }
+                    activeSystems[idx].UpdateUIStatesPostfix(gameTime);
                 }
-                item.UpdateUIStatesPostfix(gameTime);
-            });
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.UpdateUIStatesPostfix 异常: {ex.Message}", ex);
+                }
+            }
 
             GameTime gt = gameTime ?? new GameTime();
-            var activeSystems = ContentHookDispatcher.ActiveModSystems;
             for (int idx = 0; idx < activeSystems.Length; idx++)
             {
                 var sys = activeSystems[idx];
@@ -217,22 +230,80 @@ namespace tContentPatch.ModPatch
 
         private static void Hook_DoUpdateInWorld(On_Main.orig_DoUpdateInWorld orig, Main self)
         {
-            mod.ForTry(item => item.DoUpdateInWorldPrefix());
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DoUpdateInWorldPrefix();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DoUpdateInWorldPrefix 异常: {ex.Message}", ex);
+                }
+            }
+
             orig(self);
-            mod.ForTry(item => item.DoUpdateInWorldPostfix());
+
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DoUpdateInWorldPostfix();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DoUpdateInWorldPostfix 异常: {ex.Message}", ex);
+                }
+            }
         }
 
         private static void Hook_DrawMap(On_Main.orig_DrawMap orig, Main self, GameTime gameTime)
         {
             orig(self, gameTime);
-            mod.ForTry(item => item.DrawMapPostfix(gameTime));
+
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DrawMapPostfix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DrawMapPostfix 异常: {ex.Message}", ex);
+                }
+            }
         }
 
         private static void Hook_DrawMenu(On_Main.orig_DrawMenu orig, Main self, GameTime gameTime)
         {
-            mod.ForTry(item => item.DrawMenuPrefix(gameTime));
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DrawMenuPrefix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DrawMenuPrefix 异常: {ex.Message}", ex);
+                }
+            }
+
             orig(self, gameTime);
-            mod.ForTry(item => item.DrawMenuPostfix(gameTime));
+
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DrawMenuPostfix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DrawMenuPostfix 异常: {ex.Message}", ex);
+                }
+            }
         }
 
         private static void Hook_MouseText_DrawItemTooltip_GetLinesInfo(On_Main.orig_MouseText_DrawItemTooltip_GetLinesInfo orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
@@ -303,9 +374,33 @@ namespace tContentPatch.ModPatch
 
         private static void Hook_DoDraw(On_Main.orig_DoDraw orig, Main self, GameTime gameTime)
         {
-            mod.ForTry(item => item.DoDrawPrefix(gameTime));
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DoDrawPrefix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DoDrawPrefix 异常: {ex.Message}", ex);
+                }
+            }
+
             orig(self, gameTime);
-            mod.ForTry(item => item.DoDrawPostfix(gameTime));
+
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].DoDrawPostfix(gameTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.DoDrawPostfix 异常: {ex.Message}", ex);
+                }
+            }
+
             DrawIME.Postfix(gameTime);
             DrawTip.PatchDoDraw.Postfix(gameTime);
         }
@@ -365,11 +460,33 @@ namespace tContentPatch.ModPatch
                 {
                     ModItemSidecarEngine.OnPlayerLoaded(Main.LocalPlayer);
                 }
-                mod.ForTry(item => item.OnEnterWorld());
+                var activeSystems = ContentHookDispatcher.ActiveModSystems;
+                for (int idx = 0; idx < activeSystems.Length; idx++)
+                {
+                    try
+                    {
+                        activeSystems[idx].OnEnterWorld();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModSystem.OnEnterWorld 异常: {ex.Message}", ex);
+                    }
+                }
             }
             else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
             {
-                mod.ForTry(item => item.OnLeaveWorld());
+                var activeSystems = ContentHookDispatcher.ActiveModSystems;
+                for (int idx = 0; idx < activeSystems.Length; idx++)
+                {
+                    try
+                    {
+                        activeSystems[idx].OnLeaveWorld();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModSystem.OnLeaveWorld 异常: {ex.Message}", ex);
+                    }
+                }
                 // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
                 ModItemSidecarEngine.ResetContainers();
                 // 离开世界时自动持久化所有脏模组设置
@@ -389,46 +506,37 @@ namespace tContentPatch.ModPatch
 
         public static void SetupDrawInterfaceLayersPostfix()
         {
-            try
-            {
-                List<GameInterfaceLayer> gameInterfaceLayers = Main.instance?._gameInterfaceLayers;
-                if (gameInterfaceLayers == null) return;
+            List<GameInterfaceLayer> gameInterfaceLayers = Main.instance?._gameInterfaceLayers;
+            if (gameInterfaceLayers == null) return;
 
-                if (PerformanceProfiler.IsEnabled)
-                {
-                    for (int i = 0; i < mod.Count; i++)
-                    {
-                        var item = mod[i];
-                        if (item == null) continue;
-                        using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".SetupDrawInterfaceLayers"))
-                        {
-                            try { item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers); }
-                            catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
-                        }
-                    }
-                }
-                else
-                {
-                    mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
-                }
-            }
-            catch (Exception ex)
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
-                OutputDebug.OutputException(ex);
+                try
+                {
+                    activeSystems[idx].SetupDrawInterfaceLayersPostfix(gameInterfaceLayers);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.SetupDrawInterfaceLayersPostfix 异常: {ex.Message}", ex);
+                }
             }
         }
 
         public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo,
             ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors)
         {
-            try
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
             {
-                foreach (PatchMain i in mod) i.MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo,
-                    ref oldKB, ref numLines, ref toolTipLine, ref lineColors);
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
+                try
+                {
+                    activeSystems[idx].MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref oldKB, ref numLines, ref toolTipLine, ref lineColors);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.MouseText_DrawItemTooltip_GetLinesInfoPostfix 异常: {ex.Message}", ex);
+                }
             }
         }
 
@@ -437,7 +545,18 @@ namespace tContentPatch.ModPatch
             Vector2 origin = __result;
             Vector2 modifi = __result;
 
-            mod.ForTry(item => modifi = item.PlayerFocusedScreenPosition(origin, modifi));
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Length; idx++)
+            {
+                try
+                {
+                    modifi = activeSystems[idx].PlayerFocusedScreenPosition(origin, modifi);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.PlayerFocusedScreenPosition 异常: {ex.Message}", ex);
+                }
+            }
 
             __result = modifi;
         }

@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
@@ -17,7 +17,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// //NoPublic
     /// </summary>
-    internal class Function_damagePlay2 : PatchMain
+    internal class Function_damagePlay2 : TPML.Content.ModSystem
     {
         public static GetSetReset<int> damagePlay_damage = new GetSetReset<int>(777, 777);
         public static GetSetReset<int> damagePlay_play = new GetSetReset<int>(-1, -1);

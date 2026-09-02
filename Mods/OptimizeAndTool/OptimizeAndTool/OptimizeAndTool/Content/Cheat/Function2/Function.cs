@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function : PatchPlayer
+    internal class Function : TPML.Content.ModPlayer
     {
         public static GetSetReset<int> functionDamage = new GetSetReset<int>();
         public static GetSetReset<bool> aimAdvance = new GetSetReset<bool>();

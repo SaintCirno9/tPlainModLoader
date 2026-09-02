@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -799,7 +799,7 @@ namespace OptimizeAndTool.Content.BigBag
     /// 巨大背包角色生命周期监听器：
     /// 角色保存、加载、切换时自动存取属于该角色的独立大背包数据
     /// </summary>
-    public class BigBagPlayer : PatchPlayer
+    public class BigBagPlayer : TPML.Content.ModPlayer
     {
         public override void SavePlayerPrefix(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
         {

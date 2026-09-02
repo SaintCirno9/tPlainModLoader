@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal class Function_fly : PatchPlayer
+    internal class Function_fly : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> fly = new GetSetReset<bool>();
         public static GetSetReset<float> fly_val = new GetSetReset<float>(16, 16);

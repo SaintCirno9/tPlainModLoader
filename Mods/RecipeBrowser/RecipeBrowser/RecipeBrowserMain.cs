@@ -10,7 +10,7 @@ using TPML.Core.Logging;
 
 namespace RecipeBrowser
 {
-    public class RecipeBrowserMain : PatchMain
+    public class RecipeBrowserMain : TPML.Content.ModSystem
     {
         private static readonly ILogger Logger = LogManager.GetLogger("RecipeBrowser");
         public override void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers)

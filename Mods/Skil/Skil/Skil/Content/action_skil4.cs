@@ -11,7 +11,7 @@ using static Skil.Content.Utils;
 
 namespace Skil.Content
 {
-    public class skil4 : PatchPlayer
+    public class skil4 : TPML.Content.ModPlayer
     {
         //技能4, 生成一圈旋转的射弹, 范围不断变大, 时间到后开始爆炸
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
@@ -44,7 +44,7 @@ namespace Skil.Content
             else a1_skil4_false(This);
         }
 
-        private class enterWorld : PatchMain
+        private class enterWorld : TPML.Content.ModSystem
         {
             public override void OnEnterWorld()
             {

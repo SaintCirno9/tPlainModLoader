@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
     /// <summary>
     /// //NoPublic
     /// </summary>
-    internal class Function_chestAddAll : PatchPlayer
+    internal class Function_chestAddAll : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> chestAddAll = new GetSetReset<bool>();
         public static GetSetReset<int> chestAddAll_set = new GetSetReset<int>(1, 1, GetSetReset.GetIntFunc(1, ItemID.Count - 1));

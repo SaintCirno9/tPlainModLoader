@@ -78,5 +78,30 @@ namespace TPML.Content
         public virtual void PostAddRecipes()
         {
         }
+
+        public virtual void UpdatePrefix(GameTime gameTime) { }
+        public virtual void UpdatePostfix(GameTime gameTime) { }
+        public virtual void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers) { }
+        public virtual void UpdateUIStatesPrefix(GameTime gameTime) { }
+        public virtual void UpdateUIStatesPostfix(GameTime gameTime) { }
+        public virtual void DoUpdateInWorldPrefix() { }
+        public virtual void DoUpdateInWorldPostfix() { }
+        public virtual void DrawMapPostfix(GameTime gameTime) { }
+        public virtual void DrawMenuPrefix(GameTime gameTime) { }
+        public virtual void DrawMenuPostfix(GameTime gameTime) { }
+        public virtual void OnEnterWorld() { }
+        public virtual void OnLeaveWorld() { }
+        public virtual void DoDrawPrefix(GameTime gameTime) { }
+        public virtual void DoDrawPostfix(GameTime gameTime) { }
+        public virtual Vector2 PlayerFocusedScreenPosition(Vector2 origin, Vector2 modifi) => modifi;
+
+        public override void Load()
+        {
+            base.Load();
+            Initialize();
+        }
+
+        public virtual void Initialize() { }
+        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Terraria.Item item, ref int yoyoLogo, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
     }
 }

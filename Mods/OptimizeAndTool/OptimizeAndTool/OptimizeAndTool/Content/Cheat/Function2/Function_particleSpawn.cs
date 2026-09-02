@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function_particleSpawn : PatchPlayer
+    internal class Function_particleSpawn : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> particleSpawn = new GetSetReset<bool>();
         public static GetSetReset<int> particleSpawn_set = new GetSetReset<int>();

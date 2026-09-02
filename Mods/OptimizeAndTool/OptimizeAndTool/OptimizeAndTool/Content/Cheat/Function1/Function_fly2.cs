@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal class Function_fly2 : PatchPlayer
+    internal class Function_fly2 : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> fly2 = new GetSetReset<bool>();
         public static GetSetReset<float> fly2_val = new GetSetReset<float>(20, 20);
@@ -90,7 +90,7 @@ namespace OptimizeAndTool.Content.Cheat.Function1
             fly2_resume = true;
         }
 
-        private class Function_fly2_ModMain : PatchMain
+        private class Function_fly2_ModMain : TPML.Content.ModSystem
         {
             public override void OnEnterWorld()
             {

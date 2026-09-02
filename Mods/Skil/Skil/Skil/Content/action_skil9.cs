@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace Skil.Content
 {
-    public class skil9 : PatchPlayer
+    public class skil9 : TPML.Content.ModPlayer
     {
         //技能9, 一圈激光围绕旋转
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

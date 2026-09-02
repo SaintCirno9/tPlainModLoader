@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
@@ -88,7 +88,7 @@ namespace OptimizeAndTool.Content
             return uis;
         }
 
-        public class GameViewMatrixZoomLimitLoop : PatchMain
+        public class GameViewMatrixZoomLimitLoop : TPML.Content.ModSystem
         {
             public override void DoUpdateInWorldPrefix()
             {

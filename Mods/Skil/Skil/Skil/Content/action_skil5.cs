@@ -12,7 +12,7 @@ using static Skil.Content.Utils;
 
 namespace Skil.Content
 {
-    public class skil5 : PatchPlayer
+    public class skil5 : TPML.Content.ModPlayer
     {
         //技能5, 从两侧生成一堆射弹
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();

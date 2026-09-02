@@ -43,36 +43,22 @@ namespace tContentPatch.ModLoad
         public List<ModSetting> inheritance_setting = null;
         /// <summary/>
         public List<ModNetPacket> inheritance_netPacket = null;
-        /// <summary>
-        /// 继承了<see cref="PatchMain"/>的类
-        /// </summary>
-        public List<PatchMain> inheritance_patchMain = null;
-        /// <summary>
-        /// 继承了<see cref="PatchPlayer"/>的类
-        /// </summary>
-        public List<PatchPlayer> inheritance_patchPlayer = null;
-        /// <summary/>
-        public List<PatchNPC> inheritance_patchNPC = null;
-        /// <summary/>
-        public List<PatchItem> inheritance_patchItem = null;
-        /// <summary/>
-        public List<PatchProjectile> inheritance_patchProjectile = null;
-        /// <summary/>
-        public List<PatchTileLightScanner> inheritance_patchTileLightScanner = null;
-        /// <summary/>
-        public List<PatchRemadeChatMonitor> inheritance_patchRemadeChatMonitor = null;
-        /// <summary/>
-        public List<PatchWorldFile> inheritance_patchWorldFile = null;
-        /// <summary/>
-        public List<PatchNetMessage> inheritance_patchNetMessage = null;
-        /// <summary/>
-        public List<PatchMessageBuffer> inheritance_patchMessageBuffer = null;
-        /// <summary/>
-        public List<PatchChest> inheritance_patchChest = null;
-        /// <summary/>
-        public List<PatchRemoteClient> inheritance_patchRemoteClient = null;
-        /// <summary/>
-        public List<PatchWorldGen> inheritance_patchWorldGen = null;
+
+        [System.Obsolete("Phase D.2 已废弃，全面迁移至 TPML.Content.ModSystem 与 ModPlayer", false)]
+        public List<PatchMain> inheritance_patchMain = new List<PatchMain>();
+        [System.Obsolete("Phase D.2 已废弃，全面迁移至 TPML.Content.ModPlayer", false)]
+        public List<PatchPlayer> inheritance_patchPlayer = new List<PatchPlayer>();
+        public List<PatchNPC> inheritance_patchNPC = new List<PatchNPC>();
+        public List<PatchItem> inheritance_patchItem = new List<PatchItem>();
+        public List<PatchProjectile> inheritance_patchProjectile = new List<PatchProjectile>();
+        public List<PatchTileLightScanner> inheritance_patchTileLightScanner = new List<PatchTileLightScanner>();
+        public List<PatchRemadeChatMonitor> inheritance_patchRemadeChatMonitor = new List<PatchRemadeChatMonitor>();
+        public List<PatchWorldFile> inheritance_patchWorldFile = new List<PatchWorldFile>();
+        public List<PatchNetMessage> inheritance_patchNetMessage = new List<PatchNetMessage>();
+        public List<PatchMessageBuffer> inheritance_patchMessageBuffer = new List<PatchMessageBuffer>();
+        public List<PatchChest> inheritance_patchChest = new List<PatchChest>();
+        public List<PatchRemoteClient> inheritance_patchRemoteClient = new List<PatchRemoteClient>();
+        public List<PatchWorldGen> inheritance_patchWorldGen = new List<PatchWorldGen>();
 
         /// <summary>
         /// 复制模组对象的字段, <see cref="config"/>,<see cref="info"/>也为复制对象

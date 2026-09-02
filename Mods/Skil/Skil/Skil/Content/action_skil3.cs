@@ -10,7 +10,7 @@ using static Skil.Content.Utils;
 
 namespace Skil.Content
 {
-    public class skil3 : PatchPlayer
+    public class skil3 : TPML.Content.ModPlayer
     {
         //技能3, 召唤一个眼球激光扫射
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
