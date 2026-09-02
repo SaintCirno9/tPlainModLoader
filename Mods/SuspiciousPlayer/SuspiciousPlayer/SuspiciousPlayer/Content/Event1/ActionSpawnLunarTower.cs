@@ -1,16 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Linq;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 生成柱子, 再次生成则回复护盾
     /// </summary>
-    internal class ActionSpawnLunarTower : PatchMain
+    internal class ActionSpawnLunarTower : ModSystem
     {
         //NPC.ShieldStrengthTowerVortex = 0;
         //NPC.ShieldStrengthTowerStardust = 0;

@@ -1,16 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Linq;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 召唤龙
     /// </summary>
-    internal class ActionCultistRitual : PatchMain
+    internal class ActionCultistRitual : ModSystem
     {
         public static ActionState state = new ActionState(run, end);
         private static Projectile fazhen = null;

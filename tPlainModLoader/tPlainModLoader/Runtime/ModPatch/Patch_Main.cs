@@ -1,3 +1,4 @@
+#pragma warning disable CS0618
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
@@ -82,7 +83,6 @@ namespace tContentPatch.ModPatch
                         Logger.Error($"ModSystem.UpdatePrefix 异常: {ex.Message}", ex);
                     }
                 }
-                mod.ForTry(item => item.UpdatePrefix(gameTime));
             }
             catch (Exception ex)
             {
@@ -103,7 +103,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.UpdatePostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.UpdatePostfix(gameTime));
 
             for (int idx = 0; idx < systems.Length; idx++)
             {
@@ -152,8 +151,6 @@ namespace tContentPatch.ModPatch
                 }
             }
 
-            mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
-
             if (Main.playerInventory && !_firstInvDrawLogged)
             {
                 Logger.Info($"[Patch_Main] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}");
@@ -180,7 +177,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.UpdateUIStatesPrefix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.UpdateUIStatesPrefix(gameTime));
 
             PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
 
@@ -207,7 +203,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.UpdateUIStatesPostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.UpdateUIStatesPostfix(gameTime));
 
             GameTime gt = gameTime ?? new GameTime();
             for (int idx = 0; idx < activeSystems.Length; idx++)
@@ -248,7 +243,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DoUpdateInWorldPrefix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DoUpdateInWorldPrefix());
 
             orig(self);
 
@@ -263,7 +257,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DoUpdateInWorldPostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DoUpdateInWorldPostfix());
         }
 
         private static void Hook_DrawMap(On_Main.orig_DrawMap orig, Main self, GameTime gameTime)
@@ -282,7 +275,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DrawMapPostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DrawMapPostfix(gameTime));
         }
 
         private static void Hook_DrawMenu(On_Main.orig_DrawMenu orig, Main self, GameTime gameTime)
@@ -299,7 +291,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DrawMenuPrefix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DrawMenuPrefix(gameTime));
 
             orig(self, gameTime);
 
@@ -314,7 +305,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DrawMenuPostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DrawMenuPostfix(gameTime));
         }
 
         private static void Hook_MouseText_DrawItemTooltip_GetLinesInfo(On_Main.orig_MouseText_DrawItemTooltip_GetLinesInfo orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
@@ -376,7 +366,7 @@ namespace tContentPatch.ModPatch
                 }
             }
 
-            // 3. 分发旧 PatchMain 的 Tooltip 拓展
+            // 3. 分发 ModSystem 的 Tooltip 拓展
             float oldKBLocal = oldKB;
             string[] toolTipLineLocal = toolTipLine;
             Color[] lineColorsLocal = lineColors;
@@ -397,7 +387,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DoDrawPrefix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DoDrawPrefix(gameTime));
 
             orig(self, gameTime);
 
@@ -412,7 +401,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.DoDrawPostfix 异常: {ex.Message}", ex);
                 }
             }
-            mod.ForTry(item => item.DoDrawPostfix(gameTime));
 
             DrawIME.Postfix(gameTime);
             DrawTip.PatchDoDraw.Postfix(gameTime);
@@ -485,7 +473,6 @@ namespace tContentPatch.ModPatch
                         Logger.Error($"ModSystem.OnEnterWorld 异常: {ex.Message}", ex);
                     }
                 }
-                mod.ForTry(item => item.OnEnterWorld());
             }
             else if (_UpdatePrefix_CanUpdateGameplay_old && Main.CanUpdateGameplay == false)
             {
@@ -501,7 +488,6 @@ namespace tContentPatch.ModPatch
                         Logger.Error($"ModSystem.OnLeaveWorld 异常: {ex.Message}", ex);
                     }
                 }
-                mod.ForTry(item => item.OnLeaveWorld());
                 // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
                 ModItemSidecarEngine.ResetContainers();
                 // 离开世界时自动持久化所有脏模组设置
@@ -536,8 +522,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.SetupDrawInterfaceLayersPostfix 异常: {ex.Message}", ex);
                 }
             }
-
-            mod.ForTry(item => item.SetupDrawInterfaceLayersPostfix(gameInterfaceLayers));
         }
 
         public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo,
@@ -554,18 +538,6 @@ namespace tContentPatch.ModPatch
                 {
                     Logger.Error($"ModSystem.MouseText_DrawItemTooltip_GetLinesInfoPostfix 异常: {ex.Message}", ex);
                 }
-            }
-
-            try
-            {
-                foreach (PatchMain i in mod)
-                {
-                    i.MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref oldKB, ref numLines, ref toolTipLine, ref lineColors);
-                }
-            }
-            catch (Exception ex)
-            {
-                OutputDebug.OutputException(ex);
             }
         }
 
@@ -586,8 +558,6 @@ namespace tContentPatch.ModPatch
                     Logger.Error($"ModSystem.PlayerFocusedScreenPosition 异常: {ex.Message}", ex);
                 }
             }
-
-            mod.ForTry(item => modifi = item.PlayerFocusedScreenPosition(origin, modifi));
 
             __result = modifi;
         }

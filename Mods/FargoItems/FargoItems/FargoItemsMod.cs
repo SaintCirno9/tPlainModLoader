@@ -10,9 +10,8 @@ namespace FargoItems
     /// <summary>
     /// tPlainModLoader 原生 Mod 加载器入口
     /// </summary>
-    public class FargoItemsTPMLEntry : tContentPatch.Mod
+    public class FargoItemsTPMLEntry : TPML.Content.Mod
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("FargoItems");
         public static FargoItemsMod ModInstance { get; private set; }
 
         public override void Load()
@@ -36,7 +35,7 @@ namespace FargoItems
     /// <summary>
     /// 玩家进入世界通知与材质状态保障
     /// </summary>
-    public class FargoItemsPlayerNotice : tContentPatch.PatchPlayer
+    public class FargoItemsPlayerNotice : TPML.Content.ModPlayer
     {
         private bool _announced = false;
 
@@ -56,7 +55,7 @@ namespace FargoItems
     /// <summary>
     /// 主循环前置贴图就绪保障
     /// </summary>
-    public class FargoItemsPatchMain : tContentPatch.PatchMain
+    public class FargoItemsPatchMain : TPML.Content.ModSystem
     {
         private static bool _texturesReady = false;
 

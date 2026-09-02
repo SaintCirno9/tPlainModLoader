@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
@@ -100,7 +100,7 @@ namespace SuspiciousPlayer.Content.Event1
         }
     }
 
-    public class EventMain : PatchMain
+    public class EventMain : TPML.Content.ModSystem
     {
         public override void OnEnterWorld()
         {

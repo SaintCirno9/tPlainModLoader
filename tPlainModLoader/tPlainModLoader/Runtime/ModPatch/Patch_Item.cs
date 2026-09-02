@@ -1,3 +1,4 @@
+#pragma warning disable CS0618
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Terraria;

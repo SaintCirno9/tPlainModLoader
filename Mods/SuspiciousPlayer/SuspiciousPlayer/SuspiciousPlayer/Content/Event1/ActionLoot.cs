@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,13 +7,14 @@ using tContentPatch;
 using Terraria;
 using Terraria.GameContent.Drawing;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 战利品
     /// </summary>
-    internal class ActionLoot : PatchMain
+    internal class ActionLoot : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static List<(int, int)> item = null;

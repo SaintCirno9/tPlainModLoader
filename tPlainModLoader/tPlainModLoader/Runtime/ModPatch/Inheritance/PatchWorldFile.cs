@@ -1,6 +1,12 @@
+using System;
+
 namespace tContentPatch
 {
-    /// <summary/>
+    /// <summary>
+    /// 已废弃的世界存档 Patch 基类。请迁移至 <see cref="TPML.Content.ModSystem"/> 并使用 HookGen 门面或 Sidecar。
+    /// 作者: SaintCirno9
+    /// </summary>
+    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
     public abstract class PatchWorldFile
     {
         /// <summary>

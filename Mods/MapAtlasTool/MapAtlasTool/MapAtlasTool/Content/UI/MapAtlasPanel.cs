@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Graphics;
 using MapAtlasTool.Utils;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
 using tContentPatch.Content.UI;
 using Terraria;
 using Terraria.Audio;
@@ -12,6 +11,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Content;
 using TPML.Core.Pinyin;
 using UITextBox = tContentPatch.Content.UI.UITextBox;
 
@@ -22,7 +22,7 @@ namespace MapAtlasTool.Content.UI
     /// 仅在 Main.mapFullscreen 时驱动自有 UserInterface (全屏地图态原版 UI 层不活动)。
     /// 作者: SaintCirno9
     /// </summary>
-    public class MapAtlasPanel : PatchMain
+    public class MapAtlasPanel : ModSystem
     {
         /// <summary>面板展开状态(随 setting.json 持久化)</summary>
         internal static GetSetReset<bool> PanelOpen = new GetSetReset<bool>(false, false);

@@ -1,62 +1,18 @@
-﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace tContentPatch
 {
-    /// <summary/>
-    public abstract class PatchMain
+    /// <summary>
+    /// 已废弃的生命周期 Patch 基类。请迁移至 <see cref="TPML.Content.ModSystem"/>。
+    /// 作者: SaintCirno9
+    /// </summary>
+    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
+    public abstract class PatchMain : TPML.Content.ModSystem
     {
-        /// <summary>
-        /// <see cref="Mod.Loaded"/>后调用
-        /// </summary>
-        public virtual void Initialize() { }
-        /// <summary>
-        /// 进入世界时, 仅在单人和客户端有效
-        /// </summary>
-        public virtual void OnEnterWorld() { }
-        /// <summary>
-        /// 离开世界时（含退回主菜单），仅在单人和客户端有效。
-        /// </summary>
-        public virtual void OnLeaveWorld() { }
-        /// <summary>
-        /// <see cref="Main.Update(GameTime)"/>前调用
-        /// </summary>
-        public virtual void UpdatePrefix(GameTime gameTime) { }
-        /// <summary>
-        /// <see cref="Main.Update(GameTime)"/>后调用
-        /// </summary>
-        public virtual void UpdatePostfix(GameTime gameTime) { }
-        /// <summary>
-        /// 用于修改或添加ui
-        /// </summary>
-        public virtual void SetupDrawInterfaceLayersPostfix(List<GameInterfaceLayer> gameInterfaceLayers) { }
-        /// <summary/>
-        public virtual void UpdateUIStatesPrefix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void UpdateUIStatesPostfix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void DoUpdateInWorldPrefix() { }
-        /// <summary/>
-        public virtual void DoUpdateInWorldPostfix() { }
-        /// <summary/>
-        public virtual void DrawMapPostfix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void DrawMenuPrefix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void DrawMenuPostfix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo, ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors) { }
-        /// <summary/>
-        public virtual void DoDrawPrefix(GameTime gameTime) { }
-        /// <summary/>
-        public virtual void DoDrawPostfix(GameTime gameTime) { }
-        /// <summary>
-        /// <paramref name="origin"/>是原本的值, <paramref name="modifi"/>是其它<see cref="PlayerFocusedScreenPosition(Vector2, Vector2)"/>修改过的值
-        /// <para/>如果不想影响其它<see cref="PlayerFocusedScreenPosition(Vector2, Vector2)"/>修改值就直接返回<paramref name="modifi"/>
-        /// </summary>
-        public virtual Vector2 PlayerFocusedScreenPosition(Vector2 origin, Vector2 modifi) => modifi;
     }
 }

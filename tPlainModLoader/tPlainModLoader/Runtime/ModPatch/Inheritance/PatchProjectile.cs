@@ -1,11 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+using System;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
+using TPML.Content;
 
 namespace tContentPatch
 {
-    /// <summary/>
-    public abstract class PatchProjectile
+    /// <summary>
+    /// 已废弃的弹幕 Patch 基类。请迁移至 <see cref="TPML.Content.GlobalProjectile"/> 或 <see cref="TPML.Content.ModProjectile"/>。
+    /// 作者: SaintCirno9
+    /// </summary>
+    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
+    public abstract class PatchProjectile : TPML.Content.GlobalProjectile
     {
         /// <summary>
         /// <see cref="Mod.Loaded"/>后调用

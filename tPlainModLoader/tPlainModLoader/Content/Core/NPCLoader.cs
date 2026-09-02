@@ -14,7 +14,6 @@ using TPML.Content.Assets;
 using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
-using tContentPatch.ModPatch;
 using tContentPatch.Utils;
 
 namespace TPML.Content
@@ -56,24 +55,29 @@ namespace TPML.Content
 
         private static void Hook_UpdateNPC(On_NPC.orig_UpdateNPC orig, NPC self, int i)
         {
-            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.UpdateNPCPrefix(self, i));
             orig(self, i);
-            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.UpdateNPCPostfix(self, i));
         }
 
         private static void Hook_SetDefaults(On_NPC.orig_SetDefaults orig, NPC self, int Type, NPCSpawnParams spawnparams)
         {
-            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.SetDefaultsPrefix(self, Type, spawnparams));
             orig(self, Type, spawnparams);
-            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.SetDefaultsPostfix(self, Type, spawnparams));
+            if (Type >= ModNPCOffset)
+            {
+                SetDefaults(self);
+            }
+            else
+            {
+                foreach (var gNpc in ContentHookDispatcher.ActiveGlobalNPCs)
+                {
+                    try { gNpc.SetDefaults(self); } catch (Exception ex) { ModLoader.Log($"[NPCLoader] GlobalNPC.SetDefaults 异常: {ex.Message}"); }
+                }
+            }
         }
 
         private static int Hook_NewNPC(On_NPC.orig_NewNPC orig,
             Terraria.DataStructures.IEntitySource source, int X, int Y, int Type, int Start, float ai0, float ai1, float ai2, float ai3, int Target)
         {
-            int result = orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
-            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.NewNPCPostfix(result, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target));
-            return result;
+            return orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
         }
 
         public static int Register(ModNPC npc)

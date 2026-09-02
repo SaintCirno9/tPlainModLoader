@@ -1,13 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Linq;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
-    internal class ActionReady : PatchMain
+    internal class ActionReady : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static int ReadyCount = 0;

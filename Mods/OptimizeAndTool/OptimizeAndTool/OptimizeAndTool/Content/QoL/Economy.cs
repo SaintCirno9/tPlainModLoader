@@ -1,10 +1,10 @@
+using System.Collections.Generic;
 using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
-using System.Collections.Generic;
-using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL
 {
@@ -36,16 +36,16 @@ namespace OptimizeAndTool.Content.QoL
     }
 
     /// <summary>
-    /// 钱币倍率实施：NPC 生成时（SetDefaultsPostfix）改写基础身价 value。
+    /// 钱币倍率实施：NPC 生成时改写基础身价 value（基于 TPML GlobalNPC 体系）。
     /// </summary>
-    internal class Patch_CoinDropRate : PatchNPC
+    internal class Patch_CoinDropRate : TPML.Content.GlobalNPC
     {
-        public override void SetDefaultsPostfix(NPC This, int Type, NPCSpawnParams spawnparams)
+        public override void SetDefaults(NPC npc)
         {
-            if (!Economy.EnableCoinDropRate.val) return;
-            if (This.value > 0f)
+            if (!Economy.EnableCoinDropRate.val || npc == null) return;
+            if (npc.value > 0f)
             {
-                This.value = This.value * Economy.CoinDropRate.val;
+                npc.value *= Economy.CoinDropRate.val;
             }
         }
     }

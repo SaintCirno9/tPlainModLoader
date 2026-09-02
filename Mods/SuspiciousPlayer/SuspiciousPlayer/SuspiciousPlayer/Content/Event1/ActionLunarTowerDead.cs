@@ -1,15 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 柱子死亡
     /// </summary>
-    internal class ActionLunarTowerDead : PatchMain
+    internal class ActionLunarTowerDead : ModSystem
     {
         public static ActionState state = new ActionState(run);
         public static Vector2 pos = Vector2.Zero;

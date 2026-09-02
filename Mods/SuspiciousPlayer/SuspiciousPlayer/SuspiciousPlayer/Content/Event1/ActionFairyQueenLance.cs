@@ -1,16 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 空灵长枪
     /// </summary>
-    internal class ActionFairyQueenLance : PatchMain
+    internal class ActionFairyQueenLance : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static Vector2 pos = Vector2.Zero;

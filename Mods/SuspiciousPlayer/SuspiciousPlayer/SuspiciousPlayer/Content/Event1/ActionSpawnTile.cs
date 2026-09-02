@@ -1,13 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
-    internal class ActionSpawnTile : PatchMain
+    internal class ActionSpawnTile : ModSystem
     {
         public static ActionState state = new ActionState(run);
         public static int width = 100;

@@ -70,10 +70,8 @@ namespace FishingMachine
     /// <summary>
     /// tPlainModLoader 原生 Mod 加载器入口
     /// </summary>
-    public class FishingMachineTPMLEntry : tContentPatch.Mod
+    public class FishingMachineTPMLEntry : TPML.Content.Mod
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("FishingMachine");
-
         public override void Load()
         {
             Logger.Info("===== FishingMachine 模组加载成功 =====");
@@ -83,7 +81,7 @@ namespace FishingMachine
     /// <summary>
     /// 挂钩 UI 图层绘制与世界生命周期
     /// </summary>
-    public class FishingMachineMain : tContentPatch.PatchMain
+    public class FishingMachineMain : TPML.Content.ModSystem
     {
         public override void OnLeaveWorld()
         {
@@ -107,7 +105,7 @@ namespace FishingMachine
     /// <summary>
     /// 挂钩玩家鼠标世界交互（选定水域钓点）
     /// </summary>
-    public class FishingMachinePlayerInteraction : tContentPatch.PatchPlayer
+    public class FishingMachinePlayerInteraction : TPML.Content.ModPlayer
     {
         public override void UpdatePrefix(Player This, int playerI)
         {

@@ -1,15 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 火球
     /// </summary>
-    internal class ActionFireball : PatchMain
+    internal class ActionFireball : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static int count = 0;

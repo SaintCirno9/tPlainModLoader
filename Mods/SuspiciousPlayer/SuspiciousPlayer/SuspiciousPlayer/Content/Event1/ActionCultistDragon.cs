@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 分裂龙
     /// </summary>
-    internal class ActionCultistDragon : PatchMain
+    internal class ActionCultistDragon : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static int count = 0;

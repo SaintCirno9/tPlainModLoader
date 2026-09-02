@@ -1,15 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 无护盾时
     /// </summary>
-    internal class ActionNoShield : PatchMain
+    internal class ActionNoShield : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static int timeCount = 0;

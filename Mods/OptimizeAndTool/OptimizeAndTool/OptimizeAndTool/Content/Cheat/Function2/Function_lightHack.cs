@@ -1,16 +1,22 @@
+using System.Collections.Generic;
 using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
-using System.Collections.Generic;
-using tContentPatch;
 using Terraria;
+using Terraria.Graphics.Light;
 using Terraria.UI;
 using Terraria.Utilities;
+using Terraria.GameContent.Drawing;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function_lightHack : PatchTileLightScanner
+    /// <summary>
+    /// 透视照明功能（基于 TPML ModSystem 与 HookGen 强类型门面）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class Function_lightHack : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> lightHack = new GetSetReset<bool>();
 
@@ -34,11 +40,16 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             return uis;
         }
 
-        public override void ApplyTileLightPrefix(Tile tile, int x, int y, ref FastRandom localRandom, ref Vector3 lightColor)
+        public override void Load()
         {
-            if (lightHack.val == false) return;
-
-            lightColor = Vector3.One;
+            On_TileLightScanner.ApplyTileLight += delegate(On_TileLightScanner.orig_ApplyTileLight orig, TileLightScanner self, Tile tile, int x, int y, ref FastRandom localRandom, ref Vector3 lightColor)
+            {
+                if (lightHack.val)
+                {
+                    lightColor = Vector3.One;
+                }
+                orig(self, tile, x, y, ref localRandom, ref lightColor);
+            };
         }
     }
 }

@@ -1,3 +1,4 @@
+#pragma warning disable CS0618
 using System.Collections.Generic;
 using tContentPatch.Content.Network;
 using Terraria;

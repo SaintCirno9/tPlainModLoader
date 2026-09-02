@@ -1,33 +1,23 @@
+using System.Collections.Generic;
 using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
-using System.Collections.Generic;
-using tContentPatch;
 using Terraria;
 using Terraria.GameContent.Creative;
 using Terraria.UI;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
     /// <summary>
-    /// 禁用传染
+    /// 禁用传染（基于 TPML ModSystem）
+    /// 作者: SaintCirno9
     /// </summary>
-    internal class Function_stopTileConvert : PatchWorldGen
+    internal class Function_stopTileConvert : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
 
-        //public override bool CanConvert(int i2, int j2, int conversionType, bool tiles, bool walls)
-        //{
-        //    if (Enable.val == false) return true;
-
-        //    if (conversionType != BiomeConversionID.Corruption &&
-        //        conversionType != BiomeConversionID.Hallow &&
-        //        conversionType != BiomeConversionID.Crimson) return true;
-
-        //    return false;
-        //}
-
-        public override void UpdateWorldPrefix()
+        public override void PreUpdateWorld()
         {
             if (WorldGen.isGeneratingOrLoadingWorld) return;
 

@@ -1,16 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.ID;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 会爆炸的暗黑法阵
     /// </summary>
-    internal class ActionDarkMan : PatchMain
+    internal class ActionDarkMan : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static int count = 0;

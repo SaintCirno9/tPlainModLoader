@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using tContentPatch;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
-    internal class ActionList : PatchMain
+    internal class ActionList : ModSystem
     {
         public static ActionState state = new ActionState(run);
         private static List<int> stateId = new List<int>();

@@ -11,7 +11,6 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.UI;
-using tContentPatch.ModPatch;
 using TPML.Content.Assets;
 using TPML.Content.Core;
 using TPML.Content.Engine;
@@ -56,18 +55,25 @@ namespace TPML.Content
 
         private static void Hook_SetDefaults(On_Item.orig_SetDefaults orig, Item self, int type, Terraria.GameContent.Items.ItemVariant variant)
         {
-            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.SetDefaultsPrefix(self, type, variant));
             orig(self, type, variant);
-            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.SetDefaultsPostfix(self, type, variant));
+            if (type >= ModItemOffset)
+            {
+                SetDefaults(self);
+            }
+            else
+            {
+                foreach (var gItem in ContentHookDispatcher.ActiveGlobalItems)
+                {
+                    try { gItem.SetDefaults(self); } catch (Exception ex) { ModLoader.Log($"[ItemLoader] GlobalItem.SetDefaults 异常: {ex.Message}"); }
+                }
+            }
         }
 
         private static int Hook_NewItem(On_Item.orig_NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool orig,
             IEntitySource source, Vector2 pos, int type, int stack, int prefix,
             NewItemOwnership ownership, Vector2? velocity, Item.NewItemModifier modifier, bool noBroadcast)
         {
-            int result = orig(source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast);
-            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.NewItemPostfix(result, source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast));
-            return result;
+            return orig(source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast);
         }
 
         public static int Register(ModItem item)

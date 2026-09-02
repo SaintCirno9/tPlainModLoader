@@ -1,15 +1,21 @@
-﻿using Microsoft.Xna.Framework;
-using SuspiciousPlayer.Content.VirtualPlayer;
 using System.Linq;
+using Microsoft.Xna.Framework;
+using SuspiciousPlayer.Content.VirtualPlayer;
 using tContentPatch;
 using Terraria;
 using Terraria.Audio;
+using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.Localization;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
-    internal class PlayerNPC : PatchPlayer
+    /// <summary>
+    /// 虚拟玩家生命周期处理（基于 TPML ModPlayer）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class PlayerNPC : TPML.Content.ModPlayer
     {
         public override void UpdatePrefix(Player This, int playerI)
         {
@@ -27,24 +33,28 @@ namespace SuspiciousPlayer.Content.Event1
 
                 NetMessage.PlayNetSound(new NetMessage.NetSoundInfo(This.position,
                     341, SoundID.NPCDeath59.Style));
-                
             }
             else
             {
                 Main.NewText($"{This.name}被激怒了", 175, 75, 255);
-
-                //ushort index = SoundID.IndexByName[nameof(SoundID.NPCDeath59)];
-                //LegacySoundStyle sound = SoundID.SoundByIndex[index];
                 SoundEngine.PlaySound(SoundID.NPCDeath59);
             }
 
             Event.Run(This.Center);
         }
+
+        public override bool CanDropTombstone(Player player, long coinsOwned, NetworkText deathText, int hitDirection)
+        {
+            return VP.vps?.Contains(player) != true;
+        }
     }
 
-    public class PlayerNPC_addBuff : PatchProjectile
+    /// <summary>
+    /// 弹幕命中虚拟玩家 Buff 施加（基于 TPML GlobalProjectile）
+    /// </summary>
+    public class PlayerNPC_addBuff : TPML.Content.GlobalProjectile
     {
-        public override void UpdatePostfix(Projectile This, int i)
+        public override void PostAI(Projectile This)
         {
             if (This.type != 406) return;
             if (This.active == false) return;
@@ -72,52 +82,53 @@ namespace SuspiciousPlayer.Content.Event1
         }
     }
 
-    public class Init : PatchMain
+    /// <summary>
+    /// 物品触发与系统初始化（基于 TPML ModSystem）
+    /// </summary>
+    public class Init : TPML.Content.ModSystem
     {
-        public override void Initialize()
+        public override void Load()
         {
-            //丢物品传送
-            Patch.PatchItem.OnNewItem += (x, y, type) =>
+            // 丢物品传送
+            On_Item.NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool += (orig, source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast) =>
             {
-                if (type != ItemID.SlimeGun) return;
-
-                for (int i = 0; i < VP.vps?.Count; i++)
+                int res = orig(source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast);
+                if (type == ItemID.SlimeGun)
                 {
-                    Player player = VP.vps[i];
-
-                    Vector2 pos = new Vector2(x - player.width / 2, y - player.height / 2);
-                    pos.X += i * 8;
-
-                    if (pos.X < 0) pos.X = 0;
-                    else if (pos.X > Main.maxTilesX * 16) pos.X = Main.maxTilesX * 16;
-                    if (pos.Y < 0) pos.Y = 0;
-                    else if (pos.Y > Main.maxTilesY * 16) pos.Y = Main.maxTilesY * 16;
-
-                    player.Center = pos;
-                    
-                    Rectangle location = new Rectangle((int)pos.X, (int)pos.Y, 0, 0);
-                    Color color = Color.Green;
-                    string text = $"传送到:{location.X},{location.Y}";
-
-                    if (Main.netMode == 2)
+                    for (int i = 0; i < VP.vps?.Count; i++)
                     {
-                        NetMessage.SendData(13, number: player.whoAmI);//控制,属性,位置
-                        NetMessage.SendData(MessageID.CombatTextString, text: NetworkText.FromLiteral(text),
-                            number: (int)color.PackedValue, number2: location.X, number3: location.Y);
-                    }
-                    else
-                    {
-                        CombatText.NewText(location, color, text, false, false);
-                    }
+                        Player player = VP.vps[i];
+                        if (player == null) continue;
 
-                    ContentPatch.PrintTry(text);
+                        Vector2 p = new Vector2(pos.X - player.width / 2, pos.Y - player.height / 2);
+                        p.X += i * 8;
+
+                        if (p.X < 0) p.X = 0;
+                        else if (p.X > Main.maxTilesX * 16) p.X = Main.maxTilesX * 16;
+                        if (p.Y < 0) p.Y = 0;
+                        else if (p.Y > Main.maxTilesY * 16) p.Y = Main.maxTilesY * 16;
+
+                        player.Center = p;
+                        
+                        Rectangle location = new Rectangle((int)p.X, (int)p.Y, 0, 0);
+                        Color color = Color.Green;
+                        string text = $"传送到:{location.X},{location.Y}";
+
+                        if (Main.netMode == 2)
+                        {
+                            NetMessage.SendData(13, number: player.whoAmI);//控制,属性,位置
+                            NetMessage.SendData(MessageID.CombatTextString, text: NetworkText.FromLiteral(text),
+                                number: (int)color.PackedValue, number2: location.X, number3: location.Y);
+                        }
+                        else
+                        {
+                            CombatText.NewText(location, color, text, false, false);
+                        }
+
+                        ContentPatch.PrintTry(text);
+                    }
                 }
-            };
-
-            //虚拟玩家不生成墓碑
-            Patch.PatchPlayer.OnCanDropTombstone += p =>
-            {
-                return VP.vps?.Contains(p) != true;
+                return res;
             };
         }
     }

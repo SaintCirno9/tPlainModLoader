@@ -23,11 +23,13 @@ namespace TPML.Content.Engine
         private static readonly List<ModSystem> _modSystems = new List<ModSystem>();
         private static readonly List<GlobalItem> _globalItems = new List<GlobalItem>();
         private static readonly List<GlobalNPC> _globalNPCs = new List<GlobalNPC>();
+        private static readonly List<GlobalProjectile> _globalProjectiles = new List<GlobalProjectile>();
 
         public static ModPlayer[] ActiveModPlayers { get; private set; } = Array.Empty<ModPlayer>();
         public static ModSystem[] ActiveModSystems { get; private set; } = Array.Empty<ModSystem>();
         public static GlobalItem[] ActiveGlobalItems { get; private set; } = Array.Empty<GlobalItem>();
         public static GlobalNPC[] ActiveGlobalNPCs { get; private set; } = Array.Empty<GlobalNPC>();
+        public static GlobalProjectile[] ActiveGlobalProjectiles { get; private set; } = Array.Empty<GlobalProjectile>();
 
         private static readonly ILogger Logger = LogManager.GetLogger("ContentHookDispatcher");
 
@@ -69,6 +71,10 @@ namespace TPML.Content.Engine
                     {
                         _globalNPCs.Add(gNpc);
                     }
+                    else if (item is GlobalProjectile gProj && !_globalProjectiles.Contains(gProj))
+                    {
+                        _globalProjectiles.Add(gProj);
+                    }
                 }
 
                 CommitSnapshotsInternal();
@@ -95,6 +101,7 @@ namespace TPML.Content.Engine
             ActiveModSystems = _modSystems.ToArray();
             ActiveGlobalItems = _globalItems.ToArray();
             ActiveGlobalNPCs = _globalNPCs.ToArray();
+            ActiveGlobalProjectiles = _globalProjectiles.ToArray();
         }
 
         public static void Clear()
@@ -105,6 +112,7 @@ namespace TPML.Content.Engine
                 _modSystems.Clear();
                 _globalItems.Clear();
                 _globalNPCs.Clear();
+                _globalProjectiles.Clear();
                 CommitSnapshotsInternal();
             }
             TPML.Content.Fusion.InventoryFusionManager.Clear();

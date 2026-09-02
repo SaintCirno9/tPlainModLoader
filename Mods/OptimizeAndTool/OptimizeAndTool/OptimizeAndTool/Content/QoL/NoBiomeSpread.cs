@@ -1,10 +1,10 @@
+using System.Collections.Generic;
 using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
-using System.Collections.Generic;
-using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.QoL
 {
@@ -37,16 +37,20 @@ namespace OptimizeAndTool.Content.QoL
     }
 
     /// <summary>
-    /// PatchWorldGen.CanConvert 即原版 WorldGen.Convert 的前置判定（conversionType 对应 BiomeConversionID）。
+    /// 禁止邪恶生物群落蔓延系统（基于 TPML ModSystem 与 HookGen 强类型门面）
     /// </summary>
-    internal class Patch_NoBiomeSpread : PatchWorldGen
+    internal class Patch_NoBiomeSpread : TPML.Content.ModSystem
     {
-        public override bool CanConvert(int i2, int j2, int conversionType, bool tiles, bool walls)
+        public override void Load()
         {
-            if (!NoBiomeSpread.Enable.val) return true;
-            // 1=腐化 2=神圣 4=猩红：自然蔓延转换，禁止
-            if (conversionType == 1 || conversionType == 2 || conversionType == 4) return false;
-            return true;
+            On_WorldGen.Convert_int_int_int_bool_bool += (orig, i2, j2, conversionType, tiles, walls) =>
+            {
+                if (NoBiomeSpread.Enable.val && (conversionType == 1 || conversionType == 2 || conversionType == 4))
+                {
+                    return;
+                }
+                orig(i2, j2, conversionType, tiles, walls);
+            };
         }
     }
 }

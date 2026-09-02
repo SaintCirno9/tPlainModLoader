@@ -1,9 +1,14 @@
-﻿using Terraria;
+using System;
+using Terraria;
 using Terraria.Localization;
 
 namespace tContentPatch
 {
-    /// <summary/>
+    /// <summary>
+    /// 已废弃的网络消息 Patch 基类。
+    /// 作者: SaintCirno9
+    /// </summary>
+    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
     public abstract class PatchNetMessage
     {
         /// <summary>

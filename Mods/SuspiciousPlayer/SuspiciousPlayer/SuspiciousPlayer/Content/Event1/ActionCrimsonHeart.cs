@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,13 +8,14 @@ using Terraria.Audio;
 using Terraria.ID;
 using Terraria.Localization;
 using static Terraria.DataStructures.GameDifficultyData.LinearCurve;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1
 {
     /// <summary>
     /// 心脏
     /// </summary>
-    internal class ActionCrimsonHeart : PatchMain
+    internal class ActionCrimsonHeart : ModSystem
     {
         public static ActionState state = new ActionState(run, end);
         private static List<Point> poss = new List<Point>();

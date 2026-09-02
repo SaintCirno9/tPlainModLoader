@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using SuspiciousPlayer.Content.Event1;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,10 +8,11 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.Localization;
+using TPML.Content;
 
 namespace SuspiciousPlayer.Content.VirtualPlayer
 {
-    internal class VP : PatchMain
+    internal class VP : ModSystem
     {
         public static List<Player> vps = null;
 

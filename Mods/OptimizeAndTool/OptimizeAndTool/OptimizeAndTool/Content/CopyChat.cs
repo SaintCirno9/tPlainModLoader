@@ -1,20 +1,25 @@
-﻿using CommandHelp;
+using System;
+using System.Collections.Generic;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using ReLogic.OS;
-using System;
-using System.Collections.Generic;
-using tContentPatch;
 using Terraria;
 using Terraria.Audio;
+using Terraria.GameContent.UI.Chat;
 using Terraria.UI;
 using Terraria.UI.Chat;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content
 {
-    internal class CopyChat : PatchRemadeChatMonitor
+    /// <summary>
+    /// 聊天文本复制功能（基于 TPML ModSystem 与 HookGen 强类型门面）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class CopyChat : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>(true, true);
 
@@ -38,13 +43,22 @@ namespace OptimizeAndTool.Content
             return uis;
         }
 
-        public override void DrawChatPostfix(bool drawingPlayerChat)
+        public override void Load()
         {
-            if (Enable.val == false) return;
+            On_RemadeChatMonitor.DrawChat += (orig, self, drawingPlayerChat) =>
+            {
+                orig(self, drawingPlayerChat);
+                DrawChatPostfix(self, drawingPlayerChat);
+            };
+        }
 
-            int showCount = Patch.Patch_RemadeChatMonitor._showCount;
-            int startChatLine = Patch.Patch_RemadeChatMonitor._startChatLine;
-            List<ChatMessageContainer> messages = Patch.Patch_RemadeChatMonitor._messages;
+        private static void DrawChatPostfix(RemadeChatMonitor self, bool drawingPlayerChat)
+        {
+            if (Enable.val == false || self == null) return;
+
+            int showCount = self._showCount;
+            int startChatLine = self._startChatLine;
+            List<ChatMessageContainer> messages = self._messages;
 
             int num = startChatLine;
             int i2 = 0;

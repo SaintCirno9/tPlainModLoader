@@ -5,11 +5,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MapAtlasTool.Content.UI;
-using tContentPatch;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.ID;
+using TPML.Content;
 using TPML.Core.Diagnostics;
 using TPML.Core.Logging;
 
@@ -63,7 +63,7 @@ namespace MapAtlasTool.Content
     /// 全图关键结构与全量宝箱雷达标记系统
     /// 作者: SaintCirno9
     /// </summary>
-    public class StructureMarker : PatchMain
+    public class StructureMarker : TPML.Content.ModSystem
     {
         private static readonly ILogger Logger = LogManager.GetLogger("MapAtlasTool");
         private static readonly object _pinsLock = new object();

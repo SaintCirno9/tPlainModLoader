@@ -1,20 +1,26 @@
-using ChatAi.Content.UI;
-using ChatAi.Utils;
-using ChatAi.Utils.quickBuild;
-using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using tContentPatch;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.GameContent.NetModules;
+using Terraria.GameContent.UI.Chat;
 using Terraria.Net;
 using Terraria.UI;
 using Terraria.UI.Chat;
+using tContentPatch;
+using TPML.Content;
+using ChatAi.Content.UI;
+using ChatAi.Utils;
+using ChatAi.Utils.quickBuild;
 
 namespace ChatAi.Content
 {
-    internal class GameChatAi : PatchRemadeChatMonitor
+    /// <summary>
+    /// 聊天 AI 系统实现（基于 TPML ModSystem 与 HookGen 强类型门面）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class GameChatAi : TPML.Content.ModSystem
     {
         public static GetSetReset<bool> Enable = new GetSetReset<bool>();
         public static GetSetReset<bool> DisplayText = new GetSetReset<bool>();
@@ -41,7 +47,7 @@ namespace ChatAi.Content
             }
         };
 
-        public override void Initialize()
+        public override void Load()
         {
             Enable.OnValUpdate += v =>
             {
@@ -70,11 +76,12 @@ namespace ChatAi.Content
             {
                 printToGame("[c/ffff00:请求超时(估计人家不在]");
             };
-        }
 
-        public override void AddNewMessagePrefix(ref string text, Color color, int widthLimitInPixels = -1)
-        {
-            if (Enable.val) inputText(text);
+            On_RemadeChatMonitor.AddNewMessage += (orig, self, text, color, widthLimitInPixels) =>
+            {
+                if (Enable.val) inputText(text);
+                orig(self, text, color, widthLimitInPixels);
+            };
         }
 
         public static void inputText(string text)

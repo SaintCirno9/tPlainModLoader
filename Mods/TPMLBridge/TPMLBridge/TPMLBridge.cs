@@ -90,7 +90,7 @@ namespace TPMLBridge
         }
     }
 
-    public class TPMLBridgeMain : PatchMain
+    public class TPMLBridgeMain : TPML.Content.ModSystem
     {
         public override void UpdatePrefix(GameTime gameTime)
         {
