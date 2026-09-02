@@ -4,7 +4,11 @@ using tContentPatch.Utils;
 
 namespace tContentPatch.ModPatch
 {
-    internal abstract class ListCopy<T> : IListPlain
+    /// <summary>
+    /// 补丁列表包装基类（向后兼容存根）。
+    /// 作者: SaintCirno9
+    /// </summary>
+    public abstract class ListCopy<T> : IListPlain
     {
         public List<T> list = null;
 

@@ -7,10 +7,9 @@ using TPML.Content;
 namespace tContentPatch
 {
     /// <summary>
-    /// 已废弃的弹幕 Patch 基类。请迁移至 <see cref="TPML.Content.GlobalProjectile"/> 或 <see cref="TPML.Content.ModProjectile"/>。
+    /// 弹幕兼容基类（建议直接继承 <see cref="TPML.Content.GlobalProjectile"/> 或 <see cref="TPML.Content.ModProjectile"/>）。
     /// 作者: SaintCirno9
     /// </summary>
-    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
     public abstract class PatchProjectile : TPML.Content.GlobalProjectile
     {
         /// <summary>

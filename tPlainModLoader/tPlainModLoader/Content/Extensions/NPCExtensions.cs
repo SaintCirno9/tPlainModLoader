@@ -56,9 +56,8 @@ namespace TPML.Content
         /// </summary>
         public static void DropItemInstanced(this NPC npc, Vector2 position, Vector2 size, int itemType, int itemStack = 1, bool interactionRequired = true)
         {
-#pragma warning disable CS0618
-            Item.NewItem(new EntitySource_Misc("DropItemInstanced"), (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, itemType, itemStack);
-#pragma warning restore CS0618
+            Vector2 center = position + size * 0.5f;
+            Item.NewItem(new EntitySource_Misc("DropItemInstanced"), center, itemType, itemStack);
         }
 
         /// <summary>
@@ -66,9 +65,8 @@ namespace TPML.Content
         /// </summary>
         public static void DropItemInstanced(this NPC npc, Rectangle rect, int itemType, int itemStack = 1, bool interactionRequired = true)
         {
-#pragma warning disable CS0618
-            Item.NewItem(new EntitySource_Misc("DropItemInstanced"), rect.X, rect.Y, rect.Width, rect.Height, itemType, itemStack);
-#pragma warning restore CS0618
+            Vector2 center = new Vector2(rect.X + rect.Width * 0.5f, rect.Y + rect.Height * 0.5f);
+            Item.NewItem(new EntitySource_Misc("DropItemInstanced"), center, itemType, itemStack);
         }
 
         /// <summary>

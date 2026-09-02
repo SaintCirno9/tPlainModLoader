@@ -36,7 +36,7 @@ namespace tContentPatch
 
             Initialize_CommandMsg();
             Initialize_ModDirectory();
-            Initialize_AddPatch();
+            Initialize_Core_HookGen_And_Patches();
             Initialize_ModLoader();
             Initialize_CMD();
 
@@ -116,7 +116,7 @@ namespace tContentPatch
             PrintTry(s);
         }
 
-        private void Initialize_AddPatch()
+        private void Initialize_Core_HookGen_And_Patches()
         {
             CheckNetplayConnect();
 
@@ -132,14 +132,6 @@ namespace tContentPatch
 
             // 2. 注册核心系统与功能 HookGen 强类型门面钩子
             ModPatch.Patch_Main.RegisterAll();
-            ModPatch.Patch_WorldFile.RegisterAll();
-            ModPatch.Patch_WorldGen.RegisterAll();
-            ModPatch.Patch_NetMessage.RegisterAll();
-            ModPatch.Patch_MessageBuffer.RegisterAll();
-            ModPatch.Patch_Chest.RegisterAll();
-            ModPatch.Patch_RemoteClient.RegisterAll();
-            ModPatch.Patch_TileLightScanner.RegisterAll();
-            ModPatch.Patch_RemadeChatMonitor.RegisterAll();
             ModPatch.Patch_CreativeAndCraftingSearch.RegisterAll();
             ModPatch.Patch_ChatCommand.RegisterAll();
 
@@ -150,22 +142,6 @@ namespace tContentPatch
             Content.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
             Content.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
             Content.Menus.ModSetSwitch.Patch.RegisterAll();
-
-            // 4. 初始化旧版模组补丁分发容器
-            typePatch = new ModPatch.TypePatch();
-            typePatch.AddPatch(new ModPatch.Patch_Main());
-            typePatch.AddPatch(new ModPatch.Patch_Player());
-            typePatch.AddPatch(new ModPatch.Patch_NPC());
-            typePatch.AddPatch(new ModPatch.Patch_Item());
-            typePatch.AddPatch(new ModPatch.Patch_Projectile());
-            typePatch.AddPatch(new ModPatch.Patch_TileLightScanner());
-            typePatch.AddPatch(new ModPatch.Patch_RemadeChatMonitor());
-            typePatch.AddPatch(new ModPatch.Patch_WorldFile());
-            typePatch.AddPatch(new ModPatch.Patch_NetMessage());
-            typePatch.AddPatch(new ModPatch.Patch_MessageBuffer());
-            typePatch.AddPatch(new ModPatch.Patch_Chest());
-            typePatch.AddPatch(new ModPatch.Patch_RemoteClient());
-            typePatch.AddPatch(new ModPatch.Patch_WorldGen());
         }
 
         private void Initialize_ModDirectory()

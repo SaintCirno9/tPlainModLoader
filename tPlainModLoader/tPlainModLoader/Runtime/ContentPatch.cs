@@ -27,7 +27,7 @@ namespace tContentPatch
 
         private static ContentPatch Instance = null;
 
-        internal static ModPatch.TypePatch typePatch = null;
+        public static ModPatch.TypePatch typePatch = new ModPatch.TypePatch();
 
         private static FieldInfo reflection_Terraria_Main_inRun = null;
 

@@ -4,10 +4,9 @@ using Terraria;
 namespace tContentPatch
 {
     /// <summary>
-    /// 已废弃的网络缓冲 Patch 基类。
+    /// 网络缓冲兼容基类。
     /// 作者: SaintCirno9
     /// </summary>
-    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
     public abstract class PatchMessageBuffer
     {
         /// <summary>

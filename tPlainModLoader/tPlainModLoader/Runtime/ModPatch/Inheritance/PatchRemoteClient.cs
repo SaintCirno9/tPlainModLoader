@@ -4,10 +4,9 @@ using Terraria;
 namespace tContentPatch
 {
     /// <summary>
-    /// 已废弃的客户端连接 Patch 基类。
+    /// 客户端连接兼容基类。
     /// 作者: SaintCirno9
     /// </summary>
-    [Obsolete("TPML 现代体系已全面替代 Patch*，请继承 ModSystem / ModPlayer / Global*")]
     public abstract class PatchRemoteClient
     {
         /// <summary>
