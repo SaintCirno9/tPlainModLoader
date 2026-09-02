@@ -135,7 +135,7 @@ namespace TPML.Content
         public virtual bool CanDropTombstone(long coinsOwned, NetworkText deathText, int hitDirection) => true;
         public virtual bool CanDropTombstone(Player player, long coinsOwned, NetworkText deathText, int hitDirection) => CanDropTombstone(coinsOwned, deathText, hitDirection);
         public virtual void UpdateArmorSets(int playerIndex) { }
-        public virtual void UpdateArmorSetsPostfix(Player player, int playerIndex) => UpdateArmorSets(playerIndex);
+        public virtual void UpdateArmorSetsPostfix(Player player, int playerIndex) { }
         public virtual void SavePlayer(PlayerFileData playerFile, bool skipMapSave)
         {
             SavePlayerPrefix(playerFile, skipMapSave);

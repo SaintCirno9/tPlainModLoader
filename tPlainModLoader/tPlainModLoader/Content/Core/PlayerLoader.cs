@@ -174,6 +174,7 @@ namespace TPML.Content
                 try
                 {
                     mp.UpdateArmorSets(i);
+                    mp.UpdateArmorSetsPostfix(self, i);
                 }
                 catch (Exception ex)
                 {
