@@ -1,5 +1,4 @@
 using FargoItems.Content.Items.Explosives;
-
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Audio;
@@ -30,51 +29,69 @@ namespace FargoItems.Content.Projectiles.Explosives
             return false;
         }
 
+        public override void AI()
+        {
+            Projectile.Kill();
+        }
+
         public override void OnKill(int timeLeft)
         {
             Vector2 position = Projectile.Center;
             SoundEngine.PlaySound(SoundID.Item14, position);
+            Player player = Main.player[Projectile.owner];
+            BuildBridge(player, position, Projectile.ai[2] == 2);
+        }
 
+        public static void BuildBridge(Player player, Vector2 position, bool isAlt)
+        {
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 return;
             }
 
-            // All the way across
-            for (int x = 1; x <= Main.maxTilesX; x++)
+            int originY = (int)(position.Y / 16.0f);
+
+            // 贯穿整个世界 X 轴
+            for (int x = 1; x < Main.maxTilesX - 1; x++)
             {
-                // Six down, last is platforms
+                // 清理上方 5 格空间，最底格 (y=0) 铺设木平台
                 for (int y = -5; y <= 0; y++)
                 {
                     int xPosition = x;
-                    int yPosition = (int)(y + position.Y / 16.0f);
+                    int yPosition = originY + y;
 
-                    if (xPosition < 0 || xPosition >= Main.maxTilesX || yPosition < 0 || yPosition >= Main.maxTilesY)
+                    if (!WorldGen.InWorld(xPosition, yPosition))
                         continue;
 
                     Tile tile = Main.tile[xPosition, yPosition];
-
                     if (tile == null)
-                        continue;
+                    {
+                        tile = new Tile();
+                        Main.tile[xPosition, yPosition] = tile;
+                    }
 
                     if (!FargoItems.Content.Logic.ExplosivesHelper.OkayToDestroyTileAt(xPosition, yPosition))
                         continue;
 
-                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
-
-                    if (y == 0 && Projectile.ai[2] != 2)
+                    if (y == 0 && !isAlt)
                     {
                         FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition, false);
-                        // Spawn platforms
-                        WorldGen.PlaceTile(xPosition, yPosition, TileID.Platforms);
-                        if (Main.netMode == NetmodeID.Server)
-                            NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
+                        WorldGen.PlaceTile(xPosition, yPosition, TileID.Platforms, mute: true, forced: true);
                     }
                     else
                     {
                         if (!FargoItems.Content.Logic.ExplosivesHelper.TileIsLiterallyAir(tile))
-                            FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
+                            FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition, false);
                     }
+                }
+            }
+
+            // 刷新全图平台连接帧
+            for (int x = 1; x < Main.maxTilesX - 1; x++)
+            {
+                if (WorldGen.InWorld(x, originY))
+                {
+                    WorldGen.SquareTileFrame(x, originY);
                 }
             }
         }

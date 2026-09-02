@@ -1,5 +1,4 @@
 using FargoItems.Content.Items.Explosives;
-
 using Microsoft.Xna.Framework;
 using System;
 using Terraria;
@@ -31,17 +30,9 @@ namespace FargoItems.Content.Projectiles.Explosives
             return false;
         }
 
-        public override bool TileCollideStyle(ref int width, ref int height, ref bool fallThrough, ref Vector2 hitboxCenterFrac)
-        {
-            fallThrough = false;
-
-            return base.TileCollideStyle(ref width, ref height, ref fallThrough, ref hitboxCenterFrac);
-        }
-
-        public override bool OnTileCollide(Vector2 oldVelocity)
+        public override void AI()
         {
             Projectile.Kill();
-            return true;
         }
 
         public override void OnKill(int timeLeft)
@@ -49,45 +40,60 @@ namespace FargoItems.Content.Projectiles.Explosives
             SoundEngine.PlaySound(SoundID.Item15, Projectile.Center);
             SoundEngine.PlaySound(SoundID.Item14, Projectile.Center);
 
+            Player player = Main.player[Projectile.owner];
+            BuildPond(player, Projectile.Center);
+        }
+
+        public static void BuildPond(Player player, Vector2 position)
+        {
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 return;
             }
 
-            Vector2 position = Projectile.Center;
-            int width = 150;
-            int height = 50;
+            const int width = 150;
+            const int height = 50;
 
-            for (int x = -width/2; x <= width/2; x++)
+            int originX = (int)(position.X / 16.0f);
+            int originY = (int)(position.Y / 16.0f);
+
+            for (int x = -width / 2; x <= width / 2; x++)
             {
                 for (int y = 0; y <= height; y++)
                 {
-                    int xPosition = (int)(x + position.X / 16.0f);
-                    int yPosition = (int)(y + position.Y / 16.0f);
+                    int xPosition = originX + x;
+                    int yPosition = originY + y;
 
-                    if (xPosition < 0 || xPosition >= Main.maxTilesX || yPosition < 0 || yPosition >= Main.maxTilesY)
+                    if (!WorldGen.InWorld(xPosition, yPosition))
                         continue;
 
                     Tile tile = Main.tile[xPosition, yPosition];
                     if (tile == null)
-                        continue;
-
-                    if (!FargoItems.Content.Logic.ExplosivesHelper.OkayToDestroyTileAt(xPosition, yPosition) || FargoItems.Content.Logic.ExplosivesHelper.TileIsLiterallyAir(tile))
-                        continue;
-
-                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
-                    if (y == height || Math.Abs(x) == width/2)
                     {
-                        WorldGen.PlaceTile(xPosition, yPosition, TileID.StoneSlab);
+                        tile = new Tile();
+                        Main.tile[xPosition, yPosition] = tile;
+                    }
+
+                    if (!FargoItems.Content.Logic.ExplosivesHelper.OkayToDestroyTileAt(xPosition, yPosition))
+                        continue;
+
+                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition, false);
+
+                    if (y == height || Math.Abs(x) == width / 2)
+                    {
+                        // 铺设石板边缘与池底
+                        WorldGen.PlaceTile(xPosition, yPosition, TileID.StoneSlab, mute: true, forced: true);
+                        WorldGen.SquareTileFrame(xPosition, yPosition);
                     }
                     else
                     {
+                        // 填充水
                         WorldGen.PlaceLiquid(xPosition, yPosition, (byte)LiquidID.Water, byte.MaxValue);
                     }
-                    
                 }
             }
 
+            Liquid.QuickWater(3);
             Main.refreshMap = true;
         }
     }

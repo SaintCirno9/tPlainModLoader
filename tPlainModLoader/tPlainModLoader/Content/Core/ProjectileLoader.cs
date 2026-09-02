@@ -26,7 +26,7 @@ namespace TPML.Content
     {
         private static readonly ILogger Logger = LogManager.GetLogger("ProjectileLoader");
 
-        public const int ModProjectileOffset = 1100;
+        public const int ModProjectileOffset = 1500;
         internal static readonly ContentRegistry<ModProjectile> Registry = new ContentRegistry<ModProjectile>(ModProjectileOffset);
         private static readonly ConditionalWeakTable<Projectile, ModProjectile> _modProjInstances = new ConditionalWeakTable<Projectile, ModProjectile>();
 
@@ -58,7 +58,15 @@ namespace TPML.Content
 
         private static void Hook_Update(On_Projectile.orig_Update orig, Projectile self, int i)
         {
-            orig(self, i);
+            try
+            {
+                orig(self, i);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[ProjectileLoader] Projectile[{i}] (Type={self?.type}, timeLeft={self?.timeLeft}) Update 异常: {ex.Message}", ex);
+                throw;
+            }
         }
 
         private static void Hook_SetDefaults(On_Projectile.orig_SetDefaults orig, Projectile self, int Type)
@@ -242,6 +250,57 @@ namespace TPML.Content
 
             // 自动递归扩容 ProjectileID.Sets
             ArrayResizer.ResizeSets(typeof(ProjectileID.Sets), required, 500);
+
+            // 关键 Sets 数组模组 ID 默认值补全（防止 0 默认值导致 Update 阶段 oldPos 越界崩溃与轨迹误判）
+            if (ProjectileID.Sets.TrailingMode != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.TrailingMode.Length; i++)
+                {
+                    if (ProjectileID.Sets.TrailingMode[i] == 0) ProjectileID.Sets.TrailingMode[i] = -1;
+                }
+            }
+            if (ProjectileID.Sets.TrailCacheLength != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.TrailCacheLength.Length; i++)
+                {
+                    if (ProjectileID.Sets.TrailCacheLength[i] == 0) ProjectileID.Sets.TrailCacheLength[i] = 10;
+                }
+            }
+            if (ProjectileID.Sets.DrawScreenCheckFluff != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.DrawScreenCheckFluff.Length; i++)
+                {
+                    if (ProjectileID.Sets.DrawScreenCheckFluff[i] == 0) ProjectileID.Sets.DrawScreenCheckFluff[i] = 480;
+                }
+            }
+            if (ProjectileID.Sets.YoyosLifeTimeMultiplier != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.YoyosLifeTimeMultiplier.Length; i++)
+                {
+                    if (ProjectileID.Sets.YoyosLifeTimeMultiplier[i] == 0f) ProjectileID.Sets.YoyosLifeTimeMultiplier[i] = -1f;
+                }
+            }
+            if (ProjectileID.Sets.YoyosMaximumRange != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.YoyosMaximumRange.Length; i++)
+                {
+                    if (ProjectileID.Sets.YoyosMaximumRange[i] == 0f) ProjectileID.Sets.YoyosMaximumRange[i] = 200f;
+                }
+            }
+            if (ProjectileID.Sets.YoyosTopSpeed != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.YoyosTopSpeed.Length; i++)
+                {
+                    if (ProjectileID.Sets.YoyosTopSpeed[i] == 0f) ProjectileID.Sets.YoyosTopSpeed[i] = 10f;
+                }
+            }
+            if (ProjectileID.Sets.SummonTagDamageMultiplier != null)
+            {
+                for (int i = ProjectileID.Count; i < ProjectileID.Sets.SummonTagDamageMultiplier.Length; i++)
+                {
+                    if (ProjectileID.Sets.SummonTagDamageMultiplier[i] == 0f) ProjectileID.Sets.SummonTagDamageMultiplier[i] = 1f;
+                }
+            }
 
             // 扩容 Lang._projectileNameCache
             if (Lang._projectileNameCache != null && Lang._projectileNameCache.Length <= required)

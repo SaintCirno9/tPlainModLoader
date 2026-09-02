@@ -18,6 +18,7 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("ContentHost");
         private static readonly List<Mod> _mods = new List<Mod>();
         private static readonly HashSet<string> _knownNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<Assembly> _scannedAssemblies = new HashSet<Assembly>();
         private static bool _initialized = false;
 
         /// <summary>
@@ -65,9 +66,10 @@ namespace TPML.Content
                 Logger.Error($"内容模组 Load 失败: {mod.Name}", ex);
             }
 
-            // 自动扫描程序集中的所有 ILoadable 内容并注册（如 ModPlayer, ModSystem, ModItem）
-            if (mod.Code != null)
+            // 自动扫描程序集中的所有 ILoadable 内容并注册（如 ModPlayer, ModSystem, ModItem），同程序集仅扫描一次
+            if (mod.Code != null && !_scannedAssemblies.Contains(mod.Code))
             {
+                _scannedAssemblies.Add(mod.Code);
                 Type[] types = null;
                 try
                 {
@@ -240,6 +242,7 @@ namespace TPML.Content
 
             _mods.Clear();
             _knownNames.Clear();
+            _scannedAssemblies.Clear();
 
             try
             {

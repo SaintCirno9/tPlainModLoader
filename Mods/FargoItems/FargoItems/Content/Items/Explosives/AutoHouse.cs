@@ -50,7 +50,8 @@ namespace FargoItems.Content.Items.Explosives
             Vector2 mouse = Main.MouseWorld;
             var logger = TPML.Core.Logging.LogManager.GetLogger("AutoHouse");
             logger.Info($"[AutoHouse] 玩家 [{player.name}] 触发 Shoot, 鼠标目标: ({mouse.X:F1}, {mouse.Y:F1}), 弹幕类型: {type}");
-            Projectile.NewProjectile(player.GetSource_ItemUse(source.Item), mouse, Vector2.Zero, type, 0, 0, player.whoAmI);
+            SoundEngine.PlaySound(SoundID.Item14, mouse);
+            AutoHouseProj.BuildHouse(player, mouse);
             return false;
         }
 

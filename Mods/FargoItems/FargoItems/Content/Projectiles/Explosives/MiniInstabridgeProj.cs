@@ -1,5 +1,4 @@
 using FargoItems.Content.Items.Explosives;
-
 using Microsoft.Xna.Framework;
 using System.Linq;
 using Terraria;
@@ -31,23 +30,32 @@ namespace FargoItems.Content.Projectiles.Explosives
             return false;
         }
 
+        public override void AI()
+        {
+            Projectile.Kill();
+        }
+
         public override void OnKill(int timeLeft)
         {
             Vector2 position = Projectile.Center;
             SoundEngine.PlaySound(SoundID.Item14, position);
+            Player player = Main.player[Projectile.owner];
+            BuildBridge(player, position);
+        }
 
+        public static void BuildBridge(Player player, Vector2 position)
+        {
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 return;
             }
 
-            // All the way across
             const int length = 400;
-            bool goLeft = Projectile.Center.X < Main.player[Projectile.owner].Center.X;
+            bool goLeft = position.X < player.Center.X;
             int min = goLeft ? -length : 0;
             int max = goLeft ? 0 : length;
 
-            int[] deletableTiles = [ 
+            int[] deletableTiles = [
                 TileID.Cactus,
                 TileID.Trees,
                 TileID.CorruptThorns,
@@ -55,30 +63,32 @@ namespace FargoItems.Content.Projectiles.Explosives
                 TileID.JungleThorns
             ];
 
+            int originX = (int)(position.X / 16.0f);
+            int originY = (int)(position.Y / 16.0f);
+
             for (int x = min; x < max; x++)
             {
-                int xPosition = (int)(x + position.X / 16.0f);
-                int yPosition = (int)(position.Y / 16.0f);
+                int xPosition = originX + x;
+                int yPosition = originY;
 
-                if (xPosition < 0 || xPosition >= Main.maxTilesX || yPosition < 0 || yPosition >= Main.maxTilesY)
+                if (!WorldGen.InWorld(xPosition, yPosition))
                     continue;
 
                 Tile tile = Main.tile[xPosition, yPosition];
-
                 if (tile == null)
                 {
-                    continue;
+                    tile = new Tile();
+                    Main.tile[xPosition, yPosition] = tile;
                 }
 
-                if (deletableTiles.Contains(tile.type))
+                if (tile.active() && deletableTiles.Contains(tile.type))
                 {
-                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
+                    FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition, false);
                 }
 
-                // Spawn platforms
-                WorldGen.PlaceTile(xPosition, yPosition, TileID.Platforms);
-
-                NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
+                // 铺设木平台
+                WorldGen.PlaceTile(xPosition, yPosition, TileID.Platforms, mute: true, forced: true);
+                WorldGen.SquareTileFrame(xPosition, yPosition);
             }
         }
     }

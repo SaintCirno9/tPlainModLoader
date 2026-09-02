@@ -1,9 +1,8 @@
-﻿using FargoItems.Content.Projectiles.Explosives;
+using FargoItems.Content.Projectiles.Explosives;
 using FargoItems.Content.Systems;
-
-
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using TPML.Content;
@@ -53,8 +52,8 @@ namespace FargoItems.Content.Items.Explosives
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
             Vector2 mouse = Main.MouseWorld;
-            Projectile.NewProjectile(player.GetSource_ItemUse(source.Item), mouse, Vector2.Zero, type, 0, 0, player.whoAmI, ai2: player.altFunctionUse);
-
+            SoundEngine.PlaySound(SoundID.Item14, mouse);
+            InstabridgeProj.BuildBridge(player, mouse, player.altFunctionUse == 2);
             return false;
         }
 

@@ -1,10 +1,10 @@
-﻿using FargoItems.Content.Projectiles.Explosives;
+using FargoItems.Content.Projectiles.Explosives;
 using FargoItems.Content.Systems;
-
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using TPML.Content;
@@ -73,7 +73,10 @@ Only works in the Jungle Temple and after Plantera is defeated"); */
         {
             Vector2 altarPos = NearbyAltar(player);
             if (altarPos != default)
-                Projectile.NewProjectile(player.GetSource_ItemUse(source.Item), altarPos, Vector2.Zero, type, 0, 0, player.whoAmI);
+            {
+                SoundEngine.PlaySound(SoundID.Item14, altarPos);
+                LihzahrdInstactuationBombProj.ActuateTemple(player, altarPos);
+            }
             return false;
         }
 

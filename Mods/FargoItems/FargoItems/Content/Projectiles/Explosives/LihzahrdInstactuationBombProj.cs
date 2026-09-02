@@ -31,17 +31,27 @@ namespace FargoItems.Content.Projectiles.Explosives
             return false;
         }
 
+        public override void AI()
+        {
+            Projectile.Kill();
+        }
+
         public override void OnKill(int timeLeft)
         {
             SoundEngine.PlaySound(SoundID.Item14, Projectile.Center);
+            Player player = Main.player[Projectile.owner];
+            ActuateTemple(player, Projectile.Center);
+        }
 
+        public static void ActuateTemple(Player player, Vector2 position)
+        {
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 return;
             }
 
-            int xPos = (int)Projectile.Center.X / 16;
-            int yPos = (int)Projectile.Center.Y / 16;
+            int xPos = (int)position.X / 16;
+            int yPos = (int)position.Y / 16;
 
             bool WipeColumn(int i)
             {
@@ -50,10 +60,9 @@ namespace FargoItems.Content.Projectiles.Explosives
                     int tileX = xPos + i;
                     int tileY = yPos + j;
 
-                    if (tileX < 0 || tileX > Main.maxTilesX || tileY <= 0 || tileY > Main.maxTilesY)
+                    if (!WorldGen.InWorld(tileX, tileY))
                     {
-                        if (j == 0)
-                            return false;
+                        if (j == 0) return false;
                         continue;
                     }
 
@@ -64,53 +73,44 @@ namespace FargoItems.Content.Projectiles.Explosives
 
                     if (tile.wall != WallID.LihzahrdBrickUnsafe)
                     {
-                        if (j == 0)
-                            return false;
+                        if (j == 0) return false;
                         continue;
                     }
 
-                    //check for chest above this block
+                    // 检查上方是否有宝箱
                     Tile tileAbove = Framing.GetTileSafely(tileX, tileY - 1);
-                    if (TileID.Sets.BasicChest[tileAbove.type])
+                    if (tileAbove.active() && TileID.Sets.BasicChest[tileAbove.type])
                     {
                         TileObjectData data = TileObjectData.GetTileData(tileAbove.type, 0);
-                        int x = tileX - (tile.frameX / 18 % data.Width);
-                        int y = tileY - 1 - (tile.frameY / 18 % data.Height); //get top left of chest
+                        int x = tileX - (tileAbove.frameX / 18 % (data?.Width ?? 2));
+                        int y = tileY - 1 - (tileAbove.frameY / 18 % (data?.Height ?? 2));
 
-                        WorldGen.KillTile(x, y);
-                        if (Main.netMode == NetmodeID.Server)
-                            NetMessage.SendTileSquare(-1, x, y, 3);
-
-                        //if couldnt destroy chest, ignore this block
-                        if (TileID.Sets.BasicChest[tileAbove.type])
+                        WorldGen.KillTile(x, y, noItem: true);
+                        if (tileAbove.active() && TileID.Sets.BasicChest[tileAbove.type])
                             continue;
                     }
 
-                    if (TileID.Sets.BasicChest[tile.type])
+                    if (tile.active() && TileID.Sets.BasicChest[tile.type])
                     {
                         TileObjectData data = TileObjectData.GetTileData(tile.type, 0);
-                        int x = tileX - tile.frameX / 18 % data.Width;
-                        int y = tileY - tile.frameY / 18 % data.Height; //get top left of chest
+                        int x = tileX - tile.frameX / 18 % (data?.Width ?? 2);
+                        int y = tileY - tile.frameY / 18 % (data?.Height ?? 2);
 
-                        WorldGen.KillTile(x, y); //try to kill chest
-                        if (Main.netMode == NetmodeID.Server)
-                            NetMessage.SendTileSquare(-1, x, y, 3);
-
+                        WorldGen.KillTile(x, y, noItem: true);
                         continue;
                     }
 
-                    if (tile.type == TileID.LihzahrdBrick)
+                    if (tile.active() && tile.type == TileID.LihzahrdBrick)
                     {
-                        tile.inActive(true); //actuate it
-                        if (Main.netMode == NetmodeID.Server)
-                            NetMessage.SendTileSquare(-1, tileX, tileY, 1);
-
+                        tile.inActive(true);
+                        WorldGen.SquareTileFrame(tileX, tileY);
                         continue;
                     }
 
-                    WorldGen.KillTile(tileX, tileY);
-                    if (Main.netMode == NetmodeID.Server)
-                        NetMessage.SendTileSquare(-1, tileX, tileY, 1);
+                    if (tile.active())
+                    {
+                        WorldGen.KillTile(tileX, tileY, noItem: true);
+                    }
                 }
 
                 return true;
@@ -120,23 +120,21 @@ namespace FargoItems.Content.Projectiles.Explosives
             int rightMax = 60;
 
             int leftTry = 0;
-            for (; leftTry >= -leftMax; leftTry--) //try clearing left side
+            for (; leftTry >= -leftMax; leftTry--)
             {
-                if (!WipeColumn(leftTry)) //if went OOB or exited temple before reaching normal left limit, give up
+                if (!WipeColumn(leftTry))
                 {
-                    rightMax += leftMax - Math.Abs(leftTry); //try to extend right side by this much
-                    //Main.NewText($"Extended right max to {rightMax}");
+                    rightMax += leftMax - Math.Abs(leftTry);
                     break;
                 }
             }
-            
-            for (int rightTry = 0; rightTry <= rightMax; rightTry++) //try clearing right side
+
+            for (int rightTry = 0; rightTry <= rightMax; rightTry++)
             {
-                if (!WipeColumn(rightTry)) //if went OOB or exited temple before reaching normal right limit, give up
+                if (!WipeColumn(rightTry))
                 {
-                    leftMax += rightMax - rightTry; //try to extend left side by this much
-                    //Main.NewText($"Extended left max to {leftMax}");
-                    for (; leftTry >= -leftMax; leftTry--) //try left one more time with the new extended limit
+                    leftMax += rightMax - rightTry;
+                    for (; leftTry >= -leftMax; leftTry--)
                     {
                         if (!WipeColumn(leftTry))
                             break;
@@ -144,6 +142,8 @@ namespace FargoItems.Content.Projectiles.Explosives
                     break;
                 }
             }
+
+            Main.refreshMap = true;
         }
     }
 }

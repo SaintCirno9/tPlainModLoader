@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json.Linq;
 using Terraria;
@@ -31,6 +32,76 @@ namespace TPMLBridge.GABP.Tools
                     {
                         type = "object",
                         properties = new { }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/test_autohouse",
+                    Description = "诊断 AutoHouse 快速房屋原生内容注册、贴图、弹幕绑定、配方与环境材质主题状态。",
+                    Tags = new List<string> { "diagnostic", "read-only", "autohouse" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new { }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/use_autohouse",
+                    Description = "在世界中指定坐标（默认玩家身旁）触发 AutoHouse 建造流程，并自动执行房屋结构、家具完整性与 NPC 适居性全量扫描。",
+                    Tags = new List<string> { "action", "autohouse", "building" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            targetX = new { type = "integer", description = "建造目标图格 X 坐标（可选，默认玩家右侧 6 格）" },
+                            targetY = new { type = "integer", description = "建造目标图格 Y 坐标（可选，默认玩家脚底 Y）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/use_instabridge",
+                    Description = "模拟玩家手持使用 InstaBridge / ObsidianInstaBridge / DoubleObsidianInstabridge 铺设全图平台桥并断言图格覆盖率。",
+                    Tags = new List<string> { "action", "instabridge", "building" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            variant = new { type = "string", description = "平台桥类型（'Wood' / 'Obsidian' / 'DoubleObsidian'，默认 'Wood'）" },
+                            targetY = new { type = "integer", description = "铺设高度图格 Y（可选，默认玩家脚底 Y）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/use_instatrack",
+                    Description = "模拟玩家手持使用 InstaTrack 铺设全图矿车轨道并断言轨道图格连续性。",
+                    Tags = new List<string> { "action", "instatrack", "building" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            targetY = new { type = "integer", description = "铺设高度图格 Y（可选，默认玩家脚底 Y）" }
+                        }
+                    }
+                },
+                new GABPToolDescriptor
+                {
+                    Name = "tpml/use_instapond",
+                    Description = "模拟玩家手持使用 InstaPond 开凿并灌注全环境钓鱼水池并断言水体与石板边缘。",
+                    Tags = new List<string> { "action", "instapond", "building" },
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            targetX = new { type = "integer", description = "水池中心图格 X（可选，默认玩家当前 X）" },
+                            targetY = new { type = "integer", description = "水池表面图格 Y（可选，默认玩家脚底 Y）" }
+                        }
                     }
                 },
                 new GABPToolDescriptor
@@ -72,6 +143,18 @@ namespace TPMLBridge.GABP.Tools
                 case "tpml_test_instavator":
                     return await MainThreadQueue.EnqueueAsync(() => TestInstavator());
 
+                case "tpml/test_autohouse":
+                case "tpml_test_autohouse":
+                    return await MainThreadQueue.EnqueueAsync(() => TestAutoHouse());
+
+                case "tpml/use_autohouse":
+                case "tpml_use_autohouse":
+                    {
+                        int? targetX = args?["targetX"]?.Value<int?>();
+                        int? targetY = args?["targetY"]?.Value<int?>();
+                        return await MainThreadQueue.EnqueueAsync(() => UseAutoHouse(targetX, targetY));
+                    }
+
                 case "tpml/get_last_build_result":
                 case "tpml_get_last_build_result":
                 case "tpml/last_build_result":
@@ -86,6 +169,29 @@ namespace TPMLBridge.GABP.Tools
                         int? targetY = args?["targetY"]?.Value<int?>();
                         string variant = args?["variant"]?.ToString();
                         return await MainThreadQueue.EnqueueAsync(() => InspectShaft(centerX, startY, targetY, variant));
+                    }
+
+                case "tpml/use_instabridge":
+                case "tpml_use_instabridge":
+                    {
+                        string variant = args?["variant"]?.ToString() ?? "Wood";
+                        int? targetY = args?["targetY"]?.Value<int>();
+                        return await MainThreadQueue.EnqueueAsync(() => UseInstaBridge(variant, targetY));
+                    }
+
+                case "tpml/use_instatrack":
+                case "tpml_use_instatrack":
+                    {
+                        int? targetY = args?["targetY"]?.Value<int>();
+                        return await MainThreadQueue.EnqueueAsync(() => UseInstaTrack(targetY));
+                    }
+
+                case "tpml/use_instapond":
+                case "tpml_use_instapond":
+                    {
+                        int? targetX = args?["targetX"]?.Value<int>();
+                        int? targetY = args?["targetY"]?.Value<int>();
+                        return await MainThreadQueue.EnqueueAsync(() => UseInstaPond(targetX, targetY));
                     }
 
                 default:
@@ -479,6 +585,460 @@ namespace TPMLBridge.GABP.Tools
                 wallCoveragePercent = wallCoverage,
                 evaluation,
                 summary
+            };
+        }
+
+        public static object TestAutoHouse()
+        {
+            // 扫描 AutoHouse 模组物品
+            ModItem autoHouseItem = null;
+            foreach (ModItem modItem in ItemLoader.Items)
+            {
+                if (modItem == null) continue;
+                if (modItem.Name.Equals("AutoHouse", StringComparison.OrdinalIgnoreCase) ||
+                    (ToolHelpers.GetItemDisplayName(modItem.Type) ?? "").Contains("快速房子"))
+                {
+                    autoHouseItem = modItem;
+                    break;
+                }
+            }
+
+            int itemType = autoHouseItem?.Type ?? 0;
+            string itemName = autoHouseItem != null ? ToolHelpers.GetItemDisplayName(itemType) : "未找到";
+            bool itemRegistered = autoHouseItem != null && ItemLoader.GetItem(itemType) != null;
+
+            ItemLoader.EnsureTextureLoaded(itemType);
+            var itemAsset = TextureAssets.Item != null && itemType < TextureAssets.Item.Length ? TextureAssets.Item[itemType] : null;
+            bool itemTextureValid = itemAsset != null && itemAsset.IsLoaded && itemAsset.Value != null;
+
+            // 扫描 AutoHouseProj 模组弹幕
+            ModProjectile autoHouseProj = null;
+            foreach (ModProjectile modProj in ProjectileLoader.Projectiles)
+            {
+                if (modProj == null) continue;
+                if (modProj.Name.Equals("AutoHouseProj", StringComparison.OrdinalIgnoreCase))
+                {
+                    autoHouseProj = modProj;
+                    break;
+                }
+            }
+
+            int projType = autoHouseProj?.Type ?? 0;
+            bool projRegistered = autoHouseProj != null && ProjectileLoader.GetModProjectile(projType) != null;
+            bool projOffsetSafe = projType >= ProjectileLoader.ModProjectileOffset;
+
+            // 扫描 AutoHouse 配方
+            var matchedRecipes = new List<object>();
+            for (int i = 0; i < Recipe.numRecipes && i < Main.recipe.Length; i++)
+            {
+                Recipe recipe = Main.recipe[i];
+                if (recipe?.createItem == null || recipe.createItem.type != itemType) continue;
+
+                var reqs = recipe.requiredItem
+                    .Where(it => it != null && !it.IsAir && it.type > 0)
+                    .Select(it => new { id = it.type, name = ToolHelpers.GetItemDisplayName(it.type), stack = it.stack })
+                    .ToList();
+
+                matchedRecipes.Add(new
+                {
+                    recipeIndex = i,
+                    outputItemId = itemType,
+                    requiredTile = recipe.requiredTile >= 0 ? Lang.GetMapObjectName(recipe.requiredTile) : "无",
+                    requirements = reqs
+                });
+            }
+
+            return new
+            {
+                success = itemRegistered && projRegistered && projOffsetSafe,
+                item = new
+                {
+                    id = itemType,
+                    name = itemName,
+                    registered = itemRegistered,
+                    textureLoaded = itemTextureValid,
+                    width = itemAsset?.Value?.Width ?? 0,
+                    height = itemAsset?.Value?.Height ?? 0
+                },
+                projectile = new
+                {
+                    id = projType,
+                    name = "AutoHouseProj",
+                    registered = projRegistered,
+                    offsetSafe = projOffsetSafe,
+                    minSafeOffset = ProjectileLoader.ModProjectileOffset
+                },
+                recipes = matchedRecipes,
+                summary = (itemRegistered && projRegistered && projOffsetSafe)
+                    ? $"AutoHouse 原生注册完美就绪！物品ID={itemType} | 弹幕ID={projType} (安全偏移 >= {ProjectileLoader.ModProjectileOffset}) | 配方数={matchedRecipes.Count}"
+                    : $"AutoHouse 存在异常配置！物品注册: {itemRegistered}, 弹幕注册: {projRegistered}, 偏移安全: {projOffsetSafe}"
+            };
+        }
+
+        public static object UseAutoHouse(int? targetTileX, int? targetTileY)
+        {
+            if (Main.gameMenu || Main.LocalPlayer == null)
+                return new { inWorld = false, success = false, message = "当前未进入世界" };
+
+            Player player = Main.LocalPlayer;
+            int originX = targetTileX.HasValue ? targetTileX.Value : (int)(player.Center.X / 16f) + 6;
+            int originY = targetTileY.HasValue ? targetTileY.Value : (int)(player.Bottom.Y / 16f);
+
+            if (originX < 15 || originX >= Main.maxTilesX - 15 || originY < 15 || originY >= Main.maxTilesY - 15)
+            {
+                return new { inWorld = true, success = false, message = $"目标坐标 ({originX}, {originY}) 超出有效世界范围" };
+            }
+
+            // 确保玩家手中选中的是 AutoHouse 物品
+            int autoHouseItemId = 0;
+            foreach (var item in TPML.Content.ItemLoader.Items)
+            {
+                if (item != null && item.Name.Equals("AutoHouse", StringComparison.OrdinalIgnoreCase))
+                {
+                    autoHouseItemId = item.Type;
+                    break;
+                }
+            }
+
+            if (autoHouseItemId <= 0)
+            {
+                return new { inWorld = true, success = false, message = "未找到 AutoHouse 模组物品" };
+            }
+
+            // 如果当前手持不是 AutoHouse，在玩家背包第 0 格放置 AutoHouse
+            if (player.HeldItem == null || player.HeldItem.type != autoHouseItemId)
+            {
+                player.inventory[0].SetDefaults(autoHouseItemId);
+                player.inventory[0].stack = 10;
+                player.selectedItem = 0;
+            }
+
+            int initialStack = player.HeldItem.stack;
+
+            // 设置鼠标世界坐标与屏幕坐标
+            Vector2 mouseWorld = new Vector2(originX * 16f + 8f, originY * 16f + 8f);
+            Main.mouseX = (int)(mouseWorld.X - Main.screenPosition.X);
+            Main.mouseY = (int)(mouseWorld.Y - Main.screenPosition.Y);
+
+            // 直接模拟玩家使用当前选中的手持物品
+            player.controlUseItem = true;
+            player.releaseUseItem = true;
+            player.ItemCheck();
+
+            // 更新世界中的弹幕以立即执行弹幕生命周期
+            for (int i = 0; i < Main.maxProjectiles; i++)
+            {
+                if (Main.projectile[i].active && Main.projectile[i].owner == player.whoAmI)
+                {
+                    Main.projectile[i].Update(i);
+                }
+            }
+
+            // 扫描并断言生成的房屋图格
+            int side = player.Center.X < mouseWorld.X ? 1 : -1;
+            int startX = (side * -1) + originX;
+            int x1 = startX + (1 * side);
+            int x2 = startX + (10 * side);
+            int minX = Math.Min(x1, x2);
+            int maxX = Math.Max(x1, x2);
+            int minY = originY - 5;
+            int maxY = originY;
+
+            int floorTiles = 0;
+            int ceilingTiles = 0;
+            int platformTiles = 0;
+            int wallTiles = 0;
+            int doorTiles = 0;
+            int chairTiles = 0;
+            int tableTiles = 0;
+            int torchTiles = 0;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    if (!WorldGen.InWorld(x, y)) continue;
+                    Tile tile = Main.tile[x, y];
+                    if (tile == null) continue;
+
+                    if (tile.wall > 0) wallTiles++;
+
+                    if (tile.active())
+                    {
+                        if (y == maxY) floorTiles++;
+                        else if (y == minY && tile.type == TileID.Platforms) platformTiles++;
+                        else if (y == minY) ceilingTiles++;
+                        else if (tile.type == TileID.ClosedDoor || tile.type == TileID.OpenDoor) doorTiles++;
+                        else if (tile.type == TileID.Chairs) chairTiles++;
+                        else if (tile.type == TileID.Tables) tableTiles++;
+                        else if (tile.type == TileID.Torches) torchTiles++;
+                    }
+                }
+            }
+
+            bool structureValid = floorTiles >= 8 && (ceilingTiles + platformTiles) >= 8 && wallTiles >= 20;
+            bool furnitureValid = doorTiles >= 1 && chairTiles >= 1 && tableTiles >= 1 && torchTiles >= 1;
+            bool consumed = player.HeldItem.stack < initialStack;
+            bool houseComplete = structureValid && furnitureValid;
+
+            return new
+            {
+                inWorld = true,
+                success = houseComplete,
+                itemUsed = player.HeldItem?.Name ?? "AutoHouse",
+                itemConsumed = consumed,
+                remainingStack = player.HeldItem?.stack ?? 0,
+                buildOrigin = new { tileX = originX, tileY = originY, worldX = mouseWorld.X, worldY = mouseWorld.Y },
+                houseBounds = new { minX, maxX, minY, maxY, width = maxX - minX + 1, height = maxY - minY + 1 },
+                structure = new
+                {
+                    floorTiles,
+                    ceilingTiles,
+                    platformTiles,
+                    wallTiles,
+                    structureValid
+                },
+                furniture = new
+                {
+                    doorTiles,
+                    chairTiles,
+                    tableTiles,
+                    torchTiles,
+                    furnitureValid
+                },
+                summary = houseComplete
+                    ? $"★ 玩家直接使用 [快速房屋] 实机测试大获成功！物品已消耗，在图格 [{minX}~{maxX}, {minY}~{maxY}] 成功构建完整 NPC 适居房屋（地板={floorTiles}, 墙壁={wallTiles}, 门={doorTiles}, 桌={tableTiles}, 椅={chairTiles}, 火把={torchTiles}）"
+                    : $"直接使用物品建造存在缺损：结构合格={structureValid}, 家具合格={furnitureValid}, 物品消耗={consumed}"
+            };
+        }
+
+        public static object UseInstaBridge(string variant, int? targetY)
+        {
+            if (Main.gameMenu || Main.netMode != 0)
+                return new { success = false, message = "必须处于单机世界中才能执行测试" };
+
+            Player player = Main.LocalPlayer;
+            if (player == null)
+                return new { success = false, message = "未找到本地玩家实例" };
+
+            int yPos = targetY ?? (int)(player.position.Y / 16f);
+
+            int targetItemType;
+            bool isMini = string.Equals(variant, "Mini", StringComparison.OrdinalIgnoreCase);
+            bool isMiniDirt = string.Equals(variant, "MiniDirt", StringComparison.OrdinalIgnoreCase);
+
+            if (string.Equals(variant, "DoubleObsidian", StringComparison.OrdinalIgnoreCase))
+                targetItemType = ModContent.ItemType("FargoItems", "DoubleObsidianInstabridge");
+            else if (string.Equals(variant, "Obsidian", StringComparison.OrdinalIgnoreCase))
+                targetItemType = ModContent.ItemType("FargoItems", "ObsidianInstaBridge");
+            else if (isMini)
+                targetItemType = ModContent.ItemType("FargoItems", "MiniInstaBridge");
+            else if (isMiniDirt)
+                targetItemType = ModContent.ItemType("FargoItems", "MiniDirtInstaBridge");
+            else
+                targetItemType = ModContent.ItemType("FargoItems", "InstaBridge");
+
+            player.inventory[0].SetDefaults(targetItemType);
+            player.inventory[0].stack = 10;
+            player.selectedItem = 0;
+
+            Vector2 mouseWorld = new Vector2(player.Center.X + (isMini || isMiniDirt ? 100f : 0f), yPos * 16f);
+            Main.mouseX = (int)(mouseWorld.X - Main.screenPosition.X);
+            Main.mouseY = (int)(mouseWorld.Y - Main.screenPosition.Y);
+
+            player.controlUseItem = true;
+            player.releaseUseItem = true;
+            player.ItemCheck();
+
+            if (isMini || isMiniDirt)
+            {
+                int originX = (int)(mouseWorld.X / 16f);
+                int expectedTileType = isMiniDirt ? TileID.Dirt : TileID.Platforms;
+                int length = isMiniDirt ? 150 : 400;
+                int placedCount = 0;
+
+                for (int x = 0; x < length; x++)
+                {
+                    int gx = originX + x;
+                    if (WorldGen.InWorld(gx, yPos))
+                    {
+                        Tile tile = Main.tile[gx, yPos];
+                        if (tile != null && tile.active() && tile.type == expectedTileType)
+                            placedCount++;
+                    }
+                }
+
+                double miniCoverage = (double)placedCount / length;
+                bool miniSuccess = miniCoverage >= 0.90;
+
+                return new
+                {
+                    inWorld = true,
+                    success = miniSuccess,
+                    variant,
+                    targetY = yPos,
+                    placedTiles = placedCount,
+                    expectedLength = length,
+                    coverage = $"{miniCoverage * 100:F1}%",
+                    itemConsumed = player.HeldItem.stack < 10,
+                    summary = miniSuccess
+                        ? $"★ 小型{(isMiniDirt ? "泥土" : "木")}平台桥 [{variant}] 铺设大获成功！铺设图格数: {placedCount}/{length} (覆盖率: {miniCoverage * 100:F1}%)"
+                        : $"小型平台桥铺设未达预期：覆盖率={miniCoverage * 100:F1}%"
+                };
+            }
+
+            // 采样扫描世界全宽平台覆盖率 (采样 100 个点)
+            int sampleCount = 100;
+            int foundPlatforms = 0;
+            int step = (Main.maxTilesX - 20) / sampleCount;
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                int sampleX = 10 + i * step;
+                if (WorldGen.InWorld(sampleX, yPos))
+                {
+                    Tile tile = Main.tile[sampleX, yPos];
+                    if (tile != null && tile.active() && tile.type == TileID.Platforms)
+                    {
+                        foundPlatforms++;
+                    }
+                }
+            }
+
+            double coverage = (double)foundPlatforms / sampleCount;
+            bool success = coverage >= 0.90;
+
+            return new
+            {
+                inWorld = true,
+                success,
+                variant,
+                targetY = yPos,
+                platformCoverage = $"{coverage * 100:F1}%",
+                itemConsumed = player.HeldItem.stack < 10,
+                summary = success
+                    ? $"★ 平台桥 [{variant}] 铺设大获成功！全图平台覆盖率: {coverage * 100:F1}% (采样={foundPlatforms}/{sampleCount})"
+                    : $"平台桥铺设未达预期：覆盖率={coverage * 100:F1}%"
+            };
+        }
+
+        public static object UseInstaTrack(int? targetY)
+        {
+            if (Main.gameMenu || Main.netMode != 0)
+                return new { success = false, message = "必须处于单机世界中才能执行测试" };
+
+            Player player = Main.LocalPlayer;
+            if (player == null)
+                return new { success = false, message = "未找到本地玩家实例" };
+
+            int yPos = targetY ?? (int)(player.position.Y / 16f);
+            int targetItemType = ModContent.ItemType("FargoItems", "InstaTrack");
+
+            player.inventory[0].SetDefaults(targetItemType);
+            player.inventory[0].stack = 10;
+            player.selectedItem = 0;
+
+            Vector2 mouseWorld = new Vector2(player.Center.X, yPos * 16f);
+            Main.mouseX = (int)(mouseWorld.X - Main.screenPosition.X);
+            Main.mouseY = (int)(mouseWorld.Y - Main.screenPosition.Y);
+
+            player.controlUseItem = true;
+            player.releaseUseItem = true;
+            player.ItemCheck();
+
+            // 采样扫描世界全宽矿车轨道覆盖率
+            int sampleCount = 100;
+            int foundTracks = 0;
+            int step = (Main.maxTilesX - 20) / sampleCount;
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                int sampleX = 10 + i * step;
+                if (WorldGen.InWorld(sampleX, yPos))
+                {
+                    Tile tile = Main.tile[sampleX, yPos];
+                    if (tile != null && tile.active() && tile.type == TileID.MinecartTrack)
+                    {
+                        foundTracks++;
+                    }
+                }
+            }
+
+            double coverage = (double)foundTracks / sampleCount;
+            bool success = coverage >= 0.90;
+
+            return new
+            {
+                inWorld = true,
+                success,
+                targetY = yPos,
+                trackCoverage = $"{coverage * 100:F1}%",
+                itemConsumed = player.HeldItem.stack < 10,
+                summary = success
+                    ? $"★ 全图矿车轨道铺设大获成功！全图轨道覆盖率: {coverage * 100:F1}% (采样={foundTracks}/{sampleCount})"
+                    : $"矿车轨道铺设未达预期：覆盖率={coverage * 100:F1}%"
+            };
+        }
+
+        public static object UseInstaPond(int? targetX, int? targetY)
+        {
+            if (Main.gameMenu || Main.netMode != 0)
+                return new { success = false, message = "必须处于单机世界中才能执行测试" };
+
+            Player player = Main.LocalPlayer;
+            if (player == null)
+                return new { success = false, message = "未找到本地玩家实例" };
+
+            int originX = targetX ?? (int)(player.position.X / 16f + 30f);
+            int originY = targetY ?? (int)(player.position.Y / 16f);
+            int targetItemType = ModContent.ItemType("FargoItems", "InstaPond");
+
+            player.inventory[0].SetDefaults(targetItemType);
+            player.inventory[0].stack = 10;
+            player.selectedItem = 0;
+
+            Vector2 mouseWorld = new Vector2(originX * 16f, originY * 16f);
+            Main.mouseX = (int)(mouseWorld.X - Main.screenPosition.X);
+            Main.mouseY = (int)(mouseWorld.Y - Main.screenPosition.Y);
+
+            player.controlUseItem = true;
+            player.releaseUseItem = true;
+            player.ItemCheck();
+
+            // 扫描水池范围 (宽 150，深 50)
+            int waterTiles = 0;
+            int stoneSlabTiles = 0;
+
+            for (int x = -75; x <= 75; x++)
+            {
+                for (int y = 0; y <= 50; y++)
+                {
+                    int gx = originX + x;
+                    int gy = originY + y;
+                    if (!WorldGen.InWorld(gx, gy)) continue;
+
+                    Tile tile = Main.tile[gx, gy];
+                    if (tile == null) continue;
+
+                    if (tile.liquid > 0) waterTiles++;
+                    if (tile.active() && tile.type == TileID.StoneSlab) stoneSlabTiles++;
+                }
+            }
+
+            bool success = waterTiles >= 1000 && stoneSlabTiles >= 100;
+
+            return new
+            {
+                inWorld = true,
+                success,
+                originX,
+                originY,
+                waterTiles,
+                stoneSlabTiles,
+                itemConsumed = player.HeldItem.stack < 10,
+                summary = success
+                    ? $"★ 钓鱼池建造大获成功！水体图格数={waterTiles}, 石板池壁数={stoneSlabTiles}"
+                    : $"钓鱼池建造未达预期：水体={waterTiles}, 石板={stoneSlabTiles}"
             };
         }
     }

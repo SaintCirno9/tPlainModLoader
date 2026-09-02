@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Terraria.DataStructures;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -11,18 +13,48 @@ namespace TPML.Content
     /// </summary>
     public static class TileEntityLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("TileEntityLoader");
         private static readonly Dictionary<int, ModTileEntity> _entitiesByType = new Dictionary<int, ModTileEntity>();
         private static readonly Dictionary<string, int> _entitiesByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private static bool _hooksInitialized = false;
 
         public static IReadOnlyCollection<ModTileEntity> Entities => _entitiesByType.Values;
+
+        public static void InitializeHooks()
+        {
+            if (_hooksInitialized) return;
+            _hooksInitialized = true;
+            On_TileEntity.Read += Hook_TileEntity_Read;
+        }
+
+        private static TileEntity Hook_TileEntity_Read(On_TileEntity.orig_Read orig, BinaryReader reader, int gameVersion, bool networkSend)
+        {
+            byte id = reader.ReadByte();
+            TileEntity tileEntity = TileEntity.manager?.GenerateInstance(id);
+            if (tileEntity == null)
+            {
+                Logger.Warn($"[TileEntityLoader] 发现未知或未注册的 TileEntity 类型 (TypeID={id})，正在安全丢弃该实体以保护世界加载...");
+                var dummy = new DummyTileEntity();
+                dummy.type = id;
+                dummy.ReadInner(reader, gameVersion, networkSend);
+                return dummy;
+            }
+
+            tileEntity.type = id;
+            tileEntity.ReadInner(reader, gameVersion, networkSend);
+            return tileEntity;
+        }
 
         public static int Register(ModTileEntity entity)
         {
             if (entity == null) return 0;
 
+            InitializeHooks();
+
             if (TileEntity.manager == null)
             {
                 TileEntity.manager = new TileEntitiesManager();
+                TileEntity.manager.RegisterAll();
             }
 
             TileEntity.manager.Register(entity);
@@ -33,7 +65,7 @@ namespace TPML.Content
             _entitiesByName[entity.Name] = type;
 
             ModContent.RegisterTileEntityType(entity.GetType(), type);
-            ModLoader.Log($"[TileEntityLoader] 成功注册 TileEntity: [{entity.FullName}] -> TypeID={type}");
+            Logger.Info($"[TileEntityLoader] 成功注册 TileEntity: [{entity.FullName}] -> TypeID={type}");
             return type;
         }
 
@@ -70,6 +102,11 @@ namespace TPML.Content
         {
             _entitiesByType.Clear();
             _entitiesByName.Clear();
+        }
+
+        private sealed class DummyTileEntity : TileEntity
+        {
+            public override bool IsTileValidForEntity(int x, int y) => false;
         }
     }
 }

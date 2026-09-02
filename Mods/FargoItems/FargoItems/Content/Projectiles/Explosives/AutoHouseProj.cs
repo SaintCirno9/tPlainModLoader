@@ -1,11 +1,10 @@
-using FargoItems.Content.Items.Explosives;
-
-using Microsoft.Xna.Framework;
 using System;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using TPML.Content;
+using FargoItems.Content.Logic;
 
 namespace FargoItems.Content.Projectiles.Explosives
 {
@@ -21,334 +20,61 @@ namespace FargoItems.Content.Projectiles.Explosives
             Projectile.ignoreWater = true;
             Projectile.alpha = 255;
         }
+
         public static void GetTiles(Player player, Vector2 position, out int wallType, out int tileType, out int platformStyle, out bool moddedPlatform, out string biomeName)
         {
             moddedPlatform = false;
             float tileY = position.Y / 16.0f;
 
-            if (player.ZoneUnderworldHeight || tileY >= Main.UnderworldLayer)
-            {
-                wallType = WallID.ObsidianBrick;
-                tileType = TileID.ObsidianBrick;
-                platformStyle = 13;
-                biomeName = "地狱 (Underworld)";
-            }
-            else if (player.ZoneSkyHeight || tileY <= (float)Main.worldSurface * 0.35f)
-            {
-                wallType = WallID.DiscWall;
-                tileType = TileID.Sunplate;
-                platformStyle = 22;
-                biomeName = "太空/天岛 (Sky)";
-            }
-            else if (player.ZoneGlowshroom)
-            {
-                wallType = WallID.Mushroom;
-                tileType = TileID.MushroomBlock;
-                platformStyle = 18;
-                biomeName = "发光蘑菇地 (Glowshroom)";
-            }
-            else if (player.ZoneHallow)
-            {
-                wallType = WallID.Pearlwood;
-                tileType = TileID.Pearlwood;
-                platformStyle = 3;
-                biomeName = "神圣之地 (Hallow)";
-            }
-            else if (player.ZoneCrimson)
-            {
-                wallType = WallID.Shadewood;
-                tileType = TileID.Shadewood;
-                platformStyle = 5;
-                biomeName = "猩红之地 (Crimson)";
-            }
-            else if (player.ZoneCorrupt)
-            {
-                wallType = WallID.Ebonwood;
-                tileType = TileID.Ebonwood;
-                platformStyle = 1;
-                biomeName = "腐化之地 (Corrupt)";
-            }
-            else if (player.ZoneJungle)
-            {
-                wallType = WallID.RichMaogany;
-                tileType = TileID.RichMahogany;
-                platformStyle = 2;
-                biomeName = "丛林 (Jungle)";
-            }
-            else if (player.ZoneSnow)
-            {
-                wallType = WallID.BorealWood;
-                tileType = TileID.BorealWood;
-                platformStyle = 19;
-                biomeName = "雪原 (Snow)";
-            }
-            else if (player.ZoneDesert && !player.ZoneBeach)
-            {
-                wallType = WallID.Cactus;
-                tileType = TileID.CactusBlock;
-                platformStyle = 25;
-                biomeName = "沙漠 (Desert)";
-            }
-            else if (player.ZoneBeach)
-            {
-                wallType = WallID.PalmWood;
-                tileType = TileID.PalmWood;
-                platformStyle = 17;
-                biomeName = "海滩 (Beach)";
-            }
-            else
-            {
-                wallType = WallID.Wood;
-                tileType = TileID.WoodBlock;
-                platformStyle = 0;
-                biomeName = "森林 (Forest)";
-            }
+            bool isUnderworld = player.ZoneUnderworldHeight || tileY >= Main.UnderworldLayer;
+            bool isSky = player.ZoneSkyHeight || tileY <= (float)Main.worldSurface * 0.35f;
+
+            var theme = AutoHouseBuildPlan.ResolveTheme(
+                isUnderworld,
+                isSky,
+                player.ZoneGlowshroom,
+                player.ZoneHallow,
+                player.ZoneCrimson,
+                player.ZoneCorrupt,
+                player.ZoneJungle,
+                player.ZoneSnow,
+                player.ZoneDesert,
+                player.ZoneBeach);
+
+            wallType = theme.WallType;
+            tileType = theme.TileType;
+            platformStyle = theme.PlatformStyle;
+            biomeName = theme.BiomeName;
         }
-        public static void PlaceHouse(int x, int y, Vector2 position, int side, Player player)
-        {
-            int xPosition = (int)((side * -1) + x + position.X / 16.0f);
-            int yPosition = (int)(y + position.Y / 16.0f);
-            Tile tile = Main.tile[xPosition, yPosition];
 
-            // Testing for blocks that should not be destroyed
-            if (!FargoItems.Content.Logic.ExplosivesHelper.OkayToDestroyTileAt(xPosition, yPosition, true))
-                return;
-
-            GetTiles(player, position, out int wallType, out int tileType, out int platformStyle, out bool moddedPlatform, out _);
-
-            if (x == 10 * side || x == 1 * side)
-            {
-                //dont act if the right tile already above (but DO replace a corner platform)
-                if (y == -5 && tile.type == tileType)
-                    return;
-
-                //dont act on correct block above/below door, destroying them will break it
-                if ((y == -4 || y == 0) && tile.type == tileType)
-                    return;
-                
-                if ((y == -1 || y == -2 || y == -3) && (tile.type == TileID.ClosedDoor || tile.type == TileID.OpenDoor))
-                    return;
-            }
-            else //for blocks besides those on the left/right edges where doors are placed, its okay to have platform as floor
-            {
-                //dont act if the right blocks already above
-                if (y == -5 && (tile.type == TileID.Platforms || tile.type == tileType))
-                    return;
-
-                if (y == 0 && (tile.type == TileID.Platforms || tile.type == tileType))
-                    return;
-            }
-
-            //doing it this way so the code still runs to place bg walls behind open door
-            if (!((x == 9 * side || x == 2 * side) && (y == -1 || y == -2 || y == -3) && tile.type == TileID.OpenDoor))
-                FargoItems.Content.Logic.ExplosivesHelper.ClearEverything(xPosition, yPosition);
-
-            // Spawn walls
-            if (y != -5 && y != 0 && x != (10 * side) && x != (1 * side))
-            {
-                WorldGen.PlaceWall(xPosition, yPosition, wallType);
-                if (Main.netMode == NetmodeID.Server)
-                    NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
-            }
-
-            //platforms on top
-            if (y == -5 && Math.Abs(x) >= 3 && Math.Abs(x) <= 5)
-            {
-                int type = TileID.Platforms;
-                int style = 0;
-                if (moddedPlatform) type = platformStyle;
-                else style = platformStyle;
-                WorldGen.PlaceTile(xPosition, yPosition, type, style: style);
-                if (Main.netMode == NetmodeID.Server)
-                    NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 1, xPosition, yPosition, type, style);
-            }
-            // Spawn border
-            else if ((y == -5) || (y == 0) || (x == (10 * side)) || (x == (1 * side) && y == -4))
-            {
-                WorldGen.PlaceTile(xPosition, yPosition, tileType);
-                if (Main.netMode == NetmodeID.Server)
-                    NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
-            }
-        }
         public static void GetFurniture(Player player, Vector2 position, out int doorStyle, out int chairStyle, out int tableStyle, out int torchStyle)
         {
             float tileY = position.Y / 16.0f;
 
-            if (player.ZoneUnderworldHeight || tileY >= Main.UnderworldLayer)
-            {
-                doorStyle = 19;
-                chairStyle = 16;
-                tableStyle = 13;
-                torchStyle = 7;
-            }
-            else if (player.ZoneSkyHeight || tileY <= (float)Main.worldSurface * 0.35f)
-            {
-                doorStyle = 9;
-                chairStyle = 10;
-                tableStyle = 7;
-                torchStyle = 0;
-            }
-            else if (player.ZoneGlowshroom)
-            {
-                doorStyle = 6;
-                chairStyle = 9;
-                tableStyle = 27;
-                torchStyle = 22;
-            }
-            else if (player.ZoneHallow)
-            {
-                doorStyle = 3;
-                chairStyle = 4;
-                tableStyle = 3;
-                torchStyle = 20;
-            }
-            else if (player.ZoneCrimson)
-            {
-                doorStyle = 10;
-                chairStyle = 11;
-                tableStyle = 8;
-                torchStyle = 19;
-            }
-            else if (player.ZoneCorrupt)
-            {
-                doorStyle = 1;
-                chairStyle = 2;
-                tableStyle = 1;
-                torchStyle = 18;
-            }
-            else if (player.ZoneJungle)
-            {
-                doorStyle = 2;
-                chairStyle = 3;
-                tableStyle = 2;
-                torchStyle = 21;
-            }
-            else if (player.ZoneSnow)
-            {
-                doorStyle = 30;
-                chairStyle = 30;
-                tableStyle = 28;
-                torchStyle = 9;
-            }
-            else if (player.ZoneDesert && !player.ZoneBeach)
-            {
-                doorStyle = 4;
-                chairStyle = 6;
-                tableStyle = 30;
-                torchStyle = 16;
-            }
-            else if (player.ZoneBeach)
-            {
-                doorStyle = 29;
-                chairStyle = 29;
-                tableStyle = 26;
-                torchStyle = 17;
-            }
-            else
-            {
-                doorStyle = 0;
-                chairStyle = 0;
-                tableStyle = 0;
-                torchStyle = 0;
-            }
-        }
-        public static void PlaceFurniture(int x, int y, Vector2 position, int side, Player player)
-        {
-            int xPosition = (int)((side * -1) + x + position.X / 16.0f);
-            int yPosition = (int)(y + position.Y / 16.0f);
+            bool isUnderworld = player.ZoneUnderworldHeight || tileY >= Main.UnderworldLayer;
+            bool isSky = player.ZoneSkyHeight || tileY <= (float)Main.worldSurface * 0.35f;
 
-            Tile tile = Main.tile[xPosition, yPosition];
-            // Testing for blocks that should not be destroyed
-            if (!FargoItems.Content.Logic.ExplosivesHelper.OkayToDestroyTileAt(xPosition, yPosition, true))
-                return;
+            var theme = AutoHouseBuildPlan.ResolveTheme(
+                isUnderworld,
+                isSky,
+                player.ZoneGlowshroom,
+                player.ZoneHallow,
+                player.ZoneCrimson,
+                player.ZoneCorrupt,
+                player.ZoneJungle,
+                player.ZoneSnow,
+                player.ZoneDesert,
+                player.ZoneBeach);
 
-            GetFurniture(player, position, out int doorStyle, out int chairStyle, out int tableStyle, out int torchStyle);
-            int style = 0;
-            int type = 0;
-            if (y == -1)
-            {
-                if (Math.Abs(x) == 1)
-                {
-                    if (doorStyle > TileID.Count)
-                    {
-                        type = doorStyle;
-                        style = 0;
-                    }
-                    else
-                    {
-                        type = TileID.ClosedDoor;
-                        style = doorStyle;
-                    }
-
-                    WorldGen.PlaceTile(xPosition, yPosition, type, style: style);
-                    if (Main.netMode == NetmodeID.Server)
-                        NetMessage.SendTileSquare(-1, xPosition, yPosition - 2, 1, 3);
-                }
-
-                if (x == (5 * side))
-                {
-                    if (chairStyle > TileID.Count)
-                    {
-                        type = chairStyle;
-                        style = 0;
-                    }
-                    else
-                    {
-                        type = TileID.Chairs;
-                        style = chairStyle;
-                    }
-
-                    WorldGen.PlaceObject(xPosition, yPosition, type, direction: side, style: style);
-                    if (Main.netMode == NetmodeID.Server)
-                        NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 1, xPosition, yPosition, type, style);
-                }
-
-                if (x == (7 * side))
-                {
-                    if (tableStyle > TileID.Count)
-                    {
-                        type = tableStyle;
-                        style = 0;
-                    }
-                    else
-                    {
-                        type = TileID.Tables;
-                        style = tableStyle;
-                    }
-
-
-                    WorldGen.PlaceTile(xPosition, yPosition, type, style: style);
-                    if (Main.netMode == NetmodeID.Server)
-                        NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 1, xPosition, yPosition, type, style);
-                }
-            }
-
-            if (x == (7 * side) && y == -4)
-            {
-                if (torchStyle > TileID.Count)
-                {
-                    type = torchStyle;
-                    style = 0;
-                }
-                else
-                {
-                    type = TileID.Torches;
-                    style = torchStyle;
-                }
-                WorldGen.PlaceTile(xPosition, yPosition, type, style: style);
-                if (Main.netMode == NetmodeID.Server)
-                    NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 1, xPosition, yPosition, type, style);
-            }
+            doorStyle = theme.DoorStyle;
+            chairStyle = theme.ChairStyle;
+            tableStyle = theme.TableStyle;
+            torchStyle = theme.TorchStyle;
         }
 
-        public static void UpdateWall(int x, int y, Vector2 position, int side, Player player)
+        public override void AI()
         {
-            int xPosition = (int)((side * -1) + x + position.X / 16.0f);
-            int yPosition = (int)(y + position.Y / 16.0f);
-
-            WorldGen.SquareWallFrame(xPosition, yPosition);
-            if (Main.netMode == NetmodeID.Server)
-                NetMessage.SendTileSquare(-1, xPosition, yPosition, 1);
+            Projectile.Kill();
         }
 
         public override void OnKill(int timeLeft)
@@ -363,10 +89,13 @@ namespace FargoItems.Content.Projectiles.Explosives
         {
             if (player == null) return;
             var logger = TPML.Core.Logging.LogManager.GetLogger("AutoHouse");
-            int startTileX = (int)(position.X / 16.0f);
-            int startTileY = (int)(position.Y / 16.0f);
-            GetTiles(player, position, out int sampleWall, out int sampleTile, out _, out _, out string biomeName);
-            logger.Info($"[AutoHouse] 正在为玩家 [{player.name}] 在坐标 ({position.X:F1}, {position.Y:F1}) [图格: {startTileX}, {startTileY}] 构建房屋... 判定环境: [{biomeName}], 材质: TileID={sampleTile}, WallID={sampleWall}");
+            int originX = (int)(position.X / 16.0f);
+            int originY = (int)(position.Y / 16.0f);
+
+            GetTiles(player, position, out int wallType, out int tileType, out int platformStyle, out _, out string biomeName);
+            GetFurniture(player, position, out int doorStyle, out int chairStyle, out int tableStyle, out int torchStyle);
+
+            logger.Info($"[AutoHouse] 正在为玩家 [{player.name}] 在坐标 ({position.X:F1}, {position.Y:F1}) [图格: {originX}, {originY}] 构建房屋... 环境: [{biomeName}], 材质: TileID={tileType}, WallID={wallType}");
 
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
@@ -374,57 +103,118 @@ namespace FargoItems.Content.Projectiles.Explosives
                 return;
             }
 
+            int side = player.Center.X < position.X ? 1 : -1;
+            var (minX, maxX, minY, maxY) = AutoHouseBuildPlan.GetHouseBounds(originX, originY, side);
+
             try
             {
-                if (player.Center.X < position.X)
+                // 阶段 1：安全清空房屋覆盖矩形区域内的一切图格与流体
+                for (int gx = minX - 1; gx <= maxX + 1; gx++)
                 {
-                    for (int i = 0; i < 3; i++)
+                    for (int gy = minY - 1; gy <= maxY + 1; gy++)
                     {
-                        for (int x = 11; x > -1; x--)
+                        if (!WorldGen.InWorld(gx, gy)) continue;
+                        if (ExplosivesHelper.OkayToDestroyTileAt(gx, gy, true))
                         {
-                            if (i != 2 && (x == 11 || x == 0))
-                                continue;
-
-                            for (int y = -6; y <= 1; y++)
+                            if (gx >= minX && gx <= maxX && gy >= minY && gy <= maxY)
                             {
-                                if (i != 2 && (y == -6 || y == 1))
-                                    continue;
-
-                                if (i == 0)
-                                    PlaceHouse(x, y, position, 1, player);
-                                else if (i == 1)
-                                    PlaceFurniture(x, y, position, 1, player);
-                                else
-                                    UpdateWall(x, y, position, 1, player);
+                                ExplosivesHelper.ClearEverything(gx, gy, false);
                             }
                         }
                     }
                 }
-                else
+
+                // 阶段 2：铺设实体外框（地板、天花板、外墙立柱）与背景墙
+                for (int x = 1; x <= 10; x++)
                 {
-                    for (int i = 0; i < 3; i++)
+                    int currentX = (side == 1) ? minX + (x - 1) : maxX - (x - 1);
+
+                    for (int y = -5; y <= 0; y++)
                     {
-                        for (int x = -11; x < 1; x++)
+                        int currentY = originY + y;
+                        if (!WorldGen.InWorld(currentX, currentY)) continue;
+
+                        Tile t = Main.tile[currentX, currentY];
+                        if (t == null)
                         {
-                            if (i != 2 && (x == -11 || x == 0))
-                                continue;
+                            t = new Tile();
+                            Main.tile[currentX, currentY] = t;
+                        }
 
-                            for (int y = -6; y <= 1; y++)
-                            {
-                                if (i != 2 && (y == -6 || y == 1))
-                                    continue;
+                        // 内部区域全覆盖铺设背景墙
+                        if (y != -5 && y != 0 && x != 1 && x != 10)
+                        {
+                            t.wall = (ushort)wallType;
+                            WorldGen.SquareWallFrame(currentX, currentY);
+                        }
 
-                                if (i == 0)
-                                    PlaceHouse(x, y, position, -1, player);
-                                else if (i == 1)
-                                    PlaceFurniture(x, y, position, -1, player);
-                                else
-                                    UpdateWall(x, y, position, -1, player);
-                            }
+                        // 地板
+                        if (y == 0)
+                        {
+                            WorldGen.PlaceTile(currentX, currentY, tileType, mute: true, forced: true);
+                        }
+                        // 天花板平台 (x=3..5)
+                        else if (y == -5 && x >= 3 && x <= 5)
+                        {
+                            WorldGen.PlaceTile(currentX, currentY, TileID.Platforms, mute: true, forced: true, style: platformStyle);
+                        }
+                        // 天花板实体块
+                        else if (y == -5)
+                        {
+                            WorldGen.PlaceTile(currentX, currentY, tileType, mute: true, forced: true);
+                        }
+                        // 门上方的立柱实体块
+                        else if ((x == 1 || x == 10) && y == -4)
+                        {
+                            WorldGen.PlaceTile(currentX, currentY, tileType, mute: true, forced: true);
                         }
                     }
                 }
-                logger.Info("[AutoHouse] ★ 房屋结构与内部家具生成完毕！");
+
+                // 阶段 3：放置家具（门、椅子、桌子、火把）
+                int floorY = originY; // 地板图格 Y
+                int interiorFloorContactY = floorY - 1; // 站在地板上的图格 Y
+
+                // 3.1 放置左门与右门 (x=1, x=10)
+                int leftDoorX = (side == 1) ? minX : maxX;
+                int rightDoorX = (side == 1) ? maxX : minX;
+
+                WorldGen.PlaceObject(leftDoorX, interiorFloorContactY, TileID.ClosedDoor, mute: true, style: doorStyle, direction: side);
+                WorldGen.PlaceObject(rightDoorX, interiorFloorContactY, TileID.ClosedDoor, mute: true, style: doorStyle, direction: -side);
+
+                // 3.2 放置椅子与桌子
+                int chairX = (side == 1) ? minX + 3 : maxX - 3;
+                int tableX = (side == 1) ? minX + 5 : maxX - 6;
+
+                // 椅子面向桌子
+                WorldGen.PlaceObject(chairX, interiorFloorContactY, TileID.Chairs, mute: true, style: chairStyle, direction: side);
+                // 桌子 (2x2)
+                WorldGen.PlaceObject(tableX, interiorFloorContactY, TileID.Tables, mute: true, style: tableStyle, direction: side);
+
+                // 3.3 放置中心火把 (天花板下方中心)
+                int torchX = (side == 1) ? minX + 4 : maxX - 4;
+                int torchY = originY - 4;
+                WorldGen.PlaceTile(torchX, torchY, TileID.Torches, mute: true, forced: true, style: torchStyle);
+
+                // 阶段 4：区域帧刷新与网络同步
+                for (int gx = minX - 1; gx <= maxX + 1; gx++)
+                {
+                    for (int gy = minY - 1; gy <= maxY + 1; gy++)
+                    {
+                        if (WorldGen.InWorld(gx, gy))
+                        {
+                            WorldGen.SquareTileFrame(gx, gy);
+                            WorldGen.SquareWallFrame(gx, gy);
+                        }
+                    }
+                }
+
+                if (Main.netMode == NetmodeID.Server)
+                {
+                    NetMessage.SendTileSquare(-1, minX - 1, minY - 1, AutoHouseBuildPlan.HouseWidth + 2, AutoHouseBuildPlan.HouseHeight + 2);
+                }
+
+                logger.Info($"[AutoHouse] ★ 房屋结构与内部家具生成完毕！边界: X:[{minX}, {maxX}], Y:[{minY}, {maxY}]");
             }
             catch (Exception ex)
             {

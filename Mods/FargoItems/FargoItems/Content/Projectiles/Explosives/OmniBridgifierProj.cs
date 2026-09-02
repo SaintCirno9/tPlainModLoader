@@ -35,6 +35,11 @@ namespace FargoItems.Content.Projectiles.Explosives
             return false;
         }
 
+        public override void AI()
+        {
+            Projectile.Kill();
+        }
+
         public override void OnKill(int timeLeft)
         {
             SoundEngine.PlaySound(SoundID.Item14, Projectile.Center);
@@ -56,13 +61,13 @@ namespace FargoItems.Content.Projectiles.Explosives
                         if (WorldGen.InWorld(x, y))
                         {
                             Tile tile = Framing.GetTileSafely(x, y);
-                            if (tile == null || tile.type != 0)
+                            if (tile != null && tile.active())
                                 return false;
                         }
                     }
                 }
 
-                WorldGen.PlaceTile(xPos, yPos - TileHeight / 2, Placeable);
+                WorldGen.PlaceTile(xPos, yPos - TileHeight / 2, Placeable, mute: true, forced: true);
                 if (Main.netMode == NetmodeID.Server)
                     NetMessage.SendTileSquare(-1, xPos - 1, yPos - TileHeight, 2, TileHeight);
 

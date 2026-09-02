@@ -28,10 +28,21 @@ namespace FargoItems.Content.Projectiles.Explosives
 
         public override bool? CanDamage() => false;
 
+        public override void AI()
+        {
+            Projectile.Kill();
+        }
+
         public override void OnKill(int timeLeft)
         {
             SoundEngine.PlaySound(SoundID.Item14, Projectile.Center);
 
+            Player player = Main.player[Projectile.owner];
+            ExterminateAltars(player);
+        }
+
+        public static void ExterminateAltars(Player player)
+        {
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 return;
@@ -44,11 +55,10 @@ namespace FargoItems.Content.Projectiles.Explosives
                     if (WorldGen.InWorld(i, j))
                     {
                         Tile tile = Framing.GetTileSafely(i, j);
-                        if (tile.type == Terraria.ID.TileID.DemonAltar)
+                        if (tile.active() && tile.type == TileID.DemonAltar)
                         {
-                            WorldGen.KillTile(i, j);
-                            if (Main.netMode == NetmodeID.Server)
-                                NetMessage.SendTileSquare(-1, i, j, 1);
+                            WorldGen.KillTile(i, j, noItem: true);
+                            tile.ClearEverything();
                         }
                     }
                 }

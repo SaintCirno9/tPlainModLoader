@@ -1,10 +1,9 @@
 using FargoItems.Content.Projectiles.Explosives;
 using FargoItems.Content.Systems;
-
-
 using Microsoft.Xna.Framework;
 using System;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using TPML.Content;
@@ -56,7 +55,8 @@ namespace FargoItems.Content.Items.Explosives
             Vector2 mouse = Main.MouseWorld;
             var logger = TPML.Core.Logging.LogManager.GetLogger("MiniDirtBridge");
             logger.Info($"[MiniDirtBridge] 玩家 [{player.name}] 触发 Shoot, 鼠标目标: ({mouse.X:F1}, {mouse.Y:F1}), 弹幕类型: {type}");
-            Projectile.NewProjectile(player.GetSource_ItemUse(source.Item), mouse, Vector2.Zero, type, 0, 0, player.whoAmI);
+            SoundEngine.PlaySound(SoundID.Item14, mouse);
+            MiniDirtInstabridgeProj.BuildBridge(player, mouse);
             return false;
         }
 

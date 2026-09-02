@@ -457,10 +457,36 @@ namespace TPML.ModPatch
 
         private static void Hook_LoadWorld(On_WorldFile.orig_LoadWorld orig)
         {
-            orig();
-            if (Main.netMode == 0 || Main.netMode == 2)
+            var logger = LogManager.GetLogger("WorldLoad");
+            logger.Info($"[WorldLoad] 正在载入世界: [{Main.worldName}] (Path: {Main.worldPathName})");
+            try
             {
-                ModItemSidecarEngine.OnWorldLoaded();
+                orig();
+                if (WorldGen.loadFailed)
+                {
+                    logger.Error($"[WorldLoad] 世界加载失败！LastThrownLoadException: {Terraria.IO.WorldFile.LastThrownLoadException}");
+                }
+                else
+                {
+                    logger.Info($"[WorldLoad] ★ 世界 [{Main.worldName}] 载入成功！(尺寸: {Main.maxTilesX}x{Main.maxTilesY})");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"[WorldLoad] 世界加载抛出未处理异常: {ex.Message}", ex);
+                throw;
+            }
+
+            if (!WorldGen.loadFailed && (Main.netMode == 0 || Main.netMode == 2))
+            {
+                try
+                {
+                    ModItemSidecarEngine.OnWorldLoaded();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"[WorldLoad] ModItemSidecarEngine.OnWorldLoaded 异常: {ex.Message}", ex);
+                }
             }
         }
 
