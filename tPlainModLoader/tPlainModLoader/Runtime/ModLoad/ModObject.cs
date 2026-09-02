@@ -44,9 +44,7 @@ namespace tContentPatch.ModLoad
         /// <summary/>
         public List<ModNetPacket> inheritance_netPacket = null;
 
-        [System.Obsolete("Phase D.2 已废弃，全面迁移至 TPML.Content.ModSystem 与 ModPlayer", false)]
         public List<PatchMain> inheritance_patchMain = new List<PatchMain>();
-        [System.Obsolete("Phase D.2 已废弃，全面迁移至 TPML.Content.ModPlayer", false)]
         public List<PatchPlayer> inheritance_patchPlayer = new List<PatchPlayer>();
         public List<PatchNPC> inheritance_patchNPC = new List<PatchNPC>();
         public List<PatchItem> inheritance_patchItem = new List<PatchItem>();

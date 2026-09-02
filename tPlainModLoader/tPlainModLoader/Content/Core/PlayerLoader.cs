@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using tContentPatch.ModPatch;
+using tContentPatch.Utils;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.IO;
@@ -82,6 +84,7 @@ namespace TPML.Content
                     Logger.Error($"ModPlayer.UpdatePrefix 异常: {ex.Message}", ex);
                 }
             }
+            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdatePrefix(self, i));
 
             // 分发 ModPlayer.PreUpdate
             PreUpdate(self);
@@ -115,6 +118,7 @@ namespace TPML.Content
                     Logger.Error($"ModPlayer.UpdatePostfix 异常: {ex.Message}", ex);
                 }
             }
+            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdatePostfix(self, i));
 
             // 分发 ModPlayer.PostUpdate
             PostUpdate(self);
@@ -136,6 +140,7 @@ namespace TPML.Content
                     Logger.Error($"ModPlayer.UpdateEquipsPrefix 异常: {ex.Message}", ex);
                 }
             }
+            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateEquipsPrefix(self, i));
 
             orig(self, i);
 
@@ -152,6 +157,7 @@ namespace TPML.Content
                     Logger.Error($"ModPlayer.UpdateEquipsPostfix 异常: {ex.Message}", ex);
                 }
             }
+            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateEquipsPostfix(self, i));
 
             PostUpdateEquips(self);
         }
@@ -174,6 +180,7 @@ namespace TPML.Content
                     Logger.Error($"ModPlayer.UpdateArmorSets 异常: {ex.Message}", ex);
                 }
             }
+            tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateArmorSetsPostfix(self, i));
         }
 
         private static void Hook_SavePlayer(On_Player.orig_SavePlayer orig, PlayerFileData playerFile, bool skipMapSave, bool canBeSkipped)
@@ -183,6 +190,7 @@ namespace TPML.Content
                 if (playerFile?.Player != null)
                 {
                     ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player, playerFile);
+                    tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SavePlayerPrefix(playerFile, skipMapSave));
                 }
             }
 
@@ -193,6 +201,7 @@ namespace TPML.Content
                 if (playerFile?.Player != null)
                 {
                     ModItemSidecarEngine.OnPlayerSavePostfix(playerFile.Player);
+                    tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SavePlayerPostfix(playerFile, skipMapSave));
                 }
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
@@ -218,6 +227,7 @@ namespace TPML.Content
             if (result?.Player != null)
             {
                 ModItemSidecarEngine.OnPlayerLoaded(result.Player);
+                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.LoadPlayerPostfix(result));
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
                 for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -245,6 +255,7 @@ namespace TPML.Content
                 // 激活新角色前，先广播重置并清理上一个角色的扩展容器内存驻留状态
                 ModItemSidecarEngine.ResetContainers();
                 ModItemSidecarEngine.OnPlayerLoaded(self.Player);
+                tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SetAsActivePostfix(self));
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
                 for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -265,7 +276,7 @@ namespace TPML.Content
 
         private static void Hook_DropTombstone(On_Player.orig_DropTombstone orig, Player self, long coinsOwned, NetworkText deathText, int hitDirection)
         {
-            bool canDrop = true;
+            bool canDrop = tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.CanDropTombstone(self, coinsOwned, deathText, hitDirection));
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
             for (int idx = 0; idx < activePlayers.Length; idx++)

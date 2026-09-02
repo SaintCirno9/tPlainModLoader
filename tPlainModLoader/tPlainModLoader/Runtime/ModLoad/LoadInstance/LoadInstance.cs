@@ -46,6 +46,12 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_netPacket = Utils.CreateInstance<ModNetPacket>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchMain = Utils.CreateInstance<PatchMain>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchPlayer = Utils.CreateInstance<PatchPlayer>(mo.assembly);
                 }
                 catch (Exception ex)
                 {

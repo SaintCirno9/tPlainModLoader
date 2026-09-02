@@ -6,6 +6,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using Terraria.UI;
+using TPML.Content;
 using WandsTool.Content;
 using WandsTool.Content.Structure;
 using WandsTool.KeyBind;
@@ -16,7 +17,7 @@ namespace WandsTool
     /// 哥们别看了, 这里都是直接移植的陈年老屎
     /// 原本想优化下的但看了下还不如直接重写
     /// </summary>
-    public class feces : PatchMain
+    public class feces : ModSystem
     {
         private static wandsPanel uiInstance = null;
         private static wandsPanel UI
@@ -30,6 +31,12 @@ namespace WandsTool
                 }
                 return uiInstance;
             }
+        }
+
+        public override void Load()
+        {
+            base.Load();
+            WandsKeybind.Initialize();
         }
 
         public override void Initialize()

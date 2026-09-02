@@ -1,13 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace QuickButton
 {
-    public class ModifyInterfaceLayers : PatchMain
+    public class ModifyInterfaceLayers : ModSystem
     {
         public static UIState ui_state { get; protected set; } = null;
         private static UserInterface ui = null;

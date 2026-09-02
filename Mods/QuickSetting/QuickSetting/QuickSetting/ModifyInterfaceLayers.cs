@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using tContentPatch;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 
 namespace QuickSetting
 {
-    public class ModifyInterfaceLayers : PatchMain
+    public class ModifyInterfaceLayers : ModSystem
     {
         public static UIState ui_state { get; protected set; } = null;
         private static UserInterface ui = null;
