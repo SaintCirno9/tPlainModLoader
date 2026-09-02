@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using tContentPatch;
-using tContentPatch.Utils;
+using TPML;
+using TPML.Utils;
 using TPML.Core.Logging;
 
 namespace tPlainModLoaderInjector

@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using tContentPatch;
+using TPML;
 using TPML.Core.Logging;
 
 namespace tPlainModLoader.Prepatcher
@@ -78,7 +78,7 @@ namespace tPlainModLoader.Prepatcher
                                 fileName.Equals("TerrariaHooks.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TPML.TerrariaHooks.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TPML.Runtime.dll", StringComparison.OrdinalIgnoreCase) ||
-                                fileName.Equals("tContentPatch.dll", StringComparison.OrdinalIgnoreCase) ||
+                                fileName.Equals("TPML.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TPML.Content.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("TPML.Core.dll", StringComparison.OrdinalIgnoreCase) ||
                                 fileName.Equals("CommandHelp.dll", StringComparison.OrdinalIgnoreCase) ||

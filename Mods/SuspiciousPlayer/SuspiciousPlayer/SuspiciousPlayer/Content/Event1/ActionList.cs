@@ -1,5 +1,5 @@
-using System.Collections.Generic;
-using tContentPatch;
+﻿using System.Collections.Generic;
+using TPML;
 using TPML.Content;
 
 namespace SuspiciousPlayer.Content.Event1

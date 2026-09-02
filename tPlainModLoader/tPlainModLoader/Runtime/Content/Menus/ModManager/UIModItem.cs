@@ -6,16 +6,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using tContentPatch.Content.UI;
-using tContentPatch.ModLoad;
-using tContentPatch.Threading;
+using TPML.UI;
+using TPML.ModLoad;
+using TPML.Threading;
+using TPML.Content;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModManager
+namespace TPML.UI.Menus.ModManager
 {
     internal class UIElementEmpty : UIElement
     {
@@ -58,7 +59,7 @@ namespace tContentPatch.Content.Menus.ModManager
 
         static UIModItem()
         {
-            defaultIco = Utils.Resource.GetTexture2D($"{nameof(tContentPatch)}.Resources.UI.ModIcon.png");
+            defaultIco = TPML.Utils.Resource.GetTexture2D($"{nameof(TPML)}.Resources.UI.ModIcon.png");
         }
 
         public UIModItem(UIState backUI, ModObject mo_, List<ModObject> mos)

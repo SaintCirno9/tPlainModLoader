@@ -2,7 +2,7 @@
 using ChatAi.Content.UI;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.UI;
 

@@ -1,6 +1,6 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.QoL;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;

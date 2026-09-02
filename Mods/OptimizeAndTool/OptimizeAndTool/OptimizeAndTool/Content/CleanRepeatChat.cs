@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria.UI;
 using Terraria.UI.Chat;
 

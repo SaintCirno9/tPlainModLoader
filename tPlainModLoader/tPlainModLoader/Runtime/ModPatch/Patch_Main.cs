@@ -1,21 +1,20 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using tContentPatch.Content;
-using tContentPatch.Content.Network;
-using tContentPatch.Utils;
+using TPML.Content;
+using TPML.Network;
+using TPML.Utils;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.IO;
 using Terraria.UI;
-using TPML.Content;
 using TPML.Content.Engine;
 using TPML.Content.IO;
 using TPML.Content.UI;
 using TPML.Core.Diagnostics;
 using TPML.Core.Logging;
 
-namespace tContentPatch.ModPatch
+namespace TPML.ModPatch
 {
     /// <summary>
     /// 主游戏主循环与核心生命周期强类型门面调度中心

@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;

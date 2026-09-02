@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace tContentPatch.Prepatcher
+namespace TPML.Prepatcher
 {
     /// <summary>
     /// Prepatcher 编译期占位存根类。<para/>

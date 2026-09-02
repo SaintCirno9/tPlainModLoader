@@ -4,7 +4,7 @@ using Skil.Utils;
 using Skil.Utils.quickBuild;
 using System.Collections.Generic;
 using System.Linq;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 

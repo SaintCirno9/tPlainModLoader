@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +16,7 @@ using TPML.Core.Logging;
 
 namespace RecipeBrowser
 {
-    public class RecipeBrowserTPMLEntry : tContentPatch.Mod
+    public class RecipeBrowserTPMLEntry : TPML.Mod
     {
         public static RecipeBrowserTPMLEntry Instance { get; private set; }
         public static RecipeBrowserMod ModInstance { get; private set; }

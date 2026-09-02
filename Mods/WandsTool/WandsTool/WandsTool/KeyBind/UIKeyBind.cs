@@ -1,6 +1,6 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using tContentPatch.Content.UI.ModSet;
+using TPML.UI.ModSet;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 

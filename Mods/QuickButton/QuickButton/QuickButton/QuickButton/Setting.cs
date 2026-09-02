@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using tContentPatch;
-using tContentPatch.Content.UI;
-using tContentPatch.Content.UI.ModSet;
+using TPML;
+using TPML.UI;
+using TPML.UI.ModSet;
 using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;

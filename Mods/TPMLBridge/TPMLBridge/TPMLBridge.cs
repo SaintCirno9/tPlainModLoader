@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using Terraria;
 using Terraria.IO;
-using tContentPatch;
+using TPML;
 using TPML.Core.Logging;
 using TPMLBridge.GABP;
 using TPMLBridge.GABP.Tools;

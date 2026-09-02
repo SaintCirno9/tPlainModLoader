@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using tContentPatch;
-using tContentPatch.Utils;
+using TPML;
+using TPML.Utils;
 using TPML.Core.Logging;
 
 namespace tPlainModLoader
@@ -61,7 +61,7 @@ namespace tPlainModLoader
             //
 
             Logger.Info("正在初始化内容补丁...");
-            if (Initialize_tContentPatch())
+            if (Initialize_TPML())
             {
                 Logger.Info("内容补丁初始化成功");
             }
@@ -102,7 +102,7 @@ namespace tPlainModLoader
             Environment.Exit(0);
         }
 
-        private static bool Initialize_tContentPatch()
+        private static bool Initialize_TPML()
         {
             Type type = typeof(ContentPatch);
             ContentPatch cp = (ContentPatch)Activator.CreateInstance(type, true);

@@ -55,13 +55,13 @@
       <LogicalName>TPML.Core.Pinyin.PinyinResource.txt</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Runtime\Resources\TitleLinkButtons.png">
-      <LogicalName>tContentPatch.Resources.TitleLinkButtons.png</LogicalName>
+      <LogicalName>TPML.Resources.TitleLinkButtons.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Runtime\Resources\UI.ModIcon.png">
-      <LogicalName>tContentPatch.Resources.UI.ModIcon.png</LogicalName>
+      <LogicalName>TPML.Resources.UI.ModIcon.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Runtime\Resources\UI.Workshop.HudModManager.png">
-      <LogicalName>tContentPatch.Resources.UI.Workshop.HudModManager.png</LogicalName>
+      <LogicalName>TPML.Resources.UI.Workshop.HudModManager.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 

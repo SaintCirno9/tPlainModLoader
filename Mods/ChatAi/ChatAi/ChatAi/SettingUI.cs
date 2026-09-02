@@ -1,6 +1,6 @@
 ﻿using ChatAi.Content;
 using ChatAi.Utils.quickBuild;
-using tContentPatch;
+using TPML;
 using Terraria.UI;
 
 namespace ChatAi

@@ -1,6 +1,6 @@
-﻿using tContentPatch.Utils;
+﻿using TPML.Utils;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     /// <summary>
     /// 模组配置

@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using tContentPatch.ModLoad;
-using tContentPatch.Patch;
+using TPML.ModLoad;
+using TPML.Patch;
 using Terraria;
 using TPML.Core.Logging;
 
-namespace tContentPatch
+namespace TPML
 {
     public partial class ContentPatch
     {
@@ -23,7 +23,7 @@ namespace tContentPatch
         /// <summary/>
         public static bool NoPublic = true;
 
-        internal const string patchId_mod = "tContentPatch.mod.patch";
+        internal const string patchId_mod = "TPML.mod.patch";
 
         private static ContentPatch Instance = null;
 

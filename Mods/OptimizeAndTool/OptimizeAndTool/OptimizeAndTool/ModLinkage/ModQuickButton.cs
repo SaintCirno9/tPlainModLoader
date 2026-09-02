@@ -1,12 +1,12 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using OptimizeAndTool.Content.Creative;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
-using tContentPatch;
-using tContentPatch.ModLoad;
+using TPML;
+using TPML.ModLoad;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;

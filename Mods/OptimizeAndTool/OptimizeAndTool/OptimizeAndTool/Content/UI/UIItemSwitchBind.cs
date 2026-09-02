@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Utils;
 using System;
-using tContentPatch.Content.UI;
+using TPML.UI;
 
 namespace OptimizeAndTool.Content.UI
 {

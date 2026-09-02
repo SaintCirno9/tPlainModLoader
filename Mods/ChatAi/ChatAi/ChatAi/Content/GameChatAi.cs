@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -8,7 +8,7 @@ using Terraria.GameContent.UI.Chat;
 using Terraria.Net;
 using Terraria.UI;
 using Terraria.UI.Chat;
-using tContentPatch;
+using TPML;
 using TPML.Content;
 using ChatAi.Content.UI;
 using ChatAi.Utils;
@@ -188,7 +188,7 @@ namespace ChatAi.Content
 
             print_oldText = text;
 
-            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+            TPML.Threading.MainThreadDispatcher.Enqueue(() =>
             {
                 if (Main.netMode == 0)
                 {

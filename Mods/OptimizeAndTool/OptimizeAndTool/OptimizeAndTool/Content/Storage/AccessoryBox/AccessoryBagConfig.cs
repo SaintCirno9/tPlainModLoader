@@ -1,7 +1,7 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI.ModSet;
+using TPML.UI.ModSet;
 using Terraria.UI;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;

@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Patch
+namespace TPML.Patch
 {
     /// <summary>补丁种类（自 Harmony 迁移，等价 HarmonyPatchType 语义）</summary>
     internal enum HarmonyPatchType

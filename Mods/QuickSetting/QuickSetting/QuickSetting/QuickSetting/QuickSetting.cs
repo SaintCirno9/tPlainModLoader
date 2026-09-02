@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using QuickSetting.KeyBind;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 

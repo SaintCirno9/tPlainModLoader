@@ -1,5 +1,5 @@
 ﻿using PixelArt.Utils.quickBuild;
-using tContentPatch;
+using TPML;
 using Terraria.UI;
 
 namespace PixelArt

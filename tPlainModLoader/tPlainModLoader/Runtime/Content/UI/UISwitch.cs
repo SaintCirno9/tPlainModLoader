@@ -7,7 +7,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// 开关

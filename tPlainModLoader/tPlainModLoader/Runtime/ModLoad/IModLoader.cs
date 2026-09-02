@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal interface IModLoader : IModLoaderState
     {

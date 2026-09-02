@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace tContentPatch.Prepatcher
+namespace TPML.Prepatcher
 {
     /// <summary>
     /// 标记用于访问通过 Prepatcher 动态注入到目标类中的原生字段扩展方法。<para/>

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
 
-namespace tContentPatch.Content.UI.ModSet
+namespace TPML.UI.ModSet
 {
     /// <summary>
     /// 开关

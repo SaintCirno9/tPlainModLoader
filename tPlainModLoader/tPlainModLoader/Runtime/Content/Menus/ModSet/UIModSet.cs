@@ -1,14 +1,14 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModSet
+namespace TPML.UI.Menus.ModSet
 {
     internal class UIModSet : UIState
     {

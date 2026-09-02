@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using OptimizeAndTool.Content.Storage.ItemContainer;
-using tContentPatch;
-using tContentPatch.Patch;
+using TPML;
+using TPML.Patch;
 using TPML.Content;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 
@@ -11,7 +11,7 @@ namespace OptimizeAndTool.Content.Patch
     /// OptimizeAndTool 模组生命周期与强类型 MonoMod 门控总入口
     /// 作者: SaintCirno9
     /// </summary>
-    internal class OptimizeAndToolHookInit : tContentPatch.Mod
+    internal class OptimizeAndToolHookInit : TPML.Mod
     {
         public static OptimizeAndToolContentMod ContentModInstance { get; private set; }
 

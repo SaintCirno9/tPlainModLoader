@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using TPML.Core.Logging;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal class Intercept : IModLoader
     {

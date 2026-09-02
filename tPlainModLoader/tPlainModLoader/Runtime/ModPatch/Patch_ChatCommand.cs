@@ -1,7 +1,7 @@
-using Terraria.Chat;
-using tContentPatch.Command;
+﻿using Terraria.Chat;
+using TPML.Command;
 
-namespace tContentPatch.ModPatch
+namespace TPML.ModPatch
 {
     /// <summary>
     /// 拦截游戏内聊天输入框的指令输入强类型门面调度类

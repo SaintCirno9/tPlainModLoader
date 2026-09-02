@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
@@ -68,7 +68,7 @@ namespace OptimizeAndTool.Content.Cheat.Function1
         public static List<CommandObject> GetCO()
         {
             CommandObject co = new CommandObject("skin");
-            co.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(co.SubCommand));
+            co.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(co.SubCommand));
 
             CommandMethod clear = new CommandMethod("clear");
             clear.Runing += v => skinClear();

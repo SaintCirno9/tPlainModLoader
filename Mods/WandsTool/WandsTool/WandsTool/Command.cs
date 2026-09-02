@@ -1,6 +1,6 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 
 namespace WandsTool
 {
@@ -11,7 +11,7 @@ namespace WandsTool
             List<CommandObject> cos = new List<CommandObject>();
 
             CommandObject root = new CommandObject(nameof(WandsTool));
-            root.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(root.SubCommand));
+            root.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(root.SubCommand));
 
             // enable [true|false]
             CommandMethod enable = new CommandMethod("enable", 1);

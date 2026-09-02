@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using MapAtlasTool.Content;
 using MapAtlasTool.Content.UI;
-using tContentPatch;
+using TPML;
 
 namespace MapAtlasTool
 {

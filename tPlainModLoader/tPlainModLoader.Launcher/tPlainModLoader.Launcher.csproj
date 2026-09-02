@@ -67,7 +67,7 @@
   </Target>
 
   <!-- 构建后部署：产物复制发布到游戏目录下的 tPlainModLoader 文件夹。
-       Mods 为模组放置处（代码按 tContentPatch.dll 同级 Mods 解析），首次部署会顺带迁移已有的 launchConfig.json -->
+       Mods 为模组放置处（代码按 TPML.dll 同级 Mods 解析），首次部署会顺带迁移已有的 launchConfig.json -->
   <Target Name="DeployToGameDir" AfterTargets="Build" DependsOnTargets="EnableLargeAddressAware" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
       <GameDeployDir>$(TerrariaDir)\tPlainModLoader</GameDeployDir>

@@ -1,6 +1,6 @@
 ﻿using Skil.Content;
 using Skil.Utils.quickBuild;
-using tContentPatch;
+using TPML;
 using Terraria.UI;
 
 namespace Skil

@@ -1,8 +1,8 @@
-﻿using tContentPatch.Threading;
+﻿using TPML.Threading;
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.MenuUI
+namespace TPML.UI.MenuUI
 {
     /// <summary/>
     public class Menu

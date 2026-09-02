@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class ModLoader : IModLoader
     {

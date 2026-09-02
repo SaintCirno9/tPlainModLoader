@@ -4,7 +4,7 @@ using System.Reflection;
 using Terraria;
 using TPML.Content;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class ModLoader
     {
@@ -49,7 +49,7 @@ namespace tContentPatch.ModLoad
 
                     try
                     {
-                        Content.Network.ModNetworkPacket.Register(mo.inheritance_netPacket);
+                        TPML.Network.ModNetworkPacket.Register(mo.inheritance_netPacket);
                     }
                     catch (Exception ex)
                     {

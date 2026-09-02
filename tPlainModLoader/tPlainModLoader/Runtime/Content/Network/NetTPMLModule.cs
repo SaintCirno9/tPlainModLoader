@@ -2,7 +2,7 @@
 using Terraria;
 using Terraria.Net;
 
-namespace tContentPatch.Content.Network
+namespace TPML.Network
 {
     internal class NetTPMLModule : NetModule
     {
@@ -30,7 +30,7 @@ namespace tContentPatch.Content.Network
         {
             string text = reader.ReadString();
             if (Main.dedServ == false) return;
-            if (text != nameof(tContentPatch)) return;
+            if (text != nameof(TPML)) return;
 
             ModNetworkPacket.OnGetNotice(userId);
         }
@@ -41,7 +41,7 @@ namespace tContentPatch.Content.Network
 
             NetPacket packet = CreatePacket<NetTPMLModule>();
             packet.Writer.Write(MsgTypeID.Notice);
-            packet.Writer.Write(nameof(tContentPatch));
+            packet.Writer.Write(nameof(TPML));
 
             NetManager.Instance.SendToServer(packet);
         }

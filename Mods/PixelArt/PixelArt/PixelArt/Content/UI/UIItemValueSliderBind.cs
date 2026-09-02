@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using PixelArt.Utils;
 using System;
-using tContentPatch.Content.UI.ModSet;
+using TPML.UI.ModSet;
 
 namespace PixelArt.Content.UI
 {

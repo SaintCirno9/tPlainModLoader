@@ -1,5 +1,5 @@
-using SuspiciousPlayer.Content.Event1;
-using tContentPatch;
+﻿using SuspiciousPlayer.Content.Event1;
+using TPML;
 using Terraria;
 using Terraria.DataStructures;
 

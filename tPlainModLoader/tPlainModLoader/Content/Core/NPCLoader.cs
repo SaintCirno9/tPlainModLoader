@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -14,7 +14,7 @@ using TPML.Content.Assets;
 using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
-using tContentPatch.Utils;
+using TPML.Utils;
 
 namespace TPML.Content
 {

@@ -10,8 +10,8 @@ using OptimizeAndTool.Content.QoL.Reforge;
 using OptimizeAndTool.Content.QoL.VeinMining;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
 using System.Collections.Generic;
-using tContentPatch;
-using tContentPatch.Content.UI.ModSet;
+using TPML;
+using TPML.UI.ModSet;
 using Terraria;
 using Terraria.UI;
 

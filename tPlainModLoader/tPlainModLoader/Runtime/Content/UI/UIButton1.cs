@@ -5,7 +5,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// 有个框里面显示文本, 鼠标在上方影响颜色和播放声音

@@ -1,4 +1,4 @@
-using OptimizeAndTool.Content;
+﻿using OptimizeAndTool.Content;
 using OptimizeAndTool.Content.Cheat.Function1;
 using OptimizeAndTool.Content.Cheat.HeldItemModify;
 using OptimizeAndTool.Content.Cheat.PlayerModify;
@@ -17,7 +17,7 @@ using OptimizeAndTool.Content.Storage.AccessoryBox;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria.UI;
 
 namespace OptimizeAndTool

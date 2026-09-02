@@ -43,26 +43,26 @@ namespace ChatAi
                 System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
                 string v = await Apis.Chat.InputAsync(text, type);
-                if (v == null) { tContentPatch.ContentPatch.PrintTry("返回文本为[null]"); return; }
-                if (v.Length < 1) { tContentPatch.ContentPatch.PrintTry("返回文本长度为[0]"); return; }
+                if (v == null) { TPML.ContentPatch.PrintTry("返回文本为[null]"); return; }
+                if (v.Length < 1) { TPML.ContentPatch.PrintTry("返回文本长度为[0]"); return; }
 
                 ChatResponse?.Invoke(v);
             }
             catch (TaskCanceledException ex)
             {
-                tContentPatch.ContentPatch.PrintTry($"任务超时: [{ex.Message}]");
+                TPML.ContentPatch.PrintTry($"任务超时: [{ex.Message}]");
 
                 RequestTimeout?.Invoke();
             }
             catch (HttpRequestException ex)
             {
-                tContentPatch.ContentPatch.PrintTry($"http响应失败: [{ex.Message}]");
+                TPML.ContentPatch.PrintTry($"http响应失败: [{ex.Message}]");
 
                 RequestFailure?.Invoke();
             }
             catch (Exception ex)
             {
-                tContentPatch.ContentPatch.PrintTry($"其它异常: [{ex.Message}]");
+                TPML.ContentPatch.PrintTry($"其它异常: [{ex.Message}]");
 
                 RequestFailure?.Invoke();
             }
@@ -77,11 +77,11 @@ namespace ChatAi
             try
             {
                 Apis.Chat.SetApiKey(key);
-                tContentPatch.ContentPatch.PrintTry($"设置api的key为: [{Apis.Chat.apiKey}]");
+                TPML.ContentPatch.PrintTry($"设置api的key为: [{Apis.Chat.apiKey}]");
             }
             catch (Exception ex)
             {
-                tContentPatch.ContentPatch.PrintTry($"设置api的key失败: [{ex.Message}]");
+                TPML.ContentPatch.PrintTry($"设置api的key失败: [{ex.Message}]");
             }
         }
     }

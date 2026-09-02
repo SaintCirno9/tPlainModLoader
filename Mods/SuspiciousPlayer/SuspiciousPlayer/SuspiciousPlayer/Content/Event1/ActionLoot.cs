@@ -1,9 +1,9 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.GameContent.Drawing;
 using Terraria.ID;

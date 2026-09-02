@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Mono.Cecil;
-using tContentPatch.Prepatcher;
+using TPML.Prepatcher;
 using TPML.Core.Logging;
 
 namespace FargoItems

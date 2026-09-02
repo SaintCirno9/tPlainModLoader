@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using TPML.Core.Json;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary>
     /// Json 简易操作的旧命名空间兼容门面，实现已迁移至 TPML.Core.Json.JsonHelper。

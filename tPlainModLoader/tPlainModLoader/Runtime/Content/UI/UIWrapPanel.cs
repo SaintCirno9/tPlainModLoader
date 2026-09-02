@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// 向右堆叠, 超出宽度换行，并自动计算更新自身总高度

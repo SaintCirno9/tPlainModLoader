@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Diagnostics;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;

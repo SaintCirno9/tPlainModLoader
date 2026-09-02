@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using tContentPatch.Content.UI;
+using TPML.UI;
 
 namespace PixelArt.Content.UI
 {

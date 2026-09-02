@@ -1,11 +1,11 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// 窗口, 可以打开关闭拖动位置和大小

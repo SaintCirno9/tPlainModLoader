@@ -5,7 +5,7 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.UI;

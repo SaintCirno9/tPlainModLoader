@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
-using tContentPatch.ModLoad;
-using tContentPatch.Utils;
+using TPML.ModLoad;
+using TPML.Utils;
 using Terraria.UI;
 
-namespace tContentPatch
+namespace TPML
 {
     /// <summary>
     /// 模组设置

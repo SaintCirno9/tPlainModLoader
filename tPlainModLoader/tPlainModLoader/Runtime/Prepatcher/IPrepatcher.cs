@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using Mono.Cecil;
 
-namespace tContentPatch.Prepatcher
+namespace TPML.Prepatcher
 {
     /// <summary>
     /// 模组早期 Cecil 预补丁接口。<para/>

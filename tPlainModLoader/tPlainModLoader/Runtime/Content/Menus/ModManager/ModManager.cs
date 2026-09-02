@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using tContentPatch.ModLoad;
+using TPML.ModLoad;
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModManager
+namespace TPML.UI.Menus.ModManager
 {
     internal class ModManager
     {
@@ -152,7 +152,7 @@ namespace tContentPatch.Content.Menus.ModManager
                 List<string> enabledKeys = mosui.Where(m => m.config != null && m.config.isEnable && !string.IsNullOrEmpty(m.config.key))
                                                 .Select(m => m.config.key)
                                                 .ToList();
-                Utils.MyJson1.Save(enabledKeys, enabledFilePath);
+                TPML.Utils.MyJson1.Save(enabledKeys, enabledFilePath);
             }
             catch { }
         }

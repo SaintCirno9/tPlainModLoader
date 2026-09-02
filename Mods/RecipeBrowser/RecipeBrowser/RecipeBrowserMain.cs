@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using RecipeBrowser.Common;
 using RecipeBrowser.UIElements;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 using TPML.Core.Logging;

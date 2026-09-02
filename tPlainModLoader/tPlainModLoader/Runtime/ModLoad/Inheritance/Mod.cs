@@ -1,7 +1,7 @@
 ﻿using CommandHelp;
 using System.Collections.Generic;
 
-namespace tContentPatch
+namespace TPML
 {
     /// <summary/>
     public abstract class Mod

@@ -1,10 +1,10 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System;
 using System.Collections.Generic;
 using Terraria;
 using TPML.Core.Diagnostics;
 
-namespace tContentPatch.Command
+namespace TPML.Command
 {
     public class ProfileRootCommand : CommandObject
     {

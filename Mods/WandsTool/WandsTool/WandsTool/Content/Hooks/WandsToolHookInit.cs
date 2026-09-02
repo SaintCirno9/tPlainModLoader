@@ -1,5 +1,5 @@
-using tContentPatch;
-using tContentPatch.Patch;
+﻿using TPML;
+using TPML.Patch;
 
 namespace WandsTool.Content.Hooks
 {

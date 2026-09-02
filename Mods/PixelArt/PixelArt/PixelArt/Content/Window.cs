@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 
 namespace PixelArt.Content
 {

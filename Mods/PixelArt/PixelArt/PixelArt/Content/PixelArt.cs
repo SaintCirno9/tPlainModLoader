@@ -218,7 +218,7 @@ namespace PixelArt.Content
                     try
                     {
                         string path = Utils1.Utils.GetFileName();
-                        tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+                        TPML.Threading.MainThreadDispatcher.Enqueue(() =>
                         {
                             if (path == null)
                             {
@@ -258,7 +258,7 @@ namespace PixelArt.Content
                 if (t.IsCanceled) return;
                 if (t.Result == null) return;
                 string msg = t.Result;
-                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText($"{msg}"));
+                TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText($"{msg}"));
             });
         }
 

@@ -1,4 +1,4 @@
-﻿using tContentPatch;
+﻿using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;

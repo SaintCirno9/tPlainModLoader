@@ -1,20 +1,18 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using tContentPatch.Utils.TCPUtils;
+using TPML.Utils.TCPUtils;
 
 namespace tPlainModLoaderInjector
 {
     internal class CommandTCP
     {
-        //internal const string pipe_toTContentPatch = "tContentPatch_Pipe_command_ToTContentPatch";
-        //internal const string pipe_toOutput = "tContentPatch_Pipe_command_ToOutput";
         private static TCPC tcpc = null;
 
         public static void Initialize(int port)
         {
-            Console.Title = tContentPatch.Command.MsgCommand.JoinWindowTile;
+            Console.Title = TPML.Command.MsgCommand.JoinWindowTile;
 
             tcpc = new TCPC();
             tcpc.OnGot += s =>

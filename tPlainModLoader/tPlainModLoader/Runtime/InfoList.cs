@@ -1,4 +1,4 @@
-namespace tContentPatch
+﻿namespace TPML
 {
     /// <summary/>
     public class InfoList

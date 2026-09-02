@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 

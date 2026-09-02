@@ -1,10 +1,10 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Terraria;
 
-namespace tContentPatch.Content
+namespace TPML.Content
 {
     /// <summary>
     /// 服务端控制台指令强类型门面调度类

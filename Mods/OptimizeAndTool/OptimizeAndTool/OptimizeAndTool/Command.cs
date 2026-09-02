@@ -1,6 +1,6 @@
 ﻿using CommandHelp;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 
 namespace OptimizeAndTool
 {
@@ -11,7 +11,7 @@ namespace OptimizeAndTool
             List<CommandObject> cos = new List<CommandObject>();
 
             CommandObject root = new CommandObject(nameof(OptimizeAndTool));
-            root.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(root.SubCommand));
+            root.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(root.SubCommand));
 
             root.SubCommand.AddRange(Content.Function.GetCO());
 

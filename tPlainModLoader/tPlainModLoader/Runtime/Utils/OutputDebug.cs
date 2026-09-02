@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     internal class OutputDebug
     {

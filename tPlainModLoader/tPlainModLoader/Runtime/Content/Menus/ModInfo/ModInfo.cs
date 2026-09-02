@@ -2,11 +2,11 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using tContentPatch.ModLoad;
+using TPML.ModLoad;
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModInfo
+namespace TPML.UI.Menus.ModInfo
 {
     internal class ModInfo
     {

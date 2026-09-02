@@ -1,7 +1,7 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria;
 
 namespace OptimizeAndTool.Content.Cheat
@@ -69,7 +69,7 @@ namespace OptimizeAndTool.Content.Cheat
             CommandMethod update = new CommandMethod("update");
             CommandMethod get = new CommandMethod("get");
 
-            uuid.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(uuid.SubCommand));
+            uuid.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(uuid.SubCommand));
             uuid.SubCommand.Add(update);
             uuid.SubCommand.Add(get);
 

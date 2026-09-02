@@ -3,14 +3,14 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using tContentPatch.Content.UI;
-using tContentPatch.ModLoad;
+using TPML.UI;
+using TPML.ModLoad;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModSetSwitch
+namespace TPML.UI.Menus.ModSetSwitch
 {
     internal class UIModSetSwitch : UIState
     {

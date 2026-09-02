@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using tContentPatch.Patch;
+using TPML.Patch;
 using TPML.Content;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class ModLoader
     {
@@ -58,7 +58,7 @@ namespace tContentPatch.ModLoad
                 // 统一卸载并清理 TPML.Content 全部内容生命周期，确保配方与宿主不会残留
                 ContentHost.UnloadAll();
 
-                Content.Network.ModNetworkPacket.Clear();
+                TPML.Network.ModNetworkPacket.Clear();
 
                 PatchUtil.ClearPathc(patchId);
 

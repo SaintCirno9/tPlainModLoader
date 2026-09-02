@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary>
     /// 在 ReLogic.Native 初始化前保证游戏窗口具备可用的 IMM 输入上下文。

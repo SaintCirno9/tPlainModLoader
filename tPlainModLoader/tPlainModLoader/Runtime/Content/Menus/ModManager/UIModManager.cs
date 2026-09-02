@@ -1,15 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
-using tContentPatch.ModLoad;
+using TPML.UI;
+using TPML.ModLoad;
+using TPML.Content;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModManager
+namespace TPML.UI.Menus.ModManager
 {
     internal class UIModManager : UIState
     {

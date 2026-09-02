@@ -1,6 +1,6 @@
-using OptimizeAndTool.Utils;
+﻿using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 

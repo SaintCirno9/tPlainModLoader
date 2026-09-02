@@ -1,8 +1,8 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
-using tContentPatch.Utils;
+using TPML.Utils;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     /// <summary>
     /// 模组对象, inheritance_xxx的可能为<see langword="null"/>

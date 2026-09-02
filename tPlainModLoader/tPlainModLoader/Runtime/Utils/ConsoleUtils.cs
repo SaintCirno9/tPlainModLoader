@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     internal static class ConsoleUtils
     {

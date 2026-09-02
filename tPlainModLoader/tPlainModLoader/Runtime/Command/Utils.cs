@@ -2,7 +2,7 @@
 using CommandHelp.Exceptions;
 using System.Collections.Generic;
 
-namespace tContentPatch.Command
+namespace TPML.Command
 {
     /// <summary>
     /// 指令工具

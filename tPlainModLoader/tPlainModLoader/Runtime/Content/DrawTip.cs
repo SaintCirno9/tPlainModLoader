@@ -1,11 +1,11 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.UI.Chat;
 
-namespace tContentPatch.Content
+namespace TPML.Content
 {
     /// <summary>
     /// 绘制提示, 一个框内有文本（由 Patch_Main.Hook_DoDraw 单点调度）

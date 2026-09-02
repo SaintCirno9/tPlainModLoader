@@ -8,8 +8,9 @@ using TPML.Core.Logging;
 namespace TPML.Content
 {
     /// <summary>
-    /// TPML 内容模组统一生命周期宿主。
-    /// 旧 tContentPatch 加载器负责调用 Host，内容模组不再需要手工拼接
+    /// TPML 内容加载宿主（单例聚合）
+    /// TPML 加载器负责调用 Host，内容模组不再需要手工拼接
+    /// 作者: SaintCirno9
     /// ContentHookDispatcher / ModContent / RecipeLoader 流程。
     /// </summary>
     public static class ContentHost
@@ -220,7 +221,7 @@ namespace TPML.Content
 
         /// <summary>
         /// 逆序卸载全部内容模组，并清理内容引擎静态注册。
-        /// 供旧 tContentPatch 卸载流程调用。
+        /// 供 TPML 卸载流程调用。
         /// </summary>
         public static void UnloadAll()
         {

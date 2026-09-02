@@ -3,7 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace tContentPatch.Utils.TCPUtils
+namespace TPML.Utils.TCPUtils
 {
     /// <summary>
     /// 客户端

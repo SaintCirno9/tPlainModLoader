@@ -1,7 +1,7 @@
-using Terraria.GameContent.UI.Elements;
+﻿using Terraria.GameContent.UI.Elements;
 using TPML.Content;
 
-namespace tContentPatch.Content.Menus.Patch_UIManageControls
+namespace TPML.UI.Menus.Patch_UIManageControls
 {
     /// <summary>
     /// 拦截 UIKeybindingListItem.GetFriendlyName，为模组快捷键返回自定义中文友好名称

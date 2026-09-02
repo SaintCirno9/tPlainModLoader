@@ -1,13 +1,13 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 using TPML.Core.Pinyin;
-using UITextBox = tContentPatch.Content.UI.UITextBox;
+using UITextBox = TPML.UI.UITextBox;
 
 namespace WandsTool.Content.Structure.UI
 {

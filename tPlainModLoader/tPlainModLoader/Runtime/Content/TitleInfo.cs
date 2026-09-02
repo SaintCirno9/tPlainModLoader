@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.OS;
@@ -9,7 +9,7 @@ using Terraria.GameInput;
 using Terraria.UI.Chat;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Content
+namespace TPML.Content
 {
     /// <summary>
     /// 标题界面信息（版本号与社媒链接强类型门面调度类）
@@ -120,7 +120,7 @@ namespace tContentPatch.Content
             private static int height = -1;
             static TitleLinkButton()
             {
-                texture = Utils.Resource.GetTexture2D($"{nameof(tContentPatch)}.Resources.TitleLinkButtons.png");
+                texture = Utils.Resource.GetTexture2D($"{nameof(TPML)}.Resources.TitleLinkButtons.png");
                 width = texture.Width / 1;
                 height = texture.Height / 2;
             }

@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
-using tContentPatch.ModLoad;
+﻿using Microsoft.Xna.Framework;
+using TPML.ModLoad;
 using Terraria;
 
-namespace tContentPatch.Content
+namespace TPML.Content
 {
     /// <summary>
     /// 标题界面自动加载模组（由 Patch_Main.Hook_Update 单点调度）

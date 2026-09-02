@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Threading
+namespace TPML.Threading
 {
     /// <summary>
     /// 游戏主线程任务调度器。后台回调必须经此回主线程后再读写 UI / 游戏状态。

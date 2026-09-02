@@ -3,7 +3,7 @@ using System;
 using Terraria.Audio;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI.ModSet
+namespace TPML.UI.ModSet
 {
     /// <summary>
     /// 文本框

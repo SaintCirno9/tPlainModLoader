@@ -1,4 +1,4 @@
-﻿namespace tContentPatch
+﻿namespace TPML
 {
     internal class LauncherConfig
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// <see cref="UIScrollViewer"/>和<see cref="UIStackPanel"/>的结合

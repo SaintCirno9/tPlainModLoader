@@ -4,7 +4,7 @@ using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 
@@ -62,7 +62,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                 if (displayInfected_taskRuning) return;
                 displayInfected_taskRuning = true;
 
-                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("开始查找"));
+                TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("开始查找"));
 
                 showInfected_x = 0;
                 showInfected_y = 0;
@@ -75,7 +75,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("取消查找"));
+                            TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("取消查找"));
                             return;
                         }
 
@@ -83,7 +83,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("完成"));
+                            TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("完成"));
                             return;
                         }
 
@@ -100,7 +100,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             displayInfected_runing.val = false;
                             displayInfected_taskRuning = false;
-                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("结束, 部分方块为null, 使用点亮全图功能可以加载全部方块"));
+                            TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.NewText("结束, 部分方块为null, 使用点亮全图功能可以加载全部方块"));
                             return;
                         }
 
@@ -109,7 +109,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                         {
                             int px = showInfected_x;
                             int py = showInfected_y;
-                            tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+                            TPML.Threading.MainThreadDispatcher.Enqueue(() =>
                             {
                                 Main.NewText("发现感染, 在地图上标记");
                                 Main.Pings.Add(new Vector2(px, py) * 16f);
@@ -123,7 +123,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
                             {
                                 int mx = showInfected_x;
                                 int my = showInfected_y;
-                                tContentPatch.Threading.MainThreadDispatcher.Enqueue(() => Main.Pings.Add(new Vector2(mx, my) * 16f));
+                                TPML.Threading.MainThreadDispatcher.Enqueue(() => Main.Pings.Add(new Vector2(mx, my) * 16f));
                             }
                         }
 

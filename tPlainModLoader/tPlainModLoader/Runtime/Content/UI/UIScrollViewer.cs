@@ -1,7 +1,7 @@
-using Terraria.GameContent.UI.Elements;
+﻿using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary>
     /// <see cref="UIList"/>和<see cref="UIScrollbar"/>的结合

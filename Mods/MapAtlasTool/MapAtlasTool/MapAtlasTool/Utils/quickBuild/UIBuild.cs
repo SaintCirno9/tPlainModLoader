@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using MapAtlasTool.Content.UI;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.UI;
 

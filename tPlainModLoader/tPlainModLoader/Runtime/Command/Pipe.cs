@@ -1,11 +1,11 @@
-﻿//using System.Threading.Tasks;
+//using System.Threading.Tasks;
 
-//namespace tContentPatch.Command
+//namespace TPML.Command
 //{
 //    internal static class Pipe
 //    {
-//        internal const string pipe_toTContentPatch = "tContentPatch_Pipe_command_ToTContentPatch";
-//        internal const string pipe_toOutput = "tContentPatch_Pipe_command_ToOutput";
+//        internal const string pipe_toTPML = "TPML_Pipe_command_ToTPML";
+//        internal const string pipe_toOutput = "TPML_Pipe_command_ToOutput";
 //        private static bool isEnableSend = false;
 //        private static int count = 0;
 //        private static bool isEnableReceive = false;
@@ -29,7 +29,7 @@
 
 //            _ = Task.Run(() =>
 //            {
-//                tContentPatch.Utils.Pipe.Pipe_receive(pipe_toTContentPatch, s =>
+//                TPML.Utils.Pipe.Pipe_receive(pipe_toTContentPatch, s =>
 //                {
 //                    //Enable_Send();//如果收到消息就重新启用
 //                    if (s == null) return;
@@ -51,7 +51,7 @@
 
 //            int nowCount = count;
 
-//            tContentPatch.Utils.Pipe.Pipe_send(pipe_toOutput, msg, () =>
+//            TPML.Utils.Pipe.Pipe_send(pipe_toOutput, msg, () =>
 //            {
 //                //如果这次的消息超时则禁用管道
 //                if (nowCount != count) return;

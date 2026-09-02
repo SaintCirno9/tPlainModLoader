@@ -1,14 +1,14 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using tContentPatch.Utils;
-using tContentPatch.Utils.TCPUtils;
+using TPML.Utils;
+using TPML.Utils.TCPUtils;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Command
+namespace TPML.Command
 {
     /// <summary/>
     public class MsgCommand

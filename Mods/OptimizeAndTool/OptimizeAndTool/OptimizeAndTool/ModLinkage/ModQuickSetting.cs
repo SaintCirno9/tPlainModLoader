@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 
@@ -16,10 +16,10 @@ namespace OptimizeAndTool.ModLinkage
         {
             if (Main.dedServ) return;
 
-            List<tContentPatch.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
+            List<TPML.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
             if (mos == null) return;
 
-            tContentPatch.ModLoad.ModObject mo = mos.FirstOrDefault(i => i.config.key == "StaticTile.QuickSetting");
+            TPML.ModLoad.ModObject mo = mos.FirstOrDefault(i => i.config.key == "StaticTile.QuickSetting");
             if (mo == null) return;
 
             Type type = mo.assembly.GetType("QuickSetting.QuickSetting.QuickSetting");

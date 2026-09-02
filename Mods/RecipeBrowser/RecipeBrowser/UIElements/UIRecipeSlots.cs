@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -199,7 +199,7 @@ namespace RecipeBrowser.UIElements
                     {
                         var token = craftPathCancellationTokenSource.Token;
                         var paths = RecipePath.GetCraftPaths(recipe, token, single: true, haveItems);
-                        tContentPatch.Threading.MainThreadDispatcher.Enqueue(() =>
+                        TPML.Threading.MainThreadDispatcher.Enqueue(() =>
                         {
                             if (token.IsCancellationRequested) return;
                             craftPaths = paths;

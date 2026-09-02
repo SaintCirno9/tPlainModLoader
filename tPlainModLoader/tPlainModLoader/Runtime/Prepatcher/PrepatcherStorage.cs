@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace tContentPatch.Prepatcher
+namespace TPML.Prepatcher
 {
     /// <summary>
     /// Prepatcher 内存程序集字节流缓存中心。<para/>

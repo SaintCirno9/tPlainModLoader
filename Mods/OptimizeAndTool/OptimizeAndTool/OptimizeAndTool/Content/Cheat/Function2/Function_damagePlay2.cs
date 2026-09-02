@@ -6,7 +6,7 @@ using OptimizeAndTool.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
@@ -99,7 +99,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
         public static List<CommandObject> GetCO()
         {
             CommandObject co = new CommandObject("damagePlay2");
-            co.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(co.SubCommand));
+            co.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(co.SubCommand));
 
             CommandMethod damage = new CommandMethod("invoke");
             damage.Runing += v => Function_damagePlay2.damage(-1);

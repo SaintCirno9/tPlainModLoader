@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Linq;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.ID;
 using TPML.Content;

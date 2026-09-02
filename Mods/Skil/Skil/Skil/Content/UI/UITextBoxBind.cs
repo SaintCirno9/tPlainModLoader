@@ -1,6 +1,6 @@
-using Skil.Utils;
+﻿using Skil.Utils;
 using System;
-using tContentPatch.Content.UI;
+using TPML.UI;
 
 namespace Skil.Content.UI
 {

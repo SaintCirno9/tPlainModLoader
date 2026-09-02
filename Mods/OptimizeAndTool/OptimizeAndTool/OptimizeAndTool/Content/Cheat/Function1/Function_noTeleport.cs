@@ -1,9 +1,9 @@
-using CommandHelp;
+﻿using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 

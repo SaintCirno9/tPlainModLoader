@@ -1,5 +1,5 @@
 ﻿using System;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.ID;
 namespace OptimizeAndTool.Content.Creative

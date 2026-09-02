@@ -2,7 +2,7 @@
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModSet
+namespace TPML.UI.Menus.ModSet
 {
     internal class ModSet
     {

@@ -1,8 +1,8 @@
-using CommandHelp;
+﻿using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
-using tContentPatch.Content.UI.ModSet;
+using TPML.UI.ModSet;
 using Terraria.UI;
 
 namespace OptimizeAndTool.Content.EnhancedTooltips

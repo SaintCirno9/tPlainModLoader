@@ -1,8 +1,8 @@
 ﻿using System.IO;
-using tContentPatch.Content.Network;
+using TPML.Network;
 using Terraria.Net;
 
-namespace tContentPatch
+namespace TPML
 {
     /// <summary/>
     public abstract class ModNetPacket

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -416,13 +416,13 @@ namespace TPMLBridge.GABP.Tools
             }
 
             Logger.Info($"[TPMLBridge Command] {command}");
-            tContentPatch.ContentPatch.RunCommand(command);
+            TPML.ContentPatch.RunCommand(command);
             return new { success = true, command, message = "指令已执行" };
         }
 
         public static object ReloadMods()
         {
-            tContentPatch.ContentPatch.ReloadMods();
+            TPML.ContentPatch.ReloadMods();
             return new { success = true, message = "已触发模组重载，Bridge 将短暂断开并自动恢复" };
         }
     }

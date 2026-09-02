@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using ReLogic.Graphics;
@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OptimizeAndTool.Content.Storage.Core;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -14,7 +14,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
-using UITextBox = tContentPatch.Content.UI.UITextBox;
+using UITextBox = TPML.UI.UITextBox;
 
 namespace OptimizeAndTool.Content.Storage.Core
 {

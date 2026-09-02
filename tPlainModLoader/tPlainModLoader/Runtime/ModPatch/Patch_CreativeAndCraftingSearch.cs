@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using Terraria;
 using Terraria.GameContent.Bestiary;
 using Terraria.GameContent.Creative;
 using TPML.Core.Pinyin;
 
-namespace tContentPatch.ModPatch
+namespace TPML.ModPatch
 {
     /// <summary>
     /// 原版制作系统、向导配方查询与旅程模式物品搜索的拼音多模匹配强类型门面调度类

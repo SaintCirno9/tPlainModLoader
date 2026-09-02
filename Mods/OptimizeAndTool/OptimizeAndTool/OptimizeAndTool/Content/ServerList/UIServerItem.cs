@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using OptimizeAndTool.Content.UI;
 using OptimizeAndTool.Utils;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;

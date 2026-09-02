@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using Skil.Utils;
 using System;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria.UI;
 
 namespace Skil.Content.UI

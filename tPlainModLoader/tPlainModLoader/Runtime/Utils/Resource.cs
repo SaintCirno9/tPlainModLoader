@@ -1,9 +1,9 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary/>
     public static class Resource

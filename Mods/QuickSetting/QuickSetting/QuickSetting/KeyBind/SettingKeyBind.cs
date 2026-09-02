@@ -1,6 +1,6 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using System;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 

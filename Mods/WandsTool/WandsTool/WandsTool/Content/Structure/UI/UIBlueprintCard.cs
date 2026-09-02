@@ -1,11 +1,11 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.IO;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
-using UITextBox = tContentPatch.Content.UI.UITextBox;
+using UITextBox = TPML.UI.UITextBox;
 
 namespace WandsTool.Content.Structure.UI
 {
@@ -172,7 +172,7 @@ namespace WandsTool.Content.Structure.UI
             _isEditing = true;
 
             // 1. 输入框
-            tContentPatch.Content.UI.UITextBox txtName = new tContentPatch.Content.UI.UITextBox("输入新名称...")
+            TPML.UI.UITextBox txtName = new TPML.UI.UITextBox("输入新名称...")
             {
                 Width = { Precent = 0.58f },
                 Height = { Pixels = 32 },

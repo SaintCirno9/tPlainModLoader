@@ -4,7 +4,7 @@ using Skil.Utils;
 using Skil.Utils.quickBuild;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.GameContent.Drawing;
 using Terraria.UI;

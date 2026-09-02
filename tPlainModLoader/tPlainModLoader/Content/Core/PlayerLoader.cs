@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using tContentPatch.Utils;
+using TPML.Utils;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.IO;

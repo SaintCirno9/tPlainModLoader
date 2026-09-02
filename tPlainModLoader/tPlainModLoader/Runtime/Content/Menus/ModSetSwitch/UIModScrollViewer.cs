@@ -1,10 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
+using TPML.Content;
 using Terraria.GameContent.UI.Elements;
 
-namespace tContentPatch.Content.Menus.ModSetSwitch
+namespace TPML.UI.Menus.ModSetSwitch
 {
     /// <summary>
     /// 一个页面, 顶部一个标题, 下面滚动UI

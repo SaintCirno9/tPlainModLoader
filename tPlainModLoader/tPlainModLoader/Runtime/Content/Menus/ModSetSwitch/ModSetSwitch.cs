@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using tContentPatch.ModLoad;
+using TPML.ModLoad;
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModSetSwitch
+namespace TPML.UI.Menus.ModSetSwitch
 {
     internal class ModSetSwitch
     {

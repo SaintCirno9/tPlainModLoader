@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Terraria.GameContent;
 using Terraria.Net;
 
-namespace tContentPatch.Content.Network
+namespace TPML.Network
 {
     /// <summary>
     /// 网络模块注册（由 Patch_Main.Hook_Update 单点调度）

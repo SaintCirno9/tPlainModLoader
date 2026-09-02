@@ -1,4 +1,4 @@
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System;
@@ -8,7 +8,7 @@ using Terraria.Audio;
 using Terraria.Localization;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Content.Menus.Patch_MainMenu
+namespace TPML.UI.Menus.Patch_MainMenu
 {
     /// <summary>
     /// 主菜单一级列表增强：注入“模组 / Mods”独立入口，并适配按钮排版与点击交互

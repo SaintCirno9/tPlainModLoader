@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Input;
 using OptimizeAndTool.Content.Cheat.Function1;
 using System;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;

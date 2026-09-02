@@ -4,7 +4,7 @@ using System.IO;
 using Terraria;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModLoadException
+namespace TPML.UI.Menus.ModLoadException
 {
     internal class ModLoadException : UIState
     {

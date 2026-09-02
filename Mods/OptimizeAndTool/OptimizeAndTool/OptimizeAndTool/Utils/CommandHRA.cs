@@ -9,7 +9,7 @@ namespace OptimizeAndTool.Utils
     {
         public CommandHRA(string texe, GetSetReset<T> gsr, params CommandObject[] add) : base(texe, 1)
         {
-            SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(SubCommand));
+            SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(SubCommand));
             SubCommand.Add(new CommandVariable("reset"));
             foreach (CommandObject co in add) SubCommand.Add(co);
 
@@ -20,7 +20,7 @@ namespace OptimizeAndTool.Utils
                 if (vs[0] is CommandVariable cv)
                 {
                     if (cv.TextEquals) gsr.Reset();
-                    else tContentPatch.ContentPatch.PrintTry($"{gsr.val}");
+                    else TPML.ContentPatch.PrintTry($"{gsr.val}");
                 }
                 else
                 {

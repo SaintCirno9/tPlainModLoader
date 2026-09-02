@@ -1,6 +1,6 @@
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using System;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.UI;
 
@@ -21,7 +21,7 @@ namespace WandsTool.KeyBind
 
         public override UIElement GetUI()
         {
-            Texture2D icon = tContentPatch.Utils.Resource.GetTexture2D($"{nameof(WandsTool)}.Resources.Wand.png");
+            Texture2D icon = TPML.Utils.Resource.GetTexture2D($"{nameof(WandsTool)}.Resources.Wand.png");
             UIKeyBind ui_item = new UIKeyBind(icon, "开关魔杖模式 (可前往控件设置修改)");
             ui_item.SetKey(WandsKeybind.GetCurrentBoundKey());
             return ui_item;

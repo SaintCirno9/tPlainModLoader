@@ -1,5 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.ID;
 

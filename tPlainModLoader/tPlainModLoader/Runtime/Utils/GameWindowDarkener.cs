@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using TPML.Core.Logging;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary>
     /// 游戏窗口黑化与防白屏闪烁引擎：<br/>

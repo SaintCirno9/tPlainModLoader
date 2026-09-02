@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
 using Newtonsoft.Json.Linq;
-using tContentPatch.ModLoad;
-using tContentPatch.Threading;
+using TPML.ModLoad;
+using TPML.Threading;
 using Terraria;
 using Terraria.GameInput;
 using TPML.Core.Logging;

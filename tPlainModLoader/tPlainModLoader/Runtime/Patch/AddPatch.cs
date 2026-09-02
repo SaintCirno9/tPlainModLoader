@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 
-namespace tContentPatch.Patch
+namespace TPML.Patch
 {
     internal class AddPatch : IAddPatch
     {

@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using tContentPatch.Utils;
+using TPML.Utils;
 using TPML.Core.Logging;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class LoadConfig : IModLoader
     {

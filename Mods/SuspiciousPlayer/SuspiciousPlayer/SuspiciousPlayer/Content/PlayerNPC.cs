@@ -1,7 +1,7 @@
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.Xna.Framework;
 using SuspiciousPlayer.Content.VirtualPlayer;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;

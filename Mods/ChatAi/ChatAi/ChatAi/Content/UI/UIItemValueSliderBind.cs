@@ -1,7 +1,7 @@
 ﻿using ChatAi.Utils;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using tContentPatch.Content.UI.ModSet;
+using TPML.UI.ModSet;
 
 namespace ChatAi.Content.UI
 {

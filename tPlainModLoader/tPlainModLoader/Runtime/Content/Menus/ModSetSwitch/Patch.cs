@@ -1,10 +1,10 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Localization;
 using Terraria.Social;
 
-namespace tContentPatch.Content.Menus.ModSetSwitch
+namespace TPML.UI.Menus.ModSetSwitch
 {
     internal class Patch
     {

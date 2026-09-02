@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace tContentPatch.Patch
+namespace TPML.Patch
 {
     /// <summary>
     /// 修补方法的详细方式请访问<para/>

@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TPML.Content;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class LoadInstance
     {

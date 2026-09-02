@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using Terraria;
 
@@ -57,7 +57,7 @@ namespace OptimizeAndTool.Content.Cheat
             if (list == null || i < 0 || i >= list.Length)
             {
                 msg = $"[{i}] no entity";
-                tContentPatch.ContentPatch.PrintTry(msg);
+                TPML.ContentPatch.PrintTry(msg);
                 Main.NewText(msg);
                 return;
             }
@@ -65,7 +65,7 @@ namespace OptimizeAndTool.Content.Cheat
             T o = list[i];
             msg = $"[{getName(o)}]";
             if (isActive(o) == false) msg += " no active";
-            tContentPatch.ContentPatch.PrintTry(msg);
+            TPML.ContentPatch.PrintTry(msg);
             Main.NewText(msg);
         }
 

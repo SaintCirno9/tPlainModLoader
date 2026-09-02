@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class LoadAssembly : IModLoader
     {

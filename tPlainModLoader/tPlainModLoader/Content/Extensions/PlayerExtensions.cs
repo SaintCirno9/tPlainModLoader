@@ -48,12 +48,12 @@ namespace TPML.Content
             }
 
             bool overFlowing;
-            long coinsInv = Utils.CoinsCount(out overFlowing, player.inventory, 58, 57, 56, 55, 54);
-            long coinsBank = Utils.CoinsCount(out overFlowing, player.bank.item);
-            long coinsBank2 = Utils.CoinsCount(out overFlowing, player.bank2.item);
-            long coinsBank3 = Utils.CoinsCount(out overFlowing, player.bank3.item);
-            long coinsBank4 = Utils.CoinsCount(out overFlowing, player.bank4.item);
-            return Utils.CoinsCombineStacks(out overFlowing, coinsInv, coinsBank, coinsBank2, coinsBank3, coinsBank4) >= price;
+            long coinsInv = Terraria.Utils.CoinsCount(out overFlowing, player.inventory, 58, 57, 56, 55, 54);
+            long coinsBank = Terraria.Utils.CoinsCount(out overFlowing, player.bank.item);
+            long coinsBank2 = Terraria.Utils.CoinsCount(out overFlowing, player.bank2.item);
+            long coinsBank3 = Terraria.Utils.CoinsCount(out overFlowing, player.bank3.item);
+            long coinsBank4 = Terraria.Utils.CoinsCount(out overFlowing, player.bank4.item);
+            return Terraria.Utils.CoinsCombineStacks(out overFlowing, coinsInv, coinsBank, coinsBank2, coinsBank3, coinsBank4) >= price;
         }
 
         public static Terraria.DataStructures.IEntitySource GetSource_OpenItem(this Player player, int itemType) => new EntitySource_Misc("OpenItem");

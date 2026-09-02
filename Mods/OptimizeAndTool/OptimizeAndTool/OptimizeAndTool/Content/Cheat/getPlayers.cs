@@ -1,4 +1,4 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System.Collections.Generic;
 using Terraria;
 
@@ -20,7 +20,7 @@ namespace OptimizeAndTool.Content.Cheat
 
                     string s = $"{i},{player.whoAmI}[{player.name}]";
 
-                    tContentPatch.ContentPatch.PrintTry(s);
+                    TPML.ContentPatch.PrintTry(s);
                 }
             };
 

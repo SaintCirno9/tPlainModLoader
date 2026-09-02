@@ -1,8 +1,8 @@
 ﻿using System;
-using tContentPatch.ModLoad;
+using TPML.ModLoad;
 using Terraria;
 
-namespace tContentPatch.Content.Menus.ModLoadingMenu
+namespace TPML.UI.Menus.ModLoadingMenu
 {
     internal class ModLoadingMenu
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Terraria.UI;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary/>
     public static class Utils

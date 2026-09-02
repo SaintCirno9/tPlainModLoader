@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Linq;
-using tContentPatch;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
@@ -17,10 +17,10 @@ namespace QuickSetting.ModLinkage
             if (Main.dedServ) return;
             if (IsLinkage == false) return;
 
-            System.Collections.Generic.List<tContentPatch.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
+            System.Collections.Generic.List<TPML.ModLoad.ModObject> mos = ContentPatch.GetModObjects();
             if (mos == null) return;
 
-            tContentPatch.ModLoad.ModObject mo = mos.FirstOrDefault(i => i.assembly?.GetName().Name == "QuickButton");
+            TPML.ModLoad.ModObject mo = mos.FirstOrDefault(i => i.assembly?.GetName().Name == "QuickButton");
             if (mo == null) return;
 
             Type type = mo.assembly.GetType("QuickButton.QuickButton.QuickButton");

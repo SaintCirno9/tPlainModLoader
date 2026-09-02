@@ -2,16 +2,16 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using tContentPatch.Content;
-using tContentPatch.Content.Menus.ModLoadException;
-using tContentPatch.Content.Menus.ModManager;
-using tContentPatch.ModLoad;
-using tContentPatch.Patch;
+using TPML.Content;
+using TPML.UI.Menus.ModLoadException;
+using TPML.UI.Menus.ModManager;
+using TPML.ModLoad;
+using TPML.Patch;
 using Terraria;
 using Terraria.ID;
 using TPML.Core.Logging;
 
-namespace tContentPatch
+namespace TPML
 {
     /// <summary/>
     public partial class ContentPatch
@@ -61,11 +61,11 @@ namespace tContentPatch
             LoadAssembly la = new LoadAssembly(lc);
             Intercept intercept = new Intercept(la);
             LoadInstance li = new LoadInstance(intercept);//在实例化模组对象前拦截
-            ModLoader ml = new ModLoader(li, patchId_mod);
+            TPML.ModLoad.ModLoader ml = new TPML.ModLoad.ModLoader(li, patchId_mod);
 
             LoaderControl.SetModLoader(ml, intercept);
             //加载时
-            LoaderControl.OnModLoad_Start += (e) => Content.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
+            LoaderControl.OnModLoad_Start += (e) => UI.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
             //加载完成时
             LoaderControl.OnModLoad_Ok += () =>
             {
@@ -84,22 +84,22 @@ namespace tContentPatch
                 Threading.MainThreadDispatcher.Enqueue(() => Main.menuMode = MenuID.Title);
             };
             //取消时
-            LoaderControl.OnModLoad_Cancel += (e) => Content.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
+            LoaderControl.OnModLoad_Cancel += (e) => UI.Menus.ModLoadingMenu.ModLoadingMenu.OpenLoadMenu(e, LoaderControl.CancelLoad);
             //取消完成
-            LoaderControl.OnModLoad_Canceled += () => ModManager.OpenModManagerMenu(null);
+            LoaderControl.OnModLoad_Canceled += () => UI.Menus.ModManager.ModManager.OpenModManagerMenu(null);
             //加载异常时
             LoaderControl.OnModLoad_Exception += (e) =>
             {
-                ModLoadException.OpenModLoadExceptionMenu(e);
-                ModLoadException.WaitMenuClose();
-                ModManager.OpenModManagerMenu(null);
+                UI.Menus.ModLoadException.ModLoadException.OpenModLoadExceptionMenu(e);
+                UI.Menus.ModLoadException.ModLoadException.WaitMenuClose();
+                UI.Menus.ModManager.ModManager.OpenModManagerMenu(null);
             };
             //卸载异常时：记录错误并回到模组管理器，禁止杀进程
             LoaderControl.OnModUnload_Exception += (e) =>
             {
                 Logger.Error($"卸载模组异常，已中止卸载并返回模组管理器: {e?.Message}", e);
-                Content.Menus.ModLoadException.ModLoadException.OpenModLoadExceptionMenu(e);
-                Content.Menus.ModManager.ModManager.OpenModManagerMenu(null);
+                UI.Menus.ModLoadException.ModLoadException.OpenModLoadExceptionMenu(e);
+                UI.Menus.ModManager.ModManager.OpenModManagerMenu(null);
             };
         }
 
@@ -138,10 +138,10 @@ namespace tContentPatch
             // 3. 注册 UI 与控制台 HookGen 强类型门面钩子
             Content.TitleInfo.RegisterAll();
             Content.DedServConsoleCommand.RegisterAll();
-            Content.Menus.Patch_MainMenu.Patch_MainMenu.RegisterAll();
-            Content.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
-            Content.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
-            Content.Menus.ModSetSwitch.Patch.RegisterAll();
+            UI.Menus.Patch_MainMenu.Patch_MainMenu.RegisterAll();
+            UI.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
+            UI.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
+            UI.Menus.ModSetSwitch.Patch.RegisterAll();
         }
 
         private void Initialize_ModDirectory()

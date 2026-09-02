@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using tContentPatch.Prepatcher;
-using tContentPatch.Utils;
+using TPML.Prepatcher;
+using TPML.Utils;
 using TPML.Core.Logging;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
@@ -416,7 +416,7 @@ namespace tPlainModLoader.Prepatcher
         {
             foreach (var ca in method.CustomAttributes)
             {
-                if (ca.AttributeType.FullName == "tContentPatch.Prepatcher.PrepatcherFieldAttribute" ||
+                if (ca.AttributeType.FullName == "TPML.Prepatcher.PrepatcherFieldAttribute" ||
                     ca.AttributeType.Name == "PrepatcherFieldAttribute")
                 {
                     if (ca.ConstructorArguments.Count > 0)
@@ -444,7 +444,7 @@ namespace tPlainModLoader.Prepatcher
                 foreach (MethodDefinition method in type.Methods)
                 {
                     if (method.CustomAttributes.Any(ca =>
-                        ca.AttributeType.FullName == "tContentPatch.Prepatcher.PrepatcherFieldAttribute" ||
+                        ca.AttributeType.FullName == "TPML.Prepatcher.PrepatcherFieldAttribute" ||
                         ca.AttributeType.Name == "PrepatcherFieldAttribute"))
                     {
                         result.Add(method);
@@ -467,7 +467,7 @@ namespace tPlainModLoader.Prepatcher
                 if (!type.IsAbstract && !type.IsInterface)
                 {
                     if (type.Interfaces.Any(i =>
-                        i.InterfaceType.FullName == "tContentPatch.Prepatcher.IPrepatcher" ||
+                        i.InterfaceType.FullName == "TPML.Prepatcher.IPrepatcher" ||
                         i.InterfaceType.Name == "IPrepatcher"))
                     {
                         result.Add(type);
@@ -490,7 +490,7 @@ namespace tPlainModLoader.Prepatcher
                 foreach (MethodDefinition method in type.Methods)
                 {
                     if (method.IsStatic && method.CustomAttributes.Any(ca =>
-                        ca.AttributeType.FullName == "tContentPatch.Prepatcher.FreePatchAttribute" ||
+                        ca.AttributeType.FullName == "TPML.Prepatcher.FreePatchAttribute" ||
                         ca.AttributeType.Name == "FreePatchAttribute"))
                     {
                         result.Add(method);

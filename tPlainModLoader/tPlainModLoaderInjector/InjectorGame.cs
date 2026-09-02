@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using tContentPatch;
+using TPML;
 using TPML.Core.Logging;
 
 namespace tPlainModLoaderInjector
@@ -65,7 +65,7 @@ namespace tPlainModLoaderInjector
 
         private static int GetMsgCommandPort(int def)
         {
-            return tContentPatch.Command.MsgCommand.Prot > 1 ? tContentPatch.Command.MsgCommand.Prot : def;
+            return TPML.Command.MsgCommand.Prot > 1 ? TPML.Command.MsgCommand.Prot : def;
         }
 
         public static void Initialize_AssemblyResolveEvent()

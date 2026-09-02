@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using CommandHelp;
 using Microsoft.Xna.Framework;
@@ -110,7 +110,7 @@ namespace OptimizeAndTool.Content
                         }
                         else
                         {
-                            tContentPatch.Content.DrawTip.Draw(Main.spriteBatch, new string[] { $"复制[{text}]" });
+                            TPML.Content.DrawTip.Draw(Main.spriteBatch, new string[] { $"复制[{text}]" });
                         }
                     }
                 }

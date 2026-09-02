@@ -1,6 +1,6 @@
-using MapAtlasTool.Utils;
+﻿using MapAtlasTool.Utils;
 using MapAtlasTool.Utils.quickBuild;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 

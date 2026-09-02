@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using tContentPatch;
-using tContentPatch.Patch;
+using TPML;
+using TPML.Patch;
 using Terraria.UI.Chat;
 using Terraria.GameContent.UI.Chat;
 

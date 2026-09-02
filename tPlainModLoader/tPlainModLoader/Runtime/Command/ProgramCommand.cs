@@ -1,8 +1,8 @@
-using CommandHelp;
+﻿using CommandHelp;
 using System;
 using System.Collections.Generic;
 
-namespace tContentPatch.Command
+namespace TPML.Command
 {
     internal class ProgramCommand
     {
@@ -95,7 +95,7 @@ namespace tContentPatch.Command
             CommandMethod console_clear = new CommandMethod("clear");
             console_clear.Runing += args =>
             {
-                tContentPatch.Utils.ConsoleUtils.Clear();
+                TPML.Utils.ConsoleUtils.Clear();
             };
             console.SubCommand.Add(console_clear);
             console.SubCommand.Add(Utils.GetCO_OutputCOList(console.SubCommand));

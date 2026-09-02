@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
-using tContentPatch;
-using tContentPatch.Content.UI.ModSet;
+using TPML;
+using TPML.UI.ModSet;
 using Terraria;
 using Terraria.UI;
 

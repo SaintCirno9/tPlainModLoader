@@ -1,6 +1,6 @@
-using TPML.Core.Reflection;
+﻿using TPML.Core.Reflection;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary>
     /// 复制类的旧命名空间兼容门面，实现已迁移至 TPML.Core.Reflection.ObjectCopy。

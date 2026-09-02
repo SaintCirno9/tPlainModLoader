@@ -1,6 +1,6 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 
-namespace tContentPatch.Content.UI
+namespace TPML.UI
 {
     /// <summary/>
     public class UIStackPanel : Terraria.UI.UIElement

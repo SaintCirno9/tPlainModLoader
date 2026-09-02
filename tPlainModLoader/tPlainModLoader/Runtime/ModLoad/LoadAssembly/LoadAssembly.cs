@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace tContentPatch.ModLoad
+namespace TPML.ModLoad
 {
     internal partial class LoadAssembly
     {

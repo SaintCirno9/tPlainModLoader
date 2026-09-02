@@ -1,6 +1,6 @@
 ﻿using System;
-using tContentPatch;
-using tContentPatch.Utils;
+using TPML;
+using TPML.Utils;
 
 namespace ChatAi
 {

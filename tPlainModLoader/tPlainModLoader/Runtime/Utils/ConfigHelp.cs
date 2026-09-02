@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using TPML.Core.Configuration;
 
-namespace tContentPatch.Utils
+namespace TPML.Utils
 {
     /// <summary>
     /// 配置文件访问器的旧命名空间兼容门面，实现已迁移至 TPML.Core.Configuration.ConfigStore。

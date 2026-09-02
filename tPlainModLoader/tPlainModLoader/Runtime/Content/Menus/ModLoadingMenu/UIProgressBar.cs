@@ -1,10 +1,10 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModLoadingMenu
+namespace TPML.UI.Menus.ModLoadingMenu
 {
     internal class UIProgressBar : UIElement
     {

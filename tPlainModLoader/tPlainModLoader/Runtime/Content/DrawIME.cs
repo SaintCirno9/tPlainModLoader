@@ -1,7 +1,7 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Terraria;
 
-namespace tContentPatch.Content
+namespace TPML.Content
 {
     /// <summary>
     /// 绘制输入法（由 Patch_Main.Hook_DoDraw 单点调度）

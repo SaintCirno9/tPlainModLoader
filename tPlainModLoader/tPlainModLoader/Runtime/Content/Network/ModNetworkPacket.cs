@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace tContentPatch.Content.Network
+namespace TPML.Network
 {
     internal static class ModNetworkPacket
     {

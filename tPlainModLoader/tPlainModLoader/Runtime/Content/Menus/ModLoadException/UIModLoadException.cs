@@ -1,10 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria.GameContent.UI.Elements;
 using Terraria.UI;
 
-namespace tContentPatch.Content.Menus.ModLoadException
+namespace TPML.UI.Menus.ModLoadException
 {
     internal class UIModLoadException : UIState
     {

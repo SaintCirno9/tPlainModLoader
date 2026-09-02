@@ -1,6 +1,6 @@
 ﻿using CommandHelp;
 using System.Collections.Generic;
-using tContentPatch;
+using TPML;
 
 namespace Skil
 {
@@ -11,7 +11,7 @@ namespace Skil
             List<CommandObject> cos = new List<CommandObject>();
 
             CommandObject root = new CommandObject(nameof(Skil));
-            root.SubCommand.Add(tContentPatch.Command.Utils.GetCO_OutputCOList(root.SubCommand));
+            root.SubCommand.Add(TPML.Command.Utils.GetCO_OutputCOList(root.SubCommand));
 
             root.SubCommand.AddRange(Content.SkilListControl1.GetCO());
             root.SubCommand.AddRange(Content.SkilListControl2.GetCO());

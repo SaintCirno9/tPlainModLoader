@@ -1,9 +1,9 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MapAtlasTool.Utils;
 using System;
 using System.Collections.Generic;
-using tContentPatch.Content.UI;
+using TPML.UI;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -13,7 +13,7 @@ using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
 using TPML.Core.Pinyin;
-using UITextBox = tContentPatch.Content.UI.UITextBox;
+using UITextBox = TPML.UI.UITextBox;
 
 namespace MapAtlasTool.Content.UI
 {
