@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,4 +91,6 @@ namespace QuickButton.QuickButton
             ui_qb.KeyOrder(keys);
         }
     }
+
+    public class QuickButtonContentMod : TPML.Content.Mod { }
 }

@@ -195,4 +195,6 @@ namespace WandsTool
             }
         }
     }
+
+    public class WandsToolContentMod : TPML.Content.Mod { }
 }

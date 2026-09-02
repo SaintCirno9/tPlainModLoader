@@ -45,10 +45,10 @@ namespace TPML.Content
             Initialize();
 
             string key = BuildKey(mod.Name);
-            if (_knownNames.Contains(key) || _mods.Any(existing => existing.GetType() == mod.GetType()))
+            if (_knownNames.Contains(key) || (!(mod is AssemblyWrapperMod) && _mods.Any(existing => existing.GetType() == mod.GetType())))
             {
-                return _mods.FirstOrDefault(existing => existing.GetType() == mod.GetType()) ??
-                    _mods.FirstOrDefault(existing => string.Equals(existing.Name, mod.Name, StringComparison.OrdinalIgnoreCase)) ?? mod;
+                return _mods.FirstOrDefault(existing => string.Equals(existing.Name, mod.Name, StringComparison.OrdinalIgnoreCase)) ??
+                    _mods.FirstOrDefault(existing => !(existing is AssemblyWrapperMod) && existing.GetType() == mod.GetType()) ?? mod;
             }
 
             _knownNames.Add(key);
@@ -164,6 +164,7 @@ namespace TPML.Content
                     string modName = assembly.GetName().Name;
                     var autoMod = new AssemblyWrapperMod(modName, assembly);
                     registered.Add(Register(autoMod));
+                    Logger.Info($"[ContentHost] 成功为程序集 [{modName}] 注册自动包装模组并扫描内容");
                 }
             }
 

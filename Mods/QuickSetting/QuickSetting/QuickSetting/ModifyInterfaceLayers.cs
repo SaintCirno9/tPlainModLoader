@@ -64,4 +64,6 @@ namespace QuickSetting
             }
         }
     }
+
+    public class QuickSettingContentMod : TPML.Content.Mod { }
 }
