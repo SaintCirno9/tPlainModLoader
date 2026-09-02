@@ -21,16 +21,12 @@ namespace tContentPatch.ModPatch
     /// 主游戏主循环与核心生命周期强类型门面调度中心
     /// 作者: SaintCirno9
     /// </summary>
-    internal class Patch_Main : ListCopy<PatchMain>
+    public static class Patch_Main
     {
         private static readonly ILogger Logger = LogManager.GetLogger("Patch_Main");
-        private static readonly List<PatchMain> mod = new List<PatchMain>();
-        internal static List<PatchMain> ModList => mod;
 
         private static bool _hooksInitialized = false;
         private static bool _firstInvDrawLogged = false;
-
-        public Patch_Main() : base(mod) { }
 
         /// <summary>集中注册 Main/TimeLogger 相关的 HookGen 强类型静态门面钩子</summary>
         public static void RegisterAll()

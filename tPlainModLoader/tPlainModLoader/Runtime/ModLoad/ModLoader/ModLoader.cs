@@ -60,7 +60,6 @@ namespace tContentPatch.ModLoad
 
                 Content.Network.ModNetworkPacket.Clear();
 
-                ContentPatch.typePatch.ClearAllPatch();
                 PatchUtil.ClearPathc(patchId);
 
                 ++progressV;

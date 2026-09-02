@@ -27,10 +27,7 @@ namespace tContentPatch
 
         private static ContentPatch Instance = null;
 
-        public static ModPatch.TypePatch typePatch = new ModPatch.TypePatch();
-
         private static FieldInfo reflection_Terraria_Main_inRun = null;
-
 
         /// <summary>
         /// 不允许用正常方式创建
@@ -53,7 +50,6 @@ namespace tContentPatch
                 {
                     Type type = typeof(Main).BaseType;
                     reflection_Terraria_Main_inRun = type.GetField("inRun", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 }
                 bool inRun = (bool)reflection_Terraria_Main_inRun.GetValue(Main.instance);
 
