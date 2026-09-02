@@ -13,6 +13,7 @@ using Terraria.Localization;
 using Terraria.UI;
 using tContentPatch.ModPatch;
 using TPML.Content.Assets;
+using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Content.UI;
 using TPML.Core.Logging;
@@ -269,115 +270,23 @@ namespace TPML.Content
 
         public static void LoadItemTexture(ModItem item)
         {
-            try
-            {
-                EnsureArraySizes(item.Type);
-                GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
-                                       Main.instance?.GraphicsDevice ??
-                                       Main.graphics?.GraphicsDevice;
-
-                if (device == null)
+            EnsureArraySizes(item.Type);
+            ContentTextureLoader.Load(
+                item.Mod,
+                item.GetType().Assembly,
+                item.Texture,
+                item.Name,
+                item.FullName,
+                item.Type,
+                asset => TextureAssets.Item[item.Type] = asset,
+                () =>
                 {
-                    return;
+                    GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
+                                           Main.instance?.GraphicsDevice ??
+                                           Main.graphics?.GraphicsDevice;
+                    return TextureAssets.Item[0]?.Value ?? (device != null ? new Texture2D(device, 16, 16) : null);
                 }
-
-                Texture2D texture = null;
-                string texPath = item.Texture;
-
-                Assembly asm = item.GetType().Assembly;
-                string[] resNames = asm.GetManifestResourceNames();
-                string targetRes = null;
-                string normalizedTex = texPath?.Replace('/', '.')?.Replace('\\', '.');
-
-                foreach (var res in resNames)
-                {
-                    if ((!string.IsNullOrEmpty(normalizedTex) && (res.Equals(normalizedTex, StringComparison.OrdinalIgnoreCase) || res.Equals(normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex, StringComparison.OrdinalIgnoreCase))) ||
-                        res.Equals($"{item.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{item.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{item.Name}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{item.Name}.rawimg", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetRes = res;
-                        break;
-                    }
-                }
-
-                if (targetRes != null)
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(targetRes))
-                    {
-                        if (stream != null)
-                        {
-                            if (targetRes.EndsWith(".rawimg", StringComparison.OrdinalIgnoreCase))
-                            {
-                                using (var ms = new MemoryStream())
-                                {
-                                    stream.CopyTo(ms);
-                                    byte[] bytes = ms.ToArray();
-                                    if (bytes.Length >= 12)
-                                    {
-                                        int version = BitConverter.ToInt32(bytes, 0);
-                                        int width = BitConverter.ToInt32(bytes, 4);
-                                        int height = BitConverter.ToInt32(bytes, 8);
-                                        int expectedPixelBytes = width * height * 4;
-                                        if (version == 1 && width > 0 && height > 0 && bytes.Length >= 12 + expectedPixelBytes)
-                                        {
-                                            texture = new Texture2D(device, width, height);
-                                            byte[] pixelData = new byte[expectedPixelBytes];
-                                            Buffer.BlockCopy(bytes, 12, pixelData, 0, expectedPixelBytes);
-                                            texture.SetData(pixelData);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                texture = Texture2D.FromStream(device, stream);
-                            }
-                        }
-                    }
-                }
-
-                if (texture == null && item.Mod != null && !string.IsNullOrEmpty(texPath))
-                {
-                    string cleanPath = texPath.Replace('\\', '/');
-                    if (item.Mod.HasAsset(cleanPath + ".png"))
-                    {
-                        using (Stream s = item.Mod.GetFileStream(cleanPath + ".png"))
-                        {
-                            if (s != null) texture = Texture2D.FromStream(device, s);
-                        }
-                    }
-                    else if (item.Mod.HasAsset(cleanPath + ".rawimg"))
-                    {
-                        byte[] rawBytes = item.Mod.GetFileBytes(cleanPath + ".rawimg");
-                        if (rawBytes != null && rawBytes.Length >= 12)
-                        {
-                            int width = BitConverter.ToInt32(rawBytes, 4);
-                            int height = BitConverter.ToInt32(rawBytes, 8);
-                            int expectedPixelBytes = width * height * 4;
-                            if (width > 0 && height > 0 && rawBytes.Length >= 12 + expectedPixelBytes)
-                            {
-                                texture = new Texture2D(device, width, height);
-                                byte[] pixelData = new byte[expectedPixelBytes];
-                                Buffer.BlockCopy(rawBytes, 12, pixelData, 0, expectedPixelBytes);
-                                texture.SetData(pixelData);
-                            }
-                        }
-                    }
-                }
-
-                if (texture == null)
-                {
-                    texture = TextureAssets.Item[0]?.Value ?? new Texture2D(device, 16, 16);
-                }
-
-                TextureAssets.Item[item.Type] = AssetFactory.CreateLoaded(texture, item.FullName);
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[ItemLoader] 为物品 [{item.FullName}] 加载材质异常: {ex.Message}");
-            }
+            );
         }
 
         public static ModItem GetItem(int type)
@@ -794,6 +703,7 @@ namespace TPML.Content
 
         public static void Clear()
         {
+            ContentTextureLoader.ClearAssets(TextureAssets.Item, ModItemOffset, _nextItemID, TextureAssets.Item[0]?.Value);
             _itemsByType.Clear();
             _displayNames.Clear();
             _tooltips.Clear();

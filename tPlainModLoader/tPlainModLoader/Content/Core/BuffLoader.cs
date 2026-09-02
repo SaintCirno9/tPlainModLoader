@@ -10,6 +10,7 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
 using TPML.Content.Assets;
+using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
 
@@ -127,70 +128,23 @@ namespace TPML.Content
 
         public static void LoadBuffTexture(ModBuff buff)
         {
-            try
-            {
-                EnsureArraySizes(buff.Type);
-                GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
-                                       Main.instance?.GraphicsDevice ??
-                                       Main.graphics?.GraphicsDevice;
-
-                if (device == null) return;
-
-                Texture2D texture = null;
-                string texPath = buff.Texture;
-
-                Assembly asm = buff.GetType().Assembly;
-                string[] resNames = asm.GetManifestResourceNames();
-                string targetRes = null;
-                string normalizedTex = texPath?.Replace('/', '.')?.Replace('\\', '.');
-
-                foreach (var res in resNames)
+            EnsureArraySizes(buff.Type);
+            ContentTextureLoader.Load(
+                buff.Mod,
+                buff.GetType().Assembly,
+                buff.Texture,
+                buff.Name,
+                buff.FullName,
+                buff.Type,
+                asset => TextureAssets.Buff[buff.Type] = asset,
+                () =>
                 {
-                    if ((!string.IsNullOrEmpty(normalizedTex) && (res.Equals(normalizedTex, StringComparison.OrdinalIgnoreCase) || res.Equals(normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex, StringComparison.OrdinalIgnoreCase))) ||
-                        res.Equals($"{buff.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{buff.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{buff.Name}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{buff.Name}.rawimg", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetRes = res;
-                        break;
-                    }
+                    GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
+                                           Main.instance?.GraphicsDevice ??
+                                           Main.graphics?.GraphicsDevice;
+                    return TextureAssets.Buff[0]?.Value ?? (device != null ? new Texture2D(device, 32, 32) : null);
                 }
-
-                if (targetRes != null)
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(targetRes))
-                    {
-                        if (stream != null)
-                        {
-                            texture = Texture2D.FromStream(device, stream);
-                        }
-                    }
-                }
-
-                if (texture == null && buff.Mod != null && !string.IsNullOrEmpty(texPath))
-                {
-                    string cleanPath = texPath.Replace('\\', '/');
-                    if (buff.Mod.HasAsset(cleanPath + ".png"))
-                    {
-                        using (Stream s = buff.Mod.GetFileStream(cleanPath + ".png"))
-                        {
-                            if (s != null) texture = Texture2D.FromStream(device, s);
-                        }
-                    }
-                }
-
-                if (texture == null)
-                {
-                    texture = TextureAssets.Buff[0]?.Value ?? new Texture2D(device, 32, 32);
-                }
-
-                TextureAssets.Buff[buff.Type] = AssetFactory.CreateLoaded(texture, buff.FullName);
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[BuffLoader] 为 Buff [{buff.FullName}] 加载贴图异常: {ex.Message}");
-            }
+            );
         }
 
         public static ModBuff GetBuff(int type)
@@ -379,6 +333,7 @@ namespace TPML.Content
 
         public static void Clear()
         {
+            ContentTextureLoader.ClearAssets(TextureAssets.Buff, ModBuffOffset, _nextBuffID, TextureAssets.Buff[0]?.Value);
             _buffsByType.Clear();
             _displayNames.Clear();
             _descriptions.Clear();

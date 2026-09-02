@@ -11,6 +11,7 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ObjectData;
 using TPML.Content.Assets;
+using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
 
@@ -282,74 +283,23 @@ namespace TPML.Content
 
         public static void LoadTileTexture(ModTile tile)
         {
-            try
-            {
-                EnsureArraySizes(tile.Type);
-                GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
-                                       Main.instance?.GraphicsDevice ??
-                                       Main.graphics?.GraphicsDevice;
+            EnsureArraySizes(tile.Type);
+            string[] extraAliases = tile.Name.Equals("FishingMachineTile", StringComparison.OrdinalIgnoreCase)
+                ? new[] { $"{tile.Name}Tile", "AutofisherTile" }
+                : new[] { $"{tile.Name}Tile" };
 
-                if (device == null) return;
-
-                Texture2D texture = null;
-                string texPath = tile.Texture;
-                Assembly asm = tile.GetType().Assembly;
-                string[] resNames = asm.GetManifestResourceNames();
-                string targetRes = null;
-                string tileName = tile.Name;
-
-                foreach (var res in resNames)
-                {
-                    if (res.Equals($"{tileName}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{tileName}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{tileName}Tile.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{tileName}Tile.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{tileName}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{tileName}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        (tileName.Equals("FishingMachineTile", StringComparison.OrdinalIgnoreCase) && res.EndsWith("AutofisherTile.png", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        targetRes = res;
-                        break;
-                    }
-                }
-
-                if (targetRes != null)
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(targetRes))
-                    {
-                        if (stream != null)
-                        {
-                            texture = Texture2D.FromStream(device, stream);
-                        }
-                    }
-                }
-
-                if (texture == null && tile.Mod != null)
-                {
-                    string cleanPath = texPath.Replace('\\', '/');
-                    if (tile.Mod.HasAsset(cleanPath + ".png"))
-                    {
-                        using (Stream s = tile.Mod.GetFileStream(cleanPath + ".png"))
-                        {
-                            if (s != null) texture = Texture2D.FromStream(device, s);
-                        }
-                    }
-                }
-
-                if (texture == null)
-                {
-                    texture = new Texture2D(device, 16, 16);
-                    Color[] data = new Color[16 * 16];
-                    for (int i = 0; i < data.Length; i++) data[i] = Color.Magenta;
-                    texture.SetData(data);
-                }
-
-                TextureAssets.Tile[tile.Type] = AssetFactory.CreateLoaded(texture, $"ModTile_{tile.Name}");
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[TileLoader] 为物块 [{tile.FullName}] 加载材质异常: {ex.Message}");
-            }
+            ContentTextureLoader.Load(
+                tile.Mod,
+                tile.GetType().Assembly,
+                tile.Texture,
+                tile.Name,
+                tile.FullName,
+                tile.Type,
+                asset => TextureAssets.Tile[tile.Type] = asset,
+                () => GetFallbackTexture(),
+                assetNameOverride: $"ModTile_{tile.Name}",
+                extraAliases: extraAliases
+            );
         }
 
         public static void KillMultiTileStructure(int i, int j, int type, bool noItem = false)
@@ -703,6 +653,7 @@ namespace TPML.Content
 
         public static void Clear()
         {
+            ContentTextureLoader.ClearAssets(TextureAssets.Tile, ModTileOffset, _nextTileID, TileLoader.GetFallbackTexture());
             _tilesByType.Clear();
             _tilesByName.Clear();
             _nextTileID = ModTileOffset;

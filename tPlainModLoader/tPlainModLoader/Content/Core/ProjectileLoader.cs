@@ -13,6 +13,7 @@ using Terraria.ID;
 using Terraria.Localization;
 using tContentPatch.ModPatch;
 using TPML.Content.Assets;
+using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
 
@@ -233,70 +234,23 @@ namespace TPML.Content
 
         public static void LoadProjectileTexture(ModProjectile proj)
         {
-            try
-            {
-                EnsureArraySizes(proj.Type);
-                GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
-                                       Main.instance?.GraphicsDevice ??
-                                       Main.graphics?.GraphicsDevice;
-
-                if (device == null) return;
-
-                Texture2D texture = null;
-                string texPath = proj.Texture;
-
-                Assembly asm = proj.GetType().Assembly;
-                string[] resNames = asm.GetManifestResourceNames();
-                string targetRes = null;
-                string normalizedTex = texPath?.Replace('/', '.')?.Replace('\\', '.');
-
-                foreach (var res in resNames)
+            EnsureArraySizes(proj.Type);
+            ContentTextureLoader.Load(
+                proj.Mod,
+                proj.GetType().Assembly,
+                proj.Texture,
+                proj.Name,
+                proj.FullName,
+                proj.Type,
+                asset => TextureAssets.Projectile[proj.Type] = asset,
+                () =>
                 {
-                    if ((!string.IsNullOrEmpty(normalizedTex) && (res.Equals(normalizedTex, StringComparison.OrdinalIgnoreCase) || res.Equals(normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex, StringComparison.OrdinalIgnoreCase))) ||
-                        res.Equals($"{proj.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{proj.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{proj.Name}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{proj.Name}.rawimg", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetRes = res;
-                        break;
-                    }
+                    GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
+                                           Main.instance?.GraphicsDevice ??
+                                           Main.graphics?.GraphicsDevice;
+                    return TextureAssets.Projectile[0]?.Value ?? (device != null ? new Texture2D(device, 16, 16) : null);
                 }
-
-                if (targetRes != null)
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(targetRes))
-                    {
-                        if (stream != null)
-                        {
-                            texture = Texture2D.FromStream(device, stream);
-                        }
-                    }
-                }
-
-                if (texture == null && proj.Mod != null && !string.IsNullOrEmpty(texPath))
-                {
-                    string cleanPath = texPath.Replace('\\', '/');
-                    if (proj.Mod.HasAsset(cleanPath + ".png"))
-                    {
-                        using (Stream s = proj.Mod.GetFileStream(cleanPath + ".png"))
-                        {
-                            if (s != null) texture = Texture2D.FromStream(device, s);
-                        }
-                    }
-                }
-
-                if (texture == null)
-                {
-                    texture = TextureAssets.Projectile[0]?.Value ?? new Texture2D(device, 16, 16);
-                }
-
-                TextureAssets.Projectile[proj.Type] = AssetFactory.CreateLoaded(texture, proj.FullName);
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[ProjectileLoader] 为弹幕 [{proj.FullName}] 加载贴图异常: {ex.Message}");
-            }
+            );
         }
 
         public static ModProjectile GetProjectile(int type)
@@ -444,6 +398,7 @@ namespace TPML.Content
 
         public static void Clear()
         {
+            ContentTextureLoader.ClearAssets(TextureAssets.Projectile, ModProjectileOffset, _nextProjID, TextureAssets.Projectile[0]?.Value);
             _projsByType.Clear();
             _displayNames.Clear();
             _projsByName.Clear();

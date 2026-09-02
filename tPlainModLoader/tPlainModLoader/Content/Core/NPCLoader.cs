@@ -11,6 +11,7 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
 using TPML.Content.Assets;
+using TPML.Content.Core;
 using TPML.Content.Engine;
 using TPML.Core.Logging;
 using tContentPatch.ModPatch;
@@ -169,70 +170,23 @@ namespace TPML.Content
 
         public static void LoadNPCTexture(ModNPC npc)
         {
-            try
-            {
-                EnsureArraySizes(npc.Type);
-                GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
-                                       Main.instance?.GraphicsDevice ??
-                                       Main.graphics?.GraphicsDevice;
-
-                if (device == null) return;
-
-                Texture2D texture = null;
-                string texPath = npc.Texture;
-
-                Assembly asm = npc.GetType().Assembly;
-                string[] resNames = asm.GetManifestResourceNames();
-                string targetRes = null;
-                string normalizedTex = texPath?.Replace('/', '.')?.Replace('\\', '.');
-
-                foreach (var res in resNames)
+            EnsureArraySizes(npc.Type);
+            ContentTextureLoader.Load(
+                npc.Mod,
+                npc.GetType().Assembly,
+                npc.Texture,
+                npc.Name,
+                npc.FullName,
+                npc.Type,
+                asset => TextureAssets.Npc[npc.Type] = asset,
+                () =>
                 {
-                    if ((!string.IsNullOrEmpty(normalizedTex) && (res.Equals(normalizedTex, StringComparison.OrdinalIgnoreCase) || res.Equals(normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex + ".png", StringComparison.OrdinalIgnoreCase) || res.EndsWith("." + normalizedTex, StringComparison.OrdinalIgnoreCase))) ||
-                        res.Equals($"{npc.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{npc.Name}.png", StringComparison.OrdinalIgnoreCase) ||
-                        res.Equals($"{npc.Name}.rawimg", StringComparison.OrdinalIgnoreCase) ||
-                        res.EndsWith($".{npc.Name}.rawimg", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetRes = res;
-                        break;
-                    }
+                    GraphicsDevice device = Main.spriteBatch?.GraphicsDevice ??
+                                           Main.instance?.GraphicsDevice ??
+                                           Main.graphics?.GraphicsDevice;
+                    return TextureAssets.Npc[0]?.Value ?? (device != null ? new Texture2D(device, 16, 16) : null);
                 }
-
-                if (targetRes != null)
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(targetRes))
-                    {
-                        if (stream != null)
-                        {
-                            texture = Texture2D.FromStream(device, stream);
-                        }
-                    }
-                }
-
-                if (texture == null && npc.Mod != null && !string.IsNullOrEmpty(texPath))
-                {
-                    string cleanPath = texPath.Replace('\\', '/');
-                    if (npc.Mod.HasAsset(cleanPath + ".png"))
-                    {
-                        using (Stream s = npc.Mod.GetFileStream(cleanPath + ".png"))
-                        {
-                            if (s != null) texture = Texture2D.FromStream(device, s);
-                        }
-                    }
-                }
-
-                if (texture == null)
-                {
-                    texture = TextureAssets.Npc[0]?.Value ?? new Texture2D(device, 16, 16);
-                }
-
-                TextureAssets.Npc[npc.Type] = AssetFactory.CreateLoaded(texture, npc.FullName);
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[NPCLoader] 为 NPC [{npc.FullName}] 加载贴图异常: {ex.Message}");
-            }
+            );
         }
 
         public static ModNPC GetNPC(int type)
@@ -411,6 +365,7 @@ namespace TPML.Content
 
         public static void Clear()
         {
+            ContentTextureLoader.ClearAssets(TextureAssets.Npc, ModNPCOffset, _nextNPCID, TextureAssets.Npc[0]?.Value);
             _npcsByType.Clear();
             _displayNames.Clear();
             _npcsByName.Clear();
