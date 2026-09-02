@@ -11,8 +11,8 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
     /// </summary>
     public static class AccessoryBagCacheManager
     {
-        private static readonly Dictionary<Guid, AccessoryBagItem> _bagCache = new Dictionary<Guid, AccessoryBagItem>();
-        private static readonly List<AccessoryBagItem> _playerBagsCache = new List<AccessoryBagItem>(16);
+        private static Dictionary<Guid, AccessoryBagItem> _bagCache = new Dictionary<Guid, AccessoryBagItem>();
+        private static List<AccessoryBagItem> _playerBagsCache = new List<AccessoryBagItem>();
 
         public static void UpdateCache()
         {
@@ -21,18 +21,21 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             Player player = Main.LocalPlayer;
             if (player == null || !player.active) return;
 
-            _bagCache.Clear();
-            _playerBagsCache.Clear();
+            var newBagCache = new Dictionary<Guid, AccessoryBagItem>();
+            var newPlayerBags = new List<AccessoryBagItem>(16);
 
-            ScanArray(player.inventory);
-            ScanArray(player.bank?.item);
-            ScanArray(player.bank2?.item);
-            ScanArray(player.bank3?.item);
-            ScanArray(player.bank4?.item);
-            ScanArray(BigBag.BigBag.Slots);
+            ScanArray(player.inventory, newBagCache, newPlayerBags);
+            ScanArray(player.bank?.item, newBagCache, newPlayerBags);
+            ScanArray(player.bank2?.item, newBagCache, newPlayerBags);
+            ScanArray(player.bank3?.item, newBagCache, newPlayerBags);
+            ScanArray(player.bank4?.item, newBagCache, newPlayerBags);
+            ScanArray(BigBag.BigBag.Slots, newBagCache, newPlayerBags);
+
+            _bagCache = newBagCache;
+            _playerBagsCache = newPlayerBags;
         }
 
-        private static void ScanArray(Item[] items)
+        private static void ScanArray(Item[] items, Dictionary<Guid, AccessoryBagItem> bagCache, List<AccessoryBagItem> playerBags)
         {
             if (items == null) return;
             for (int i = 0; i < items.Length; i++)
@@ -41,10 +44,10 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 if (it != null && !it.IsAir)
                 {
                     AccessoryBagItem bag = ItemLoader.GetModItem(it) as AccessoryBagItem;
-                    if (bag != null && bag.BagID != Guid.Empty && !_bagCache.ContainsKey(bag.BagID))
+                    if (bag != null && bag.BagID != Guid.Empty && !bagCache.ContainsKey(bag.BagID))
                     {
-                        _bagCache[bag.BagID] = bag;
-                        _playerBagsCache.Add(bag);
+                        bagCache[bag.BagID] = bag;
+                        playerBags.Add(bag);
                     }
                 }
             }

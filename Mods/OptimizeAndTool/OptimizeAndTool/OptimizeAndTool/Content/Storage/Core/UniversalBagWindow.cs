@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using ReLogic.Graphics;
@@ -123,22 +123,29 @@ namespace OptimizeAndTool.Content.Storage.Core
             {
                 if (CurrentBag != null)
                 {
-                    CurrentBag.OnSlotsChanged -= Rebuild;
+                    CurrentBag.OnSlotsChanged -= RequestRebuild;
                 }
             };
+        }
+
+        private bool _needsRebuild = false;
+
+        public void RequestRebuild()
+        {
+            _needsRebuild = true;
         }
 
         public void Open(IBagInventory bag, UIState parentState)
         {
             if (CurrentBag != null)
             {
-                CurrentBag.OnSlotsChanged -= Rebuild;
+                CurrentBag.OnSlotsChanged -= RequestRebuild;
             }
 
             CurrentBag = bag;
             if (CurrentBag != null)
             {
-                CurrentBag.OnSlotsChanged += Rebuild;
+                CurrentBag.OnSlotsChanged += RequestRebuild;
                 if (ui_title != null)
                 {
                     ui_title.SetText(CurrentBag.Title);
@@ -662,6 +669,13 @@ namespace OptimizeAndTool.Content.Storage.Core
                     Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
                     Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
                 }
+            }
+
+            // 帧末安全执行脏标记重构，彻底杜绝在 UIElement.Update 递归遍历子控件时修改集合
+            if (_needsRebuild)
+            {
+                _needsRebuild = false;
+                Rebuild();
             }
         }
     }

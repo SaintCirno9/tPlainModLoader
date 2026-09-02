@@ -29,20 +29,22 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             var bags = AccessoryBagCacheManager.GetAllBags();
             if (bags == null || bags.Count == 0) return null;
 
-            var list = new List<Item>();
-            foreach (var bag in bags)
+            var snapshot = bags is List<AccessoryBagItem> list ? list.ToArray() : new List<AccessoryBagItem>(bags).ToArray();
+            var result = new List<Item>();
+            for (int b = 0; b < snapshot.Length; b++)
             {
+                var bag = snapshot[b];
                 if (bag?.personalInventory != null)
                 {
                     for (int i = 0; i < bag.personalInventory.Length; i++)
                     {
                         Item it = bag.personalInventory[i];
-                        if (it != null && !it.IsAir) list.Add(it);
+                        if (it != null && !it.IsAir) result.Add(it);
                     }
                 }
             }
 
-            return list.ToArray();
+            return result.ToArray();
         }
 
         public void OnModified(Player player)
@@ -50,9 +52,10 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             var bags = AccessoryBagCacheManager.GetAllBags();
             if (bags != null)
             {
-                foreach (var bag in bags)
+                var snapshot = bags is List<AccessoryBagItem> list ? list.ToArray() : new List<AccessoryBagItem>(bags).ToArray();
+                for (int i = 0; i < snapshot.Length; i++)
                 {
-                    bag?.TriggerSlotsChanged();
+                    snapshot[i]?.TriggerSlotsChanged();
                 }
             }
         }

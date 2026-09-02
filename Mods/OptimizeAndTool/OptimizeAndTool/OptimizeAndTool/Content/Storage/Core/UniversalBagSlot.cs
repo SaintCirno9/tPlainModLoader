@@ -9,6 +9,7 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.UI;
 using Terraria.UI.Chat;
+using TPML.Content;
 
 namespace OptimizeAndTool.Content.Storage.Core
 {
@@ -22,6 +23,11 @@ namespace OptimizeAndTool.Content.Storage.Core
     {
         private readonly IBagInventory bag;
         private readonly int slotIndex;
+
+        // 右键分堆与加速状态机私有计时器
+        private int rightMouseDownTimer = -1;
+        private int superFastStackTimer = 0;
+
         public UniversalBagSlot(IBagInventory bag, int slotIndex)
         {
             this.bag = bag;
@@ -158,59 +164,7 @@ namespace OptimizeAndTool.Content.Storage.Core
 
         public override void RightClick(UIMouseEvent evt)
         {
-            if (bag?.Slots == null || slotIndex < 0 || slotIndex >= bag.Slots.Length) return;
-
-            TakeOneItem();
-        }
-
-        /// <summary>
-        /// 从槽位中取出 1 个物品至鼠标光标（原版对齐：支持空手或持有同种未满堆叠物品时取出）
-        /// </summary>
-        private void TakeOneItem()
-        {
-            if (bag?.Slots == null || slotIndex < 0 || slotIndex >= bag.Slots.Length) return;
-
-            Item item = bag.Slots[slotIndex];
-            if (item == null || item.IsAir) return;
-
-            Item mouse = Main.mouseItem;
-            if (mouse.IsAir)
-            {
-                Main.mouseItem = item.Clone();
-                Main.mouseItem.stack = 1;
-                if (!item.favorited || item.stack > 1)
-                {
-                    Main.mouseItem.favorited = false;
-                }
-                item.stack--;
-                if (item.stack <= 0)
-                {
-                    item.TurnToAir();
-                }
-                SoundEngine.PlaySound(SoundID.MenuTick);
-                ItemSlot.RefreshStackSplitCooldown();
-            }
-            else if (Item.CanStack(mouse, item) && mouse.stack < mouse.maxStack)
-            {
-                mouse.stack++;
-                item.stack--;
-                if (item.stack <= 0)
-                {
-                    item.TurnToAir();
-                }
-                SoundEngine.PlaySound(SoundID.MenuTick);
-                ItemSlot.RefreshStackSplitCooldown();
-            }
-            else
-            {
-                return;
-            }
-
-            if (bag.IsDynamicCapacity)
-            {
-                bag.EnsureTrailingEmptySlots(10);
-            }
-            bag.TriggerSlotsChanged();
+            // 右键生命周期已由 Update 中的状态机统一精准调度，此处避免重复触发
         }
 
         public override void Update(GameTime gameTime)
@@ -223,20 +177,228 @@ namespace OptimizeAndTool.Content.Storage.Core
             {
                 Main.LocalPlayer.mouseInterface = true;
 
-                // 长按右键持续取出 (对齐原版 stackSplit 连点加速机制)
-                if (Main.mouseRight && !Main.mouseRightRelease && Main.stackSplit <= 1)
+                // 统一处理右键状态机 (单击防误触、缓慢加速分堆、原版装备穿戴与开箱)
+                HandleRightClickLogic();
+            }
+            else
+            {
+                // 光标移出当前槽位，若之前处于按住状态则触发释放重置
+                if (rightMouseDownTimer >= 0)
                 {
-                    Item item = bag.Slots[slotIndex];
-                    if (item != null && !item.IsAir)
+                    OnRightMouseReleased();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 统一调度右键分堆状态机、长按加速与原版扩展交互（开箱/穿戴）
+        /// </summary>
+        private void HandleRightClickLogic()
+        {
+            // 鼠标未按住右键时：若之前按住过则触发松开收尾
+            if (!Main.mouseRight)
+            {
+                if (rightMouseDownTimer >= 0)
+                {
+                    OnRightMouseReleased();
+                }
+                return;
+            }
+
+            // 玩家处于使用物品动画中则禁止交互
+            if (Main.LocalPlayer.itemAnimation > 0)
+            {
+                return;
+            }
+
+            Item item = bag.Slots[slotIndex];
+            if (item == null || item.IsAir)
+            {
+                if (rightMouseDownTimer >= 0)
+                {
+                    OnRightMouseReleased();
+                }
+                return;
+            }
+
+            // 1. 原版扩展右键交互：光标为空时支持单件装备右键快速穿戴替换与宝藏袋/礼包原地开启
+            if (Main.mouseItem.IsAir)
+            {
+                // 1.1 单件装备/时装/染料快捷穿戴 (SwapEquip)
+                if (item.stack == 1 && ItemSlot.CanSwapEquip(item))
+                {
+                    if (Main.mouseRightRelease)
                     {
-                        int num = Main.superFastStack + 1;
-                        for (int i = 0; i < num; i++)
+                        ItemSlot.SwapEquip(bag.Slots, ItemSlot.Context.InventoryItem, slotIndex);
+                        Main.mouseRightRelease = false;
+
+                        // 若换下的旧装备不符合当前容器限制，自动转移至玩家主背包
+                        if (!bag.Slots[slotIndex].IsAir && !bag.MeetEntryCriteria(bag.Slots[slotIndex], slotIndex))
                         {
-                            if (Main.mouseItem.IsAir || (Item.CanStack(Main.mouseItem, item) && Main.mouseItem.stack < Main.mouseItem.maxStack))
-                            {
-                                TakeOneItem();
-                            }
+                            Item ejected = bag.Slots[slotIndex].Clone();
+                            bag.Slots[slotIndex].TurnToAir();
+                            Main.LocalPlayer.GetItem(ejected, GetItemSettings.QuickTransferFromSlot);
                         }
+
+                        if (bag.IsDynamicCapacity)
+                        {
+                            bag.EnsureTrailingEmptySlots(10);
+                        }
+                        bag.TriggerSlotsChanged();
+                        rightMouseDownTimer = 0;
+                    }
+                    return;
+                }
+
+                // 1.2 宝藏袋与可开启容器原地开启
+                ModItem modItem = ItemLoader.GetModItem(item.type);
+                bool canOpenModItem = modItem != null && modItem.CanRightClick();
+                bool isOpenableVanilla = ItemID.Sets.OpenableBag[item.type];
+
+                if (canOpenModItem || isOpenableVanilla)
+                {
+                    if (Main.mouseRightRelease)
+                    {
+                        if (canOpenModItem)
+                        {
+                            modItem.RightClick(Main.LocalPlayer);
+                            item.stack--;
+                            if (item.stack <= 0)
+                            {
+                                item.TurnToAir();
+                            }
+                            SoundEngine.PlaySound(SoundID.Grab);
+                        }
+                        else
+                        {
+                            ItemSlot.TryOpenContainer(bag.Slots, ItemSlot.Context.InventoryItem, slotIndex, Main.LocalPlayer);
+                        }
+
+                        Main.mouseRightRelease = false;
+                        if (bag.IsDynamicCapacity)
+                        {
+                            bag.EnsureTrailingEmptySlots(10);
+                        }
+                        bag.TriggerSlotsChanged();
+                        rightMouseDownTimer = 0;
+                    }
+                    return;
+                }
+            }
+
+            // 2. 右键分堆逻辑 (支持光标为空时取出 1 个，或光标持有同类未满物品时堆叠取出)
+            if (!Main.mouseItem.IsAir && (!Item.CanStack(Main.mouseItem, item) || Main.mouseItem.stack >= Main.mouseItem.maxStack))
+            {
+                return;
+            }
+
+            // 初次按下瞬间：取出 1 个并开始计时
+            if (rightMouseDownTimer == -1)
+            {
+                rightMouseDownTimer = 0;
+                superFastStackTimer = 0;
+                TakeSlotItemToMouse(1);
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                return;
+            }
+
+            // 持续长按计时推进
+            rightMouseDownTimer++;
+
+            bool shouldTake = false;
+            int takeCount = 1;
+
+            // 对齐原版分堆曲线：
+            // 前 30 帧 (约 0.5 秒) 防误触静止停顿
+            if (rightMouseDownTimer >= 30)
+            {
+                if (rightMouseDownTimer < 60)
+                {
+                    // 30~60 帧区间：从 6 帧/个渐进缩短为 4 帧/个、2 帧/个
+                    int interval = rightMouseDownTimer < 40 ? 6 : (rightMouseDownTimer < 50 ? 4 : 2);
+                    if (rightMouseDownTimer % interval == 0)
+                    {
+                        shouldTake = true;
+                        takeCount = 1;
+                    }
+                }
+                else
+                {
+                    // >= 60 帧：激活超速多倍堆叠，每 2 帧取出 1+n 个
+                    if (rightMouseDownTimer % 2 == 0)
+                    {
+                        if (superFastStackTimer < 40)
+                        {
+                            superFastStackTimer++;
+                        }
+                        shouldTake = true;
+                        takeCount = 1 + (superFastStackTimer / 2);
+                    }
+                }
+            }
+
+            if (shouldTake)
+            {
+                int beforeStack = item.stack;
+                TakeSlotItemToMouse(takeCount);
+                if (item.stack != beforeStack)
+                {
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                }
+            }
+        }
+
+        private void OnRightMouseReleased()
+        {
+            rightMouseDownTimer = -1;
+            superFastStackTimer = 0;
+
+            if (bag != null)
+            {
+                if (bag.IsDynamicCapacity)
+                {
+                    bag.EnsureTrailingEmptySlots(10);
+                }
+                bag.TriggerSlotsChanged();
+            }
+        }
+
+        /// <summary>
+        /// 从槽位中取出指定数量物品至鼠标光标（轻量化数据修改，不触发全量 UI 销毁重建）
+        /// </summary>
+        private void TakeSlotItemToMouse(int count)
+        {
+            if (bag?.Slots == null || slotIndex < 0 || slotIndex >= bag.Slots.Length) return;
+            Item item = bag.Slots[slotIndex];
+            if (item == null || item.IsAir) return;
+
+            Item mouse = Main.mouseItem;
+            if (mouse.IsAir)
+            {
+                int actualTake = Math.Min(count, item.stack);
+                Main.mouseItem = item.Clone();
+                Main.mouseItem.stack = actualTake;
+                if (!item.favorited || item.stack > actualTake)
+                {
+                    Main.mouseItem.favorited = false;
+                }
+                item.stack -= actualTake;
+                if (item.stack <= 0)
+                {
+                    item.TurnToAir();
+                }
+            }
+            else if (Item.CanStack(mouse, item))
+            {
+                int maxCanAdd = mouse.maxStack - mouse.stack;
+                int actualTake = Math.Min(Math.Min(count, item.stack), maxCanAdd);
+                if (actualTake > 0)
+                {
+                    mouse.stack += actualTake;
+                    item.stack -= actualTake;
+                    if (item.stack <= 0)
+                    {
+                        item.TurnToAir();
                     }
                 }
             }
