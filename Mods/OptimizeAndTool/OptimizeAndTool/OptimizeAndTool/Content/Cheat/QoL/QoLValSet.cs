@@ -78,10 +78,10 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 UIBuild.get2(autoResummonMinions, "记录死亡前使用的召唤杖，复活后自动重新召唤仆从至上限", "Images/Buff_150", "复活自动召唤仆从"),
 
                 // 生态与植被增强
-                UIBuild.get2(herbFastGrow, "草药极速跃迁生长至开花阶段", "Images/Item_313", "草药极速生长"),
+                UIBuild.get2(herbFastGrow, "玩家周围草药（幼苗->成熟->开花两阶段）、仙人掌与竹子等平滑渐进生长", "Images/Item_313", "草药与作物极速生长"),
                 UIBuild.get2(herbBloomAnytime, "草药在任意时刻均视为开花状态，收获必掉种子与额外草药", "Images/Item_309", "草药任意时刻开花"),
                 UIBuild.get2(staffOfRegenAutoReplant, "使用再生法杖或再生之斧收获草药时自动原地重新播种", "Images/Item_213", "再生法杖收获自动补种"),
-                UIBuild.get2(treeFastGrow, "树苗与宝石树苗极速生长成树木", "Images/Item_27", "树木极速生长"),
+                UIBuild.get2(treeFastGrow, "全树种（森林/针叶/丛林/棕榈/灰烬/樱花/黄柳/7种宝石树及巨型发光蘑菇）平滑极速生长成大树", "Images/Item_27", "树木极速生长"),
                 UIBuild.get2(treeShakeGuaranteeFruit, "摇树必定掉落当前树种对应的水果", "Images/Item_4009", "摇树必掉水果"),
                 UIBuild.get2(gemTreeFullGemDrops, "破坏宝石树干全段方块必定掉落对应宝石", "Images/Item_182", "宝石树全段掉宝石"),
                 UIBuild.get2(removeGraveyardVisuals, "移除墓地环境屏幕暗角、迷雾滤镜与墓地背景音乐", "Images/Item_321", "移除墓地暗角与音乐"),

@@ -1,12 +1,13 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using TPML;
 using Terraria;
 using Terraria.ID;
+using OptimizeAndTool.Content.QoL;
 
 namespace OptimizeAndTool.Content.Cheat.QoL
 {
     /// <summary>
-    /// 生态与植被增强门控（草药极速生长/开花/补种、树木生长/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ 门控）
+    /// 生态与植被增强门控（草药极速生长/开花/补种、全树种生长/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ 门控）
     /// 作者: SaintCirno9
     /// </summary>
     public class EcologyHooks : TPML.Content.ModSystem
@@ -39,6 +40,8 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             _registered = false;
         }
 
+        private static int _growthTimer = 0;
+
         public override void UpdatePrefix(GameTime gameTime)
         {
             if (QoLValSet.removeGraveyardVisuals.val)
@@ -47,6 +50,103 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 if (Main.curMusic == MusicID.Graveyard)
                 {
                     Main.curMusic = Main.newMusic;
+                }
+            }
+
+            UpdateActiveEcoGrowth();
+        }
+
+        private static void UpdateActiveEcoGrowth()
+        {
+            // 仅在单人模式或服务端执行生态加速，避免客户端脱节
+            if (Main.netMode == 1) return;
+
+            // 每 10 帧触发一次平滑抽样推进（约 5~10 秒内平滑长成）
+            _growthTimer++;
+            if (_growthTimer % 10 != 0) return;
+
+            bool growTree = QoLValSet.treeFastGrow.val;
+            bool growHerb = QoLValSet.herbFastGrow.val;
+            bool growPumpkin = EcoGrowthHooks.EnablePumpkinFastGrow.val;
+
+            if (!growTree && !growHerb && !growPumpkin) return;
+
+            for (int p = 0; p < Main.maxPlayers; p++)
+            {
+                Player player = Main.player[p];
+                if (!player.active || player.dead) continue;
+
+                int playerTileX = (int)(player.Center.X / 16f);
+                int playerTileY = (int)(player.Center.Y / 16f);
+
+                // 视野缓冲范围内随机采样 50 个坐标
+                for (int k = 0; k < 50; k++)
+                {
+                    int rx = playerTileX + Main.rand.Next(-70, 71);
+                    int ry = playerTileY + Main.rand.Next(-50, 51);
+
+                    if (rx < 5 || rx >= Main.maxTilesX - 5 || ry < 5 || ry >= Main.maxTilesY - 5) continue;
+                    Tile tile = Main.tile[rx, ry];
+                    if (tile == null || !tile.active()) continue;
+
+                    // 1. 树苗生长（支持森林/针叶/丛林/腐化/猩红/神圣/棕榈/灰烬/樱花/黄柳/7种宝石树）
+                    if (growTree && (tile.type == TileID.Saplings || tile.type == TileID.GemSaplings || tile.type == TileID.VanityTreeSakuraSaplings || tile.type == TileID.VanityTreeWillowSaplings))
+                    {
+                        if (Main.rand.Next(4) == 0)
+                        {
+                            bool isUnderground = (double)ry > Main.worldSurface;
+                            WorldGen.AttemptToGrowTreeFromSapling(rx, ry, isUnderground);
+                        }
+                    }
+                    // 2. 草药平滑两阶段生长（幼苗 -> 成熟 -> 开花）
+                    else if (growHerb && (tile.type == TileID.ImmatureHerbs || tile.type == TileID.MatureHerbs))
+                    {
+                        if (Main.rand.Next(3) == 0)
+                        {
+                            if (tile.type == TileID.ImmatureHerbs)
+                            {
+                                tile.type = TileID.MatureHerbs;
+                            }
+                            else if (tile.type == TileID.MatureHerbs)
+                            {
+                                tile.type = TileID.BloomingHerbs;
+                            }
+                            WorldGen.SquareTileFrame(rx, ry);
+                            if (Main.netMode == 2) NetMessage.SendTileSquare(-1, rx, ry, 1);
+                        }
+                    }
+                    // 3. 南瓜平滑生长
+                    else if (growPumpkin && tile.type == TileID.Pumpkins)
+                    {
+                        if (Main.rand.Next(3) == 0)
+                        {
+                            WorldGen.GrowPumpkin(rx, ry, tile.type);
+                        }
+                    }
+                    // 4. 仙人掌平滑生长
+                    else if (growHerb && tile.type == TileID.Cactus)
+                    {
+                        if (Main.rand.Next(6) == 0)
+                        {
+                            WorldGen.GrowCactus(rx, ry);
+                        }
+                    }
+                    // 5. 竹子平滑生长
+                    else if (growHerb && (tile.type == 571 || tile.type == 572))
+                    {
+                        if (Main.rand.Next(6) == 0 && (!Main.tile[rx, ry - 1].active() || Main.tile[rx, ry - 1].type == 61 || Main.tile[rx, ry - 1].type == 74))
+                        {
+                            WorldGen.PlaceBamboo(rx, ry - 1);
+                        }
+                    }
+                    // 6. 巨型发光蘑菇生长（地下发光蘑菇草皮上的蘑菇）
+                    else if (growTree && tile.type == TileID.MushroomPlants && (double)ry > Main.worldSurface)
+                    {
+                        if (Main.rand.Next(8) == 0)
+                        {
+                            WorldGen.GrowEpicTree(rx, ry);
+                        }
+                    }
                 }
             }
         }
@@ -74,9 +174,18 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 return;
             }
 
-            if (tile.type == TileID.ImmatureHerbs || tile.type == TileID.MatureHerbs)
+            if (tile.type == TileID.ImmatureHerbs)
+            {
+                tile.type = TileID.MatureHerbs;
+                WorldGen.SquareTileFrame(x, y);
+                if (Main.netMode == 2) NetMessage.SendTileSquare(-1, x, y, 1);
+                else if (Main.netMode == 1) NetMessage.SendTileSquare(Main.myPlayer, x, y, 1);
+                return;
+            }
+            else if (tile.type == TileID.MatureHerbs)
             {
                 tile.type = TileID.BloomingHerbs;
+                WorldGen.SquareTileFrame(x, y);
                 if (Main.netMode == 2) NetMessage.SendTileSquare(-1, x, y, 1);
                 else if (Main.netMode == 1) NetMessage.SendTileSquare(Main.myPlayer, x, y, 1);
                 return;
@@ -181,10 +290,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
 
         private static bool Hook_AttemptToGrowTreeFromSapling(On_WorldGen.orig_AttemptToGrowTreeFromSapling orig, int x, int y, bool underground, int treeHeightAddon, bool ignoreWalls)
         {
-            if (QoLValSet.treeFastGrow.val)
-            {
-                return WorldGen.GrowTree(x, y);
-            }
+            // 原版 AttemptToGrowTreeFromSapling 内部已包含 13+ 种树木（森林/针叶/丛林/腐化/猩红/神圣/棕榈/灰烬/樱花/黄柳/7种宝石树）的精确路由分发与粒子音效
             return orig(x, y, underground, treeHeightAddon, ignoreWalls);
         }
 
