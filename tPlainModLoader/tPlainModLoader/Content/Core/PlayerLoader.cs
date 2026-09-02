@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using TPML.Utils;
@@ -184,6 +184,7 @@ namespace TPML.Content
             {
                 if (playerFile?.Player != null)
                 {
+                    SidecarSaveManager.BindPlayerFilePath(playerFile.Player, playerFile.Path);
                     ModItemSidecarEngine.OnPlayerSavePrefix(playerFile.Player, playerFile);
                 }
             }
@@ -219,6 +220,7 @@ namespace TPML.Content
             PlayerFileData result = orig(playerPath, cloudSave);
             if (result?.Player != null)
             {
+                SidecarSaveManager.BindPlayerFilePath(result.Player, playerPath);
                 ModItemSidecarEngine.OnPlayerLoaded(result.Player);
 
                 var activePlayers = ContentHookDispatcher.ActiveModPlayers;
@@ -244,6 +246,7 @@ namespace TPML.Content
             orig(self);
             if (self?.Player != null)
             {
+                SidecarSaveManager.BindPlayerFilePath(self.Player, self.Path);
                 // 激活新角色前，先广播重置并清理上一个角色的扩展容器内存驻留状态
                 ModItemSidecarEngine.ResetContainers();
                 ModItemSidecarEngine.OnPlayerLoaded(self.Player);

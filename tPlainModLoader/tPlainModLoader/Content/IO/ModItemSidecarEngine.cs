@@ -126,6 +126,11 @@ namespace TPML.Content.IO
         public static event Action<Player> OnLoadContainers;
 
         /// <summary>
+        /// 当玩家伴随数据保存落盘前触发的扩展数据统一收集事件（大背包/扩展容器直接将当前槽位写入，实现单次原子写盘）
+        /// </summary>
+        public static event Action<Player, PlayerSidecarData> OnCollectPlayerSidecarData;
+
+        /// <summary>
         /// 广播重置所有扩展容器内存状态并清空驻留数据
         /// </summary>
         public static void ResetContainers()
@@ -628,6 +633,17 @@ namespace TPML.Content.IO
                     _playerTempSwap["trash"] = player.trashItem;
                     player.trashItem = new Item();
                 }
+            }
+
+            // 广播收集所有扩展容器（如 BigBag）与模组挂载的 Sidecar 伴随数据
+            try
+            {
+                if (data.Containers == null) data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
+                OnCollectPlayerSidecarData?.Invoke(player, data);
+            }
+            catch (Exception ex)
+            {
+                ModLoader.Log($"[Sidecar] 收集扩展容器伴随数据异常: {ex.Message}");
             }
 
             // 保存所有已注册 ModPlayer 的自定义数据

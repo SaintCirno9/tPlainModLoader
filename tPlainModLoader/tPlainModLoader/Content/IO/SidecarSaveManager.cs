@@ -54,6 +54,17 @@ namespace TPML.Content.IO
             return name;
         }
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<Player, string> _playerFileCache = new System.Collections.Concurrent.ConcurrentDictionary<Player, string>();
+
+        /// <summary>
+        /// 显式绑定 Player 实例与其对应的 .plr 文件路径，确保后续所有无上下文调用路径 100% 绝对一致
+        /// </summary>
+        public static void BindPlayerFilePath(Player player, string playerFilePath)
+        {
+            if (player == null || string.IsNullOrEmpty(playerFilePath)) return;
+            _playerFileCache[player] = playerFilePath;
+        }
+
         /// <summary>
         /// 角色伴随存档路径：优先使用 .plr 文件名（稳定、可区分同名角色），并兼容旧的按显示名命名文件。
         /// </summary>
@@ -64,6 +75,11 @@ namespace TPML.Content.IO
 
         public static string GetPlayerSavePath(Player player, string playerFilePath)
         {
+            if (player != null && !string.IsNullOrEmpty(playerFilePath))
+            {
+                _playerFileCache[player] = playerFilePath;
+            }
+
             string nameKey = CleanFileName(player?.name ?? "unknown");
             string namePath = Path.Combine(SaveDirectory, $"Player_{nameKey}.tpml_data");
             string fileKey = GetPlayerFileKey(playerFilePath);
@@ -85,11 +101,18 @@ namespace TPML.Content.IO
 
         private static string TryGetPlayerFilePath(Player player)
         {
+            if (player == null) return null;
+            if (_playerFileCache.TryGetValue(player, out string cachedPath) && !string.IsNullOrEmpty(cachedPath))
+            {
+                return cachedPath;
+            }
+
             try
             {
                 PlayerFileData active = Main.ActivePlayerFileData;
                 if (active?.Player == player && !string.IsNullOrEmpty(active.Path))
                 {
+                    _playerFileCache[player] = active.Path;
                     return active.Path;
                 }
             }

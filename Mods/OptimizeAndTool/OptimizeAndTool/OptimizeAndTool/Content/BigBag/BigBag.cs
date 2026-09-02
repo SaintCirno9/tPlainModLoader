@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -77,6 +77,7 @@ namespace OptimizeAndTool.Content.BigBag
             EnsureCapacitySafety();
             EnsureTrailingEmptySlots(10);
             InventoryFusionManager.RegisterSource(FusionSource);
+            _ = BigBagStorage.ContainerKey;
         }
 
         /// <summary>
@@ -755,6 +756,26 @@ namespace OptimizeAndTool.Content.BigBag
         {
             ModItemSidecarEngine.OnResetContainers += Reset;
             ModItemSidecarEngine.OnLoadContainers += LoadForPlayer;
+            ModItemSidecarEngine.OnCollectPlayerSidecarData += CollectForPlayerSave;
+        }
+
+        /// <summary>
+        /// 当玩家伴随数据保存落盘前统一收集大背包最新槽位（单次原子写盘）
+        /// </summary>
+        public static void CollectForPlayerSave(Player player, PlayerSidecarData data)
+        {
+            if (player == null || data == null) return;
+
+            if (string.IsNullOrEmpty(ActivePlayerName) && (player == Main.LocalPlayer || player == Main.ActivePlayerFileData?.Player))
+            {
+                ActivePlayerName = player.name;
+            }
+
+            if (!string.IsNullOrEmpty(ActivePlayerName) && player.name == ActivePlayerName)
+            {
+                if (data.Containers == null) data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
+                data.Containers[ContainerKey] = ModItemSidecarEngine.SerializeSlots(BigBag.Slots);
+            }
         }
 
         /// <summary>
@@ -763,7 +784,9 @@ namespace OptimizeAndTool.Content.BigBag
         public static void SaveNow()
         {
             Player player = Main.LocalPlayer;
-            if (player == null || string.IsNullOrEmpty(ActivePlayerName) || player.name != ActivePlayerName) return;
+            if (player == null) return;
+            if (string.IsNullOrEmpty(ActivePlayerName)) ActivePlayerName = player.name;
+            if (player.name != ActivePlayerName) return;
             ModItemSidecarEngine.SavePlayerContainer(player, ContainerKey, BigBag.Slots);
         }
 
@@ -801,11 +824,16 @@ namespace OptimizeAndTool.Content.BigBag
     /// </summary>
     public class BigBagPlayer : TPML.Content.ModPlayer
     {
-        public override void SavePlayerPrefix(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
+        public override void SavePlayer(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
         {
+            base.SavePlayer(playerFile, skipMapSave);
             if (playerFile?.Player != null)
             {
-                // 严格校验：只有被保存的角色正是当前内存加载激活的角色时，才允许写入内存槽位数据，杜绝新建角色被污染
+                if (string.IsNullOrEmpty(BigBagStorage.ActivePlayerName) && (playerFile.Player == Main.LocalPlayer || playerFile.Player == Main.ActivePlayerFileData?.Player))
+                {
+                    BigBagStorage.LoadForPlayer(playerFile.Player);
+                }
+
                 if (!string.IsNullOrEmpty(BigBagStorage.ActivePlayerName) && playerFile.Player.name == BigBagStorage.ActivePlayerName)
                 {
                     ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, BigBagStorage.ContainerKey, BigBag.Slots);

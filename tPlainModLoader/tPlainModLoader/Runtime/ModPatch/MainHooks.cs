@@ -45,6 +45,8 @@ namespace TPML.ModPatch
             On_Main.EraseWorld += Hook_EraseWorld;
             On_Main.DrawInventory += Hook_DrawInventory;
             On_TimeLogger.DrawException += Hook_DrawException;
+            On_WorldFile.SaveWorld += Hook_SaveWorld;
+            On_WorldFile.LoadWorld += Hook_LoadWorld;
 
             _hooksInitialized = true;
             Logger.Info("MainHooks 强类型生命周期门面钩子初始化完成");
@@ -438,6 +440,30 @@ namespace TPML.ModPatch
             orig(ex);
         }
 
+        private static void Hook_SaveWorld(On_WorldFile.orig_SaveWorld orig, bool resetTime, bool useTemps, bool canBeSkipped)
+        {
+            if (Main.netMode == 0 || Main.netMode == 2)
+            {
+                ModItemSidecarEngine.OnWorldSavePrefix();
+            }
+
+            orig(resetTime, useTemps, canBeSkipped);
+
+            if (Main.netMode == 0 || Main.netMode == 2)
+            {
+                ModItemSidecarEngine.OnWorldSavePostfix();
+            }
+        }
+
+        private static void Hook_LoadWorld(On_WorldFile.orig_LoadWorld orig)
+        {
+            orig();
+            if (Main.netMode == 0 || Main.netMode == 2)
+            {
+                ModItemSidecarEngine.OnWorldLoaded();
+            }
+        }
+
         #endregion
 
         #region Internal Dispatch & Lifecycle Logic
@@ -482,16 +508,12 @@ namespace TPML.ModPatch
                         Logger.Error($"ModSystem.OnLeaveWorld 异常: {ex.Message}", ex);
                     }
                 }
-                // 离开世界退回主菜单时，清理所有扩展容器驻留数据与调度状态
-                ModItemSidecarEngine.ResetContainers();
-                // 离开世界时自动持久化所有脏模组设置
+                // 离开世界时自动持久化所有脏模组设置（容器数据保留在内存中以确保随后的 Player.SavePlayer 正确写盘）
                 ModSetting.SaveAllDirty();
             }
 
             if (!_UpdatePrefix_gameMenu_old && Main.gameMenu)
             {
-                // 检测到进入主菜单，安全复位所有容器内存驻留状态
-                ModItemSidecarEngine.ResetContainers();
                 ModSetting.SaveAllDirty();
             }
 

@@ -44,6 +44,30 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         private static readonly Dictionary<int, int> _itemToProj = new Dictionary<int, int>();
         private static readonly Dictionary<int, bool> _itemIsSentry = new Dictionary<int, bool>();
 
+        static MinionMemoryTracker()
+        {
+            ModItemSidecarEngine.OnCollectPlayerSidecarData += (player, data) =>
+            {
+                if (player == null || data == null) return;
+                lock (_lock)
+                {
+                    if (player.name == _currentLoadedPlayerName)
+                    {
+                        if (data.CustomProperties == null) data.CustomProperties = new Dictionary<string, string>();
+                        if (_activeMemory != null && _activeMemory.Count > 0)
+                        {
+                            data.CustomProperties[CustomPropertyKey] = JsonConvert.SerializeObject(_activeMemory);
+                        }
+                        else
+                        {
+                            data.CustomProperties.Remove(CustomPropertyKey);
+                        }
+                        _isDirty = false;
+                    }
+                }
+            };
+        }
+
         /// <summary>
         /// 初始化反查映射表（从 ContentSamples 自动构建）
         /// </summary>
