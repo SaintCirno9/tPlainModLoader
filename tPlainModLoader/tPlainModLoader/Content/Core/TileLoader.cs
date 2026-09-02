@@ -26,15 +26,14 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("TileLoader");
 
         public static readonly int ModTileOffset = TileID.Count;
-        private static int _nextTileID = TileID.Count;
-        private static readonly Dictionary<int, ModTile> _tilesByType = new Dictionary<int, ModTile>();
-        private static readonly Dictionary<string, int> _tilesByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        internal static readonly ContentRegistry<ModTile> Registry = new ContentRegistry<ModTile>(ModTileOffset);
 
         private static volatile bool _hooksInitialized = false;
         private static readonly object _hookInitLock = new object();
 
-        public static int TileCount => _nextTileID;
-        public static IReadOnlyCollection<ModTile> Tiles => _tilesByType.Values;
+        public static int TileCount => Registry.NextId;
+        public static int NextTileID => Registry.NextId;
+        public static IReadOnlyCollection<ModTile> Tiles => Registry.Values as IReadOnlyCollection<ModTile> ?? new List<ModTile>(Registry.Values);
 
         public static void InitializeHooks()
         {
@@ -63,11 +62,9 @@ namespace TPML.Content
 
             InitializeHooks();
 
-            int type = _nextTileID++;
+            int type = Registry.ReserveNextId();
             tile.Type = type;
-            _tilesByType[type] = tile;
-            _tilesByName[tile.FullName] = type;
-            _tilesByName[tile.Name] = type;
+            Registry.Register(tile, type);
 
             ModContent.RegisterTileType(tile.GetType(), type);
 
@@ -94,8 +91,7 @@ namespace TPML.Content
 
         public static ModTile GetTile(int type)
         {
-            _tilesByType.TryGetValue(type, out ModTile tile);
-            return tile;
+            return Registry.Get(type);
         }
 
         public static T GetTile<T>() where T : ModTile
@@ -110,29 +106,12 @@ namespace TPML.Content
 
         public static int TileType(string modName, string tileName)
         {
-            if (string.IsNullOrEmpty(tileName)) return 0;
-            if (!string.IsNullOrEmpty(modName) && _tilesByName.TryGetValue($"{modName}/{tileName}", out int type))
-            {
-                return type;
-            }
-            if (_tilesByName.TryGetValue(tileName, out int fallbackType))
-            {
-                return fallbackType;
-            }
-            return 0;
+            return Registry.GetType(modName, tileName);
         }
 
         public static int TileType(string fullName)
         {
-            if (string.IsNullOrEmpty(fullName)) return 0;
-            if (_tilesByName.TryGetValue(fullName, out int type)) return type;
-            int idx = fullName.IndexOf('/');
-            if (idx >= 0 && idx < fullName.Length - 1)
-            {
-                string shortName = fullName.Substring(idx + 1);
-                if (_tilesByName.TryGetValue(shortName, out int shortType)) return shortType;
-            }
-            return 0;
+            return Registry.GetType(fullName);
         }
 
         public static void EnsureArraySizes(int maxType)
@@ -332,7 +311,7 @@ namespace TPML.Content
             WorldGen.destroyObject = true;
 
             // 1. 掉落物块本体物品（仅在多方块原点掉落 1 次）
-            if (!noItem && (tileData.Width != 1 || tileData.Height != 1) && _tilesByType.TryGetValue(type, out ModTile mt))
+            if (!noItem && (tileData.Width != 1 || tileData.Height != 1) && Registry.TryGet(type, out ModTile mt))
             {
                 int dropItem = mt.GetItemDrop(type, frameX, frameY);
                 if (dropItem > 0 && mt.Drop(originX, originY))
@@ -360,7 +339,7 @@ namespace TPML.Content
             }
 
             // 3. 触发 KillMultiTile 释放战利品与实体清理
-            if (_tilesByType.TryGetValue(type, out ModTile modTile))
+            if (Registry.TryGet(type, out ModTile modTile))
             {
                 modTile.KillMultiTile(originX, originY, frameX - num4, frameY - num5);
             }
@@ -458,7 +437,7 @@ namespace TPML.Content
         private static void Hook_KillTile(On_WorldGen.orig_KillTile orig, int i, int j, bool fail, bool effectOnly, bool noItem)
         {
             Tile tile = Framing.GetTileSafely(i, j);
-            if (tile.active() && tile.type >= ModTileOffset && _tilesByType.TryGetValue(tile.type, out ModTile modTile))
+            if (tile.active() && tile.type >= ModTileOffset && Registry.TryGet(tile.type, out ModTile modTile))
             {
                 modTile.KillTile(i, j, ref fail, ref effectOnly, ref noItem);
 
@@ -489,7 +468,7 @@ namespace TPML.Content
         private static void Hook_TileFrame(On_WorldGen.orig_TileFrame orig, int i, int j, bool resetFrame, bool noBreak)
         {
             Tile tile = Framing.GetTileSafely(i, j);
-            if (tile.active() && tile.type >= ModTileOffset && _tilesByType.TryGetValue(tile.type, out ModTile modTile))
+            if (tile.active() && tile.type >= ModTileOffset && Registry.TryGet(tile.type, out ModTile modTile))
             {
                 if (!modTile.TileFrame(i, j, ref resetFrame, ref noBreak))
                 {
@@ -512,7 +491,7 @@ namespace TPML.Content
         private static void Hook_TileInteractionsCheck(On_Player.orig_TileInteractionsCheck orig, Player self, int myX, int myY)
         {
             Tile tile = Framing.GetTileSafely(myX, myY);
-            if (tile.active() && tile.type >= ModTileOffset && _tilesByType.TryGetValue(tile.type, out ModTile modTile))
+            if (tile.active() && tile.type >= ModTileOffset && Registry.TryGet(tile.type, out ModTile modTile))
             {
                 if (Main.mouseRight && Main.mouseRightRelease)
                 {
@@ -530,7 +509,7 @@ namespace TPML.Content
         private static void Hook_TileInteractionsMouseOver(On_Player.orig_TileInteractionsMouseOver orig, Player self, int myX, int myY)
         {
             Tile tile = Framing.GetTileSafely(myX, myY);
-            if (tile.active() && tile.type >= ModTileOffset && _tilesByType.TryGetValue(tile.type, out ModTile modTile))
+            if (tile.active() && tile.type >= ModTileOffset && Registry.TryGet(tile.type, out ModTile modTile))
             {
                 modTile.MouseOver(myX, myY);
             }
@@ -659,10 +638,8 @@ namespace TPML.Content
 
         public static void Clear()
         {
-            ContentTextureLoader.ClearAssets(TextureAssets.Tile, ModTileOffset, _nextTileID, TileLoader.GetFallbackTexture());
-            _tilesByType.Clear();
-            _tilesByName.Clear();
-            _nextTileID = ModTileOffset;
+            ContentTextureLoader.ClearAssets(TextureAssets.Tile, ModTileOffset, Registry.NextId, TileLoader.GetFallbackTexture());
+            Registry.Clear();
         }
     }
 }

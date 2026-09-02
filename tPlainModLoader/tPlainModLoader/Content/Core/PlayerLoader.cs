@@ -110,6 +110,21 @@ namespace TPML.Content
         {
             orig(self, i);
             tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.UpdateArmorSetsPostfix(self, i));
+
+            var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    mp.UpdateArmorSets(i);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.UpdateArmorSets 异常: {ex.Message}", ex);
+                }
+            }
         }
 
         private static void Hook_SavePlayer(On_Player.orig_SavePlayer orig, PlayerFileData playerFile, bool skipMapSave, bool canBeSkipped)
@@ -132,6 +147,21 @@ namespace TPML.Content
                     ModItemSidecarEngine.OnPlayerSavePostfix(playerFile.Player);
                 }
                 tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SavePlayerPostfix(playerFile, skipMapSave));
+
+                var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+                for (int idx = 0; idx < activePlayers.Length; idx++)
+                {
+                    var mp = activePlayers[idx];
+                    if (playerFile?.Player != null) mp.Player = playerFile.Player;
+                    try
+                    {
+                        mp.SavePlayer(playerFile, skipMapSave);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModPlayer.SavePlayer 异常: {ex.Message}", ex);
+                    }
+                }
             }
         }
 
@@ -142,6 +172,21 @@ namespace TPML.Content
             {
                 ModItemSidecarEngine.OnPlayerLoaded(result.Player);
                 tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.LoadPlayerPostfix(result));
+
+                var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+                for (int idx = 0; idx < activePlayers.Length; idx++)
+                {
+                    var mp = activePlayers[idx];
+                    mp.Player = result.Player;
+                    try
+                    {
+                        mp.LoadPlayer(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModPlayer.LoadPlayer 异常: {ex.Message}", ex);
+                    }
+                }
             }
             return result;
         }
@@ -155,12 +200,46 @@ namespace TPML.Content
                 ModItemSidecarEngine.ResetContainers();
                 ModItemSidecarEngine.OnPlayerLoaded(self.Player);
                 tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.SetAsActivePostfix(self));
+
+                var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+                for (int idx = 0; idx < activePlayers.Length; idx++)
+                {
+                    var mp = activePlayers[idx];
+                    mp.Player = self.Player;
+                    try
+                    {
+                        mp.SetAsActive(self);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"ModPlayer.SetAsActive 异常: {ex.Message}", ex);
+                    }
+                }
             }
         }
 
         private static void Hook_DropTombstone(On_Player.orig_DropTombstone orig, Player self, long coinsOwned, NetworkText deathText, int hitDirection)
         {
             bool canDrop = tContentPatch.ModPatch.Patch_Player.ModList.ForTry(item => item.CanDropTombstone(self, coinsOwned, deathText, hitDirection));
+
+            var activePlayers = ContentHookDispatcher.ActiveModPlayers;
+            for (int idx = 0; idx < activePlayers.Length; idx++)
+            {
+                var mp = activePlayers[idx];
+                mp.Player = self;
+                try
+                {
+                    if (!mp.CanDropTombstone(coinsOwned, deathText, hitDirection))
+                    {
+                        canDrop = false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModPlayer.CanDropTombstone 异常: {ex.Message}", ex);
+                }
+            }
+
             if (!canDrop) return;
             orig(self, coinsOwned, deathText, hitDirection);
         }

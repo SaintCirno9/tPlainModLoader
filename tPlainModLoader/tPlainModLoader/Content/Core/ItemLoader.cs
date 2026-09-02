@@ -28,17 +28,13 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("ItemLoader");
 
         public const int ModItemOffset = 6200;
-        private static int _nextItemID = ModItemOffset;
-        private static readonly Dictionary<int, ModItem> _itemsByType = new Dictionary<int, ModItem>();
+        internal static readonly ContentRegistry<ModItem> Registry = new ContentRegistry<ModItem>(ModItemOffset);
         private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Item, ModItem> _modItemInstances = new System.Runtime.CompilerServices.ConditionalWeakTable<Item, ModItem>();
-        private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
         private static readonly Dictionary<int, string> _tooltips = new Dictionary<int, string>();
-        private static readonly Dictionary<string, int> _itemsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-
-        public static int ItemCount => _nextItemID;
-        public static int NextItemID => _nextItemID;
-        public static IReadOnlyCollection<ModItem> Items => _itemsByType.Values;
+        public static int ItemCount => Registry.NextId;
+        public static int NextItemID => Registry.NextId;
+        public static IReadOnlyCollection<ModItem> Items => Registry.Values as IReadOnlyCollection<ModItem> ?? new List<ModItem>(Registry.Values);
 
         private static volatile bool _hooksInitialized = false;
         private static readonly object _hookInitLock = new object();
@@ -78,11 +74,9 @@ namespace TPML.Content
         {
             if (item == null) return 0;
 
-            int type = _nextItemID++;
+            int type = Registry.ReserveNextId();
             item.SetType(type);
-            _itemsByType[type] = item;
-            _itemsByName[item.FullName] = type;
-            _itemsByName[item.Name] = type;
+            Registry.Register(item, type);
 
             ModContent.RegisterItemType(item.GetType(), type);
 
@@ -247,7 +241,8 @@ namespace TPML.Content
             {
                 if (id >= ModItemOffset)
                 {
-                    if (_displayNames.TryGetValue(id, out string name))
+                    string name = Registry.GetDisplayName(id);
+                    if (!string.IsNullOrEmpty(name))
                     {
                         return new LocalizedText($"ItemName.{id}", name);
                     }
@@ -268,7 +263,7 @@ namespace TPML.Content
 
         public static void ReloadTextures()
         {
-            foreach (var kvp in _itemsByType)
+            foreach (var kvp in Registry.Entries)
             {
                 LoadItemTexture(kvp.Value);
             }
@@ -297,8 +292,7 @@ namespace TPML.Content
 
         public static ModItem GetItem(int type)
         {
-            _itemsByType.TryGetValue(type, out ModItem item);
-            return item;
+            return Registry.Get(type);
         }
 
         public static void ResolveItemLocalization(ModItem item)
@@ -365,7 +359,7 @@ namespace TPML.Content
 
         public static void SetDisplayName(int type, string name)
         {
-            _displayNames[type] = name;
+            Registry.SetDisplayName(type, name);
             EnsureArraySizes(type);
             if (Lang._itemNameCache != null && type < Lang._itemNameCache.Length)
             {
@@ -375,17 +369,15 @@ namespace TPML.Content
 
         public static string GetDisplayName(int type)
         {
-            if (_displayNames.TryGetValue(type, out string name) && !string.IsNullOrEmpty(name))
+            string name = Registry.GetDisplayName(type);
+            if (!string.IsNullOrEmpty(name))
             {
                 return name;
             }
-            if (_itemsByType.TryGetValue(type, out ModItem item))
+            if (Registry.TryGet(type, out ModItem item))
             {
                 ResolveItemLocalization(item);
-                if (_displayNames.TryGetValue(type, out string resolvedName))
-                {
-                    return resolvedName;
-                }
+                return Registry.GetDisplayName(type);
             }
             return string.Empty;
         }
@@ -414,7 +406,7 @@ namespace TPML.Content
             {
                 return tip;
             }
-            if (_itemsByType.TryGetValue(type, out ModItem item))
+            if (Registry.TryGet(type, out ModItem item))
             {
                 ResolveItemLocalization(item);
                 if (_tooltips.TryGetValue(type, out string resolvedTip))
@@ -433,7 +425,7 @@ namespace TPML.Content
             var asset = TextureAssets.Item[type];
             if (asset == null || !asset.IsLoaded || asset.Value == null || asset.Value.Width <= 1 || asset.Value.Height <= 1)
             {
-                if (_itemsByType.TryGetValue(type, out ModItem modItem))
+                if (Registry.TryGet(type, out ModItem modItem))
                 {
                     LoadItemTexture(modItem);
                 }
@@ -447,7 +439,7 @@ namespace TPML.Content
             {
                 return instance;
             }
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            if (Registry.TryGet(item.type, out ModItem template))
             {
                 ModItem newInst = template.Clone(item);
                 newInst.Item = item;
@@ -477,7 +469,7 @@ namespace TPML.Content
         {
             if (item == null) return;
 
-            if (_itemsByType.TryGetValue(item.type, out ModItem template))
+            if (Registry.TryGet(item.type, out ModItem template))
             {
                 item.SetNameOverride(string.Empty);
                 ModItem instance = template.Clone(item);
@@ -676,45 +668,24 @@ namespace TPML.Content
 
         public static ModItem GetModItem(int type)
         {
-            _itemsByType.TryGetValue(type, out ModItem item);
-            return item;
+            return Registry.Get(type);
         }
 
         public static int ItemType(string modName, string itemName)
         {
-            if (string.IsNullOrEmpty(itemName)) return 0;
-            if (!string.IsNullOrEmpty(modName) && _itemsByName.TryGetValue($"{modName}/{itemName}", out int type))
-            {
-                return type;
-            }
-            if (_itemsByName.TryGetValue(itemName, out int fallbackType))
-            {
-                return fallbackType;
-            }
-            return 0;
+            return Registry.GetType(modName, itemName);
         }
 
         public static int ItemType(string fullName)
         {
-            if (string.IsNullOrEmpty(fullName)) return 0;
-            if (_itemsByName.TryGetValue(fullName, out int type)) return type;
-            int idx = fullName.IndexOf('/');
-            if (idx >= 0 && idx < fullName.Length - 1)
-            {
-                string shortName = fullName.Substring(idx + 1);
-                if (_itemsByName.TryGetValue(shortName, out int shortType)) return shortType;
-            }
-            return 0;
+            return Registry.GetType(fullName);
         }
 
         public static void Clear()
         {
-            ContentTextureLoader.ClearAssets(TextureAssets.Item, ModItemOffset, _nextItemID, TextureAssets.Item[0]?.Value);
-            _itemsByType.Clear();
-            _displayNames.Clear();
+            ContentTextureLoader.ClearAssets(TextureAssets.Item, ModItemOffset, Registry.NextId, TextureAssets.Item[0]?.Value);
+            Registry.Clear();
             _tooltips.Clear();
-            _itemsByName.Clear();
-            _nextItemID = ModItemOffset;
         }
     }
 }

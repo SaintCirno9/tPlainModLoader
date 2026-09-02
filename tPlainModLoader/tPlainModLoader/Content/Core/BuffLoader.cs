@@ -25,25 +25,20 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("BuffLoader");
 
         public const int ModBuffOffset = 350;
-        private static int _nextBuffID = ModBuffOffset;
-        private static readonly Dictionary<int, ModBuff> _buffsByType = new Dictionary<int, ModBuff>();
-        private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
+        internal static readonly ContentRegistry<ModBuff> Registry = new ContentRegistry<ModBuff>(ModBuffOffset);
         private static readonly Dictionary<int, string> _descriptions = new Dictionary<int, string>();
-        private static readonly Dictionary<string, int> _buffsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        public static int BuffCount => _nextBuffID;
-        public static int NextBuffID => _nextBuffID;
-        public static IReadOnlyCollection<ModBuff> Buffs => _buffsByType.Values;
+        public static int BuffCount => Registry.NextId;
+        public static int NextBuffID => Registry.NextId;
+        public static IReadOnlyCollection<ModBuff> Buffs => Registry.Values as IReadOnlyCollection<ModBuff> ?? new List<ModBuff>(Registry.Values);
 
         public static int Register(ModBuff buff)
         {
             if (buff == null) return 0;
 
-            int type = _nextBuffID++;
+            int type = Registry.ReserveNextId();
             buff.SetType(type);
-            _buffsByType[type] = buff;
-            _buffsByName[buff.FullName] = type;
-            _buffsByName[buff.Name] = type;
+            Registry.Register(buff, type);
 
             ModContent.RegisterBuffType(buff.GetType(), type);
 
@@ -149,40 +144,22 @@ namespace TPML.Content
 
         public static ModBuff GetBuff(int type)
         {
-            _buffsByType.TryGetValue(type, out ModBuff buff);
-            return buff;
+            return Registry.Get(type);
         }
 
         public static int BuffType(string modName, string buffName)
         {
-            if (string.IsNullOrEmpty(buffName)) return 0;
-            if (!string.IsNullOrEmpty(modName) && _buffsByName.TryGetValue($"{modName}/{buffName}", out int type))
-            {
-                return type;
-            }
-            if (_buffsByName.TryGetValue(buffName, out int fallbackType))
-            {
-                return fallbackType;
-            }
-            return 0;
+            return Registry.GetType(modName, buffName);
         }
 
         public static int BuffType(string fullName)
         {
-            if (string.IsNullOrEmpty(fullName)) return 0;
-            if (_buffsByName.TryGetValue(fullName, out int type)) return type;
-            int idx = fullName.IndexOf('/');
-            if (idx >= 0 && idx < fullName.Length - 1)
-            {
-                string shortName = fullName.Substring(idx + 1);
-                if (_buffsByName.TryGetValue(shortName, out int shortType)) return shortType;
-            }
-            return 0;
+            return Registry.GetType(fullName);
         }
 
         public static void Update(int type, Player player, ref int buffIndex)
         {
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 buff.Update(player, ref buffIndex);
             }
@@ -190,7 +167,7 @@ namespace TPML.Content
 
         public static void Update(int type, NPC npc, ref int buffIndex)
         {
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 buff.Update(npc, ref buffIndex);
             }
@@ -198,7 +175,7 @@ namespace TPML.Content
 
         public static bool ReApply(int type, Player player, int time, int buffIndex)
         {
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 return buff.ReApply(player, time, buffIndex);
             }
@@ -207,7 +184,7 @@ namespace TPML.Content
 
         public static bool ReApply(int type, NPC npc, int time, int buffIndex)
         {
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 return buff.ReApply(npc, time, buffIndex);
             }
@@ -278,7 +255,7 @@ namespace TPML.Content
 
         public static void SetDisplayName(int type, string name)
         {
-            _displayNames[type] = name;
+            Registry.SetDisplayName(type, name);
             EnsureArraySizes(type);
             if (Lang._buffNameCache != null && type < Lang._buffNameCache.Length)
             {
@@ -288,17 +265,15 @@ namespace TPML.Content
 
         public static string GetDisplayName(int type)
         {
-            if (_displayNames.TryGetValue(type, out string name) && !string.IsNullOrEmpty(name))
+            string name = Registry.GetDisplayName(type);
+            if (!string.IsNullOrEmpty(name))
             {
                 return name;
             }
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 ResolveBuffLocalization(buff);
-                if (_displayNames.TryGetValue(type, out string resolvedName))
-                {
-                    return resolvedName;
-                }
+                return Registry.GetDisplayName(type);
             }
             return string.Empty;
         }
@@ -319,7 +294,7 @@ namespace TPML.Content
             {
                 return desc;
             }
-            if (_buffsByType.TryGetValue(type, out ModBuff buff))
+            if (Registry.TryGet(type, out ModBuff buff))
             {
                 ResolveBuffLocalization(buff);
                 if (_descriptions.TryGetValue(type, out string resolvedDesc))
@@ -333,12 +308,9 @@ namespace TPML.Content
 
         public static void Clear()
         {
-            ContentTextureLoader.ClearAssets(TextureAssets.Buff, ModBuffOffset, _nextBuffID, TextureAssets.Buff[0]?.Value);
-            _buffsByType.Clear();
-            _displayNames.Clear();
+            ContentTextureLoader.ClearAssets(TextureAssets.Buff, ModBuffOffset, Registry.NextId, TextureAssets.Buff[0]?.Value);
+            Registry.Clear();
             _descriptions.Clear();
-            _buffsByName.Clear();
-            _nextBuffID = ModBuffOffset;
         }
     }
 }

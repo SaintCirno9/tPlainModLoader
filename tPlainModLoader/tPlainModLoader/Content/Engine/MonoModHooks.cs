@@ -190,11 +190,13 @@ namespace TPML.Content.Engine
                     var list = kvp.Value;
                     foreach (var detour in list.Detours)
                     {
-                        try { detour?.Dispose(); } catch { }
+                        try { detour?.Dispose(); }
+                        catch (Exception ex) { Logger.Warn($"释放 Detour/ILHook 异常: {ex.Message}"); }
                     }
                     foreach (var ilHook in list.ILHooks)
                     {
-                        try { ilHook?.Dispose(); } catch { }
+                        try { ilHook?.Dispose(); }
+                        catch (Exception ex) { Logger.Warn($"释放 Detour/ILHook 异常: {ex.Message}"); }
                     }
                 }
 
@@ -238,7 +240,10 @@ namespace TPML.Content.Engine
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"清理 ReflectionHelper 缓存异常: {ex.Message}");
+                }
             }
         }
 

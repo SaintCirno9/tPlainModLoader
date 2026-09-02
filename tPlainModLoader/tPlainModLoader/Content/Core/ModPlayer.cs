@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameInput;
+using Terraria.IO;
+using Terraria.Localization;
 using TPML.Content.IO;
 using TPML.Core.Logging;
 
@@ -129,6 +131,12 @@ namespace TPML.Content
             health = StatModifier.Default;
             mana = StatModifier.Default;
         }
+
+        public virtual bool CanDropTombstone(long coinsOwned, NetworkText deathText, int hitDirection) => true;
+        public virtual void UpdateArmorSets(int playerIndex) { }
+        public virtual void SavePlayer(PlayerFileData playerFile, bool skipMapSave) { }
+        public virtual void LoadPlayer(PlayerFileData playerFile) { }
+        public virtual void SetAsActive(PlayerFileData playerFile) { }
     }
 
     /// <summary>

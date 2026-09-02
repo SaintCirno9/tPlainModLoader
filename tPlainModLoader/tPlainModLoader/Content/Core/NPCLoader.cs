@@ -27,17 +27,13 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("NPCLoader");
 
         public const int ModNPCOffset = 700;
-        private static int _nextNPCID = ModNPCOffset;
-        private static readonly Dictionary<int, ModNPC> _npcsByType = new Dictionary<int, ModNPC>();
+        internal static readonly ContentRegistry<ModNPC> Registry = new ContentRegistry<ModNPC>(ModNPCOffset);
         private static readonly ConditionalWeakTable<NPC, ModNPC> _modNPCInstances = new ConditionalWeakTable<NPC, ModNPC>();
-        private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
-        private static readonly Dictionary<string, int> _npcsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, int> _headSlots = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-
-        public static int NPCCount => _nextNPCID;
-        public static int NextNPCID => _nextNPCID;
-        public static IReadOnlyCollection<ModNPC> NPCs => _npcsByType.Values;
+        public static int NPCCount => Registry.NextId;
+        public static int NextNPCID => Registry.NextId;
+        public static IReadOnlyCollection<ModNPC> NPCs => Registry.Values as IReadOnlyCollection<ModNPC> ?? new List<ModNPC>(Registry.Values);
 
         private static volatile bool _hooksInitialized = false;
         private static readonly object _hookInitLock = new object();
@@ -84,11 +80,9 @@ namespace TPML.Content
         {
             if (npc == null) return 0;
 
-            int type = _nextNPCID++;
+            int type = Registry.ReserveNextId();
             npc.SetType(type);
-            _npcsByType[type] = npc;
-            _npcsByName[npc.FullName] = type;
-            _npcsByName[npc.Name] = type;
+            Registry.Register(npc, type);
 
             ModContent.RegisterNPCType(npc.GetType(), type);
 
@@ -197,8 +191,7 @@ namespace TPML.Content
 
         public static ModNPC GetNPC(int type)
         {
-            _npcsByType.TryGetValue(type, out ModNPC npc);
-            return npc;
+            return Registry.Get(type);
         }
 
         public static ModNPC GetModNPC(NPC npc)
@@ -208,7 +201,7 @@ namespace TPML.Content
             {
                 return instance;
             }
-            if (_npcsByType.TryGetValue(npc.type, out ModNPC template))
+            if (Registry.TryGet(npc.type, out ModNPC template))
             {
                 ModNPC newInst = template.Clone(npc);
                 newInst.NPC = npc;
@@ -221,8 +214,7 @@ namespace TPML.Content
 
         public static ModNPC GetModNPC(int type)
         {
-            _npcsByType.TryGetValue(type, out ModNPC npc);
-            return npc;
+            return Registry.Get(type);
         }
 
         public static T GetModNPC<T>(NPC npc) where T : ModNPC => GetModNPC(npc) as T;
@@ -231,7 +223,7 @@ namespace TPML.Content
         {
             if (npc == null) return;
 
-            if (_npcsByType.TryGetValue(npc.type, out ModNPC template))
+            if (Registry.TryGet(npc.type, out ModNPC template))
             {
                 ModNPC instance = template.Clone(npc);
                 instance.NPC = npc;
@@ -255,29 +247,12 @@ namespace TPML.Content
 
         public static int NPCType(string modName, string npcName)
         {
-            if (string.IsNullOrEmpty(npcName)) return 0;
-            if (!string.IsNullOrEmpty(modName) && _npcsByName.TryGetValue($"{modName}/{npcName}", out int type))
-            {
-                return type;
-            }
-            if (_npcsByName.TryGetValue(npcName, out int fallbackType))
-            {
-                return fallbackType;
-            }
-            return 0;
+            return Registry.GetType(modName, npcName);
         }
 
         public static int NPCType(string fullName)
         {
-            if (string.IsNullOrEmpty(fullName)) return 0;
-            if (_npcsByName.TryGetValue(fullName, out int type)) return type;
-            int idx = fullName.IndexOf('/');
-            if (idx >= 0 && idx < fullName.Length - 1)
-            {
-                string shortName = fullName.Substring(idx + 1);
-                if (_npcsByName.TryGetValue(shortName, out int shortType)) return shortType;
-            }
-            return 0;
+            return Registry.GetType(fullName);
         }
 
         public static void ResolveNPCLocalization(ModNPC npc)
@@ -318,7 +293,7 @@ namespace TPML.Content
 
         public static void SetDisplayName(int type, string name)
         {
-            _displayNames[type] = name;
+            Registry.SetDisplayName(type, name);
             EnsureArraySizes(type);
             if (Lang._npcNameCache != null && type < Lang._npcNameCache.Length)
             {
@@ -328,17 +303,15 @@ namespace TPML.Content
 
         public static string GetDisplayName(int type)
         {
-            if (_displayNames.TryGetValue(type, out string name) && !string.IsNullOrEmpty(name))
+            string name = Registry.GetDisplayName(type);
+            if (!string.IsNullOrEmpty(name))
             {
                 return name;
             }
-            if (_npcsByType.TryGetValue(type, out ModNPC npc))
+            if (Registry.TryGet(type, out ModNPC npc))
             {
                 ResolveNPCLocalization(npc);
-                if (_displayNames.TryGetValue(type, out string resolvedName))
-                {
-                    return resolvedName;
-                }
+                return Registry.GetDisplayName(type);
             }
             return string.Empty;
         }
@@ -371,12 +344,9 @@ namespace TPML.Content
 
         public static void Clear()
         {
-            ContentTextureLoader.ClearAssets(TextureAssets.Npc, ModNPCOffset, _nextNPCID, TextureAssets.Npc[0]?.Value);
-            _npcsByType.Clear();
-            _displayNames.Clear();
-            _npcsByName.Clear();
+            ContentTextureLoader.ClearAssets(TextureAssets.Npc, ModNPCOffset, Registry.NextId, TextureAssets.Npc[0]?.Value);
+            Registry.Clear();
             _headSlots.Clear();
-            _nextNPCID = ModNPCOffset;
             _nextHeadSlot = 100;
         }
     }

@@ -28,15 +28,12 @@ namespace TPML.Content
         private static readonly ILogger Logger = LogManager.GetLogger("ProjectileLoader");
 
         public const int ModProjectileOffset = 1100;
-        private static int _nextProjID = ModProjectileOffset;
-        private static readonly Dictionary<int, ModProjectile> _projsByType = new Dictionary<int, ModProjectile>();
+        internal static readonly ContentRegistry<ModProjectile> Registry = new ContentRegistry<ModProjectile>(ModProjectileOffset);
         private static readonly ConditionalWeakTable<Projectile, ModProjectile> _modProjInstances = new ConditionalWeakTable<Projectile, ModProjectile>();
-        private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
-        private static readonly Dictionary<string, int> _projsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        public static int ProjectileCount => _nextProjID;
-        public static int NextProjID => _nextProjID;
-        public static IReadOnlyCollection<ModProjectile> Projectiles => _projsByType.Values;
+        public static int ProjectileCount => Registry.NextId;
+        public static int NextProjID => Registry.NextId;
+        public static IReadOnlyCollection<ModProjectile> Projectiles => Registry.Values as IReadOnlyCollection<ModProjectile> ?? new List<ModProjectile>(Registry.Values);
 
         private static volatile bool _hooksInitialized = false;
         private static readonly object _hookInitLock = new object();
@@ -150,11 +147,9 @@ namespace TPML.Content
 
             InitializeHooks();
 
-            int type = _nextProjID++;
+            int type = Registry.ReserveNextId();
             proj.SetType(type);
-            _projsByType[type] = proj;
-            _projsByName[proj.FullName] = type;
-            _projsByName[proj.Name] = type;
+            Registry.Register(proj, type);
 
             ModContent.RegisterProjectileType(proj.GetType(), type);
 
@@ -261,8 +256,7 @@ namespace TPML.Content
 
         public static ModProjectile GetProjectile(int type)
         {
-            _projsByType.TryGetValue(type, out ModProjectile proj);
-            return proj;
+            return Registry.Get(type);
         }
 
         public static ModProjectile GetModProjectile(Projectile proj)
@@ -276,7 +270,7 @@ namespace TPML.Content
                 }
                 _modProjInstances.Remove(proj);
             }
-            if (proj.type >= ModProjectileOffset && _projsByType.TryGetValue(proj.type, out ModProjectile template))
+            if (proj.type >= ModProjectileOffset && Registry.TryGet(proj.type, out ModProjectile template))
             {
                 ModProjectile newInst = template.Clone(proj);
                 newInst.Projectile = proj;
@@ -290,8 +284,7 @@ namespace TPML.Content
 
         public static ModProjectile GetModProjectile(int type)
         {
-            _projsByType.TryGetValue(type, out ModProjectile proj);
-            return proj;
+            return Registry.Get(type);
         }
 
         public static T GetModProjectile<T>(Projectile proj) where T : ModProjectile => GetModProjectile(proj) as T;
@@ -300,7 +293,7 @@ namespace TPML.Content
         {
             if (proj == null) return;
 
-            if (_projsByType.TryGetValue(proj.type, out ModProjectile template))
+            if (Registry.TryGet(proj.type, out ModProjectile template))
             {
                 ModProjectile instance = template.Clone(proj);
                 instance.Projectile = proj;
@@ -313,29 +306,12 @@ namespace TPML.Content
 
         public static int ProjectileType(string modName, string projName)
         {
-            if (string.IsNullOrEmpty(projName)) return 0;
-            if (!string.IsNullOrEmpty(modName) && _projsByName.TryGetValue($"{modName}/{projName}", out int type))
-            {
-                return type;
-            }
-            if (_projsByName.TryGetValue(projName, out int fallbackType))
-            {
-                return fallbackType;
-            }
-            return 0;
+            return Registry.GetType(modName, projName);
         }
 
         public static int ProjectileType(string fullName)
         {
-            if (string.IsNullOrEmpty(fullName)) return 0;
-            if (_projsByName.TryGetValue(fullName, out int type)) return type;
-            int idx = fullName.IndexOf('/');
-            if (idx >= 0 && idx < fullName.Length - 1)
-            {
-                string shortName = fullName.Substring(idx + 1);
-                if (_projsByName.TryGetValue(shortName, out int shortType)) return shortType;
-            }
-            return 0;
+            return Registry.GetType(fullName);
         }
 
         public static void ResolveProjectileLocalization(ModProjectile proj)
@@ -376,7 +352,7 @@ namespace TPML.Content
 
         public static void SetDisplayName(int type, string name)
         {
-            _displayNames[type] = name;
+            Registry.SetDisplayName(type, name);
             EnsureArraySizes(type);
             if (Lang._projectileNameCache != null && type < Lang._projectileNameCache.Length)
             {
@@ -386,17 +362,15 @@ namespace TPML.Content
 
         public static string GetDisplayName(int type)
         {
-            if (_displayNames.TryGetValue(type, out string name) && !string.IsNullOrEmpty(name))
+            string name = Registry.GetDisplayName(type);
+            if (!string.IsNullOrEmpty(name))
             {
                 return name;
             }
-            if (_projsByType.TryGetValue(type, out ModProjectile proj))
+            if (Registry.TryGet(type, out ModProjectile proj))
             {
                 ResolveProjectileLocalization(proj);
-                if (_displayNames.TryGetValue(type, out string resolvedName))
-                {
-                    return resolvedName;
-                }
+                return Registry.GetDisplayName(type);
             }
             return string.Empty;
         }
@@ -404,11 +378,8 @@ namespace TPML.Content
 
         public static void Clear()
         {
-            ContentTextureLoader.ClearAssets(TextureAssets.Projectile, ModProjectileOffset, _nextProjID, TextureAssets.Projectile[0]?.Value);
-            _projsByType.Clear();
-            _displayNames.Clear();
-            _projsByName.Clear();
-            _nextProjID = ModProjectileOffset;
+            ContentTextureLoader.ClearAssets(TextureAssets.Projectile, ModProjectileOffset, Registry.NextId, TextureAssets.Projectile[0]?.Value);
+            Registry.Clear();
         }
     }
 }
