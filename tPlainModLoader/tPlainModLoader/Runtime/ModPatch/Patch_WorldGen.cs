@@ -1,40 +1,42 @@
-using System;
 using System.Collections.Generic;
 using Terraria;
-using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// WorldGen 补丁（M2 迁移：Harmony → MonoMod）
+    /// WorldGen 强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_WorldGen : ListCopy<PatchWorldGen>
     {
-        private static List<PatchWorldGen> mod = new List<PatchWorldGen>();
+        private static readonly List<PatchWorldGen> mod = new List<PatchWorldGen>();
+        internal static List<PatchWorldGen> ModList => mod;
+        private static bool _hooksInitialized = false;
 
         public Patch_WorldGen() : base(mod) { }
 
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 WorldGen 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            var worldGen = typeof(WorldGen);
+            if (_hooksInitialized) return;
 
-            // WorldGen.Convert(int, int, int, bool, bool)（静态 void，prefix 返回 false 跳过）
-            HookRegistry.Add(MethodLookup.Static(worldGen, "Convert", typeof(int), typeof(int), typeof(int), typeof(bool), typeof(bool)),
-                (Action<Action<int, int, int, bool, bool>, int, int, int, bool, bool>)((orig, i2, j2, conversionType, tiles, walls) =>
-                {
-                    if (!ConvertPrefix(i2, j2, conversionType, tiles, walls)) return;
-                    orig(i2, j2, conversionType, tiles, walls);
-                }));
+            On_WorldGen.Convert_int_int_int_bool_bool += Hook_Convert;
+            On_WorldGen.UpdateWorld += Hook_UpdateWorld;
 
-            // WorldGen.UpdateWorld()（静态）
-            HookRegistry.Add(worldGen.GetMethod("UpdateWorld", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic),
-                (Action<Action>)(orig =>
-                {
-                    UpdateWorldPrefix();
-                    orig();
-                    UpdateWorldPostfix();
-                }));
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_Convert(On_WorldGen.orig_Convert_int_int_int_bool_bool orig, int i2, int j2, int conversionType, bool tiles, bool walls)
+        {
+            if (!ConvertPrefix(i2, j2, conversionType, tiles, walls)) return;
+            orig(i2, j2, conversionType, tiles, walls);
+        }
+
+        private static void Hook_UpdateWorld(On_WorldGen.orig_UpdateWorld orig)
+        {
+            UpdateWorldPrefix();
+            orig();
+            UpdateWorldPostfix();
         }
 
         public static bool ConvertPrefix(int i2, int j2, int conversionType, bool tiles, bool walls)

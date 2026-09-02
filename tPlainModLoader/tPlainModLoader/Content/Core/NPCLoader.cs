@@ -10,6 +10,7 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
+using tContentPatch.ModPatch;
 using TPML.Content.Engine;
 
 namespace TPML.Content
@@ -35,6 +36,41 @@ namespace TPML.Content
         public static int NPCCount => _nextNPCID;
         public static int NextNPCID => _nextNPCID;
         public static IReadOnlyCollection<ModNPC> NPCs => _npcsByType.Values;
+
+        private static bool _hooksInitialized = false;
+
+        public static void InitializeHooks()
+        {
+            if (_hooksInitialized) return;
+
+            On_NPC.UpdateNPC += Hook_UpdateNPC;
+            On_NPC.SetDefaults += Hook_SetDefaults;
+            On_NPC.NewNPC += Hook_NewNPC;
+
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_UpdateNPC(On_NPC.orig_UpdateNPC orig, NPC self, int i)
+        {
+            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.UpdateNPCPrefix(self, i));
+            orig(self, i);
+            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.UpdateNPCPostfix(self, i));
+        }
+
+        private static void Hook_SetDefaults(On_NPC.orig_SetDefaults orig, NPC self, int Type, NPCSpawnParams spawnparams)
+        {
+            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.SetDefaultsPrefix(self, Type, spawnparams));
+            orig(self, Type, spawnparams);
+            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.SetDefaultsPostfix(self, Type, spawnparams));
+        }
+
+        private static int Hook_NewNPC(On_NPC.orig_NewNPC orig,
+            Terraria.DataStructures.IEntitySource source, int X, int Y, int Type, int Start, float ai0, float ai1, float ai2, float ai3, int Target)
+        {
+            int result = orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
+            tContentPatch.ModPatch.Patch_NPC.ModList.ForTry(item => item.NewNPCPostfix(result, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target));
+            return result;
+        }
 
         public static int Register(ModNPC npc)
         {

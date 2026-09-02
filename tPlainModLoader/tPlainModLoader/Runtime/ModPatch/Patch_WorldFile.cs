@@ -1,41 +1,44 @@
-using System;
 using System.Collections.Generic;
 using Terraria;
-using TPML.Content.Engine;
+using Terraria.IO;
 using TPML.Content.IO;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// WorldFile 存档生命周期补丁（M2 迁移：Harmony → MonoMod）
+    /// WorldFile 存档生命周期强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_WorldFile : ListCopy<PatchWorldFile>
     {
-        private static List<PatchWorldFile> mod = new List<PatchWorldFile>();
+        private static readonly List<PatchWorldFile> mod = new List<PatchWorldFile>();
+        internal static List<PatchWorldFile> ModList => mod;
+        private static bool _hooksInitialized = false;
 
         public Patch_WorldFile() : base(mod) { }
 
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 WorldFile 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            var worldFile = typeof(Terraria.IO.WorldFile);
+            if (_hooksInitialized) return;
 
-            // WorldFile._SaveWorld(bool, bool, bool, bool)（静态）
-            HookRegistry.Add(MethodLookup.Static(worldFile, "_SaveWorld", typeof(bool), typeof(bool), typeof(bool), typeof(bool)),
-                (Action<Action<bool, bool, bool, bool>, bool, bool, bool, bool>)((orig, useCloudSaving, resetTime, useTemps, canBeSkipped) =>
-                {
-                    SaveWorldPrefix(useCloudSaving, resetTime, useTemps, canBeSkipped);
-                    orig(useCloudSaving, resetTime, useTemps, canBeSkipped);
-                    SaveWorldPostfix(useCloudSaving, resetTime, useTemps, canBeSkipped);
-                }));
+            On_WorldFile._SaveWorld += Hook_SaveWorld;
+            On_WorldFile.LoadWorld += Hook_LoadWorld;
 
-            // WorldFile.LoadWorld()（静态）
-            HookRegistry.Add(worldFile.GetMethod("LoadWorld", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic),
-                (Action<Action>)(orig =>
-                {
-                    orig();
-                    LoadWorldPostfix();
-                }));
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_SaveWorld(On_WorldFile.orig__SaveWorld orig, bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)
+        {
+            SaveWorldPrefix(useCloudSaving, resetTime, useTemps, canBeSkipped);
+            orig(useCloudSaving, resetTime, useTemps, canBeSkipped);
+            SaveWorldPostfix(useCloudSaving, resetTime, useTemps, canBeSkipped);
+        }
+
+        private static void Hook_LoadWorld(On_WorldFile.orig_LoadWorld orig)
+        {
+            orig();
+            LoadWorldPostfix();
         }
 
         public static void SaveWorldPrefix(bool useCloudSaving, bool resetTime, bool useTemps, bool canBeSkipped)

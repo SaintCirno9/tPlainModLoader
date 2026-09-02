@@ -1,198 +1,67 @@
-using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
+using Microsoft.Xna.Framework;
+using tContentPatch.Content;
+using tContentPatch.Content.Network;
 using tContentPatch.Utils;
 using Terraria;
 using Terraria.GameInput;
 using Terraria.IO;
 using Terraria.UI;
+using TPML.Content;
 using TPML.Content.Engine;
 using TPML.Content.IO;
+using TPML.Content.UI;
 using TPML.Core.Diagnostics;
+using TPML.Core.Logging;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// Main 主循环/绘制/存档生命周期补丁（M2 迁移：Harmony → MonoMod）
+    /// 主游戏主循环与核心生命周期强类型门面调度中心
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_Main : ListCopy<PatchMain>
     {
-        private static List<PatchMain> mod = new List<PatchMain>();
+        private static readonly ILogger Logger = LogManager.GetLogger("Patch_Main");
+        private static readonly List<PatchMain> mod = new List<PatchMain>();
+        internal static List<PatchMain> ModList => mod;
+
+        private static bool _hooksInitialized = false;
+        private static bool _firstInvDrawLogged = false;
 
         public Patch_Main() : base(mod) { }
 
-        #region Tooltip 管线自定义委托（原方法含 ref 参数）
-
-        private delegate void Orig_MouseTextLines(Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors);
-        private delegate void Hook_MouseTextLines(Orig_MouseTextLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors);
-
-        #endregion
-
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 Main/TimeLogger 相关的 HookGen 强类型静态门面钩子</summary>
         public static void RegisterAll()
         {
-            var main = typeof(Main);
+            if (_hooksInitialized) return;
 
-            // Main.Update(GameTime)：性能采样 + 生命周期切换 + 模组分发
-            Register("Main.Update(GameTime)", MethodLookup.Instance(main, "Update", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    UpdatePrefix(gameTime);
-                    orig(self, gameTime);
-                    UpdatePostfix(gameTime);
-                }));
+            On_Main.Update += Hook_Update;
+            On_Main.SetupDrawInterfaceLayers += Hook_SetupDrawInterfaceLayers;
+            On_Main.UpdateUIStates += Hook_UpdateUIStates;
+            On_Main.DoUpdateInWorld += Hook_DoUpdateInWorld;
+            On_Main.DrawMap += Hook_DrawMap;
+            On_Main.DrawMenu += Hook_DrawMenu;
+            On_Main.MouseText_DrawItemTooltip_GetLinesInfo += Hook_MouseText_DrawItemTooltip_GetLinesInfo;
+            On_Main.DoDraw += Hook_DoDraw;
+            On_Main.PlayerFocusedScreenPosition += Hook_PlayerFocusedScreenPosition;
+            On_Main.ErasePlayer += Hook_ErasePlayer;
+            On_Main.EraseWorld += Hook_EraseWorld;
+            On_Main.DrawInventory += Hook_DrawInventory;
+            On_TimeLogger.DrawException += Hook_DrawException;
 
-            // Main.SetupDrawInterfaceLayers()
-            Register("Main.SetupDrawInterfaceLayers()", GetInstance(main, "SetupDrawInterfaceLayers"),
-                (Action<Action<Main>, Main>)((orig, self) =>
-                {
-                    orig(self);
-                    SetupDrawInterfaceLayersPostfix();
-                }));
-
-            // Main.UpdateUIStates(GameTime)：滚轮 delta 跨阶段保持（1.4.5.8 为静态方法）
-            Register("Main.UpdateUIStates(GameTime)", GetStatic(main, "UpdateUIStates", typeof(GameTime)),
-                (Action<Action<GameTime>, GameTime>)((orig, gameTime) =>
-                {
-                    UpdateUIStatesPrefix(gameTime);
-                    orig(gameTime);
-                    UpdateUIStatesPostfix(gameTime);
-                }));
-
-            // Main.DoUpdateInWorld()
-            Register("Main.DoUpdateInWorld()", GetInstance(main, "DoUpdateInWorld"),
-                (Action<Action<Main>, Main>)((orig, self) =>
-                {
-                    DoUpdateInWorldPrefix();
-                    orig(self);
-                    DoUpdateInWorldPostfix();
-                }));
-
-            // Main.DrawMap(GameTime)
-            Register("Main.DrawMap(GameTime)", GetInstance(main, "DrawMap", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    orig(self, gameTime);
-                    DrawMapPostfix(gameTime);
-                }));
-
-            // Main.DrawMenu(GameTime)
-            Register("Main.DrawMenu(GameTime)", GetInstance(main, "DrawMenu", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    DrawMenuPrefix(gameTime);
-                    orig(self, gameTime);
-                    DrawMenuPostfix(gameTime);
-                }));
-
-            // Main.MouseText_DrawItemTooltip_GetLinesInfo（静态，ref 参数，自定义委托）
-            Register("Main.MouseText_DrawItemTooltip_GetLinesInfo", MethodLookup.Static(main, "MouseText_DrawItemTooltip_GetLinesInfo",
-                typeof(Item), typeof(int).MakeByRefType(), typeof(float), typeof(int).MakeByRefType(),
-                typeof(string[]), typeof(Color[])),
-                (Hook_MouseTextLines)MouseTextLinesHook);
-
-            // Main.DoDraw(GameTime)
-            Register("Main.DoDraw(GameTime)", GetInstance(main, "DoDraw", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    DoDrawPrefix(gameTime);
-                    orig(self, gameTime);
-                    DoDrawPostfix(gameTime);
-                }));
-
-            // Main.PlayerFocusedScreenPosition（静态，返回 Vector2）
-            Register("Main.PlayerFocusedScreenPosition()", GetStatic(main, "PlayerFocusedScreenPosition"),
-                (Func<Func<Vector2>, Vector2>)(orig =>
-                {
-                    Vector2 result = orig();
-                    PlayerFocusedScreenPosition(ref result);
-                    return result;
-                }));
-
-            // Main.ErasePlayer(int)（静态）
-            Register("Main.ErasePlayer(int)", GetStatic(main, "ErasePlayer", typeof(int)),
-                (Action<Action<int>, int>)((orig, i) =>
-                {
-                    ErasePlayerPrefix(i);
-                    orig(i);
-                }));
-
-            // Main.EraseWorld(int)（静态）
-            Register("Main.EraseWorld(int)", GetStatic(main, "EraseWorld", typeof(int)),
-                (Action<Action<int>, int>)((orig, i) =>
-                {
-                    EraseWorldPrefix(i);
-                    orig(i);
-                }));
+            _hooksInitialized = true;
+            Logger.Info("Patch_Main 强类型生命周期门面钩子初始化完成");
         }
 
-        /// <summary>带诊断的注册：目标查找失败时输出具体方法名与运行时签名</summary>
-        private static void Register(string what, MethodBase target, Delegate detour)
-        {
-            if (target == null)
-            {
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"[Patch_Main] 目标方法查找失败: {what}");
-                sb.AppendLine($"  typeof(GameTime): {typeof(GameTime).AssemblyQualifiedName}  @ {typeof(GameTime).Assembly.Location}");
-                Type foundParamType = null;
-                foreach (var m in typeof(Main).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic))
-                {
-                    if (m.Name == "Update")
-                    {
-                        var ps = m.GetParameters();
-                        string[] arr = new string[ps.Length];
-                        for (int i = 0; i < ps.Length; i++) arr[i] = ps[i].ParameterType.FullName;
-                        sb.AppendLine("  Update(" + string.Join(", ", arr) + ")  decl=" + m.DeclaringType.FullName + " static=" + m.IsStatic);
-                        foreach (var p in ps)
-                        {
-                            sb.AppendLine($"     param {p.Name}: {p.ParameterType.AssemblyQualifiedName}  @ {p.ParameterType.Assembly.Location}");
-                            if (p.Name == "gameTime") foundParamType = p.ParameterType;
-                        }
-                    }
-                }
-                if (foundParamType != null)
-                {
-                    sb.AppendLine($"  ReferenceEquals(typeof(GameTime), param): {object.ReferenceEquals(typeof(GameTime), foundParamType)}");
-                    sb.AppendLine($"  GetMethod(Update, {foundParamType.FullName}): {(typeof(Main).GetMethod("Update", new[] { foundParamType }) != null ? "FOUND" : "NULL")}");
-                    sb.AppendLine($"  GetMethod(Update, noTypes): {(typeof(Main).GetMethod("Update", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic) != null ? "FOUND" : "NULL")}");
-                }
-                sb.AppendLine($"  Main assembly: {(typeof(Main).Assembly.Location.Length > 0 ? typeof(Main).Assembly.Location : "(byte[] 加载，无位置)")}");
-                TPML.Core.Logging.LogManager.GetLogger("Patch_Main").Error(sb.ToString());
-                throw new MissingMethodException(what);
-            }
-            HookRegistry.Add(target, detour);
-        }
+        #region Hook Handlers
 
-        private static MethodInfo GetInstance(Type type, string name, params Type[] types)
-        {
-            return MethodLookup.Instance(type, name, types);
-        }
-
-        private static MethodInfo GetStatic(Type type, string name, params Type[] types)
-        {
-            return MethodLookup.Static(type, name, types);
-        }
-
-        private static void MouseTextLinesHook(Orig_MouseTextLines orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
-        {
-            if (item != null && item.type >= TPML.Content.ItemLoader.ModItemOffset)
-            {
-                TPML.Content.ItemLoader.EnsureArraySizes(item.type);
-            }
-            orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
-
-            // 后缀期望全 ref；值参数（oldKB/toolTipLine/lineColors）用本地副本传递，改动不回写（与 Harmony 语义一致）
-            float oldKBLocal = oldKB;
-            string[] toolTipLineLocal = toolTipLine;
-            Color[] lineColorsLocal = lineColors;
-            MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref oldKBLocal, ref numLines, ref toolTipLineLocal, ref lineColorsLocal);
-        }
-
-        public static void UpdatePrefix(GameTime gameTime)
+        private static void Hook_Update(On_Main.orig_Update orig, Main self, GameTime gameTime)
         {
             try
             {
+                AutoLoadMod.Prefix(gameTime);
                 Threading.MainThreadDispatcher.CaptureMainThread();
                 Threading.MainThreadDispatcher.Pump();
 
@@ -223,7 +92,265 @@ namespace tContentPatch.ModPatch
             {
                 OutputDebug.OutputException(ex);
             }
+
+            orig(self, gameTime);
+
+            if (PerformanceProfiler.IsEnabled)
+            {
+                for (int i = 0; i < mod.Count; i++)
+                {
+                    var item = mod[i];
+                    if (item == null) continue;
+                    using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePostfix"))
+                    {
+                        try { item.UpdatePostfix(gameTime); }
+                        catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
+                    }
+                }
+            }
+            else
+            {
+                mod.ForTry(item => item.UpdatePostfix(gameTime));
+            }
+
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Count; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].PostUpdateEverything();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.PostUpdateEverything 异常: {ex.Message}", ex);
+                }
+            }
+
+            RegisterNetModule.Postfix(gameTime);
         }
+
+        private static void Hook_SetupDrawInterfaceLayers(On_Main.orig_SetupDrawInterfaceLayers orig, Main self)
+        {
+            orig(self);
+
+            List<GameInterfaceLayer> gameInterfaceLayers = Main.instance?._gameInterfaceLayers;
+            if (gameInterfaceLayers == null) return;
+
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Count; idx++)
+            {
+                try
+                {
+                    activeSystems[idx].ModifyInterfaceLayers(gameInterfaceLayers);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"执行 ModSystem.ModifyInterfaceLayers 异常: {ex.Message}", ex);
+                }
+            }
+
+            if (Main.playerInventory && !_firstInvDrawLogged)
+            {
+                Logger.Info($"[Patch_Main] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}");
+                _firstInvDrawLogged = true;
+            }
+
+            SetupDrawInterfaceLayersPostfix();
+        }
+
+        private static int _preUpdateScrollWheelForUI = 0;
+
+        private static void Hook_UpdateUIStates(On_Main.orig_UpdateUIStates orig, GameTime gameTime)
+        {
+            _preUpdateScrollWheelForUI = PlayerInput.ScrollWheelDeltaForUI;
+
+            mod.ForTry(item =>
+            {
+                PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
+                item.UpdateUIStatesPrefix(gameTime);
+            });
+
+            PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
+
+            orig(gameTime);
+
+            int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
+            if (scrollWheel == 0 && _preUpdateScrollWheelForUI != 0)
+            {
+                scrollWheel = _preUpdateScrollWheelForUI;
+            }
+
+            mod.ForTry(item =>
+            {
+                if (PlayerInput.ScrollWheelDeltaForUI == 0 && scrollWheel != 0)
+                {
+                    PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
+                }
+                item.UpdateUIStatesPostfix(gameTime);
+            });
+
+            GameTime gt = gameTime ?? new GameTime();
+            var activeSystems = ContentHookDispatcher.ActiveModSystems;
+            for (int idx = 0; idx < activeSystems.Count; idx++)
+            {
+                var sys = activeSystems[idx];
+                try
+                {
+                    if (PerformanceProfiler.IsEnabled)
+                    {
+                        using (PerformanceProfiler.Measure(sys.Mod?.Name ?? sys.GetType().Assembly.GetName().Name, sys.GetType().Name + ".UpdateUI"))
+                        {
+                            sys.UpdateUI(gt);
+                        }
+                    }
+                    else
+                    {
+                        sys.UpdateUI(gt);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"ModSystem.UpdateUI 异常: {ex.Message}", ex);
+                }
+            }
+        }
+
+        private static void Hook_DoUpdateInWorld(On_Main.orig_DoUpdateInWorld orig, Main self)
+        {
+            mod.ForTry(item => item.DoUpdateInWorldPrefix());
+            orig(self);
+            mod.ForTry(item => item.DoUpdateInWorldPostfix());
+        }
+
+        private static void Hook_DrawMap(On_Main.orig_DrawMap orig, Main self, GameTime gameTime)
+        {
+            orig(self, gameTime);
+            mod.ForTry(item => item.DrawMapPostfix(gameTime));
+        }
+
+        private static void Hook_DrawMenu(On_Main.orig_DrawMenu orig, Main self, GameTime gameTime)
+        {
+            mod.ForTry(item => item.DrawMenuPrefix(gameTime));
+            orig(self, gameTime);
+            mod.ForTry(item => item.DrawMenuPostfix(gameTime));
+        }
+
+        private static void Hook_MouseText_DrawItemTooltip_GetLinesInfo(On_Main.orig_MouseText_DrawItemTooltip_GetLinesInfo orig, Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
+        {
+            if (item != null && item.type >= ItemLoader.ModItemOffset)
+            {
+                ItemLoader.EnsureArraySizes(item.type);
+            }
+
+            orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
+
+            if (item == null || item.IsAir) return;
+
+            // 1. 若模组物品原生 Tooltip 行未被原版载入，动态补充 HJSON / ModItem 描述行
+            if (item.type >= ItemLoader.ModItemOffset)
+            {
+                string tooltip = ItemLoader.GetTooltip(item.type);
+                if (!string.IsNullOrEmpty(tooltip))
+                {
+                    string[] rawLines = tooltip.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    foreach (var l in rawLines)
+                    {
+                        if (!string.IsNullOrWhiteSpace(l))
+                        {
+                            bool exists = false;
+                            for (int k = 0; k < numLines; k++)
+                            {
+                                if (toolTipLine[k] == l)
+                                {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists && numLines < toolTipLine.Length)
+                            {
+                                toolTipLine[numLines] = l;
+                                lineColors[numLines] = Color.White;
+                                numLines++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. 分发 ModItem.ModifyTooltips 与 GlobalItem.ModifyTooltips
+            var list = new List<TooltipLine>();
+            ItemLoader.ModifyTooltips(item, list);
+
+            foreach (var line in list)
+            {
+                if (numLines < toolTipLine.Length && !string.IsNullOrEmpty(line.Text))
+                {
+                    toolTipLine[numLines] = line.Text;
+                    if (line.OverrideColor.HasValue)
+                    {
+                        lineColors[numLines] = line.OverrideColor.Value;
+                    }
+                    numLines++;
+                }
+            }
+
+            // 3. 分发旧 PatchMain 的 Tooltip 拓展
+            float oldKBLocal = oldKB;
+            string[] toolTipLineLocal = toolTipLine;
+            Color[] lineColorsLocal = lineColors;
+            MouseText_DrawItemTooltip_GetLinesInfoPostfix(item, ref yoyoLogo, ref oldKBLocal, ref numLines, ref toolTipLineLocal, ref lineColorsLocal);
+        }
+
+        private static void Hook_DoDraw(On_Main.orig_DoDraw orig, Main self, GameTime gameTime)
+        {
+            mod.ForTry(item => item.DoDrawPrefix(gameTime));
+            orig(self, gameTime);
+            mod.ForTry(item => item.DoDrawPostfix(gameTime));
+            DrawIME.Postfix(gameTime);
+            DrawTip.PatchDoDraw.Postfix(gameTime);
+        }
+
+        private static Vector2 Hook_PlayerFocusedScreenPosition(On_Main.orig_PlayerFocusedScreenPosition orig)
+        {
+            Vector2 result = orig();
+            PlayerFocusedScreenPosition(ref result);
+            return result;
+        }
+
+        private static void Hook_ErasePlayer(On_Main.orig_ErasePlayer orig, int i)
+        {
+            ErasePlayerPrefix(i);
+            orig(i);
+        }
+
+        private static void Hook_EraseWorld(On_Main.orig_EraseWorld orig, int i)
+        {
+            EraseWorldPrefix(i);
+            orig(i);
+        }
+
+        private static void Hook_DrawInventory(On_Main.orig_DrawInventory orig, Main self)
+        {
+            try
+            {
+                orig(self);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"[Main.DrawInventory] 物品栏绘制异常:\n{ex}");
+                throw;
+            }
+        }
+
+        private static void Hook_DrawException(On_TimeLogger.orig_DrawException orig, Exception ex)
+        {
+            Logger.Error($"[TimeLogger.DrawException] 捕获到 UI/绘制管线异常:\n{ex}");
+            orig(ex);
+        }
+
+        #endregion
+
+        #region Internal Dispatch & Lifecycle Logic
 
         private static bool _UpdatePrefix_CanUpdateGameplay_old = false;
         private static bool _UpdatePrefix_gameMenu_old = true;
@@ -260,32 +387,12 @@ namespace tContentPatch.ModPatch
             _UpdatePrefix_gameMenu_old = Main.gameMenu;
         }
 
-        public static void UpdatePostfix(GameTime gameTime)
-        {
-            if (PerformanceProfiler.IsEnabled)
-            {
-                for (int i = 0; i < mod.Count; i++)
-                {
-                    var item = mod[i];
-                    if (item == null) continue;
-                    using (PerformanceProfiler.Measure(item.GetType().Assembly.GetName().Name, item.GetType().Name + ".UpdatePostfix"))
-                    {
-                        try { item.UpdatePostfix(gameTime); }
-                        catch (Exception ex) { OutputDebug.OutputException(ex, 2); }
-                    }
-                }
-            }
-            else
-            {
-                mod.ForTry(item => item.UpdatePostfix(gameTime));
-            }
-        }
-
         public static void SetupDrawInterfaceLayersPostfix()
         {
             try
             {
-                List<GameInterfaceLayer> gameInterfaceLayers = Main.instance._gameInterfaceLayers;
+                List<GameInterfaceLayer> gameInterfaceLayers = Main.instance?._gameInterfaceLayers;
+                if (gameInterfaceLayers == null) return;
 
                 if (PerformanceProfiler.IsEnabled)
                 {
@@ -311,64 +418,6 @@ namespace tContentPatch.ModPatch
             }
         }
 
-        private static int _preUpdateScrollWheelForUI = 0;
-
-        public static void UpdateUIStatesPrefix(GameTime gameTime)
-        {
-            _preUpdateScrollWheelForUI = PlayerInput.ScrollWheelDeltaForUI;
-
-            mod.ForTry(item =>
-            {
-                PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
-                item.UpdateUIStatesPrefix(gameTime);
-            });
-
-            PlayerInput.ScrollWheelDeltaForUI = _preUpdateScrollWheelForUI;
-        }
-
-        public static void UpdateUIStatesPostfix(GameTime gameTime)
-        {
-            int scrollWheel = PlayerInput.ScrollWheelDeltaForUI;
-            if (scrollWheel == 0 && _preUpdateScrollWheelForUI != 0)
-            {
-                scrollWheel = _preUpdateScrollWheelForUI;
-            }
-
-            mod.ForTry(item =>
-            {
-                if (PlayerInput.ScrollWheelDeltaForUI == 0 && scrollWheel != 0)
-                {
-                    PlayerInput.ScrollWheelDeltaForUI = scrollWheel;
-                }
-                item.UpdateUIStatesPostfix(gameTime);
-            });
-        }
-
-        public static void DoUpdateInWorldPrefix()
-        {
-            mod.ForTry(item => item.DoUpdateInWorldPrefix());
-        }
-
-        public static void DoUpdateInWorldPostfix()
-        {
-            mod.ForTry(item => item.DoUpdateInWorldPostfix());
-        }
-
-        public static void DrawMapPostfix(GameTime gameTime)
-        {
-            mod.ForTry(item => item.DrawMapPostfix(gameTime));
-        }
-
-        public static void DrawMenuPrefix(GameTime gameTime)
-        {
-            mod.ForTry(item => item.DrawMenuPrefix(gameTime));
-        }
-
-        public static void DrawMenuPostfix(GameTime gameTime)
-        {
-            mod.ForTry(item => item.DrawMenuPostfix(gameTime));
-        }
-
         public static void MouseText_DrawItemTooltip_GetLinesInfoPostfix(Item item, ref int yoyoLogo,
             ref float oldKB, ref int numLines, ref string[] toolTipLine, ref Color[] lineColors)
         {
@@ -381,16 +430,6 @@ namespace tContentPatch.ModPatch
             {
                 OutputDebug.OutputException(ex);
             }
-        }
-
-        public static void DoDrawPrefix(GameTime gameTime)
-        {
-            mod.ForTry(item => item.DoDrawPrefix(gameTime));
-        }
-
-        public static void DoDrawPostfix(GameTime gameTime)
-        {
-            mod.ForTry(item => item.DoDrawPostfix(gameTime));
         }
 
         public static void PlayerFocusedScreenPosition(ref Vector2 __result)
@@ -443,5 +482,7 @@ namespace tContentPatch.ModPatch
                 OutputDebug.OutputException(ex);
             }
         }
+
+        #endregion
     }
 }

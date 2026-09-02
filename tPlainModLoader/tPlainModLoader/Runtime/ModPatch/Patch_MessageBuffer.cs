@@ -1,34 +1,32 @@
-using System;
 using System.Collections.Generic;
-using tContentPatch.Content.Network;
 using Terraria;
 using Terraria.ID;
-using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// MessageBuffer 网络数据分发补丁（M2 迁移：Harmony → MonoMod，prefix 返回 false 跳过原方法）
+    /// MessageBuffer 网络数据分发强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_MessageBuffer : ListCopy<PatchMessageBuffer>
     {
-        private static List<PatchMessageBuffer> mod = new List<PatchMessageBuffer>();
+        private static readonly List<PatchMessageBuffer> mod = new List<PatchMessageBuffer>();
+        internal static List<PatchMessageBuffer> ModList => mod;
+        private static bool _hooksInitialized = false;
 
         public Patch_MessageBuffer() : base(mod) { }
 
-        // 原方法第三参为 out int，需自定义 byref 委托
-        private delegate void Orig_GetData(MessageBuffer self, int start, int length, out int messageType);
-        private delegate void Hook_GetData(Orig_GetData orig, MessageBuffer self, int start, int length, out int messageType);
-
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 MessageBuffer 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            // MessageBuffer.GetData(int, int, out int)（实例，返回 void，第三参 out）
-            HookRegistry.Add(MethodLookup.Instance(typeof(MessageBuffer), "GetData", typeof(int), typeof(int), typeof(int).MakeByRefType()),
-                (Hook_GetData)GetDataHook);
+            if (_hooksInitialized) return;
+
+            On_MessageBuffer.GetData += Hook_GetData;
+
+            _hooksInitialized = true;
         }
 
-        private static void GetDataHook(Orig_GetData orig, MessageBuffer self, int start, int length, out int messageType)
+        private static void Hook_GetData(On_MessageBuffer.orig_GetData orig, MessageBuffer self, int start, int length, out int messageType)
         {
             messageType = 0;
             if (!GetDataPrefix(self, start, length, messageType)) return;
@@ -42,33 +40,23 @@ namespace tContentPatch.ModPatch
 
             if (__instance.reader == null) __instance.ResetReader();
 
-            //
-
             __instance.reader.BaseStream.Position = start + 1;
             GetDataPrefix_14(__instance, start, length, messageType);
-
-            //
 
             bool ok = true;
             mod.ForTry(item =>
             {
                 __instance.reader.BaseStream.Position = start + 1;
-
                 ok &= item.CanGetData(__instance, start, length, messageType);
             });
-
-            //
 
             mod.ForTry(item =>
             {
                 __instance.reader.BaseStream.Position = start + 1;
-
                 item.GetDataPrefix(__instance, start, length, messageType);
             });
 
             __instance.reader.BaseStream.Position = start + 1;
-
-            //
 
             if (ok == false)
             {
@@ -115,7 +103,6 @@ namespace tContentPatch.ModPatch
             mod.ForTry(item =>
             {
                 __instance.reader.BaseStream.Position = start + 1;
-
                 item.GetDataPostfix(__instance, start, length, messageType);
             });
 

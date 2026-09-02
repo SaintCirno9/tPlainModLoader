@@ -28,6 +28,8 @@ namespace TPML.Content
             MonoModHooks.Initialize();
             ContentHookDispatcher.Initialize();
             PlayerLoader.InitializeHooks();
+            ItemLoader.InitializeHooks();
+            NPCLoader.InitializeHooks();
             ProjectileLoader.InitializeHooks();
             _initialized = true;
         }

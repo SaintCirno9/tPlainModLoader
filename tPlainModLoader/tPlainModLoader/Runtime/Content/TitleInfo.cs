@@ -1,44 +1,46 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.OS;
-using System;
-using System.Collections.Generic;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameInput;
 using Terraria.UI.Chat;
-using TPML.Content.Engine;
 using TPML.Core.Logging;
 
 namespace tContentPatch.Content
 {
     /// <summary>
-    /// 标题界面信息（版本号与社媒链接，M2 迁移：Harmony → MonoMod）
+    /// 标题界面信息（版本号与社媒链接强类型门面调度类）
+    /// 作者: SaintCirno9
     /// </summary>
     internal class TitleInfo
     {
         private static readonly ILogger Logger = LogManager.GetLogger("TitleInfo");
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        private static bool _hooksInitialized = false;
+
+        /// <summary>集中注册 TitleInfo 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            var main = typeof(Main);
+            if (_hooksInitialized) return;
 
-            // Main.DrawSocialMediaButtons(Color, float)（静态，postfix）
-            HookRegistry.Add(MethodLookup.Static(main, "DrawSocialMediaButtons", typeof(Color), typeof(float)),
-                (Action<Action<Color, float>, Color, float>)((orig, menuColor, upBump) =>
-                {
-                    orig(menuColor, upBump);
-                    MainPatch_DrawSocialMediaButtons.Postfix(menuColor, upBump);
-                }));
+            On_Main.DrawSocialMediaButtons += Hook_DrawSocialMediaButtons;
+            On_Main.DrawVersionNumber += Hook_DrawVersionNumber;
 
-            // Main.DrawVersionNumber(Color, float)（静态，postfix）
-            HookRegistry.Add(MethodLookup.Static(main, "DrawVersionNumber", typeof(Color), typeof(float)),
-                (Action<Action<Color, float>, Color, float>)((orig, menuColor, upBump) =>
-                {
-                    orig(menuColor, upBump);
-                    MainPatch_DrawVersionNumber.Postfix(menuColor, upBump);
-                }));
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_DrawSocialMediaButtons(On_Main.orig_DrawSocialMediaButtons orig, Color menuColor, float upBump)
+        {
+            orig(menuColor, upBump);
+            MainPatch_DrawSocialMediaButtons.Postfix(menuColor, upBump);
+        }
+
+        private static void Hook_DrawVersionNumber(On_Main.orig_DrawVersionNumber orig, Color menuColor, float upBump)
+        {
+            orig(menuColor, upBump);
+            MainPatch_DrawVersionNumber.Postfix(menuColor, upBump);
         }
 
         public class MainPatch_DrawSocialMediaButtons
@@ -103,9 +105,6 @@ namespace tContentPatch.Content
             color.G = (byte)((byte.MaxValue + color.R) / 2);
             color.B = color.G;
             color.A = (byte)(color.A * 0.3f);
-
-            //List<TextSnippet> snippets = ChatManager.ParseMessage(text, color);
-            //ChatManager.ConvertNormalSnippets(snippets);
 
             ChatManager.DrawColorCodedStringShadow(Main.spriteBatch, FontAssets.MouseText.Value, text,
                 pos, colorShadow, 0f, Vector2.Zero, Vector2.One);

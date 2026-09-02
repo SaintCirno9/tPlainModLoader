@@ -1,15 +1,13 @@
 using Microsoft.Xna.Framework;
-using System;
 using tContentPatch.ModLoad;
 using Terraria;
-using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
     /// <summary>
-    /// 标题界面自动加载模组（M2 迁移：Harmony → MonoMod）
+    /// 标题界面自动加载模组（由 Patch_Main.Hook_Update 单点调度）
     /// </summary>
-    internal class AutoLoadMod
+    internal static class AutoLoadMod
     {
         private static bool oneLoadMod = true;
 
@@ -18,16 +16,9 @@ namespace tContentPatch.Content
             LoaderControl.OnModLoad_Start += _ => oneLoadMod = false;
         }
 
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
         public static void RegisterAll()
         {
-            // Main.Update(GameTime)（实例）
-            HookRegistry.Add(MethodLookup.Instance(typeof(Main), "Update", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    Prefix(gameTime);
-                    orig(self, gameTime);
-                }));
+            // 已收敛由 Patch_Main 单点调度，无需单独 Detour
         }
 
         internal static void Prefix(GameTime gameTime)

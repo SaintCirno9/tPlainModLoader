@@ -1,12 +1,10 @@
 using Microsoft.Xna.Framework;
-using System;
 using Terraria;
-using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
     /// <summary>
-    /// 绘制输入法
+    /// 绘制输入法（由 Patch_Main.Hook_DoDraw 单点调度）
     /// </summary>
     public static class DrawIME
     {
@@ -19,16 +17,9 @@ namespace tContentPatch.Content
         /// </summary>
         public static Vector2 IME_P = Vector2.Zero;
 
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
         public static void RegisterAll()
         {
-            // Main.DoDraw(GameTime)（实例，postfix）
-            HookRegistry.Add(MethodLookup.Instance(typeof(Main), "DoDraw", typeof(GameTime)),
-                (Action<Action<Main, GameTime>, Main, GameTime>)((orig, self, gameTime) =>
-                {
-                    orig(self, gameTime);
-                    Postfix(gameTime);
-                }));
+            // 已收敛由 Patch_Main 单点调度，无需单独 Detour
         }
 
         internal static void Postfix(GameTime gameTime)
@@ -38,7 +29,7 @@ namespace tContentPatch.Content
             NeedIME = false;
 
             Main.instance.SetIMEPanelAnchor(IME_P, 0f);
-            Main.instance.DrawIMEPanel();//输入法
+            Main.instance.DrawIMEPanel();
         }
     }
 }

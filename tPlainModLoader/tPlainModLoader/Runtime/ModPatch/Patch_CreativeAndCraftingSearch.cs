@@ -1,37 +1,38 @@
-using Microsoft.Xna.Framework;
 using System;
 using Terraria;
 using Terraria.GameContent.Bestiary;
 using Terraria.GameContent.Creative;
-using TPML.Content.Engine;
 using TPML.Core.Pinyin;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// 原版制作系统、向导配方查询与旅程模式物品搜索的拼音多模匹配补丁
+    /// 原版制作系统、向导配方查询与旅程模式物品搜索的拼音多模匹配强类型门面调度类
     /// 作者: SaintCirno9
-    /// M2 迁移说明：原 Harmony 前缀经 ____字段 注入读取实例私有字段；
-    /// MonoMod 无字段注入机制，改为经 Publicizer 直连字段（强类型，零反射）。
     /// </summary>
     internal static class Patch_CreativeAndCraftingSearch
     {
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        private static bool _hooksInitialized = false;
+
+        /// <summary>集中注册搜索过滤器强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            // ItemFilters.BySearch.FitsFilter(Item)（实例，返回 bool，原方法被完全替换）
-            HookRegistry.Add(MethodLookup.Instance(typeof(ItemFilters.BySearch), "FitsFilter", typeof(Item)),
-                (Func<Func<ItemFilters.BySearch, Item, bool>, ItemFilters.BySearch, Item, bool>)((orig, self, entry) =>
-                {
-                    return FitsFilterPrefix(self, entry);
-                }));
+            if (_hooksInitialized) return;
 
-            // Filters.BySearch.FitsFilter(BestiaryEntry)（实例，返回 bool，原方法被完全替换）
-            HookRegistry.Add(MethodLookup.Instance(typeof(Filters.BySearch), "FitsFilter", typeof(BestiaryEntry)),
-                (Func<Func<Filters.BySearch, BestiaryEntry, bool>, Filters.BySearch, BestiaryEntry, bool>)((orig, self, entry) =>
-                {
-                    return BestiaryFitsFilterPrefix(self, entry);
-                }));
+            On_ItemFilters.BySearch.FitsFilter += Hook_ItemSearchFitsFilter;
+            On_Filters.BySearch.FitsFilter += Hook_BestiarySearchFitsFilter;
+
+            _hooksInitialized = true;
+        }
+
+        private static bool Hook_ItemSearchFitsFilter(On_ItemFilters.BySearch.orig_FitsFilter orig, ItemFilters.BySearch self, Item entry)
+        {
+            return FitsFilterPrefix(self, entry);
+        }
+
+        private static bool Hook_BestiarySearchFitsFilter(On_Filters.BySearch.orig_FitsFilter orig, Filters.BySearch self, BestiaryEntry entry)
+        {
+            return BestiaryFitsFilterPrefix(self, entry);
         }
 
         /// <summary>

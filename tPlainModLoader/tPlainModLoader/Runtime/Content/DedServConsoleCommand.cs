@@ -2,30 +2,34 @@ using CommandHelp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using Terraria;
-using TPML.Content.Engine;
 
 namespace tContentPatch.Content
 {
     /// <summary>
-    /// 服务端控制台指令（M2 迁移：Harmony → MonoMod，静态方法 + __result）
+    /// 服务端控制台指令强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal static class DedServConsoleCommand
     {
         public static bool Enable = false;
+        private static bool _hooksInitialized = false;
 
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 DedServConsoleCommand 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            // Main.ReadLineInput()（静态，返回 string）
-            HookRegistry.Add(typeof(Main).GetMethod("ReadLineInput", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic),
-                (Func<Func<string>, string>)(orig =>
-                {
-                    string result = orig();
-                    Postfix(ref result);
-                    return result;
-                }));
+            if (_hooksInitialized) return;
+
+            On_Main.ReadLineInput += Hook_ReadLineInput;
+
+            _hooksInitialized = true;
+        }
+
+        private static string Hook_ReadLineInput(On_Main.orig_ReadLineInput orig)
+        {
+            string result = orig();
+            Postfix(ref result);
+            return result;
         }
 
         private static void Postfix(ref string __result)
@@ -37,11 +41,9 @@ namespace tContentPatch.Content
             string methodName = sf?.GetMethod()?.Name;
             if (methodName != nameof(Main.startDedInputCallBack)) return;
 
-            //
-
             bool hasrun = TryRunCMD(__result);
 
-            if (hasrun) __result = string.Empty;//如果运行了就返回空
+            if (hasrun) __result = string.Empty;
         }
 
         private static bool TryRunCMD(string text)
@@ -57,7 +59,6 @@ namespace tContentPatch.Content
                 (string cmdParse, _) = i.ParseFormat(text);
                 if (cmdParse == null) continue;
                 if (i.Parse(cmdParse) == null) continue;
-                //解析成功
 
                 RunCmd(text);
                 return true;

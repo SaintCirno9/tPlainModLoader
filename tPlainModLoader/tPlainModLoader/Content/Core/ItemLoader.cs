@@ -11,6 +11,7 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.UI;
+using tContentPatch.ModPatch;
 using TPML.Content.Assets;
 using TPML.Content.Engine;
 using TPML.Content.UI;
@@ -37,6 +38,34 @@ namespace TPML.Content
         public static int ItemCount => _nextItemID;
         public static int NextItemID => _nextItemID;
         public static IReadOnlyCollection<ModItem> Items => _itemsByType.Values;
+
+        private static bool _hooksInitialized = false;
+
+        public static void InitializeHooks()
+        {
+            if (_hooksInitialized) return;
+
+            On_Item.SetDefaults += Hook_SetDefaults;
+            On_Item.NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool += Hook_NewItem;
+
+            _hooksInitialized = true;
+        }
+
+        private static void Hook_SetDefaults(On_Item.orig_SetDefaults orig, Item self, int type, Terraria.GameContent.Items.ItemVariant variant)
+        {
+            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.SetDefaultsPrefix(self, type, variant));
+            orig(self, type, variant);
+            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.SetDefaultsPostfix(self, type, variant));
+        }
+
+        private static int Hook_NewItem(On_Item.orig_NewItem_IEntitySource_Vector2_int_int_int_NewItemOwnership_Nullable1_NewItemModifier_bool orig,
+            IEntitySource source, Vector2 pos, int type, int stack, int prefix,
+            NewItemOwnership ownership, Vector2? velocity, Item.NewItemModifier modifier, bool noBroadcast)
+        {
+            int result = orig(source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast);
+            tContentPatch.ModPatch.Patch_Item.ModList.ForTry(item => item.NewItemPostfix(result, source, pos, type, stack, prefix, ownership, velocity, modifier, noBroadcast));
+            return result;
+        }
 
         public static int Register(ModItem item)
         {

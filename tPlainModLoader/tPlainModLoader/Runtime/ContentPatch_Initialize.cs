@@ -120,7 +120,7 @@ namespace tContentPatch
         {
             CheckNetplayConnect();
 
-            // 初始化原生内容引擎与全量背包融合底层门控
+            // 1. 初始化原生内容引擎与全量背包融合底层门控 (包含 PlayerLoader / ItemLoader / NPCLoader / ProjectileLoader)
             try
             {
                 TPML.Content.ContentHost.Initialize();
@@ -130,35 +130,28 @@ namespace tContentPatch
                 Logger.Error($"[ContentPatch] ContentHost 初始化异常: {ex.Message}", ex);
             }
 
-            // M2: 引擎补丁自 Harmony PatchAll 迁移为各补丁类显式 RegisterAll()（MonoMod）
+            // 2. 注册核心系统与功能 HookGen 强类型门面钩子
             ModPatch.Patch_Main.RegisterAll();
-            ModPatch.Patch_Player.RegisterAll();
-            ModPatch.Patch_PlayerFileData.RegisterAll();
-            ModPatch.Patch_NPC.RegisterAll();
-            ModPatch.Patch_Item.RegisterAll();
-            ModPatch.Patch_Projectile.RegisterAll();
-            ModPatch.Patch_TileLightScanner.RegisterAll();
-            ModPatch.Patch_RemadeChatMonitor.RegisterAll();
             ModPatch.Patch_WorldFile.RegisterAll();
+            ModPatch.Patch_WorldGen.RegisterAll();
             ModPatch.Patch_NetMessage.RegisterAll();
             ModPatch.Patch_MessageBuffer.RegisterAll();
             ModPatch.Patch_Chest.RegisterAll();
             ModPatch.Patch_RemoteClient.RegisterAll();
-            ModPatch.Patch_WorldGen.RegisterAll();
+            ModPatch.Patch_TileLightScanner.RegisterAll();
+            ModPatch.Patch_RemadeChatMonitor.RegisterAll();
             ModPatch.Patch_CreativeAndCraftingSearch.RegisterAll();
             ModPatch.Patch_ChatCommand.RegisterAll();
 
-            Content.AutoLoadMod.RegisterAll();
-            Content.DrawTip.RegisterAll();
-            Content.DrawIME.RegisterAll();
-            Content.DedServConsoleCommand.RegisterAll();
-            Content.Network.RegisterNetModule.RegisterAll();
+            // 3. 注册 UI 与控制台 HookGen 强类型门面钩子
             Content.TitleInfo.RegisterAll();
+            Content.DedServConsoleCommand.RegisterAll();
             Content.Menus.Patch_MainMenu.Patch_MainMenu.RegisterAll();
             Content.Menus.Patch_UIManageControls.Patch_UIManageControls.RegisterAll();
             Content.Menus.Patch_UIManageControls.Patch_UIKeybindingListItem.RegisterAll();
             Content.Menus.ModSetSwitch.Patch.RegisterAll();
 
+            // 4. 初始化旧版模组补丁分发容器
             typePatch = new ModPatch.TypePatch();
             typePatch.AddPatch(new ModPatch.Patch_Main());
             typePatch.AddPatch(new ModPatch.Patch_Player());

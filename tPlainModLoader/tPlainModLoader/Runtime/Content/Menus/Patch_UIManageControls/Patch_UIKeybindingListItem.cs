@@ -1,26 +1,34 @@
-using System;
 using Terraria.GameContent.UI.Elements;
 using TPML.Content;
-using TPML.Content.Engine;
 
 namespace tContentPatch.Content.Menus.Patch_UIManageControls
 {
     /// <summary>
     /// 拦截 UIKeybindingListItem.GetFriendlyName，为模组快捷键返回自定义中文友好名称
+    /// 作者: SaintCirno9
     /// </summary>
     internal static class Patch_UIKeybindingListItem
     {
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        private static bool _hooksInitialized = false;
+
+        /// <summary>集中注册 UIKeybindingListItem 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            // UIKeybindingListItem.GetFriendlyName()（实例，返回 string，prefix 返回 false 跳过）
-            HookRegistry.Add(MethodLookup.Instance(typeof(UIKeybindingListItem), "GetFriendlyName"),
-                (Func<Func<UIKeybindingListItem, string>, UIKeybindingListItem, string>)((orig, self) =>
-                {
-                    string result = null;
-                    if (Prefix(self, ref result)) result = orig(self);
-                    return result;
-                }));
+            if (_hooksInitialized) return;
+
+            On_UIKeybindingListItem.GetFriendlyName += Hook_GetFriendlyName;
+
+            _hooksInitialized = true;
+        }
+
+        private static string Hook_GetFriendlyName(On_UIKeybindingListItem.orig_GetFriendlyName orig, UIKeybindingListItem self)
+        {
+            string result = null;
+            if (Prefix(self, ref result))
+            {
+                result = orig(self);
+            }
+            return result;
         }
 
         private static bool Prefix(UIKeybindingListItem __instance, ref string __result)

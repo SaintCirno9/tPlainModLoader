@@ -1,66 +1,19 @@
-using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Terraria;
 using Terraria.DataStructures;
-using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// NPC 生命周期补丁（M2 迁移：Harmony → MonoMod）
+    /// NPC 生命周期补丁列表持有类（已收敛至 NPCLoader 统一分发）
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_NPC : ListCopy<PatchNPC>
     {
-        private static List<PatchNPC> mod = new List<PatchNPC>();
+        private static readonly List<PatchNPC> mod = new List<PatchNPC>();
+        internal static List<PatchNPC> ModList => mod;
 
         public Patch_NPC() : base(mod) { }
-
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
-        public static void RegisterAll()
-        {
-            var npc = typeof(NPC);
-
-            // NPC.UpdateNPC(int)
-            HookRegistry.Add(GetInstance(npc, "UpdateNPC", typeof(int)),
-                (Action<Action<NPC, int>, NPC, int>)((orig, self, i) =>
-                {
-                    UpdateNPCPrefix(self, i);
-                    orig(self, i);
-                    UpdateNPCPostfix(self, i);
-                }));
-
-            // NPC.SetDefaults(int, NPCSpawnParams)
-            HookRegistry.Add(GetInstance(npc, "SetDefaults", typeof(int), typeof(NPCSpawnParams)),
-                (Action<Action<NPC, int, NPCSpawnParams>, NPC, int, NPCSpawnParams>)((orig, self, Type, spawnparams) =>
-                {
-                    SetDefaultsPrefix(self, Type, spawnparams);
-                    orig(self, Type, spawnparams);
-                    SetDefaultsPostfix(self, Type, spawnparams);
-                }));
-
-            // NPC.NewNPC(IEntitySource, int, int, int, int, float, float, float, float, int)（静态，返回 int）
-            HookRegistry.Add(GetStatic(npc, "NewNPC",
-                    typeof(IEntitySource), typeof(int), typeof(int), typeof(int), typeof(int),
-                    typeof(float), typeof(float), typeof(float), typeof(float), typeof(int)),
-                (Func<Func<IEntitySource, int, int, int, int, float, float, float, float, int, int>,
-                    IEntitySource, int, int, int, int, float, float, float, float, int, int>)((orig, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target) =>
-                {
-                    int result = orig(source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
-                    NewNPCPostfix(result, source, X, Y, Type, Start, ai0, ai1, ai2, ai3, Target);
-                    return result;
-                }));
-        }
-
-        private static MethodInfo GetInstance(Type type, string name, params Type[] types)
-        {
-            return MethodLookup.Instance(type, name, types);
-        }
-
-        private static MethodInfo GetStatic(Type type, string name, params Type[] types)
-        {
-            return MethodLookup.Static(type, name, types);
-        }
 
         public static void UpdateNPCPrefix(NPC __instance, int i)
         {

@@ -1,26 +1,34 @@
 using Terraria.Chat;
 using tContentPatch.Command;
-using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// 拦截游戏内聊天输入框的指令输入（支持以 / 或 . 开头或直接输入指令名），
-    /// 并在本地作为 tContentPatch 指令分发执行，拦截原版公屏广播。
+    /// 拦截游戏内聊天输入框的指令输入强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal static class Patch_ChatCommand
     {
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        private static bool _hooksInitialized = false;
+
+        /// <summary>集中注册聊天指令强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            // ChatCommandProcessor.CreateOutgoingMessage(string)（实例，返回 ChatMessage）
-            HookRegistry.Add(MethodLookup.Instance(typeof(ChatCommandProcessor), "CreateOutgoingMessage", typeof(string)),
-                (System.Func<System.Func<ChatCommandProcessor, string, ChatMessage>, ChatCommandProcessor, string, ChatMessage>)((orig, self, text) =>
-                {
-                    ChatMessage result = null;
-                    if (CreateOutgoingMessagePrefix(text, ref result)) result = orig(self, text);
-                    return result;
-                }));
+            if (_hooksInitialized) return;
+
+            On_ChatCommandProcessor.CreateOutgoingMessage += Hook_CreateOutgoingMessage;
+
+            _hooksInitialized = true;
+        }
+
+        private static ChatMessage Hook_CreateOutgoingMessage(On_ChatCommandProcessor.orig_CreateOutgoingMessage orig, ChatCommandProcessor self, string text)
+        {
+            ChatMessage result = null;
+            if (CreateOutgoingMessagePrefix(text, ref result))
+            {
+                result = orig(self, text);
+            }
+            return result;
         }
 
         public static bool CreateOutgoingMessagePrefix(string text, ref ChatMessage __result)

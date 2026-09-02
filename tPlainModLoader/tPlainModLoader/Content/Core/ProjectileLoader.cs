@@ -7,9 +7,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using Terraria;
+using Terraria.DataStructures;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
+using tContentPatch.ModPatch;
 using TPML.Content.Engine;
 
 namespace TPML.Content
@@ -41,15 +43,26 @@ namespace TPML.Content
         {
             if (_hooksInitialized) return;
 
+            On_Projectile.Update += Hook_Update;
             On_Projectile.SetDefaults += Hook_SetDefaults;
             On_Projectile.AI += Hook_AI;
             On_Projectile.Kill += Hook_Kill;
+            On_Projectile.NewProjectile_IEntitySource_float_float_float_float_int_int_float_int_float_float_float_NewProjectileModifier += Hook_NewProjectile;
+            On_Projectile.AI_203_GetLightningColor += Hook_AI_203_GetLightningColor;
 
             _hooksInitialized = true;
         }
 
+        private static void Hook_Update(On_Projectile.orig_Update orig, Projectile self, int i)
+        {
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.UpdatePrefix(self, i));
+            orig(self, i);
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.UpdatePostfix(self, i));
+        }
+
         private static void Hook_SetDefaults(On_Projectile.orig_SetDefaults orig, Projectile self, int Type)
         {
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.SetDefaultsPrefix(self, Type));
             orig(self, Type);
             if (Type >= ModProjectileOffset)
             {
@@ -59,6 +72,7 @@ namespace TPML.Content
             {
                 _modProjInstances.Remove(self);
             }
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.SetDefaultsPostfix(self, Type));
         }
 
         private static void Hook_AI(On_Projectile.orig_AI orig, Projectile self)
@@ -84,6 +98,7 @@ namespace TPML.Content
 
         private static void Hook_Kill(On_Projectile.orig_Kill orig, Projectile self)
         {
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.KillPrefix(self));
             if (self != null)
             {
                 ModProjectile modProj = GetModProjectile(self);
@@ -104,6 +119,22 @@ namespace TPML.Content
                 }
             }
             orig(self);
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.KillPostfix(self));
+        }
+
+        private static int Hook_NewProjectile(On_Projectile.orig_NewProjectile_IEntitySource_float_float_float_float_int_int_float_int_float_float_float_NewProjectileModifier orig,
+            IEntitySource spawnSource, float X, float Y, float SpeedX, float SpeedY, int Type, int Damage, float KnockBack, int Owner, float ai0, float ai1, float ai2, NewProjectileModifier modifer)
+        {
+            int result = orig(spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2, modifer);
+            tContentPatch.ModPatch.Patch_Projectile.ModList.ForTry(item => item.NewProjectilePostfix(result, spawnSource, X, Y, SpeedX, SpeedY, Type, Damage, KnockBack, Owner, ai0, ai1, ai2, modifer));
+            return result;
+        }
+
+        private static Color Hook_AI_203_GetLightningColor(On_Projectile.orig_AI_203_GetLightningColor orig, Projectile self)
+        {
+            Color result = orig(self);
+            tContentPatch.ModPatch.Patch_Projectile.AI_203_GetLightningColor(self, ref result);
+            return result;
         }
 
         public static int Register(ModProjectile proj)

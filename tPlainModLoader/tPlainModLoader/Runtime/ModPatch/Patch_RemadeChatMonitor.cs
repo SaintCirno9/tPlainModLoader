@@ -1,45 +1,42 @@
-using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using tContentPatch.Utils;
 using Terraria.GameContent.UI.Chat;
-using TPML.Content.Engine;
 
 namespace tContentPatch.ModPatch
 {
     /// <summary>
-    /// 聊天监视器补丁（M2 迁移：Harmony → MonoMod）
+    /// 聊天监视器强类型门面调度类
+    /// 作者: SaintCirno9
     /// </summary>
     internal class Patch_RemadeChatMonitor : ListCopy<PatchRemadeChatMonitor>
     {
-        private static List<PatchRemadeChatMonitor> mod = new List<PatchRemadeChatMonitor>();
+        private static readonly List<PatchRemadeChatMonitor> mod = new List<PatchRemadeChatMonitor>();
+        internal static List<PatchRemadeChatMonitor> ModList => mod;
+        private static bool _hooksInitialized = false;
 
         public Patch_RemadeChatMonitor() : base(mod) { }
 
-        // AddNewMessage 原版签名 text 为非 ref；前缀声明 ref 是 Harmony 惯例（本地副本传参）
-        private delegate void Orig_AddNewMessage(RemadeChatMonitor self, string text, Color color, int widthLimitInPixels);
-        private delegate void Hook_AddNewMessage(Orig_AddNewMessage orig, RemadeChatMonitor self, string text, Color color, int widthLimitInPixels);
-
-        /// <summary>集中注册全部补丁（由 ContentPatch_Initialize 调用）</summary>
+        /// <summary>集中注册 RemadeChatMonitor 强类型 HookGen 钩子</summary>
         public static void RegisterAll()
         {
-            var monitor = typeof(RemadeChatMonitor);
+            if (_hooksInitialized) return;
 
-            // RemadeChatMonitor.DrawChat(bool)（实例）
-            HookRegistry.Add(MethodLookup.Instance(monitor, "DrawChat", typeof(bool)),
-                (Action<Action<RemadeChatMonitor, bool>, RemadeChatMonitor, bool>)((orig, self, drawingPlayerChat) =>
-                {
-                    DrawChatPrefix(drawingPlayerChat);
-                    orig(self, drawingPlayerChat);
-                    DrawChatPostfix(drawingPlayerChat);
-                }));
+            On_RemadeChatMonitor.DrawChat += Hook_DrawChat;
+            On_RemadeChatMonitor.AddNewMessage += Hook_AddNewMessage;
 
-            // RemadeChatMonitor.AddNewMessage(string, Color, int)（实例，ref 前缀用本地副本）
-            HookRegistry.Add(MethodLookup.Instance(monitor, "AddNewMessage", typeof(string), typeof(Color), typeof(int)),
-                (Hook_AddNewMessage)AddNewMessageHook);
+            _hooksInitialized = true;
         }
 
-        private static void AddNewMessageHook(Orig_AddNewMessage orig, RemadeChatMonitor self, string text, Color color, int widthLimitInPixels)
+        private static void Hook_DrawChat(On_RemadeChatMonitor.orig_DrawChat orig, RemadeChatMonitor self, bool drawingPlayerChat)
+        {
+            DrawChatPrefix(drawingPlayerChat);
+            orig(self, drawingPlayerChat);
+            DrawChatPostfix(drawingPlayerChat);
+        }
+
+        private static void Hook_AddNewMessage(On_RemadeChatMonitor.orig_AddNewMessage orig, RemadeChatMonitor self, string text, Color color, int widthLimitInPixels)
         {
             string textLocal = text;
             AddNewMessagePrefix(ref textLocal, color, widthLimitInPixels);
