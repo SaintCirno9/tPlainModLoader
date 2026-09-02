@@ -12,26 +12,26 @@ using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
 using tContentPatch.ModPatch;
+using TPML.Content.Assets;
 using TPML.Content.Engine;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
     /// <summary>
-    /// TPML 原生自定义弹幕注册、贴图加载与生命周期分发中心
+    /// TPML 原生自定义弹幕 (ModProjectile) 注册、贴图加载、生命周期与分发中心
     /// 作者: SaintCirno9
     /// </summary>
     public static class ProjectileLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("ProjectileLoader");
+
         public const int ModProjectileOffset = 1100;
         private static int _nextProjID = ModProjectileOffset;
         private static readonly Dictionary<int, ModProjectile> _projsByType = new Dictionary<int, ModProjectile>();
         private static readonly ConditionalWeakTable<Projectile, ModProjectile> _modProjInstances = new ConditionalWeakTable<Projectile, ModProjectile>();
         private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
         private static readonly Dictionary<string, int> _projsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly FieldInfo _assetValueField = typeof(Asset<Texture2D>).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetStateField = typeof(Asset<Texture2D>).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetNameField = typeof(Asset<Texture2D>).GetField("<Name>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
 
         public static int ProjectileCount => _nextProjID;
         public static int NextProjID => _nextProjID;
@@ -164,7 +164,10 @@ namespace TPML.Content
                 SetDefaults(sample);
                 ContentSamples.ProjectilesByType[type] = sample;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"向 ContentSamples 注册弹幕 [{proj.FullName}] 异常: {ex.Message}");
+            }
 
             ModLoader.Log($"[ProjectileLoader] 成功注册弹幕: [{proj.FullName}] -> ProjID={type}");
             return type;
@@ -183,11 +186,7 @@ namespace TPML.Content
                 {
                     if (TextureAssets.Projectile[i] == null)
                     {
-                        var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                        _assetNameField?.SetValue(emptyAsset, string.Empty);
-                        _assetValueField?.SetValue(emptyAsset, fallback);
-                        _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
-                        TextureAssets.Projectile[i] = emptyAsset;
+                        TextureAssets.Projectile[i] = AssetFactory.CreateLoaded(fallback, string.Empty);
                     }
                 }
             }
@@ -217,7 +216,7 @@ namespace TPML.Content
             }
 
             // 自动递归扩容 ProjectileID.Sets
-            ResizeSetsClass(typeof(ProjectileID.Sets), required, 500);
+            ArrayResizer.ResizeSets(typeof(ProjectileID.Sets), required, 500);
 
             // 扩容 Lang._projectileNameCache
             if (Lang._projectileNameCache != null && Lang._projectileNameCache.Length <= required)
@@ -292,11 +291,7 @@ namespace TPML.Content
                     texture = TextureAssets.Projectile[0]?.Value ?? new Texture2D(device, 16, 16);
                 }
 
-                var asset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                _assetNameField?.SetValue(asset, proj.FullName);
-                _assetValueField?.SetValue(asset, texture);
-                _assetStateField?.SetValue(asset, AssetState.Loaded);
-                TextureAssets.Projectile[proj.Type] = asset;
+                TextureAssets.Projectile[proj.Type] = AssetFactory.CreateLoaded(texture, proj.FullName);
             }
             catch (Exception ex)
             {
@@ -446,29 +441,6 @@ namespace TPML.Content
             return string.Empty;
         }
 
-        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
-        {
-            if (type == null) return;
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
-
-            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                ResizeSetsClass(nested, required, minMatchLen);
-            }
-        }
 
         public static void Clear()
         {

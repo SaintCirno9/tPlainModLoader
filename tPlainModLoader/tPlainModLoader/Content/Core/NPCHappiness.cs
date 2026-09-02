@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using Terraria.GameContent.Personalities;
 using Terraria.ID;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -21,6 +23,8 @@ namespace TPML.Content
     /// </summary>
     public readonly struct NPCHappiness
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("NPCHappiness");
+
         public readonly int NpcType;
 
         private NPCHappiness(int npcType)
@@ -44,7 +48,7 @@ namespace TPML.Content
                 var shopModifiers = profile.ShopModifiers;
                 if (shopModifiers == null) return this;
 
-                NPCPreferenceTrait trait = (NPCPreferenceTrait)shopModifiers.FirstOrDefault(t => t is NPCPreferenceTrait n && n.NpcId == npcId);
+                var trait = shopModifiers.OfType<NPCPreferenceTrait>().FirstOrDefault(t => t.NpcId == npcId);
                 if (trait != null)
                 {
                     trait.Level = affectionLevel;
@@ -56,7 +60,10 @@ namespace TPML.Content
                     Level = affectionLevel
                 });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"设置 NPC [{NpcType}] 对 [{npcId}] 好感度异常: {ex.Message}");
+            }
             return this;
         }
 
@@ -79,7 +86,10 @@ namespace TPML.Content
                 }
                 listTrait.Add(new BiomePreferenceListTrait.BiomePreference(affectionLevel, new T()));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"设置 NPC [{NpcType}] 生态好感度 [{typeof(T).Name}] 异常: {ex.Message}");
+            }
             return this;
         }
 
@@ -105,7 +115,10 @@ namespace TPML.Content
                     listTrait.Add(new BiomePreferenceListTrait.BiomePreference(affectionLevel, biome));
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"设置 NPC [{NpcType}] 生态好感度 [{biome?.GetType().Name}] 异常: {ex.Message}");
+            }
             return this;
         }
 

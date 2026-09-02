@@ -9,7 +9,9 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
+using TPML.Content.Assets;
 using TPML.Content.Engine;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -19,16 +21,14 @@ namespace TPML.Content
     /// </summary>
     public static class BuffLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("BuffLoader");
+
         public const int ModBuffOffset = 350;
         private static int _nextBuffID = ModBuffOffset;
         private static readonly Dictionary<int, ModBuff> _buffsByType = new Dictionary<int, ModBuff>();
         private static readonly Dictionary<int, string> _displayNames = new Dictionary<int, string>();
         private static readonly Dictionary<int, string> _descriptions = new Dictionary<int, string>();
         private static readonly Dictionary<string, int> _buffsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly FieldInfo _assetValueField = typeof(Asset<Texture2D>).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetStateField = typeof(Asset<Texture2D>).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetNameField = typeof(Asset<Texture2D>).GetField("<Name>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
 
         public static int BuffCount => _nextBuffID;
         public static int NextBuffID => _nextBuffID;
@@ -69,11 +69,7 @@ namespace TPML.Content
                 {
                     if (TextureAssets.Buff[i] == null)
                     {
-                        var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                        _assetNameField?.SetValue(emptyAsset, string.Empty);
-                        _assetValueField?.SetValue(emptyAsset, fallback);
-                        _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
-                        TextureAssets.Buff[i] = emptyAsset;
+                        TextureAssets.Buff[i] = AssetFactory.CreateLoaded(fallback, string.Empty);
                     }
                 }
             }
@@ -104,7 +100,7 @@ namespace TPML.Content
             }
 
             // 自动递归扩容 BuffID.Sets
-            ResizeSetsClass(typeof(BuffID.Sets), required, 300);
+            ArrayResizer.ResizeSets(typeof(BuffID.Sets), required, 300);
 
             // 扩容 Lang._buffNameCache / Lang._buffDescriptionCache
             if (Lang._buffNameCache != null && Lang._buffNameCache.Length <= required)
@@ -189,11 +185,7 @@ namespace TPML.Content
                     texture = TextureAssets.Buff[0]?.Value ?? new Texture2D(device, 32, 32);
                 }
 
-                var asset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                _assetNameField?.SetValue(asset, buff.FullName);
-                _assetValueField?.SetValue(asset, texture);
-                _assetStateField?.SetValue(asset, AssetState.Loaded);
-                TextureAssets.Buff[buff.Type] = asset;
+                TextureAssets.Buff[buff.Type] = AssetFactory.CreateLoaded(texture, buff.FullName);
             }
             catch (Exception ex)
             {
@@ -384,29 +376,6 @@ namespace TPML.Content
             return string.Empty;
         }
 
-        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
-        {
-            if (type == null) return;
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
-
-            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                ResizeSetsClass(nested, required, minMatchLen);
-            }
-        }
 
         public static void Clear()
         {

@@ -10,17 +10,21 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.Localization;
-using tContentPatch.ModPatch;
+using TPML.Content.Assets;
 using TPML.Content.Engine;
+using TPML.Core.Logging;
+using tContentPatch.ModPatch;
+using tContentPatch.Utils;
 
 namespace TPML.Content
 {
     /// <summary>
-    /// TPML 原生自定义 NPC 注册、贴图加载、生命周期与分发中心
-    /// 作者: SaintCirno9
+    /// TPML 原生自定义 NPC (ModNPC) 注册与生命周期分发中心
     /// </summary>
     public static class NPCLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("NPCLoader");
+
         public const int ModNPCOffset = 700;
         private static int _nextNPCID = ModNPCOffset;
         private static readonly Dictionary<int, ModNPC> _npcsByType = new Dictionary<int, ModNPC>();
@@ -29,9 +33,6 @@ namespace TPML.Content
         private static readonly Dictionary<string, int> _npcsByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, int> _headSlots = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly FieldInfo _assetValueField = typeof(Asset<Texture2D>).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetStateField = typeof(Asset<Texture2D>).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetNameField = typeof(Asset<Texture2D>).GetField("<Name>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
 
         public static int NPCCount => _nextNPCID;
         public static int NextNPCID => _nextNPCID;
@@ -107,7 +108,10 @@ namespace TPML.Content
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"向 ContentSamples 注册 NPC [{npc.FullName}] 异常: {ex.Message}");
+            }
 
             ModLoader.Log($"[NPCLoader] 成功注册 NPC: [{npc.FullName}] -> NPCID={type}");
             return type;
@@ -126,11 +130,7 @@ namespace TPML.Content
                 {
                     if (TextureAssets.Npc[i] == null)
                     {
-                        var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                        _assetNameField?.SetValue(emptyAsset, string.Empty);
-                        _assetValueField?.SetValue(emptyAsset, fallback);
-                        _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
-                        TextureAssets.Npc[i] = emptyAsset;
+                        TextureAssets.Npc[i] = AssetFactory.CreateLoaded(fallback, string.Empty);
                     }
                 }
             }
@@ -152,7 +152,7 @@ namespace TPML.Content
             }
 
             // 自动递归扩容 NPCID.Sets 及其所有嵌套类中的数组字段
-            ResizeSetsClass(typeof(NPCID.Sets), required, 500);
+            ArrayResizer.ResizeSets(typeof(NPCID.Sets), required, 500);
 
             // 扩容 Lang._npcNameCache
             if (Lang._npcNameCache != null && Lang._npcNameCache.Length <= required)
@@ -227,11 +227,7 @@ namespace TPML.Content
                     texture = TextureAssets.Npc[0]?.Value ?? new Texture2D(device, 16, 16);
                 }
 
-                var asset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                _assetNameField?.SetValue(asset, npc.FullName);
-                _assetValueField?.SetValue(asset, texture);
-                _assetStateField?.SetValue(asset, AssetState.Loaded);
-                TextureAssets.Npc[npc.Type] = asset;
+                TextureAssets.Npc[npc.Type] = AssetFactory.CreateLoaded(texture, npc.FullName);
             }
             catch (Exception ex)
             {
@@ -412,29 +408,6 @@ namespace TPML.Content
             }
         }
 
-        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
-        {
-            if (type == null) return;
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
-
-            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                ResizeSetsClass(nested, required, minMatchLen);
-            }
-        }
 
         public static void Clear()
         {

@@ -13,12 +13,6 @@ namespace TPML.Content.Assets
         public Mod Mod { get; }
         private readonly Dictionary<string, object> _cachedAssets = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly FieldInfo _assetNameField = typeof(Asset<Texture2D>).GetField("name", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        private static readonly FieldInfo _assetValueField = typeof(Asset<Texture2D>).GetField("ownValue", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-            ?? typeof(Asset<Texture2D>).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        private static readonly FieldInfo _assetStateField = typeof(Asset<Texture2D>).GetField("state", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-            ?? typeof(Asset<Texture2D>).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
         public ModAssetRepository(Mod mod)
         {
             Mod = mod;
@@ -36,10 +30,7 @@ namespace TPML.Content.Assets
                 Texture2D texture = LoadTexture(assetPath);
                 if (texture != null)
                 {
-                    var asset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                    _assetNameField?.SetValue(asset, assetPath);
-                    _assetValueField?.SetValue(asset, texture);
-                    _assetStateField?.SetValue(asset, AssetState.Loaded);
+                    var asset = AssetFactory.CreateLoaded(texture, assetPath);
 
                     var result = asset as Asset<T>;
                     _cachedAssets[assetPath] = result;

@@ -18,7 +18,10 @@ namespace TPML.Content
             {
                 LogCallback?.Invoke(message);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogManager.CoreLogger.Warn($"LogCallback 触发异常: {ex.Message}");
+            }
         }
 
         public static bool TryGetMod(string name, out Mod mod) => ModContent.TryGetMod(name, out mod);

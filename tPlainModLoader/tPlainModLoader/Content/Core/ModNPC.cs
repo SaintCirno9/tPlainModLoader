@@ -8,6 +8,7 @@ using Terraria.GameContent;
 using Terraria.GameContent.Bestiary;
 using Terraria.GameContent.ItemDropRules;
 using TPML.Content.IO;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -59,6 +60,8 @@ namespace TPML.Content
     /// </summary>
     public class NPCLoot : ILoot
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("NPCLoot");
+
         public int NPCNetId { get; }
         private readonly List<IItemDropRule> _entries = new List<IItemDropRule>();
 
@@ -74,7 +77,10 @@ namespace TPML.Content
             {
                 Main.ItemDropsDB?.RegisterToNPCNetId(NPCNetId, entry);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"向 NPCNetId [{NPCNetId}] 注册掉落规则异常: {ex.Message}");
+            }
             return entry;
         }
 
@@ -85,7 +91,10 @@ namespace TPML.Content
             {
                 Main.ItemDropsDB?.RemoveFromNPCNetId(NPCNetId, entry);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"从 NPCNetId [{NPCNetId}] 移除掉落规则异常: {ex.Message}");
+            }
             return entry;
         }
 
@@ -106,7 +115,10 @@ namespace TPML.Content
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"条件移除 NPCNetId [{NPCNetId}] 掉落规则异常: {ex.Message}");
+            }
         }
 
         public List<IItemDropRule> Get(bool includeGlobalDrops = true)

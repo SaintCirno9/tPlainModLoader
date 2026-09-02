@@ -4,6 +4,7 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameInput;
 using TPML.Content.IO;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -135,6 +136,7 @@ namespace TPML.Content
     /// </summary>
     public static class ModPlayerExtensions
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("ModPlayer");
         private static readonly Dictionary<Player, Dictionary<Type, ModPlayer>> _playerMods = new Dictionary<Player, Dictionary<Type, ModPlayer>>();
         private static readonly Dictionary<Player, List<ModPlayer>> _playerModList = new Dictionary<Player, List<ModPlayer>>();
 
@@ -210,7 +212,10 @@ namespace TPML.Content
                 CacheInstance(player, typeof(T), instance);
                 return instance;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"兜底实例化 ModPlayer [{typeof(T).FullName}] 异常: {ex.Message}");
+            }
 
             return null;
         }
@@ -245,7 +250,10 @@ namespace TPML.Content
                 CacheInstance(player, type, instance);
                 return instance;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"兜底实例化 ModPlayer [{type.FullName}] 异常: {ex.Message}");
+            }
 
             return null;
         }

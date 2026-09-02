@@ -5,6 +5,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.UI;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -117,6 +118,8 @@ namespace TPML.Content
     /// </summary>
     public static class RecipeLoader
     {
+        internal static readonly ILogger Logger = LogManager.GetLogger("RecipeLoader");
+
         private static readonly List<ModRecipe> _registeredModRecipes = new List<ModRecipe>();
         private static readonly Dictionary<Recipe, ModRecipe> _recipeMap = new Dictionary<Recipe, ModRecipe>();
         private static readonly Dictionary<string, RecipeGroup> _namedGroups = new Dictionary<string, RecipeGroup>(StringComparer.OrdinalIgnoreCase);
@@ -148,7 +151,10 @@ namespace TPML.Content
                     return true;
                 };
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"PlayerMeetsEnvironmentConditions 挂钩异常: {ex.Message}");
+            }
         }
 
         public static ModRecipe CreateRecipe(int resultType, int amount = 1)
@@ -178,7 +184,10 @@ namespace TPML.Content
                 {
                     group.Register();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"注册配方组 [{name}] 异常: {ex.Message}");
+                }
             }
 
             _namedGroups[name] = group;
@@ -583,7 +592,8 @@ namespace TPML.Content
             {
                 if (group.RegisteredId < 0)
                 {
-                    try { group.Register(); } catch { }
+                    try { group.Register(); }
+                    catch (Exception ex) { RecipeLoader.Logger.Warn($"注册配方组 [{group.RegisteredId}] 异常: {ex.Message}"); }
                 }
                 return AddRecipeGroup(group.RegisteredId, stack);
             }

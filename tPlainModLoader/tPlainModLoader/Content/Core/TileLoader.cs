@@ -10,7 +10,9 @@ using Terraria.DataStructures;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ObjectData;
+using TPML.Content.Assets;
 using TPML.Content.Engine;
+using TPML.Core.Logging;
 
 namespace TPML.Content
 {
@@ -20,14 +22,12 @@ namespace TPML.Content
     /// </summary>
     public static class TileLoader
     {
+        private static readonly ILogger Logger = LogManager.GetLogger("TileLoader");
+
         public static readonly int ModTileOffset = TileID.Count;
         private static int _nextTileID = TileID.Count;
         private static readonly Dictionary<int, ModTile> _tilesByType = new Dictionary<int, ModTile>();
         private static readonly Dictionary<string, int> _tilesByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly FieldInfo _assetValueField = typeof(Asset<Texture2D>).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetStateField = typeof(Asset<Texture2D>).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly FieldInfo _assetNameField = typeof(Asset<Texture2D>).GetField("<Name>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static bool _hooksInitialized = false;
 
@@ -142,11 +142,7 @@ namespace TPML.Content
                 {
                     if (TextureAssets.Tile[i] == null)
                     {
-                        var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                        _assetNameField?.SetValue(emptyAsset, string.Empty);
-                        _assetValueField?.SetValue(emptyAsset, fallback);
-                        _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
-                        TextureAssets.Tile[i] = emptyAsset;
+                        TextureAssets.Tile[i] = AssetFactory.CreateLoaded(fallback, string.Empty);
                     }
                 }
             }
@@ -160,11 +156,7 @@ namespace TPML.Content
                 {
                     if (TextureAssets.HighlightMask[i] == null)
                     {
-                        var emptyAsset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                        _assetNameField?.SetValue(emptyAsset, string.Empty);
-                        _assetValueField?.SetValue(emptyAsset, fallback);
-                        _assetStateField?.SetValue(emptyAsset, AssetState.Loaded);
-                        TextureAssets.HighlightMask[i] = emptyAsset;
+                        TextureAssets.HighlightMask[i] = AssetFactory.CreateLoaded(fallback, string.Empty);
                     }
                 }
             }
@@ -179,7 +171,7 @@ namespace TPML.Content
             }
 
             // 2. 递归扩容 TileID.Sets 及所有嵌套类 (如 Wiring, Conversion) 中的静态数组字段
-            ResizeSetsClass(typeof(TileID.Sets), required, 693);
+            ArrayResizer.ResizeSets(typeof(TileID.Sets), required, 693);
 
             // 3. 全量反射扫描 Main、WorldGen 与 MapHelper 中与 Tile 关联的静态一维/二维数组并统一扩容
             ScanAndResizeStaticArrays(typeof(Main), required);
@@ -208,7 +200,7 @@ namespace TPML.Content
                 int newLen = Math.Max(required, Main.SceneMetrics._tileCounts.Length * 2);
                 int[] newArr = new int[newLen];
                 Array.Copy(Main.SceneMetrics._tileCounts, newArr, Main.SceneMetrics._tileCounts.Length);
-                _tileCountsField?.SetValue(Main.SceneMetrics, newArr);
+                System.Runtime.CompilerServices.Unsafe.AsRef(in Main.SceneMetrics._tileCounts) = newArr;
             }
 
             // 5. 扩容配方系统与玩家临近物块数组 (防止 UpdateRecipeList 访问 player.adjTile 或 TileUsedInRecipes 发生 IndexOutOfRangeException)
@@ -247,29 +239,6 @@ namespace TPML.Content
             }
         }
 
-        private static void ResizeSetsClass(Type type, int required, int minMatchLen)
-        {
-            if (type == null) return;
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (field.FieldType.IsArray && field.FieldType.GetArrayRank() == 1)
-                {
-                    Array arr = field.GetValue(null) as Array;
-                    if (arr != null && arr.Length >= minMatchLen && arr.Length <= required)
-                    {
-                        int newLen = Math.Max(required, arr.Length * 2);
-                        Array newArr = Array.CreateInstance(field.FieldType.GetElementType(), newLen);
-                        Array.Copy(arr, newArr, arr.Length);
-                        field.SetValue(null, newArr);
-                    }
-                }
-            }
-
-            foreach (Type nested in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                ResizeSetsClass(nested, required, minMatchLen);
-            }
-        }
 
         private static void ScanAndResizeStaticArrays(Type targetType, int required)
         {
@@ -375,12 +344,7 @@ namespace TPML.Content
                     texture.SetData(data);
                 }
 
-                var asset = (Asset<Texture2D>)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Asset<Texture2D>));
-                _assetNameField?.SetValue(asset, $"ModTile_{tile.Name}");
-                _assetValueField?.SetValue(asset, texture);
-                _assetStateField?.SetValue(asset, AssetState.Loaded);
-
-                TextureAssets.Tile[tile.Type] = asset;
+                TextureAssets.Tile[tile.Type] = AssetFactory.CreateLoaded(texture, $"ModTile_{tile.Name}");
             }
             catch (Exception ex)
             {
@@ -658,7 +622,10 @@ namespace TPML.Content
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"ResetState End 异常: {ex.Message}");
+            }
 
             try
             {
@@ -670,7 +637,10 @@ namespace TPML.Content
                     device.SetRenderTarget(null);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Warn($"ResetState SetRenderTarget 异常: {ex.Message}");
+            }
         }
 
         public static void ResetSpriteBatchIfInBegin()
@@ -717,8 +687,6 @@ namespace TPML.Content
             }
         }
 
-        private static readonly FieldInfo _tileCountsField = typeof(SceneMetrics).GetField("_tileCounts", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
         private static void Hook_SceneMetrics_Scan(On_SceneMetrics.orig_Scan orig, SceneMetrics self, SceneMetricsScanSettings settings)
         {
             if (self != null && self._tileCounts != null && self._tileCounts.Length <= TileCount + 64)
@@ -726,7 +694,7 @@ namespace TPML.Content
                 int newLen = Math.Max(TileCount + 64, self._tileCounts.Length * 2);
                 int[] newArr = new int[newLen];
                 Array.Copy(self._tileCounts, newArr, self._tileCounts.Length);
-                _tileCountsField?.SetValue(self, newArr);
+                System.Runtime.CompilerServices.Unsafe.AsRef(in self._tileCounts) = newArr;
             }
             orig(self, settings);
         }
