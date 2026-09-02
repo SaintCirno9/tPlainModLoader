@@ -52,6 +52,39 @@ namespace tContentPatch.ModLoad
 
                     CheckLoadCancel();
                     mo.inheritance_patchPlayer = Utils.CreateInstance<PatchPlayer>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchNPC = Utils.CreateInstance<PatchNPC>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchItem = Utils.CreateInstance<PatchItem>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchProjectile = Utils.CreateInstance<PatchProjectile>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchTileLightScanner = Utils.CreateInstance<PatchTileLightScanner>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchRemadeChatMonitor = Utils.CreateInstance<PatchRemadeChatMonitor>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchWorldFile = Utils.CreateInstance<PatchWorldFile>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchNetMessage = Utils.CreateInstance<PatchNetMessage>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchMessageBuffer = Utils.CreateInstance<PatchMessageBuffer>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchChest = Utils.CreateInstance<PatchChest>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchRemoteClient = Utils.CreateInstance<PatchRemoteClient>(mo.assembly);
+
+                    CheckLoadCancel();
+                    mo.inheritance_patchWorldGen = Utils.CreateInstance<PatchWorldGen>(mo.assembly);
                 }
                 catch (Exception ex)
                 {
