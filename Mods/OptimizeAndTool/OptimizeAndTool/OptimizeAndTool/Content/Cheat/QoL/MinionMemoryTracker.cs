@@ -20,6 +20,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         public int ProjType { get; set; }
         public int Count { get; set; }
         public bool IsSentry { get; set; }
+        public int OriginalDamage { get; set; }
     }
 
     /// <summary>
@@ -383,6 +384,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             // 2. 统计当前活跃的弹幕
             var minionSlotsByItem = new Dictionary<int, float>();
             var sentrySlotsByItem = new Dictionary<int, int>();
+            var originalDamageByItem = new Dictionary<int, int>();
             int totalActiveProj = 0;
 
             for (int i = 0; i < Main.maxProjectiles; i++)
@@ -397,11 +399,19 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     totalActiveProj++;
                     if (itemId > 0)
                     {
-                        float slots = p.minionSlots > 0 ? p.minionSlots : 1f;
+                        // 原版星尘之龙的头 (625) 与尾 (628) 不计入栏位数，仅身节各计 0.5 栏位
+                        float slots = (p.type == 625 || p.type == 628) ? 0f : (p.minionSlots > 0 ? p.minionSlots : 1f);
                         if (minionSlotsByItem.ContainsKey(itemId))
                             minionSlotsByItem[itemId] += slots;
                         else
                             minionSlotsByItem[itemId] = slots;
+
+                        int pDmg = p.originalDamage > 0 ? p.originalDamage : p.damage;
+                        if (pDmg > 0)
+                        {
+                            if (!originalDamageByItem.TryGetValue(itemId, out int oldDmg) || pDmg > oldDmg)
+                                originalDamageByItem[itemId] = pDmg;
+                        }
                     }
                 }
                 else if (p.sentry)
@@ -413,6 +423,13 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                             sentrySlotsByItem[itemId] += 1;
                         else
                             sentrySlotsByItem[itemId] = 1;
+
+                        int pDmg = p.originalDamage > 0 ? p.originalDamage : p.damage;
+                        if (pDmg > 0)
+                        {
+                            if (!originalDamageByItem.TryGetValue(itemId, out int oldDmg) || pDmg > oldDmg)
+                                originalDamageByItem[itemId] = pDmg;
+                        }
                     }
                 }
             }
@@ -440,6 +457,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 int count = Math.Max(1, (int)Math.Round(kvp.Value));
                 int buffType = _itemToBuff.TryGetValue(itemId, out int b) ? b : 0;
                 int projType = _itemToProj.TryGetValue(itemId, out int pr) ? pr : 0;
+                int origDmg = ResolveOriginalDamageForRecord(player, itemId, originalDamageByItem);
 
                 newMemory.Add(new MinionEntry
                 {
@@ -447,7 +465,8 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     BuffType = buffType,
                     ProjType = projType,
                     Count = count,
-                    IsSentry = false
+                    IsSentry = false,
+                    OriginalDamage = origDmg
                 });
             }
 
@@ -457,6 +476,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 int count = kvp.Value;
                 int buffType = _itemToBuff.TryGetValue(itemId, out int b) ? b : 0;
                 int projType = _itemToProj.TryGetValue(itemId, out int pr) ? pr : 0;
+                int origDmg = ResolveOriginalDamageForRecord(player, itemId, originalDamageByItem);
 
                 newMemory.Add(new MinionEntry
                 {
@@ -464,7 +484,8 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     BuffType = buffType,
                     ProjType = projType,
                     Count = count,
-                    IsSentry = true
+                    IsSentry = true,
+                    OriginalDamage = origDmg
                 });
             }
 
@@ -479,6 +500,37 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             }
         }
 
+        private static int ResolveOriginalDamageForRecord(Player player, int itemId, Dictionary<int, int> originalDamageByItem)
+        {
+            Item invItem = FindPlayerItem(player, itemId);
+            if (invItem != null && invItem.damage > 0)
+            {
+                return invItem.damage;
+            }
+
+            if (originalDamageByItem != null && originalDamageByItem.TryGetValue(itemId, out int dmg) && dmg > 0)
+            {
+                return dmg;
+            }
+
+            Item sample = GetItemSample(itemId);
+            return sample != null && sample.damage > 0 ? sample.damage : 20;
+        }
+
+        public static Item FindPlayerItem(Player player, int itemId)
+        {
+            if (player == null || player.inventory == null || itemId <= 0) return null;
+            for (int i = 0; i < player.inventory.Length; i++)
+            {
+                Item it = player.inventory[i];
+                if (it != null && it.type == itemId)
+                {
+                    return it;
+                }
+            }
+            return null;
+        }
+
         private static bool IsMemoryEqual(List<MinionEntry> listA, List<MinionEntry> listB)
         {
             if (listA == null && listB == null) return true;
@@ -489,7 +541,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             {
                 var a = listA[i];
                 var b = listB[i];
-                if (a.ItemId != b.ItemId || a.Count != b.Count || a.IsSentry != b.IsSentry)
+                if (a.ItemId != b.ItemId || a.Count != b.Count || a.IsSentry != b.IsSentry || a.OriginalDamage != b.OriginalDamage)
                 {
                     return false;
                 }
@@ -595,6 +647,110 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             }
         }
 
+        private static void ResolveWeaponDamageAndKnockback(Player player, Item sampleItem, MinionEntry entry, out int originalDamage, out float knockBack)
+        {
+            originalDamage = 20;
+            knockBack = 1f;
+
+            // 1. 优先从玩家背包查找携带的真实武器（继承无情/神话等前缀的基础伤害）
+            Item invItem = FindPlayerItem(player, entry.ItemId);
+            if (invItem != null && invItem.damage > 0)
+            {
+                originalDamage = invItem.damage;
+                knockBack = player.GetWeaponKnockback(invItem, invItem.knockBack);
+                return;
+            }
+
+            // 2. 其次使用伴随存档/内存记录的 OriginalDamage
+            if (entry.OriginalDamage > 0)
+            {
+                originalDamage = entry.OriginalDamage;
+                if (sampleItem != null)
+                {
+                    knockBack = player.GetWeaponKnockback(sampleItem, sampleItem.knockBack);
+                }
+                return;
+            }
+
+            // 3. 兜底使用图鉴白板样本
+            if (sampleItem != null && sampleItem.damage > 0)
+            {
+                originalDamage = sampleItem.damage;
+                knockBack = player.GetWeaponKnockback(sampleItem, sampleItem.knockBack);
+            }
+        }
+
+        private static Vector2 FindSentryLandingSpot(Player player, float horizontalOffset)
+        {
+            float spawnX = player.Center.X + horizontalOffset;
+            int tileX = (int)(spawnX / 16f);
+            int playerBottomTileY = (int)(player.Bottom.Y / 16f);
+
+            tileX = Math.Max(10, Math.Min(Main.maxTilesX - 10, tileX));
+            int startY = Math.Max(10, Math.Min(Main.maxTilesY - 20, playerBottomTileY - 1));
+
+            int targetY = -1;
+            for (int y = startY; y < startY + 30 && y < Main.maxTilesY - 10; y++)
+            {
+                if (Main.tile[tileX, y] != null && WorldGen.SolidTile2(tileX, y))
+                {
+                    targetY = y;
+                    break;
+                }
+            }
+
+            if (targetY != -1)
+            {
+                return new Vector2(spawnX, targetY * 16f - 24f);
+            }
+
+            return new Vector2(spawnX, player.Bottom.Y - 16f);
+        }
+
+        private static void SpawnStardustDragon(Player player, Terraria.DataStructures.IEntitySource source, int originalDamage, float knockBack, int totalSlots)
+        {
+            Vector2 spawnPos = player.Center;
+            int headIdx = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 625, originalDamage, knockBack, player.whoAmI);
+            int body1Idx = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 626, originalDamage, knockBack, player.whoAmI, Main.projectile[headIdx].key);
+            int body2Idx = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 627, originalDamage, knockBack, player.whoAmI, Main.projectile[body1Idx].key);
+            int tailIdx = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 628, originalDamage, knockBack, player.whoAmI, Main.projectile[body2Idx].key);
+
+            if (body1Idx >= 0 && body1Idx < Main.maxProjectiles) Main.projectile[body1Idx].localAI[1] = body2Idx;
+            if (body2Idx >= 0 && body2Idx < Main.maxProjectiles) Main.projectile[body2Idx].localAI[1] = tailIdx;
+
+            if (headIdx >= 0 && headIdx < Main.maxProjectiles) Main.projectile[headIdx].originalDamage = originalDamage;
+            if (body1Idx >= 0 && body1Idx < Main.maxProjectiles) Main.projectile[body1Idx].originalDamage = originalDamage;
+            if (body2Idx >= 0 && body2Idx < Main.maxProjectiles) Main.projectile[body2Idx].originalDamage = originalDamage;
+            if (tailIdx >= 0 && tailIdx < Main.maxProjectiles) Main.projectile[tailIdx].originalDamage = originalDamage;
+
+            int extraSlots = totalSlots - 1;
+            for (int k = 0; k < extraSlots; k++)
+            {
+                if (tailIdx < 0 || tailIdx >= Main.maxProjectiles) break;
+                float prevKey = Main.projectile[tailIdx].ai[0];
+                int newBody1 = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 626, originalDamage, knockBack, player.whoAmI, prevKey);
+                int newBody2 = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, 0f, 627, originalDamage, knockBack, player.whoAmI, Main.projectile[newBody1].key);
+
+                if (newBody1 >= 0 && newBody1 < Main.maxProjectiles && newBody2 >= 0 && newBody2 < Main.maxProjectiles)
+                {
+                    Main.projectile[newBody1].localAI[1] = newBody2;
+                    Main.projectile[newBody1].netUpdate = true;
+                    Main.projectile[newBody1].ai[1] = 1f;
+                    Main.projectile[newBody1].originalDamage = originalDamage;
+
+                    Main.projectile[newBody2].localAI[1] = tailIdx;
+                    Main.projectile[newBody2].netUpdate = true;
+                    Main.projectile[newBody2].ai[1] = 1f;
+                    Main.projectile[newBody2].originalDamage = originalDamage;
+
+                    Main.projectile[tailIdx].ai[0] = Main.projectile[newBody2].key;
+                    Main.projectile[tailIdx].netUpdate = true;
+                    Main.projectile[tailIdx].ai[1] = 1f;
+                    Main.projectile[tailIdx].originalDamage = originalDamage;
+                }
+            }
+        }
+
         private static bool SpawnMinionEntry(Player player, MinionEntry entry, int count)
         {
             if (player == null || entry == null || count <= 0) return false;
@@ -611,12 +767,34 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 player.AddBuff(buffType, 36000);
             }
 
-            int damage = sampleItem != null ? player.GetWeaponDamage(sampleItem) : 20;
-            float knockBack = sampleItem != null ? player.GetWeaponKnockback(sampleItem, sampleItem.knockBack) : 1f;
-
+            ResolveWeaponDamageAndKnockback(player, sampleItem, entry, out int originalDamage, out float knockBack);
             var source = (sampleItem != null) ? player.GetProjectileSource_Item(sampleItem) : player.GetProjectileSource_Misc(0);
 
-            // 魔眼法杖双生子特殊生成：每组同时生成红眼 Retanimini 与绿眼 Spazmamini
+            // 1. 哨兵（Sentry）生成分支
+            if (entry.IsSentry)
+            {
+                for (int k = 0; k < count; k++)
+                {
+                    float offset = (k - (count - 1) * 0.5f) * 40f;
+                    Vector2 landingPos = FindSentryLandingSpot(player, offset);
+                    int pIndex = Projectile.NewProjectile(source, landingPos.X, landingPos.Y, 0f, 0f, shootProj, originalDamage, knockBack, player.whoAmI);
+                    if (pIndex >= 0 && pIndex < Main.maxProjectiles)
+                    {
+                        Main.projectile[pIndex].originalDamage = originalDamage;
+                    }
+                }
+                player.UpdateMaxTurrets();
+                return true;
+            }
+
+            // 2. 特殊复合仆从：星尘之龙法杖（Stardust Dragon Staff）
+            if (entry.ItemId == ItemID.StardustDragonStaff)
+            {
+                SpawnStardustDragon(player, source, originalDamage, knockBack, count);
+                return true;
+            }
+
+            // 3. 特殊复合仆从：魔眼法杖双生子（Optic Staff）
             if (entry.ItemId == ItemID.OpticStaff)
             {
                 for (int k = 0; k < count; k++)
@@ -624,22 +802,68 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     float randX1 = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                     float randY1 = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                     Vector2 spawnPos1 = player.Center + new Vector2(randX1, randY1);
-                    Projectile.NewProjectile(source, spawnPos1.X, spawnPos1.Y, 0f, -2f, ProjectileID.Retanimini, damage, knockBack, player.whoAmI);
+                    int p1 = Projectile.NewProjectile(source, spawnPos1.X, spawnPos1.Y, 0f, -2f, ProjectileID.Retanimini, originalDamage, knockBack, player.whoAmI);
+                    if (p1 >= 0 && p1 < Main.maxProjectiles)
+                    {
+                        Main.projectile[p1].originalDamage = originalDamage;
+                    }
 
                     float randX2 = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                     float randY2 = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                     Vector2 spawnPos2 = player.Center + new Vector2(randX2, randY2);
-                    Projectile.NewProjectile(source, spawnPos2.X, spawnPos2.Y, 0f, -2f, ProjectileID.Spazmamini, damage, knockBack, player.whoAmI);
+                    int p2 = Projectile.NewProjectile(source, spawnPos2.X, spawnPos2.Y, 0f, -2f, ProjectileID.Spazmamini, originalDamage, knockBack, player.whoAmI);
+                    if (p2 >= 0 && p2 < Main.maxProjectiles)
+                    {
+                        Main.projectile[p2].originalDamage = originalDamage;
+                    }
                 }
                 return true;
             }
 
+            // 4. 特殊仆从：矮人法杖（Pygmy Staff）
+            if (entry.ItemId == ItemID.PygmyStaff)
+            {
+                for (int k = 0; k < count; k++)
+                {
+                    int pygmyType = Main.rand.Next(191, 195);
+                    float randX = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
+                    float randY = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
+                    Vector2 spawnPos = player.Center + new Vector2(randX, randY);
+                    int p = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, pygmyType, originalDamage, knockBack, player.whoAmI);
+                    if (p >= 0 && p < Main.maxProjectiles)
+                    {
+                        Main.projectile[p].originalDamage = originalDamage;
+                        Main.projectile[p].localAI[0] = 30f;
+                    }
+                }
+                return true;
+            }
+
+            // 5. 单体成长型仆从：阿比盖尔的花（Abigail's Flower）与沙漠之虎（Desert Tiger / StormTigerStaff）
+            if (entry.ItemId == ItemID.AbigailsFlower || entry.ItemId == ItemID.StormTigerStaff)
+            {
+                float randX = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
+                float randY = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
+                Vector2 spawnPos = player.Center + new Vector2(randX, randY);
+                int p = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, shootProj, originalDamage, knockBack, player.whoAmI);
+                if (p >= 0 && p < Main.maxProjectiles)
+                {
+                    Main.projectile[p].originalDamage = originalDamage;
+                }
+                return true;
+            }
+
+            // 6. 通用常规仆从生成循环
             for (int k = 0; k < count; k++)
             {
                 float randX = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                 float randY = (float)(Main.rand.NextDouble() * 40.0 - 20.0);
                 Vector2 spawnPos = player.Center + new Vector2(randX, randY);
-                Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, shootProj, damage, knockBack, player.whoAmI);
+                int pIndex = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, shootProj, originalDamage, knockBack, player.whoAmI);
+                if (pIndex >= 0 && pIndex < Main.maxProjectiles)
+                {
+                    Main.projectile[pIndex].originalDamage = originalDamage;
+                }
             }
 
             return true;
