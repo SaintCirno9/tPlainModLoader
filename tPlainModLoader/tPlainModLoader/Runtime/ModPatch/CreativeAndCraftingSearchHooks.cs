@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Terraria;
 using Terraria.GameContent.Bestiary;
 using Terraria.GameContent.Creative;
@@ -10,7 +10,7 @@ namespace TPML.ModPatch
     /// 原版制作系统、向导配方查询与旅程模式物品搜索的拼音多模匹配强类型门面调度类
     /// 作者: SaintCirno9
     /// </summary>
-    internal static class Patch_CreativeAndCraftingSearch
+    public static class CreativeAndCraftingSearchHooks
     {
         private static bool _hooksInitialized = false;
 

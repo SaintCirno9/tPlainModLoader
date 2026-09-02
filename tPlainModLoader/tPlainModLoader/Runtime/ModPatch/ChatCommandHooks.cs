@@ -1,4 +1,4 @@
-﻿using Terraria.Chat;
+using Terraria.Chat;
 using TPML.Command;
 
 namespace TPML.ModPatch
@@ -7,7 +7,7 @@ namespace TPML.ModPatch
     /// 拦截游戏内聊天输入框的指令输入强类型门面调度类
     /// 作者: SaintCirno9
     /// </summary>
-    internal static class Patch_ChatCommand
+    public static class ChatCommandHooks
     {
         private static bool _hooksInitialized = false;
 

@@ -20,9 +20,9 @@ namespace TPML.ModPatch
     /// 主游戏主循环与核心生命周期强类型门面调度中心
     /// 作者: SaintCirno9
     /// </summary>
-    public static class Patch_Main
+    public static class MainHooks
     {
-        private static readonly ILogger Logger = LogManager.GetLogger("Patch_Main");
+        private static readonly ILogger Logger = LogManager.GetLogger("MainHooks");
 
         private static bool _hooksInitialized = false;
         private static bool _firstInvDrawLogged = false;
@@ -47,7 +47,7 @@ namespace TPML.ModPatch
             On_TimeLogger.DrawException += Hook_DrawException;
 
             _hooksInitialized = true;
-            Logger.Info("Patch_Main 强类型生命周期门面钩子初始化完成");
+            Logger.Info("MainHooks 强类型生命周期门面钩子初始化完成");
         }
 
         #region Hook Handlers
@@ -147,7 +147,7 @@ namespace TPML.ModPatch
 
             if (Main.playerInventory && !_firstInvDrawLogged)
             {
-                Logger.Info($"[Patch_Main] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}");
+                Logger.Info($"[MainHooks] 原生图层已注入模组图层，当前总图层数={gameInterfaceLayers.Count}");
                 _firstInvDrawLogged = true;
             }
         }
