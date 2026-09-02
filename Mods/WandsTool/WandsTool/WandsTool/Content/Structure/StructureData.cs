@@ -53,7 +53,7 @@ namespace WandsTool.Content.Structure
                 for (int y = 0; y < Height; y++)
                 {
                     TileSnapshot snap = Tiles[x, y];
-                    snap.FlipSlopeHorizontal();
+                    snap.FlipSlopeHorizontal(snap.TileType);
 
                     if (snap.HasTile)
                     {
@@ -95,6 +95,12 @@ namespace WandsTool.Content.Structure
                     if (snap.HasTile)
                     {
                         snap.TileFrameY = FlipTileFrameY(snap.TileType, snap.TileFrameY);
+                        // 平台楼梯与变体垂直翻转时需同步执行切片镜像转换
+                        bool isPlatform = snap.TileType == TileID.Platforms || (snap.TileType >= 0 && snap.TileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[snap.TileType]);
+                        if (isPlatform)
+                        {
+                            snap.TileFrameX = FlipTileFrameX(snap.TileType, snap.TileFrameX);
+                        }
                     }
                     if (snap.HasWall)
                     {
@@ -109,42 +115,134 @@ namespace WandsTool.Content.Structure
         }
 
         /// <summary>
+        /// 判断图格是否为具有左右朝向（Left / Right）的方向性家具
+        /// </summary>
+        public static bool IsDirectionalTile(int tileType, TileObjectData data)
+        {
+            if (tileType == TileID.OpenDoor) return true;
+            if (tileType == TileID.Chairs || 
+                tileType == TileID.Beds || 
+                tileType == TileID.Bathtubs || 
+                tileType == TileID.Statues || 
+                tileType == TileID.Mannequin || 
+                tileType == TileID.Womannequin || 
+                tileType == TileID.DisplayDoll || 
+                tileType == TileID.HatRack || 
+                tileType == TileID.WeaponsRack || 
+                tileType == TileID.WeaponsRack2 || 
+                tileType == TileID.Sinks || 
+                tileType == TileID.Benches || 
+                tileType == TileID.Thrones ||
+                tileType == 489) // TargetDummy
+            {
+                return true;
+            }
+
+            if (data != null)
+            {
+                if (data.Direction != Terraria.Enums.TileObjectDirection.None) return true;
+                if (data.StyleMultiplier == 2) return true;
+                if (data.Alternates != null)
+                {
+                    for (int i = 0; i < data.Alternates.Count; i++)
+                    {
+                        if (data.Alternates[i] != null && data.Alternates[i].Direction != Terraria.Enums.TileObjectDirection.None)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 对物块 Framing 纹理切片执行水平镜像
         /// </summary>
         public static short FlipTileFrameX(int tileType, short frameX)
         {
-            TileObjectData data = TileObjectData.GetTileData(tileType, 0);
-            if (data != null && (data.Width > 1 || data.Height > 1))
+            // 1. 多格家具与带 Style 的物件（如椅子、床、桌子、浴缸、雕像、开门等）
+            if (Main.tileFrameImportant[tileType] && tileType != TileID.Platforms && !(tileType >= 0 && tileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[tileType]))
             {
-                if (data.Direction != Terraria.Enums.TileObjectDirection.None && data.CoordinateFullWidth > 0)
+                TileObjectData data = TileObjectData.GetTileData(tileType, 0);
+                int objW = 1;
+                int fullW = 18;
+                bool isDirectional = false;
+
+                if (tileType == TileID.OpenDoor)
                 {
-                    int partWidth = data.CoordinateFullWidth;
-                    int subX = frameX % partWidth;
-                    int baseBlockX = frameX - subX;
-                    int invertedSubX = partWidth - 18 - subX;
-                    if (invertedSubX >= 0)
-                    {
-                        return (short)(baseBlockX + invertedSubX);
-                    }
+                    objW = 2;
+                    fullW = 36;
+                    isDirectional = true;
                 }
-                return frameX;
+                else if (data != null)
+                {
+                    objW = Math.Max(1, data.Width);
+                    fullW = data.CoordinateFullWidth > 0 ? data.CoordinateFullWidth : (objW * 18);
+                    isDirectional = IsDirectionalTile(tileType, data);
+                }
+
+                int subX = frameX % fullW;
+                int localCol = subX / 18;
+                int baseBlockX = frameX - subX;
+                int newLocalCol = objW - 1 - localCol;
+
+                int newBaseBlockX = baseBlockX;
+                if (isDirectional)
+                {
+                    int doubleW = fullW * 2;
+                    int dir = (baseBlockX % doubleW) / fullW;
+                    newBaseBlockX = (dir == 0) ? (baseBlockX + fullW) : (baseBlockX - fullW);
+                }
+
+                return (short)(newBaseBlockX + newLocalCol * 18);
             }
 
-            // 平台楼梯与端头切片翻转
-            if (tileType == Terraria.ID.TileID.Platforms)
+            // 2. 平台楼梯与端头切片翻转（精确覆盖原版与Mod平台全部 Framing 变体）
+            if (tileType == TileID.Platforms || (tileType >= 0 && tileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[tileType]))
             {
-                if (frameX == 144) return 126;
-                if (frameX == 126) return 144;
-                if (frameX == 198) return 162;
-                if (frameX == 162) return 198;
-                if (frameX == 324) return 306;
-                if (frameX == 306) return 324;
-                if (frameX == 0) return 36;
-                if (frameX == 36) return 0;
-                return frameX;
+                switch (frameX)
+                {
+                    // 2.1 平放平台端头与贴墙变体
+                    case 18: return 36;   // 右端头 [---  <->  左端头 ---]
+                    case 36: return 18;   // 左端头 ---]  <->  右端头 [---
+                    case 54: return 72;   // 左侧贴实心方块 <-> 右侧贴实心方块
+                    case 72: return 54;   // 右侧贴实心方块 <-> 左侧贴实心方块
+                    case 90: return 108;  // 右单格贴墙 <-> 左单格贴墙
+                    case 108: return 90;  // 左单格贴墙 <-> 右单格贴墙
+                    case 126: return 126; // 双侧贴墙（自身对称保持）
+
+                    // 2.2 接楼梯的平放过渡段
+                    case 216: return 234; // 左接上坡(slope=2) <-> 右接下坡(slope=1)
+                    case 234: return 216; // 右接下坡(slope=1) <-> 左接上坡(slope=2)
+                    case 252: return 252; // 双侧接楼梯（自身对称保持）
+                    case 270: return 288; // 左接上坡右悬空 <-> 左悬空右接下坡
+                    case 288: return 270; // 左悬空右接下坡 <-> 左接上坡右悬空
+
+                    // 2.3 楼梯核心切片 (Slope 1 下行 <-> Slope 2 上行)
+                    case 180: return 144; // 下行中段 <-> 上行中段
+                    case 144: return 180; // 上行中段 <-> 下行中段
+                    case 360: return 342; // 下行上端头 <-> 上行上端头
+                    case 342: return 360; // 上行上端头 <-> 下行上端头
+                    case 396: return 378; // 下行下端头 <-> 上行下端头
+                    case 378: return 396; // 上行下端头 <-> 下行下端头
+                    case 432: return 414; // 下行独立段 <-> 上行独立段
+                    case 414: return 432; // 上行独立段 <-> 下行独立段
+                    case 468: return 450; // 下行顶接平台 <-> 上行顶接平台
+                    case 450: return 468; // 上行顶接平台 <-> 下行顶接平台
+
+                    // 2.4 立柱与下挂支柱变体
+                    case 162: return 198; // 左下木桩 <-> 右下木桩
+                    case 198: return 162; // 右下木桩 <-> 左下木桩
+                    case 306: return 324; // 左立柱端头 <-> 右立柱端头
+                    case 324: return 306; // 右立柱端头 <-> 左立柱端头
+
+                    default: return frameX; // 0 (连通中间) 等对称切片保持不变
+                }
             }
 
-            // 标准 3x3 实体方块 18px 贴图切片左右镜像 (col 0 <-> col 2)
+            // 3. 标准 3x3 实体方块 18px 贴图切片左右镜像 (col 0 <-> col 2)
             int col = (frameX / 18) % 3;
             int baseCol = (frameX / 54) * 54;
             int offset = frameX % 18;
@@ -159,16 +257,36 @@ namespace WandsTool.Content.Structure
         /// </summary>
         public static short FlipTileFrameY(int tileType, short frameY)
         {
-            TileObjectData data = TileObjectData.GetTileData(tileType, 0);
-            if (data != null && (data.Width > 1 || data.Height > 1))
+            // 1. 多格家具在垂直翻转时需保持直立（Right-Side-Up）
+            if (Main.tileFrameImportant[tileType] && tileType != TileID.Platforms && !(tileType >= 0 && tileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[tileType]))
             {
-                return frameY;
+                TileObjectData data = TileObjectData.GetTileData(tileType, 0);
+                int objH = 1;
+                int fullH = 18;
+
+                if (tileType == TileID.OpenDoor)
+                {
+                    objH = 3;
+                    fullH = 54;
+                }
+                else if (data != null)
+                {
+                    objH = Math.Max(1, data.Height);
+                    fullH = data.CoordinateFullHeight > 0 ? data.CoordinateFullHeight : (objH * 18);
+                }
+
+                int subY = frameY % fullH;
+                int localRow = subY / 18;
+                int baseBlockY = frameY - subY;
+                int newLocalRow = objH - 1 - localRow;
+
+                return (short)(baseBlockY + newLocalRow * 18);
             }
 
-            // 平台不翻转 Y
-            if (tileType == Terraria.ID.TileID.Platforms) return frameY;
+            // 2. 平台不翻转 Y
+            if (tileType == TileID.Platforms || (tileType >= 0 && tileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[tileType])) return frameY;
 
-            // 标准 3x3 实体方块 18px 贴图切片上下镜像 (row 0 <-> row 2)
+            // 3. 标准 3x3 实体方块 18px 贴图切片上下镜像 (row 0 <-> row 2)
             int row = (frameY / 18) % 3;
             int baseRow = (frameY / 54) * 54;
             int offset = frameY % 18;
@@ -235,7 +353,8 @@ namespace WandsTool.Content.Structure
             if (Main.tileFrameImportant[snap.TileType])
             {
                 // 平台
-                if (snap.TileType == TileID.Platforms)
+                bool isPlatform = snap.TileType == TileID.Platforms || (snap.TileType >= 0 && snap.TileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[snap.TileType]);
+                if (isPlatform)
                 {
                     return (worldTile.frameY / 18) == (snap.TileFrameY / 18);
                 }

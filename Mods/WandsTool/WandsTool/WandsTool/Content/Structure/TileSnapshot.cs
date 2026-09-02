@@ -101,16 +101,27 @@ namespace WandsTool.Content.Structure
         /// <summary>
         /// 将水平翻转应用于自身坡度与半砖
         /// </summary>
-        public void FlipSlopeHorizontal()
+        public void FlipSlopeHorizontal(int tileType = -1)
         {
-            switch (Slope)
+            bool isPlatform = tileType == Terraria.ID.TileID.Platforms ||
+                              (tileType >= 0 && tileType < Terraria.ID.TileID.Sets.Platforms.Length && Terraria.ID.TileID.Sets.Platforms[tileType]);
+
+            if (isPlatform)
             {
-                case 1: Slope = 2; break; // 左下 -> 右下 (SlopeDownRight <-> SlopeDownLeft)
-                case 2: Slope = 1; break; // 右下 -> 左下
-                case 3: Slope = 4; break; // 左上 -> 右上 (SlopeUpRight <-> SlopeUpLeft)
-                case 4: Slope = 3; break; // 右上 -> 左上
-                case 5: break;            // 半砖水平对称，保持 5
-                case 6: break;            // 上半砖保持 6
+                // 平台楼梯坡度：Slope 1 (下行) <-> Slope 2 (上行)；0与5水平对称保持不变
+                if (Slope == 1) Slope = 2;
+                else if (Slope == 2) Slope = 1;
+            }
+            else
+            {
+                switch (Slope)
+                {
+                    case 1: Slope = 2; break; // 左下 -> 右下 (SlopeDownRight <-> SlopeDownLeft)
+                    case 2: Slope = 1; break; // 右下 -> 左下
+                    case 3: Slope = 4; break; // 左上 -> 右上 (SlopeUpRight <-> SlopeUpLeft)
+                    case 4: Slope = 3; break; // 右上 -> 左上
+                    case 5: break;            // 半砖水平对称，保持 5
+                }
             }
         }
 
@@ -124,7 +135,7 @@ namespace WandsTool.Content.Structure
 
             if (isPlatform)
             {
-                // 平台垂直翻转：普通顶部(0) <-> 半砖底部(5)，楼梯(1 <-> 2)
+                // 平台垂直翻转：普通顶部(0) <-> 下沉半砖(5)，楼梯(1 <-> 2)
                 if (Slope == 0) Slope = 5;
                 else if (Slope == 5) Slope = 0;
                 else if (Slope == 1) Slope = 2;
@@ -139,8 +150,7 @@ namespace WandsTool.Content.Structure
                     case 3: Slope = 1; break; // 左上 -> 左下
                     case 2: Slope = 4; break; // 右下 -> 右上
                     case 4: Slope = 2; break; // 右上 -> 右下
-                    case 5: Slope = 6; break; // 下半砖 -> 上半砖
-                    case 6: Slope = 5; break; // 上半砖 -> 下半砖
+                    case 5: Slope = 5; break; // 实体方块半砖保持 5（原版世界只支持下半砖）
                 }
             }
         }

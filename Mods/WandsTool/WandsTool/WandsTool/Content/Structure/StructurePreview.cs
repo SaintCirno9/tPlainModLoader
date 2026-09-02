@@ -120,14 +120,7 @@ namespace WandsTool.Content.Structure
                             if (snap.TileType == Terraria.ID.TileID.Platforms ||
                                 (snap.TileType >= 0 && snap.TileType < Terraria.ID.TileID.Sets.Platforms.Length && Terraria.ID.TileID.Sets.Platforms[snap.TileType]))
                             {
-                                if (snap.Slope == 1 || snap.Slope == 2)
-                                {
-                                    // 楼梯平台切片 (198=下行坡, 162=上行坡)
-                                    int frameXPlatform = (snap.Slope == 1) ? 198 : 162;
-                                    Rectangle platSrc = new Rectangle(frameXPlatform, safeY, 16, 16);
-                                    sb.Draw(tileTex, drawPos, platSrc, tileCol);
-                                }
-                                else if (snap.Slope == 5 || snap.HalfBlock)
+                                if (snap.Slope == 5 || snap.HalfBlock)
                                 {
                                     // 半砖平台：完整横杠切片下移 8 像素绘制
                                     Rectangle platSrc = new Rectangle(safeX, safeY, 16, 16);
@@ -135,7 +128,7 @@ namespace WandsTool.Content.Structure
                                 }
                                 else
                                 {
-                                    // 普通顶部平台：正常绘制在顶部
+                                    // 普通平台与楼梯平台：直接按准确切片绘制
                                     Rectangle platSrc = new Rectangle(safeX, safeY, 16, 16);
                                     sb.Draw(tileTex, drawPos, platSrc, tileCol);
                                 }
@@ -144,8 +137,9 @@ namespace WandsTool.Content.Structure
                             else if (snap.HalfBlock || snap.Slope == 5 || snap.Slope == 6)
                             {
                                 int halfOffsetY = (snap.Slope == 6) ? 0 : 8;
-                                tileSrc.Height = 8;
-                                sb.Draw(tileTex, drawPos + new Vector2(0, halfOffsetY), tileSrc, tileCol);
+                                int srcOffsetY = (snap.Slope == 6) ? 0 : 8;
+                                Rectangle halfSrc = new Rectangle(safeX, safeY + srcOffsetY, 16, 8);
+                                sb.Draw(tileTex, drawPos + new Vector2(0, halfOffsetY), halfSrc, tileCol);
                             }
                             // 3. 原版级精准实体斜坡切片渲染
                             else if (snap.Slope >= 1 && snap.Slope <= 4)

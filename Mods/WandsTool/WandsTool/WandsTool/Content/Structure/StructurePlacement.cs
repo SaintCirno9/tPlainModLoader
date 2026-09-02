@@ -449,9 +449,11 @@ namespace WandsTool.Content.Structure
 
                     if (snap.HasTile)
                     {
+                        bool isPlatform = snap.TileType == TileID.Platforms ||
+                                          (snap.TileType >= 0 && snap.TileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[snap.TileType]);
                         bool isFrameImportant = Main.tileFrameImportant[snap.TileType];
                         // 仅处理实体方块与平台
-                        if (!isFrameImportant || snap.TileType == TileID.Platforms)
+                        if (!isFrameImportant || isPlatform)
                         {
                             bool isSame = StructureData.IsTileIdentical(t, snap);
                             if (!isSame && (overwrite || !t.active()))
@@ -467,7 +469,7 @@ namespace WandsTool.Content.Structure
                                     t.halfBrick(true);
                                     t.slope(0);
                                 }
-                                else if (snap.Slope > 0)
+                                else if (snap.Slope >= 1 && snap.Slope <= 4)
                                 {
                                     t.halfBrick(false);
                                     t.slope(snap.Slope);
@@ -483,9 +485,12 @@ namespace WandsTool.Content.Structure
                             }
                             else if (isSame)
                             {
-                                // 相同方块仅无损同步斜坡和涂层
-                                if (snap.Slope == 5) t.halfBrick(true);
-                                else if (snap.Slope > 0) t.slope(snap.Slope);
+                                // 相同方块仅无损同步斜坡、切片和涂层
+                                if (snap.Slope == 5) { t.halfBrick(true); t.slope(0); }
+                                else if (snap.Slope >= 1 && snap.Slope <= 4) { t.halfBrick(false); t.slope(snap.Slope); }
+                                else { t.halfBrick(false); t.slope(0); }
+                                t.frameX = snap.TileFrameX;
+                                t.frameY = snap.TileFrameY;
                                 if (snap.TileColor > 0) t.color(snap.TileColor);
                                 if (snap.InActive) t.inActive(true);
                             }
@@ -541,8 +546,10 @@ namespace WandsTool.Content.Structure
 
                     if (snap.HasTile)
                     {
+                        bool isPlatform = snap.TileType == TileID.Platforms ||
+                                          (snap.TileType >= 0 && snap.TileType < TileID.Sets.Platforms.Length && TileID.Sets.Platforms[snap.TileType]);
                         bool isFrameImportant = Main.tileFrameImportant[snap.TileType];
-                        if (isFrameImportant && snap.TileType != TileID.Platforms)
+                        if (isFrameImportant && !isPlatform)
                         {
                             bool isSame = StructureData.IsTileIdentical(t, snap);
                             // 若世界上已有完全相同的家具，直接保留，不做任何破坏与重建！
