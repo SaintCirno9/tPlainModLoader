@@ -109,7 +109,7 @@ YourMod/
 
 ```csharp
 using TPML.Content;
-using tContentPatch.Patch;
+using TPML.Patch;
 
 namespace YourMod
 {
@@ -225,7 +225,7 @@ TPML 核心提供了原生级快捷键框架，自动集成到游戏原版【控
 
 ```csharp
 using Microsoft.Xna.Framework.Input;
-using tContentPatch.Input;
+using TPML.Content;
 
 public static class MyKeybinds
 {
@@ -258,7 +258,7 @@ TPML 内置了基于 `Mono.Cecil` 的 Prepatcher 预修补机制。
 通过 `[PrepatcherField]` 声明扩展方法，Prepatcher 引擎会在启动时向原版目标类注入字段，并将扩展方法体改写为单条原生 IL 访问指令：
 
 ```csharp
-using tContentPatch.Prepatcher;
+using TPML.Prepatcher;
 using Terraria;
 
 // 1. 数据结构
@@ -283,7 +283,7 @@ player.GetMyState().CustomValue++;
 
 ```csharp
 using Mono.Cecil;
-using tContentPatch.Prepatcher;
+using TPML.Prepatcher;
 
 public class MyEarlyPatcher : IPrepatcher
 {
@@ -304,7 +304,7 @@ public class MyEarlyPatcher : IPrepatcher
 ```csharp
 using HarmonyLib;
 using Terraria;
-using tContentPatch.Patch;
+using TPML.Patch;
 
 public class MyGameplayPatch : IPatch
 {
@@ -330,7 +330,7 @@ public class MyGameplayPatch : IPatch
 
 ### 2.8 统一文本输入框 (UITextBox)
 
-TPML 在 `tContentPatch.Content.UI.UITextBox` 中提供了通用的单行文本输入控件：
+TPML 在 `TPML.UI.UITextBox` 中提供了通用的单行文本输入控件：
 - **IME 输入法**：完整支持中文 Windows IME 拼音合成串内联反馈与闪烁光标；
 - **操作安全隔离**：在获得焦点期间由底层自动接管 `Main.blockInput = true` 与 `PlayerInput.WritingText = true`，彻底消除在输入数字时意外触发原版快捷栏切换（1~9, 0）或移动跑跳的问题；
 - **视口与回车响应**：超长文本平滑水平滚动，支持回车（`OnSubmit`）/失焦即时提交与 Esc 取消。
