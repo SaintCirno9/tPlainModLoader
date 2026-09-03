@@ -60,12 +60,6 @@ namespace OptimizeAndTool.Content.QoL.Pipette
         // 当前吸管选中的物品 Type，-1 表示未处于吸管状态
         private static int currentPipetteItemType = -1;
 
-        // 标记当前吸管选中的物块是否来自大背包
-        private static bool isFromBigBag = false;
-
-        // 记录从大背包调取物块时的源槽位索引
-        private static int bigBagSourceSlot = -1;
-
         /// <summary>
         /// 重置吸管调度状态
         /// </summary>
@@ -74,8 +68,6 @@ namespace OptimizeAndTool.Content.QoL.Pipette
             lastNormalSlot = 0;
             currentPipetteSlot = -1;
             currentPipetteItemType = -1;
-            isFromBigBag = false;
-            bigBagSourceSlot = -1;
         }
 
         /// <summary>
@@ -158,17 +150,10 @@ namespace OptimizeAndTool.Content.QoL.Pipette
                 Item invItem = player.inventory[i];
                 if (invItem != null && invItem.type == targetItemId && invItem.stack > 0)
                 {
-                    // 若之前是从大背包调取的物块，先将大背包物块归还
-                    if (isFromBigBag)
-                    {
-                        ReturnBigBagItemToStorage(player);
-                    }
-
                     player.selectedItemState.Select(i);
+                    player.selectedItemState.Update();
                     currentPipetteSlot = i;
                     currentPipetteItemType = targetItemId;
-                    isFromBigBag = false;
-                    bigBagSourceSlot = -1;
 
                     if (PipetteEngine.PlaySound.val) SoundEngine.PlaySound(SoundID.MenuTick);
                     if (PipetteEngine.ShowNotification.val)
@@ -179,52 +164,59 @@ namespace OptimizeAndTool.Content.QoL.Pipette
                 }
             }
 
-            // 8. 个人背包未命中 -> 深入大背包检索并智能调取手持
+            // 8. 个人背包未命中 -> 深入大背包检索并直接调取至个人背包
             if (BigBag.BigBag.EnableBigBag.val && BigBag.BigBag.Slots != null)
             {
                 int bIdx = BigBag.BigBag.FindItem(targetItemId);
                 if (bIdx != -1)
                 {
-                    // 若之前已持有另一个大背包物块，先归还
-                    if (isFromBigBag)
-                    {
-                        ReturnBigBagItemToStorage(player);
-                    }
-                    // 寻找主物品栏（10~49）中的承载槽位：优先找靠后的空格（从 49 往前找），若全满则使用第 49 格置换
-                    int carrierSlot = 49;
-                    for (int s = 49; s >= 10; s--)
-                    {
-                        if (player.inventory[s] == null || player.inventory[s].IsAir)
-                        {
-                            carrierSlot = s;
-                            break;
-                        }
-                    }
-
                     Item bigBagItem = BigBag.BigBag.Slots[bIdx];
-                    Item originalCarrierItem = player.inventory[carrierSlot] ?? new Item();
-
-                    // 将大背包物块放入主物品栏承载槽位，原槽位物品（若有）暂存入大背包该格
-                    player.inventory[carrierSlot] = bigBagItem;
-                    BigBag.BigBag.Slots[bIdx] = originalCarrierItem;
-
-                    BigBag.BigBag.NotifySlotsChanged();
-
-                    // 选中主物品栏承载槽位（原版支持直接手持 10~49 格放置物品，快捷栏 0~9 布局 100% 保持不变！）
-                    player.selectedItemState.Select(carrierSlot);
-                    currentPipetteSlot = carrierSlot;
-                    currentPipetteItemType = targetItemId;
-                    isFromBigBag = true;
-                    bigBagSourceSlot = bIdx;
-
-                    if (PipetteEngine.PlaySound.val) SoundEngine.PlaySound(SoundID.MenuTick);
-                    if (PipetteEngine.ShowNotification.val)
+                    if (bigBagItem != null && !bigBagItem.IsAir && bigBagItem.stack > 0)
                     {
-                        CombatText.NewText(player.getRect(), Color.LightGreen, $"[大背包] 调取: {itemName} (x{player.inventory[carrierSlot].stack})");
+                        // 寻找主背包（10~49）中的空槽位
+                        int targetSlot = -1;
+                        for (int s = 10; s < 50; s++)
+                        {
+                            if (player.inventory[s] == null || player.inventory[s].IsAir)
+                            {
+                                targetSlot = s;
+                                break;
+                            }
+                        }
+
+                        // 若 10~49 无空格，则与当前选中的手持槽位置换
+                        if (targetSlot == -1)
+                        {
+                            targetSlot = (curSelected >= 0 && curSelected < 50) ? curSelected : 0;
+                            Item currentHeld = player.inventory[targetSlot];
+                            // 若当前槽位有物品，将其转存入大背包
+                            if (currentHeld != null && !currentHeld.IsAir && currentHeld.stack > 0)
+                            {
+                                BigBag.BigBag.DepositItem(currentHeld);
+                            }
+                        }
+
+                        // 将大背包物品移入玩家个人背包目标槽位，并清空大背包原格
+                        player.inventory[targetSlot] = bigBagItem;
+                        BigBag.BigBag.Slots[bIdx] = new Item();
+                        BigBag.BigBag.NotifySlotsChanged();
+
+                        // 立即手持选中的槽位并刷新状态
+                        player.selectedItemState.Select(targetSlot);
+                        player.selectedItemState.Update();
+                        currentPipetteSlot = targetSlot;
+                        currentPipetteItemType = targetItemId;
+
+                        if (PipetteEngine.PlaySound.val) SoundEngine.PlaySound(SoundID.MenuTick);
+                        if (PipetteEngine.ShowNotification.val)
+                        {
+                            CombatText.NewText(player.getRect(), Color.LightGreen, $"[大背包] 调取: {itemName} (x{player.inventory[targetSlot].stack})");
+                        }
+                        return;
                     }
-                    return;
                 }
             }
+
             // 9. 背包与大背包均未找到对应物块 -> 弹出未持有警示提示
             if (PipetteEngine.PlaySound.val) SoundEngine.PlaySound(SoundID.MenuClose);
             if (PipetteEngine.ShowNotification.val)
@@ -234,76 +226,21 @@ namespace OptimizeAndTool.Content.QoL.Pipette
         }
 
         /// <summary>
-        /// 恢复到吸管前记录的原始快捷栏槽位（若来自大背包则将物块安全归还大背包）
+        /// 恢复到吸管前记录的原始快捷栏槽位
         /// </summary>
         private static void RestoreOriginalHotbar(Player player)
         {
-            if (isFromBigBag)
-            {
-                ReturnBigBagItemToStorage(player);
-            }
-
             int targetSlot = (lastNormalSlot >= 0 && lastNormalSlot < 10) ? lastNormalSlot : 0;
             currentPipetteSlot = -1;
             currentPipetteItemType = -1;
-            isFromBigBag = false;
-            bigBagSourceSlot = -1;
 
             player.selectedItemState.Select(targetSlot);
+            player.selectedItemState.Update();
             if (PipetteEngine.PlaySound.val) SoundEngine.PlaySound(SoundID.MenuTick);
 
             if (PipetteEngine.ShowNotification.val)
             {
                 CombatText.NewText(player.getRect(), Color.LightBlue, "恢复原快捷栏手持");
-            }
-        }
-
-        /// <summary>
-        /// 将由吸管从大背包调取的物块安全送回大背包并恢复主物品栏原本的格子内容
-        /// </summary>
-        private static void ReturnBigBagItemToStorage(Player player)
-        {
-            if (!isFromBigBag || currentPipetteSlot < 0 || currentPipetteSlot >= player.inventory.Length || bigBagSourceSlot < 0) return;
-
-            Item[] bagSlots = BigBag.BigBag.Slots;
-            if (bagSlots == null || bigBagSourceSlot >= bagSlots.Length)
-            {
-                isFromBigBag = false;
-                bigBagSourceSlot = -1;
-                return;
-            }
-
-            try
-            {
-                Item heldItem = player.inventory[currentPipetteSlot] ?? new Item();
-                Item originalItem = bagSlots[bigBagSourceSlot] ?? new Item();
-
-                player.inventory[currentPipetteSlot] = originalItem;
-
-                if (heldItem != null && !heldItem.IsAir && heldItem.stack > 0)
-                {
-                    bagSlots[bigBagSourceSlot] = new Item();
-                    if (!BigBag.BigBag.DepositItem(heldItem, bigBagSourceSlot) && !heldItem.IsAir)
-                    {
-                        player.QuickSpawnItem(new TPML.Content.EntitySource_Misc("PipetteReturn"), heldItem.type, heldItem.stack);
-                        heldItem.TurnToAir();
-                    }
-                }
-                else
-                {
-                    bagSlots[bigBagSourceSlot] = new Item();
-                }
-
-                BigBag.BigBag.NotifySlotsChanged();
-            }
-            catch (System.Exception ex)
-            {
-                TPML.Core.Logging.LogManager.GetLogger("OptimizeAndTool").Error("吸管归还大背包物品异常", ex);
-            }
-            finally
-            {
-                isFromBigBag = false;
-                bigBagSourceSlot = -1;
             }
         }
     }
