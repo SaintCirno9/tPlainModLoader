@@ -517,6 +517,22 @@ namespace TPML.Content
         }
 
         /// <summary>
+        /// 全局刷新所有已注册 ModItem 的默认属性与 ContentSamples 缓存，消除跨内容依赖时序差异
+        /// </summary>
+        public static void RefreshAllDefaults()
+        {
+            foreach (var kvp in Registry.Entries)
+            {
+                int type = kvp.Key;
+                ModItem item = kvp.Value;
+                if (ContentSamples.ItemsByType.TryGetValue(type, out Item sample) && sample != null)
+                {
+                    SetDefaults(sample);
+                }
+            }
+        }
+
+        /// <summary>
         /// 原生 SetDefaults IL 拦截入口：由 Prepatcher 织入 Item.SetDefaults 与 Item.netDefaults 头部
         /// </summary>
         public static bool OnSetDefaultsPrefix(Item item, int type)

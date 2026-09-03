@@ -72,18 +72,21 @@ namespace TPML.Content
         private static void Hook_SetDefaults(On_Projectile.orig_SetDefaults orig, Projectile self, int Type)
         {
             orig(self, Type);
+
             if (Type >= ModProjectileOffset)
             {
                 SetDefaults(self);
             }
             else
             {
-                _modProjInstances.Remove(self);
-                foreach (var gProj in ContentHookDispatcher.ActiveGlobalProjectiles)
-                {
-                    try { gProj.SetDefaults(self); } catch (Exception ex) { ModLoader.Log($"[ProjectileLoader] GlobalProjectile.SetDefaults 异常: {ex.Message}"); }
-                }
+                SetVanillaProjectileDefaults(self);
             }
+        }
+
+        private static void SetVanillaProjectileDefaults(Projectile proj)
+        {
+            _modProjInstances.Remove(proj);
+            TriggerGlobalProjectiles(proj);
         }
 
         private static void Hook_AI(On_Projectile.orig_AI orig, Projectile self)
@@ -100,11 +103,12 @@ namespace TPML.Content
                 if (modProj.PreAI())
                 {
                     int savedType = self.type;
-                    orig(self);
-                    if (self.type != savedType && savedType >= ModProjectileOffset)
+                    if (modProj.AIType > 0)
                     {
-                        self.type = savedType;
+                        self.type = modProj.AIType;
                     }
+                    orig(self);
+                    self.type = savedType;
                     modProj.AI();
                 }
                 modProj.PostAI();
@@ -375,19 +379,30 @@ namespace TPML.Content
         {
             if (proj == null) return;
 
+            // 抵消原版 SetDefaults 末尾未识别分支将未知 Type 强制置为 false 的副作用
+            proj.active = true;
+
             if (Registry.TryGet(proj.type, out ModProjectile template))
             {
                 ModProjectile instance = template.Clone(proj);
                 instance.Projectile = proj;
                 instance.SetType(proj.type);
+
                 _modProjInstances.Remove(proj);
                 _modProjInstances.Add(proj, instance);
+
                 instance.SetDefaults();
             }
 
+            TriggerGlobalProjectiles(proj);
+        }
+
+        private static void TriggerGlobalProjectiles(Projectile proj)
+        {
             foreach (var gProj in ContentHookDispatcher.ActiveGlobalProjectiles)
             {
-                try { gProj.SetDefaults(proj); } catch (Exception ex) { ModLoader.Log($"[ProjectileLoader] GlobalProjectile.SetDefaults 异常: {ex.Message}"); }
+                try { gProj.SetDefaults(proj); }
+                catch (Exception ex) { ModLoader.Log($"[ProjectileLoader] GlobalProjectile.SetDefaults 异常: {ex.Message}"); }
             }
         }
 

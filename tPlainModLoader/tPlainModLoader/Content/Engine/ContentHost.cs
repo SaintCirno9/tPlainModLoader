@@ -213,6 +213,15 @@ namespace TPML.Content
         {
             try
             {
+                ItemLoader.RefreshAllDefaults();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("已注册物品默认属性最终刷新失败", ex);
+            }
+
+            try
+            {
                 RecipeLoader.SetupRecipes();
             }
             catch (Exception ex)
