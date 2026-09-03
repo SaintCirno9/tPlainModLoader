@@ -1,4 +1,6 @@
+using System;
 using Microsoft.Xna.Framework;
+using MonoMod.Cil;
 using TPML;
 using Terraria;
 using Terraria.ID;
@@ -7,7 +9,7 @@ using OptimizeAndTool.Content.QoL;
 namespace OptimizeAndTool.Content.Cheat.QoL
 {
     /// <summary>
-    /// 生态与植被增强门控（草药极速生长/开花/补种、全树种生长/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ 门控）
+    /// 生态与植被增强门控（草药极速生长/开花/补种、全树种生长/最高高度锁定/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ / IL_ 门控）
     /// 作者: SaintCirno9
     /// </summary>
     public class EcologyHooks : TPML.Content.ModSystem
@@ -22,6 +24,9 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             On_WorldGen.IsAlchemyPlantHarvestable += Hook_IsAlchemyPlantHarvestable;
             On_WorldGen.KillTile += Hook_KillTile;
             On_WorldGen.AttemptToGrowTreeFromSapling += Hook_AttemptToGrowTreeFromSapling;
+            IL_WorldGen.GrowTree += Hook_GrowTree_IL;
+            IL_WorldGen.GrowPalmTree += Hook_GrowPalmTree_IL;
+            IL_WorldGen.GrowEpicTree += Hook_GrowEpicTree_IL;
             On_WorldGen.ShakeTree += Hook_ShakeTree;
             On_SceneMetrics.CalculateZones += Hook_CalculateZones;
             _registered = true;
@@ -35,8 +40,12 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             On_WorldGen.IsAlchemyPlantHarvestable -= Hook_IsAlchemyPlantHarvestable;
             On_WorldGen.KillTile -= Hook_KillTile;
             On_WorldGen.AttemptToGrowTreeFromSapling -= Hook_AttemptToGrowTreeFromSapling;
+            IL_WorldGen.GrowTree -= Hook_GrowTree_IL;
+            IL_WorldGen.GrowPalmTree -= Hook_GrowPalmTree_IL;
+            IL_WorldGen.GrowEpicTree -= Hook_GrowEpicTree_IL;
             On_WorldGen.ShakeTree -= Hook_ShakeTree;
             On_SceneMetrics.CalculateZones -= Hook_CalculateZones;
+            SetTreeSettings(false);
             _registered = false;
         }
 
@@ -286,12 +295,61 @@ namespace OptimizeAndTool.Content.Cheat.QoL
 
         #endregion
 
-        #region 树木极速生长 & 摇树必掉水果
+        #region 树木极速生长、最高高度锁定 & 摇树必掉水果
 
         private static bool Hook_AttemptToGrowTreeFromSapling(On_WorldGen.orig_AttemptToGrowTreeFromSapling orig, int x, int y, bool underground, int treeHeightAddon, bool ignoreWalls)
         {
-            // 原版 AttemptToGrowTreeFromSapling 内部已包含 13+ 种树木（森林/针叶/丛林/腐化/猩红/神圣/棕榈/灰烬/樱花/黄柳/7种宝石树）的精确路由分发与粒子音效
+            // 每次尝试从树苗生长前，按开关状态同步宝石树、樱花树、黄柳树与灰烬树的高度结构体 Profile
+            SetTreeSettings(QoLValSet.treeFastGrow.val);
             return orig(x, y, underground, treeHeightAddon, ignoreWalls);
+        }
+
+        private static void SetTreeSettings(bool enableMaxHeight)
+        {
+            int min = enableMaxHeight ? 12 : 7;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Ruby.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Diamond.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Topaz.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Amethyst.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Sapphire.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Emerald.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.GemTree_Amber.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.VanityTree_Sakura.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.VanityTree_Willow.TreeHeightMin = min;
+            WorldGen.GrowTreeSettings.Profiles.Tree_Ash.TreeHeightMin = min;
+        }
+
+        private static void Hook_GrowTree_IL(ILContext il)
+        {
+            var cursor = new ILCursor(il);
+            // 原版 WorldGen.GrowTree: int num2 = genRand.Next(5, 17) + treeHeightAddon;
+            // 将随机下限 5 替换为 16，锁定长成为最高 16 格
+            if (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdcI4(5)))
+            {
+                cursor.EmitDelegate<Func<int, int>>(min => QoLValSet.treeFastGrow.val ? 16 : min);
+            }
+        }
+
+        private static void Hook_GrowPalmTree_IL(ILContext il)
+        {
+            var cursor = new ILCursor(il);
+            // 原版 WorldGen.GrowPalmTree: int num3 = genRand.Next(10, 21) + treeHeightAddon;
+            // 将随机下限 10 替换为 20，锁定长成为最高 20 格
+            if (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdcI4(10)))
+            {
+                cursor.EmitDelegate<Func<int, int>>(min => QoLValSet.treeFastGrow.val ? 20 : min);
+            }
+        }
+
+        private static void Hook_GrowEpicTree_IL(ILContext il)
+        {
+            var cursor = new ILCursor(il);
+            // 原版 WorldGen.GrowEpicTree: int num2 = genRand.Next(20, 30);
+            // 将随机下限 20 替换为 29，锁定长成为最高 29 格
+            if (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdcI4(20)))
+            {
+                cursor.EmitDelegate<Func<int, int>>(min => QoLValSet.treeFastGrow.val ? 29 : min);
+            }
         }
 
         private static void Hook_ShakeTree(On_WorldGen.orig_ShakeTree orig, int i, int j)
