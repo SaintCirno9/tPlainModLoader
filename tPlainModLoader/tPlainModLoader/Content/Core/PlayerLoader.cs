@@ -48,6 +48,7 @@ namespace TPML.Content
                 On_Player.ItemCheck_Shoot += Hook_ItemCheck_Shoot;
                 On_Player.ItemCheck_StartActualUse += Hook_ItemCheck_StartActualUse;
                 On_Player.ItemCheck_CheckCanUse_Inner += Hook_ItemCheck_CheckCanUse_Inner;
+                On_Player.UpdateProjectileCaches += Hook_UpdateProjectileCaches;
 
                 _hooksInitialized = true;
                 Logger.Info("PlayerLoader 强类型生命周期钩子全部初始化完成");
@@ -58,8 +59,15 @@ namespace TPML.Content
 
         private static void Hook_ResetEffects(On_Player.orig_ResetEffects orig, Player self)
         {
+            EnsureProjectileCachesCapacity(self);
             orig(self);
             ResetEffects(self);
+        }
+
+        private static void Hook_UpdateProjectileCaches(On_Player.orig_UpdateProjectileCaches orig, Player player, int i)
+        {
+            EnsureProjectileCachesCapacity(player);
+            orig(player, i);
         }
 
         private static void Hook_Update(On_Player.orig_Update orig, Player self, int i)
@@ -68,6 +76,8 @@ namespace TPML.Content
 
             // 确保玩家 adjTile 数组容量满足模组物块需求，防止 UpdateRecipeList 判定配方时越界
             EnsureAdjTileCapacity(self);
+            // 确保玩家 ownedProjectileCounts 满足模组弹幕需求，防止 UpdateProjectileCaches 越界腰斩更新循环
+            EnsureProjectileCachesCapacity(self);
 
             var activePlayers = ContentHookDispatcher.ActiveModPlayers;
             for (int idx = 0; idx < activePlayers.Length; idx++)
@@ -87,7 +97,14 @@ namespace TPML.Content
             // 分发 ModPlayer.PreUpdate
             PreUpdate(self);
 
-            orig(self, i);
+            try
+            {
+                orig(self, i);
+            }
+            catch (Exception ex)
+            {
+                Logger.Fatal($"Player.Update({i}) 发生未捕获致命异常: {ex.Message}", ex);
+            }
 
             // 保持鼠标物品与 58 槽位无 stack <= 0 幽灵残留（对齐 tML）
             CleanGhostItems(self);
@@ -442,6 +459,22 @@ namespace TPML.Content
                     Array.Copy(player.adjTile, newAdj, player.adjTile.Length);
                 }
                 player.adjTile = newAdj;
+            }
+        }
+
+        private static void EnsureProjectileCachesCapacity(Player player)
+        {
+            if (player == null) return;
+            int maxProj = Math.Max(ProjectileLoader.ProjectileCount + 64, 2048);
+            if (player.ownedProjectileCounts == null || player.ownedProjectileCounts.Length < maxProj)
+            {
+                int cur = player.ownedProjectileCounts?.Length ?? 0;
+                int[] newCounts = new int[Math.Max(maxProj, cur * 2)];
+                if (player.ownedProjectileCounts != null)
+                {
+                    Array.Copy(player.ownedProjectileCounts, newCounts, player.ownedProjectileCounts.Length);
+                }
+                player.ownedProjectileCounts = newCounts;
             }
         }
 
