@@ -12,38 +12,38 @@ namespace WandsTool.Content
 {
     public class WandsPanelButton : UIState
     {
-        private UIImage back = null;
-        private Asset<Texture2D> back_img1 = null;
-        private Asset<Texture2D> back_img2 = null;
-        private UIImage ico = null;
-        private string mouseText = null;
-        public bool isBack = false;
+        private UIImage _backImage = null;
+        private Asset<Texture2D> _backTextureInactive = null;
+        private Asset<Texture2D> _backTextureActive = null;
+        private UIImage _iconImage = null;
+        private string _tooltipText = null;
+        public bool IsActive { get; set; } = false;
 
         public WandsPanelButton(Texture2D img1, string mouseText)
         {
-            back_img1 = Main.Assets.Request<Texture2D>("Images/UI/Wires_0", AssetRequestMode.ImmediateLoad);
-            back_img2 = Main.Assets.Request<Texture2D>("Images/UI/Wires_1", AssetRequestMode.ImmediateLoad);
-            this.mouseText = mouseText;
+            _backTextureInactive = Main.Assets.Request<Texture2D>("Images/UI/Wires_0", AssetRequestMode.ImmediateLoad);
+            _backTextureActive = Main.Assets.Request<Texture2D>("Images/UI/Wires_1", AssetRequestMode.ImmediateLoad);
+            _tooltipText = mouseText;
 
-            back = new UIImage(back_img1);
-            ico = new UIImage(img1);
+            _backImage = new UIImage(_backTextureInactive);
+            _iconImage = new UIImage(img1);
 
             Width.Set(40, 0);
             Height.Set(Width.Pixels, 0);
 
-            back.Width.Set(Width.Pixels, 0);
-            back.Height.Set(Height.Pixels, 0);
+            _backImage.Width.Set(Width.Pixels, 0);
+            _backImage.Height.Set(Height.Pixels, 0);
 
-            ico.Width.Set(16, 0);
-            ico.Height.Set(16, 0);
-            ico.HAlign = 0.5f;
-            ico.VAlign = 0.5f;
-            ico.ScaleToFit = true;
+            _iconImage.Width.Set(16, 0);
+            _iconImage.Height.Set(16, 0);
+            _iconImage.HAlign = 0.5f;
+            _iconImage.VAlign = 0.5f;
+            _iconImage.ScaleToFit = true;
 
             OnLeftClick += (e, s) => SoundEngine.PlaySound(SoundID.MenuTick);
 
-            Append(back);
-            Append(ico);
+            Append(_backImage);
+            Append(_iconImage);
         }
 
         public WandsPanelButton(string img1, string mouseText) :
@@ -58,21 +58,17 @@ namespace WandsTool.Content
                 Terraria.Player player = Main.LocalPlayer;
                 if (player != null) player.mouseInterface = true;
 
-                if (mouseText != null) Main.instance.MouseText(mouseText);
+                if (_tooltipText != null) Main.instance.MouseText(_tooltipText);
+            }
 
-                back.SetImage(isBack ? back_img2 : back_img1);
-            }
-            else
-            {
-                back.SetImage(isBack ? back_img2 : back_img1);
-            }
+            _backImage.SetImage(IsActive ? _backTextureActive : _backTextureInactive);
 
             base.Update(gameTime);
         }
 
         public void SetIco(Texture2D img1)
         {
-            ico.SetImage(img1);
+            _iconImage.SetImage(img1);
         }
 
         public void SetIco(string img1)
@@ -82,7 +78,7 @@ namespace WandsTool.Content
 
         public void SetTooltip(string text)
         {
-            mouseText = text;
+            _tooltipText = text;
         }
     }
 
@@ -96,28 +92,33 @@ namespace WandsTool.Content
         protected UIState btns_5 = null;
         protected UIState btns_6 = null;
         protected UIState btns_7 = null;
+        protected UIState btns_8 = null; // 子菜单 8：电线与机关
+        private int currentSubmenu = -1; // 当前展开的子菜单索引 (-1 表示未展开)
 
-        // 主环 7 个按钮
-        protected WandsPanelButton btn1 = null; // 破坏/放置
-        protected WandsPanelButton btn2 = null; // 操作目标分类
-        protected WandsPanelButton btn3 = null; // 几何形状
-        protected WandsPanelButton btn4 = null; // 方块方向/坡度
-        protected WandsPanelButton btn5 = null; // 液体魔杖
-        protected WandsPanelButton btn6 = null; // 蓝图与结构魔杖
-        protected WandsPanelButton btn7 = null; // 地形净化与环境改造魔杖
+        // 主环 8 个按钮 (8 轴对称轮盘)
+        protected WandsPanelButton btn1 = null; // 放置 / 破坏切换 (正上方)
+        protected WandsPanelButton btn2 = null; // 建筑行为与过滤 (右上方)
+        protected WandsPanelButton btn3 = null; // 几何形状 (正右方)
+        protected WandsPanelButton btn4 = null; // 方块坡度与朝向 (右下方)
+        protected WandsPanelButton btn8 = null; // 电线与机关 (正下方)
+        protected WandsPanelButton btn5 = null; // 液体魔杖 (左下方)
+        protected WandsPanelButton btn6 = null; // 建筑蓝图与结构系统 (正左方)
+        protected WandsPanelButton btn7 = null; // 地形净化与环境改造 (左上方)
 
-        // 子菜单 2：操作目标（方块、墙壁、填充空处、替换已有、收集、电线）
+        // 子菜单 2：建筑行为（方块、墙壁、同材质过滤、填充空处、替换已有、掉落收集）
         protected WandsPanelButton btn2_tile = null;
         protected WandsPanelButton btn2_wall = null;
+        protected WandsPanelButton btn2_match_filter = null;
         protected WandsPanelButton btn2_fill_empty = null;
         protected WandsPanelButton btn2_replace_existing = null;
-        protected WandsPanelButton btn2_replace_filter = null;
         protected WandsPanelButton btn2_collect = null;
-        protected WandsPanelButton btn2_wire_red = null;
-        protected WandsPanelButton btn2_wire_green = null;
-        protected WandsPanelButton btn2_wire_blue = null;
-        protected WandsPanelButton btn2_wire_yellow = null;
-        protected WandsPanelButton btn2_wire_actuator = null;
+
+        // 子菜单 8：电线与机关（红、绿、蓝、黄电线、制动器）
+        protected WandsPanelButton btn8_wire_red = null;
+        protected WandsPanelButton btn8_wire_green = null;
+        protected WandsPanelButton btn8_wire_blue = null;
+        protected WandsPanelButton btn8_wire_yellow = null;
+        protected WandsPanelButton btn8_wire_actuator = null;
 
         // 子菜单 3：几何形状（直线、空心圆、实心圆、实心矩形、空心矩形）
         protected WandsPanelButton btn3_line = null;
@@ -170,11 +171,12 @@ namespace WandsTool.Content
         public static Structure.UI.UIBlueprintManager BlueprintManager = new Structure.UI.UIBlueprintManager();
         public static WandsPanel Instance { get; private set; }
         public static bool AutoReopenManagerAfterPlacement = false;
+        public static bool IsOpen { get; set; } = false;
 
         public static void OpenBlueprintManager()
         {
             if (Instance == null) return;
-            if (!GameMain.UI_WandsPanel1_isOpen)
+            if (!IsOpen)
             {
                 Instance.Open();
             }
@@ -188,7 +190,7 @@ namespace WandsTool.Content
             }
         }
 
-        public bool isReset = true;
+        public bool IsReset { get; set; } = true;
 
         public WandsPanel()
         {
@@ -201,28 +203,32 @@ namespace WandsTool.Content
             btns_5 = new UIState();
             btns_6 = new UIState();
             btns_7 = new UIState();
+            btns_8 = new UIState();
 
-            // 主按钮初始化
+            // 主按钮初始化 (8 轴对称轮盘)
             btn1 = new WandsPanelButton("Images/Item_1", "放置 / 破坏切换");
-            btn2 = new WandsPanelButton("Images/Item_2", "操作目标: 方块/墙壁/填充/替换/收集/电线");
+            btn2 = new WandsPanelButton("Images/Item_2", "建筑行为与过滤: 方块/墙壁/同材质过滤/填充/替换/掉落物");
             btn3 = new WandsPanelButton(Resources.Images_ShapesRectangle, "几何形状: 直线 / 空心圆 / 矩形框选");
             btn4 = new WandsPanelButton(Resources.Images_SlopeSolid, "方块坡度与朝向");
+            btn8 = new WandsPanelButton("Images/UI/Wires_0", "电线与机关: 红/绿/蓝/黄电线与制动器");
             btn5 = new WandsPanelButton("Images/Item_3031", "液体魔杖: 吸收/清空/铺设液体");
             btn6 = new WandsPanelButton("Images/Item_3611", "建筑蓝图与结构系统: 复制/剪切/删除/粘贴/保存");
             btn7 = new WandsPanelButton("Images/Item_779", "地形净化与环境改造: 纯净/神圣/腐化/猩红/蘑菇/沙漠/雪原");
 
-            // 子按钮初始化
+            // 子按钮 2 初始化（建筑行为与过滤，6 个按钮）
             btn2_tile = new WandsPanelButton("Images/Item_2", "方块操作开关");
             btn2_wall = new WandsPanelButton("Images/Item_30", "背景墙操作开关");
+            btn2_match_filter = new WandsPanelButton("Images/Item_1071", "同材质过滤(保护家具): 开/关 (以鼠标起点材质为准，放置仅替换同类，破坏仅清除同类)");
             btn2_fill_empty = new WandsPanelButton("Images/Item_2", "填充空处开关 (开: 允许在空白处放置 / 关: 不填塞空白)");
             btn2_replace_existing = new WandsPanelButton("Images/Item_4082", "替换已有物块/墙壁开关 (开: 允许替换已有物块 / 关: 跳过不破坏已有物块)");
-            btn2_replace_filter = new WandsPanelButton("Images/Item_1071", "同材质过滤替换(保护家具): 开/关 (仅替换与起点方块相同的材质，保护家具与其它结构)");
             btn2_collect = new WandsPanelButton("Images/Item_5010", "破坏产生掉落物开关 (开: 产生并吸入背包 / 关: 彻底销毁无掉落)");
-            btn2_wire_red = new WandsPanelButton("Images/UI/Wires_2", "红线");
-            btn2_wire_green = new WandsPanelButton("Images/UI/Wires_3", "绿线");
-            btn2_wire_blue = new WandsPanelButton("Images/UI/Wires_4", "蓝线");
-            btn2_wire_yellow = new WandsPanelButton("Images/UI/Wires_5", "黄线");
-            btn2_wire_actuator = new WandsPanelButton("Images/UI/Wires_10", "制动器");
+
+            // 子按钮 8 初始化（电线与机关，5 个按钮）
+            btn8_wire_red = new WandsPanelButton("Images/UI/Wires_2", "红线");
+            btn8_wire_green = new WandsPanelButton("Images/UI/Wires_3", "绿线");
+            btn8_wire_blue = new WandsPanelButton("Images/UI/Wires_4", "蓝线");
+            btn8_wire_yellow = new WandsPanelButton("Images/UI/Wires_5", "黄线");
+            btn8_wire_actuator = new WandsPanelButton("Images/UI/Wires_10", "制动器");
 
             btn3_line = new WandsPanelButton(Resources.Images_ShapesLine, "直线");
             btn3_circular = new WandsPanelButton(Resources.Images_ShapesCircular, "空心圆/圆周");
@@ -269,23 +275,24 @@ namespace WandsTool.Content
             btn7_snow = new WandsPanelButton("Images/Item_5393", "冰雪化 (白溶液)");
             btn7_wall = new WandsPanelButton("Images/Item_30", "包含背景墙开关 (开: 同步改造背景墙 / 关: 仅改造物块)");
 
-            // 主按钮点击事件
-            btn1.OnLeftClick += (e, s) => onClick(0);
-            btn2.OnLeftClick += (e, s) => onClick(1);
-            btn3.OnLeftClick += (e, s) => onClick(2);
-            btn4.OnLeftClick += (e, s) => onClick(3);
-            btn5.OnLeftClick += (e, s) => onClick(4);
-            btn6.OnLeftClick += (e, s) => onClick(5);
-            btn7.OnLeftClick += (e, s) => onClick(6);
+            // 主按钮点击事件 (8 轴对称排布)
+            btn1.OnLeftClick += (e, s) => OnClick(0); // 正上方: 放置/破坏切换
+            btn2.OnLeftClick += (e, s) => OnClick(1); // 右上方: 建筑行为与过滤
+            btn3.OnLeftClick += (e, s) => OnClick(2); // 正右方: 几何形状
+            btn4.OnLeftClick += (e, s) => OnClick(3); // 右下方: 坡度与朝向
+            btn8.OnLeftClick += (e, s) => OnClick(4); // 正下方: 电线与机关
+            btn5.OnLeftClick += (e, s) => OnClick(5); // 左下方: 液体魔杖
+            btn6.OnLeftClick += (e, s) => OnClick(6); // 正左方: 建筑蓝图系统
+            btn7.OnLeftClick += (e, s) => OnClick(7); // 左上方: 地形净化与改造
 
-            // 子按钮 2 事件
-            Action<Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode> btn2_wire_action = (v) =>
-            {
-                if (GameMain.Wand_ToolMode.HasFlag(v)) GameMain.Wand_ToolMode &= ~v;
-                else GameMain.Wand_ToolMode |= v;
-            };
+            // 子按钮 2 事件（建筑行为与过滤）
             btn2_tile.OnLeftClick += (e, s) => GameMain.Wand_Tile = !GameMain.Wand_Tile;
             btn2_wall.OnLeftClick += (e, s) => GameMain.Wand_Wall = !GameMain.Wand_Wall;
+            btn2_match_filter.OnLeftClick += (e, s) =>
+            {
+                GameMain.Wand_MatchFilter = !GameMain.Wand_MatchFilter;
+                Main.NewText($"[魔杖] 同材质过滤(保护家具): {(GameMain.Wand_MatchFilter ? "开启 (以鼠标起点材质为准，放置仅替换同类，破坏仅清除同类)" : "关闭 (选区全量生效)")}", 120, 200, 255);
+            };
             btn2_fill_empty.OnLeftClick += (e, s) =>
             {
                 GameMain.Wand_FillEmpty = !GameMain.Wand_FillEmpty;
@@ -296,21 +303,23 @@ namespace WandsTool.Content
                 GameMain.Wand_ReplaceExisting = !GameMain.Wand_ReplaceExisting;
                 Main.NewText($"[魔杖] 替换已有物块/墙壁: {(GameMain.Wand_ReplaceExisting ? "开" : "关")}", 255, 255, 150);
             };
-            btn2_replace_filter.OnLeftClick += (e, s) =>
-            {
-                GameMain.Wand_ReplaceFilterMatch = !GameMain.Wand_ReplaceFilterMatch;
-                Main.NewText($"[魔杖] 同材质过滤替换(保护家具): {(GameMain.Wand_ReplaceFilterMatch ? "开启 (仅替换框选起点的同种材质，保护家具与其它物块)" : "关闭 (替换选区内全部已有物块)")}", 120, 200, 255);
-            };
             btn2_collect.OnLeftClick += (e, s) =>
             {
                 GameMain.Wand_CollectDrops = !GameMain.Wand_CollectDrops;
                 Main.NewText($"[魔杖] 产生掉落物: {(GameMain.Wand_CollectDrops ? "开" : "关")}", 255, 255, 150);
             };
-            btn2_wire_red.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red);
-            btn2_wire_green.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green);
-            btn2_wire_blue.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue);
-            btn2_wire_yellow.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow);
-            btn2_wire_actuator.OnLeftClick += (e, s) => btn2_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator);
+
+            // 子按钮 8 事件（电线与机关）
+            Action<Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode> btn8_wire_action = (v) =>
+            {
+                if (GameMain.Wand_ToolMode.HasFlag(v)) GameMain.Wand_ToolMode &= ~v;
+                else GameMain.Wand_ToolMode |= v;
+            };
+            btn8_wire_red.OnLeftClick += (e, s) => btn8_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red);
+            btn8_wire_green.OnLeftClick += (e, s) => btn8_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green);
+            btn8_wire_blue.OnLeftClick += (e, s) => btn8_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue);
+            btn8_wire_yellow.OnLeftClick += (e, s) => btn8_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow);
+            btn8_wire_actuator.OnLeftClick += (e, s) => btn8_wire_action(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator);
 
             // 子按钮 3 事件
             btn3_line.OnLeftClick += (e, s) => GameMain.Wand_Shapes = Wands.Shapes.line;
@@ -460,28 +469,32 @@ namespace WandsTool.Content
                 Main.NewText($"[魔杖] 环境改造包含背景墙: {(GameMain.Wand_BiomeIncludeWall ? "开" : "关")}", 255, 255, 150);
             };
 
-            // 装配 UI
+            // 装配 UI (主轮盘 8 个大类)
             SetState(container);
             container.Append(btns);
             container.Append(btn1);
             container.Append(btn2);
             container.Append(btn3);
             container.Append(btn4);
+            container.Append(btn8);
             container.Append(btn5);
             container.Append(btn6);
             container.Append(btn7);
 
+            // 子菜单 2：建筑行为与过滤 (6 键)
             btns_2.Append(btn2_tile);
             btns_2.Append(btn2_wall);
+            btns_2.Append(btn2_match_filter);
             btns_2.Append(btn2_fill_empty);
             btns_2.Append(btn2_replace_existing);
-            btns_2.Append(btn2_replace_filter);
             btns_2.Append(btn2_collect);
-            btns_2.Append(btn2_wire_red);
-            btns_2.Append(btn2_wire_green);
-            btns_2.Append(btn2_wire_blue);
-            btns_2.Append(btn2_wire_yellow);
-            btns_2.Append(btn2_wire_actuator);
+
+            // 子菜单 8：电线与机关 (5 键)
+            btns_8.Append(btn8_wire_red);
+            btns_8.Append(btn8_wire_green);
+            btns_8.Append(btn8_wire_blue);
+            btns_8.Append(btn8_wire_yellow);
+            btns_8.Append(btn8_wire_actuator);
 
             btns_3.Append(btn3_line);
             btns_3.Append(btn3_circular);
@@ -529,24 +542,26 @@ namespace WandsTool.Content
 
         public void Open()
         {
-            GameMain.UI_WandsPanel1_isOpen = true;
-            isReset = false;
+            IsOpen = true;
+            IsReset = false;
+            currentSubmenu = -1;
             btns.RemoveAllChildren();
             Reset();
-            update(null);
+            UpdateVisuals(null);
             Recalculate();
         }
 
         public void Close()
         {
-            GameMain.UI_WandsPanel1_isOpen = false;
+            IsOpen = false;
+            currentSubmenu = -1;
             btns.RemoveAllChildren();
             BlueprintManager?.Close();
         }
 
         public void Toggle()
         {
-            if (GameMain.UI_WandsPanel1_isOpen)
+            if (IsOpen)
             {
                 Close();
             }
@@ -556,11 +571,11 @@ namespace WandsTool.Content
             }
         }
 
-        public void update(GameTime time)
+        public void UpdateVisuals(GameTime time)
         {
-            if (isReset)
+            if (IsReset)
             {
-                isReset = false;
+                IsReset = false;
                 Reset();
                 Recalculate();
             }
@@ -618,60 +633,64 @@ namespace WandsTool.Content
             btn7.SetTooltip($"地形净化与环境改造: {GameMain.Wand_BiomeMode} [包含背景墙:{(GameMain.Wand_BiomeIncludeWall ? "开" : "关")}]");
 
             // 子按钮激活高亮背景
-            btn2_tile.isBack = GameMain.Wand_Tile;
-            btn2_wall.isBack = GameMain.Wand_Wall;
-            btn2_fill_empty.isBack = GameMain.Wand_FillEmpty;
-            btn2_replace_existing.isBack = GameMain.Wand_ReplaceExisting;
-            btn2_replace_filter.isBack = GameMain.Wand_ReplaceFilterMatch;
-            btn2_replace_filter.SetTooltip($"同材质过滤替换(保护家具): {(GameMain.Wand_ReplaceFilterMatch ? "开" : "关")} (以鼠标起点方块为准)");
-            btn2_collect.isBack = GameMain.Wand_CollectDrops;
-            btn2_wire_red.isBack = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red);
-            btn2_wire_green.isBack = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green);
-            btn2_wire_blue.isBack = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue);
-            btn2_wire_yellow.isBack = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow);
-            btn2_wire_actuator.isBack = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator);
+            btn2_tile.IsActive = GameMain.Wand_Tile;
+            btn2_wall.IsActive = GameMain.Wand_Wall;
+            btn2_match_filter.IsActive = GameMain.Wand_MatchFilter;
+            btn2_match_filter.SetTooltip($"同材质过滤(保护家具): {(GameMain.Wand_MatchFilter ? "开" : "关")} (以鼠标起点材质为准，放置仅替换同类，破坏仅清除同类)");
+            btn2_fill_empty.IsActive = GameMain.Wand_FillEmpty;
+            btn2_replace_existing.IsActive = GameMain.Wand_ReplaceExisting;
+            btn2_collect.IsActive = GameMain.Wand_CollectDrops;
 
-            btn3_line.isBack = GameMain.Wand_Shapes == Wands.Shapes.line;
-            btn3_circular.isBack = GameMain.Wand_Shapes == Wands.Shapes.circular;
-            btn3_filledCircular.isBack = GameMain.Wand_Shapes == Wands.Shapes.filledCircular;
-            btn3_rectangle.isBack = GameMain.Wand_Shapes == Wands.Shapes.rectangle;
-            btn3_hollowRectangle.isBack = GameMain.Wand_Shapes == Wands.Shapes.hollowRectangle;
-            btn4_Solid.isBack = GameMain.Wand_BlockType == WandAction.BlockType.Solid;
-            btn4_HalfBlock.isBack = GameMain.Wand_BlockType == WandAction.BlockType.HalfBlock;
-            btn4_SlopeUpLeft.isBack = GameMain.Wand_BlockType == WandAction.BlockType.SlopeUpLeft;
-            btn4_SlopeUpRight.isBack = GameMain.Wand_BlockType == WandAction.BlockType.SlopeUpRight;
-            btn4_SlopeDownLeft.isBack = GameMain.Wand_BlockType == WandAction.BlockType.SlopeDownLeft;
-            btn4_SlopeDownRight.isBack = GameMain.Wand_BlockType == WandAction.BlockType.SlopeDownRight;
+            // 电线子按钮高亮与主按钮状态
+            btn8_wire_red.IsActive = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red);
+            btn8_wire_green.IsActive = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green);
+            btn8_wire_blue.IsActive = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue);
+            btn8_wire_yellow.IsActive = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow);
+            btn8_wire_actuator.IsActive = GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator);
+            btn8.IsActive = GameMain.Wand_ToolMode != 0;
+            btn8.SetTooltip($"电线与机关: [{(GameMain.Wand_ToolMode == 0 ? "全部关闭" : GameMain.Wand_ToolMode.ToString())}]");
 
-            btn5_off.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.None;
-            btn5_absorb.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Absorb;
-            btn5_clear.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Clear;
-            btn5_water.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Water;
-            btn5_lava.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Lava;
-            btn5_honey.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Honey;
-            btn5_shimmer.isBack = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Shimmer;
-            btn5_infinite.isBack = GameMain.Wand_InfiniteLiquid;
+            btn3_line.IsActive = GameMain.Wand_Shapes == Wands.Shapes.line;
+            btn3_circular.IsActive = GameMain.Wand_Shapes == Wands.Shapes.circular;
+            btn3_filledCircular.IsActive = GameMain.Wand_Shapes == Wands.Shapes.filledCircular;
+            btn3_rectangle.IsActive = GameMain.Wand_Shapes == Wands.Shapes.rectangle;
+            btn3_hollowRectangle.IsActive = GameMain.Wand_Shapes == Wands.Shapes.hollowRectangle;
+            btn4_Solid.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.Solid;
+            btn4_HalfBlock.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.HalfBlock;
+            btn4_SlopeUpLeft.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.SlopeUpLeft;
+            btn4_SlopeUpRight.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.SlopeUpRight;
+            btn4_SlopeDownLeft.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.SlopeDownLeft;
+            btn4_SlopeDownRight.IsActive = GameMain.Wand_BlockType == WandAction.BlockType.SlopeDownRight;
+
+            btn5_off.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.None;
+            btn5_absorb.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Absorb;
+            btn5_clear.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Clear;
+            btn5_water.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Water;
+            btn5_lava.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Lava;
+            btn5_honey.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Honey;
+            btn5_shimmer.IsActive = GameMain.Wand_LiquidMode == GameMain.LiquidMode.Shimmer;
+            btn5_infinite.IsActive = GameMain.Wand_InfiniteLiquid;
 
             btn6.SetTooltip($"建筑蓝图模式: {GameMain.Wand_StructureMode} [覆盖:{(GameMain.Wand_StructureOverwrite ? "开" : "关")}] [背景墙:{(GameMain.Wand_StructureIncludeWall ? "开" : "关")}] [材料消耗:{(GameMain.Wand_StructureConsumeMaterials ? "开" : "关")}]");
-            btn6_off.isBack = GameMain.Wand_StructureMode == GameMain.StructureMode.None;
-            btn6_copy.isBack = GameMain.Wand_StructureMode == GameMain.StructureMode.Copy;
-            btn6_cut.isBack = GameMain.Wand_StructureMode == GameMain.StructureMode.Cut;
-            btn6_delete.isBack = GameMain.Wand_StructureMode == GameMain.StructureMode.Delete;
-            btn6_paste.isBack = GameMain.Wand_StructureMode == GameMain.StructureMode.Paste;
-            btn6_overwrite.isBack = GameMain.Wand_StructureOverwrite;
-            btn6_wall.isBack = GameMain.Wand_StructureIncludeWall;
-            btn6_consume.isBack = GameMain.Wand_StructureConsumeMaterials;
-            btn6_manager.isBack = BlueprintManager.IsOpen;
+            btn6_off.IsActive = GameMain.Wand_StructureMode == GameMain.StructureMode.None;
+            btn6_copy.IsActive = GameMain.Wand_StructureMode == GameMain.StructureMode.Copy;
+            btn6_cut.IsActive = GameMain.Wand_StructureMode == GameMain.StructureMode.Cut;
+            btn6_delete.IsActive = GameMain.Wand_StructureMode == GameMain.StructureMode.Delete;
+            btn6_paste.IsActive = GameMain.Wand_StructureMode == GameMain.StructureMode.Paste;
+            btn6_overwrite.IsActive = GameMain.Wand_StructureOverwrite;
+            btn6_wall.IsActive = GameMain.Wand_StructureIncludeWall;
+            btn6_consume.IsActive = GameMain.Wand_StructureConsumeMaterials;
+            btn6_manager.IsActive = BlueprintManager.IsOpen;
 
-            btn7_off.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.None;
-            btn7_purity.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Purity;
-            btn7_hallow.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Hallow;
-            btn7_corruption.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Corruption;
-            btn7_crimson.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Crimson;
-            btn7_mushroom.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Mushroom;
-            btn7_desert.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Desert;
-            btn7_snow.isBack = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Snow;
-            btn7_wall.isBack = GameMain.Wand_BiomeIncludeWall;
+            btn7_off.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.None;
+            btn7_purity.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Purity;
+            btn7_hallow.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Hallow;
+            btn7_corruption.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Corruption;
+            btn7_crimson.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Crimson;
+            btn7_mushroom.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Mushroom;
+            btn7_desert.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Desert;
+            btn7_snow.IsActive = GameMain.Wand_BiomeMode == GameMain.BiomeMode.Snow;
+            btn7_wall.IsActive = GameMain.Wand_BiomeIncludeWall;
         }
 
         public void Reset()
@@ -684,27 +703,30 @@ namespace WandsTool.Content
                 ui.Top.Set(p.Y - ui.Height.Pixels / 2, 0);
             };
 
-            // 主轮盘 7 个按钮均匀环绕鼠标 (半径 48px)
-            layoutCircle.Invoke(7, 0, btn1, 48f); // 正上方: 放置/破坏
-            layoutCircle.Invoke(7, 1, btn2, 48f); // 右上方: 操作目标
-            layoutCircle.Invoke(7, 2, btn3, 48f); // 右下方: 形状
-            layoutCircle.Invoke(7, 3, btn4, 48f); // 正下方偏右: 坡度
-            layoutCircle.Invoke(7, 4, btn5, 48f); // 正下方偏左: 液体
-            layoutCircle.Invoke(7, 5, btn6, 48f); // 左下方: 蓝图与结构
-            layoutCircle.Invoke(7, 6, btn7, 48f); // 左上方: 地形净化与改造
+            // 主轮盘 8 个按钮均匀环绕鼠标 (半径 48px，左右功能区对称)
+            layoutCircle.Invoke(8, 0, btn1, 48f); // 正上方 (-90°): 放置/破坏切换
+            layoutCircle.Invoke(8, 1, btn2, 48f); // 右上方 (-45°): 建筑行为与过滤
+            layoutCircle.Invoke(8, 2, btn3, 48f); // 正右方 (0°): 几何形状
+            layoutCircle.Invoke(8, 3, btn4, 48f); // 右下方 (45°): 坡度朝向
+            layoutCircle.Invoke(8, 4, btn8, 48f); // 正下方 (90°): 电线与机关
+            layoutCircle.Invoke(8, 5, btn5, 48f); // 左下方 (135°): 液体魔杖
+            layoutCircle.Invoke(8, 6, btn6, 48f); // 正左方 (180°): 建筑蓝图与结构系统
+            layoutCircle.Invoke(8, 7, btn7, 48f); // 左上方 (225°): 地形净化与改造
 
-            // 子菜单 2 环绕 (半径 96px, 11 个按钮)
-            layoutCircle.Invoke(11, 0, btn2_tile, 96f);
-            layoutCircle.Invoke(11, 1, btn2_wall, 96f);
-            layoutCircle.Invoke(11, 2, btn2_fill_empty, 96f);
-            layoutCircle.Invoke(11, 3, btn2_replace_existing, 96f);
-            layoutCircle.Invoke(11, 4, btn2_replace_filter, 96f);
-            layoutCircle.Invoke(11, 5, btn2_collect, 96f);
-            layoutCircle.Invoke(11, 6, btn2_wire_red, 96f);
-            layoutCircle.Invoke(11, 7, btn2_wire_green, 96f);
-            layoutCircle.Invoke(11, 8, btn2_wire_blue, 96f);
-            layoutCircle.Invoke(11, 9, btn2_wire_yellow, 96f);
-            layoutCircle.Invoke(11, 10, btn2_wire_actuator, 96f);
+            // 子菜单 2 环绕 (半径 96px, 6 个按钮)
+            layoutCircle.Invoke(6, 0, btn2_tile, 96f);
+            layoutCircle.Invoke(6, 1, btn2_wall, 96f);
+            layoutCircle.Invoke(6, 2, btn2_match_filter, 96f);
+            layoutCircle.Invoke(6, 3, btn2_fill_empty, 96f);
+            layoutCircle.Invoke(6, 4, btn2_replace_existing, 96f);
+            layoutCircle.Invoke(6, 5, btn2_collect, 96f);
+
+            // 子菜单 8 环绕 (半径 96px, 5 个按钮)
+            layoutCircle.Invoke(5, 0, btn8_wire_red, 96f);
+            layoutCircle.Invoke(5, 1, btn8_wire_green, 96f);
+            layoutCircle.Invoke(5, 2, btn8_wire_blue, 96f);
+            layoutCircle.Invoke(5, 3, btn8_wire_yellow, 96f);
+            layoutCircle.Invoke(5, 4, btn8_wire_actuator, 96f);
 
             layoutCircle.Invoke(5, 0, btn3_line, 96f);
             layoutCircle.Invoke(5, 1, btn3_circular, 96f);
@@ -751,18 +773,33 @@ namespace WandsTool.Content
             layoutCircle.Invoke(9, 8, btn7_wall, 96f);
         }
 
-        private void onClick(int index)
+        private void OnClick(int index)
         {
+            if (index == 0)
+            {
+                GameMain.Wand_isPlace = !GameMain.Wand_isPlace;
+                return;
+            }
+
+            // 再次点击同一个母菜单按钮：收回（折叠）子菜单
+            if (currentSubmenu == index)
+            {
+                btns.RemoveAllChildren();
+                currentSubmenu = -1;
+                return;
+            }
+
             btns.RemoveAllChildren();
+            currentSubmenu = index;
 
             switch (index)
             {
-                case 0: GameMain.Wand_isPlace = !GameMain.Wand_isPlace; break;
-                case 1: btns.Append(btns_2); break;
-                case 2: btns.Append(btns_3); break;
-                case 3: btns.Append(btns_4); break;
-                case 4: btns.Append(btns_5); break;
-                case 5:
+                case 1: btns.Append(btns_2); break; // 建筑行为与过滤
+                case 2: btns.Append(btns_3); break; // 几何形状
+                case 3: btns.Append(btns_4); break; // 坡度与朝向
+                case 4: btns.Append(btns_8); break; // 电线与机关
+                case 5: btns.Append(btns_5); break; // 液体魔杖
+                case 6: // 建筑蓝图系统
                     btns.Append(btns_6);
                     if (GameMain.Wand_StructureMode == GameMain.StructureMode.None)
                     {
@@ -771,7 +808,7 @@ namespace WandsTool.Content
                         Main.NewText("[魔杖] 蓝图模式已开启 (默认: 结构复制)", 255, 240, 100);
                     }
                     break;
-                case 6:
+                case 7: // 地形净化与改造
                     btns.Append(btns_7);
                     if (GameMain.Wand_BiomeMode == GameMain.BiomeMode.None)
                     {

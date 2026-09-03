@@ -231,7 +231,7 @@ namespace WandsTool.Content
                 }
 
                 // 开启同材质过滤替换时：若起点选中了有效方块且当前方块类型不匹配，则跳过（保护家具与其余物块）
-                if (GameMain.Wand_ReplaceFilterMatch && t.filterTileType >= 0 && tile.type != t.filterTileType)
+                if (GameMain.Wand_MatchFilter && t.filterTileType >= 0 && tile.type != t.filterTileType)
                 {
                     return;
                 }
@@ -300,7 +300,7 @@ namespace WandsTool.Content
                 }
 
                 // 开启同材质过滤替换时：若起点选中了有效背景墙且当前背景墙类型不匹配，则跳过保护
-                if (GameMain.Wand_ReplaceFilterMatch && t.filterWallType > 0 && tile.wall != t.filterWallType)
+                if (GameMain.Wand_MatchFilter && t.filterWallType > 0 && tile.wall != t.filterWallType)
                 {
                     return;
                 }
@@ -355,18 +355,27 @@ namespace WandsTool.Content
             Tile tile = Main.tile[t.x, t.y];
             if (tile == null) return;
 
+            bool killed = false;
             if (t.isTile && tile.active())
             {
-                WorldGen.KillTile(t.x, t.y, fail: false, effectOnly: false, noItem: false);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 0, t.x, t.y);
+                if (t.filterTileType < 0 || tile.type == t.filterTileType)
+                {
+                    WorldGen.KillTile(t.x, t.y, fail: false, effectOnly: false, noItem: false);
+                    NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 0, t.x, t.y);
+                    killed = true;
+                }
             }
             if (t.isWall && tile.wall > 0)
             {
-                WorldGen.KillWall(t.x, t.y, fail: false);
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 2, t.x, t.y);
+                if (t.filterWallType < 0 || tile.wall == t.filterWallType)
+                {
+                    WorldGen.KillWall(t.x, t.y, fail: false);
+                    NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 2, t.x, t.y);
+                    killed = true;
+                }
             }
 
-            if (GameMain.Wand_CollectDrops && player != null)
+            if (killed && GameMain.Wand_CollectDrops && player != null)
             {
                 CollectDropsNear(t.x, t.y, player);
             }
@@ -790,7 +799,7 @@ namespace WandsTool.Content
             }
         }
 
-        public static void DelTile(List<Point> tile, bool isTile, bool isWall, bool collectDrops = true)
+        public static void DelTile(List<Point> tile, bool isTile, bool isWall, bool collectDrops = true, int filterTile = -1, int filterWall = -1)
         {
             if (tile == null) return;
             bool hasNull = false;
@@ -799,7 +808,7 @@ namespace WandsTool.Content
 
             for (int i = 0; i < tile.Count; ++i)
             {
-                tile t = new tile(tile[i].X, tile[i].Y, isTile, isWall, BlockType.Solid);
+                tile t = new tile(tile[i].X, tile[i].Y, isTile, isWall, BlockType.Solid, false, filterTile, filterWall);
 
                 if (canTile(t) == false) continue;
 
@@ -816,8 +825,13 @@ namespace WandsTool.Content
                     continue;
                 }
 
-                if ((!isTile || !T.active()) &&
-                    (!isWall || !(T.wall > 0))) continue;
+                bool tileValid = isTile && T.active() && (filterTile < 0 || T.type == filterTile);
+                bool wallValid = isWall && (T.wall > 0) && (filterWall < 0 || T.wall == filterWall);
+
+                if (!tileValid && !wallValid) continue;
+
+                t.isTile = tileValid;
+                t.isWall = wallValid;
 
                 tileKill.Enqueue(t);
             }

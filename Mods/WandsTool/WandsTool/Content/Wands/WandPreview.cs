@@ -146,7 +146,7 @@ namespace WandsTool.Content
                         // 已有方块：需开启替换，且在过滤模式下必须与起点方块同材质
                         if (GameMain.Wand_ReplaceExisting && dst.type != tileCreateType)
                         {
-                            if (!GameMain.Wand_ReplaceFilterMatch || Wands.StartTileType < 0 || dst.type == Wands.StartTileType)
+                            if (!GameMain.Wand_MatchFilter || Wands.StartTileType < 0 || dst.type == Wands.StartTileType)
                             {
                                 canDrawTile = true;
                             }
@@ -194,7 +194,7 @@ namespace WandsTool.Content
                     {
                         if (GameMain.Wand_ReplaceExisting && dst.wall != wallCreateType)
                         {
-                            if (!GameMain.Wand_ReplaceFilterMatch || Wands.StartWallType <= 0 || dst.wall == Wands.StartWallType)
+                            if (!GameMain.Wand_MatchFilter || Wands.StartWallType <= 0 || dst.wall == Wands.StartWallType)
                             {
                                 canDrawWall = true;
                             }
@@ -230,7 +230,7 @@ namespace WandsTool.Content
         }
 
         /// <summary>
-        /// 破坏模式：对选区既有物块与背景墙覆盖 40% 红色高亮遮罩与裂纹虚影
+        /// 破坏模式：对选区既有物块与背景墙覆盖 40% 红色高亮遮罩与裂纹虚影（支持同材质过滤精准遮罩与安全保护）
         /// </summary>
         private static void DrawBreak(SpriteBatch sb, List<Point> shapes)
         {
@@ -239,6 +239,25 @@ namespace WandsTool.Content
 
             GetViewportTileRange(out int minX, out int minY, out int maxX, out int maxY);
 
+            int filterTile = -1;
+            int filterWall = -1;
+            if (GameMain.Wand_MatchFilter)
+            {
+                // 层级优先：起点有物块则仅破坏同类物块（保护背景墙）；
+                // 仅当起点无物块（纯背景墙）时才破坏同类背景墙；
+                // 起点为空白空气时退化为全量破坏
+                if (Wands.StartTileType >= 0)
+                {
+                    filterTile = Wands.StartTileType;
+                    filterWall = -1;
+                }
+                else if (Wands.StartWallType > 0)
+                {
+                    filterTile = -1;
+                    filterWall = Wands.StartWallType;
+                }
+            }
+
             foreach (Point p in shapes)
             {
                 if (p.X < minX || p.X > maxX || p.Y < minY || p.Y > maxY) continue; // 视口裁剪
@@ -246,6 +265,21 @@ namespace WandsTool.Content
                 Tile tile = Main.tile[p.X, p.Y];
                 if (tile == null) continue;
                 if (!tile.active() && tile.wall <= 0) continue; // 无可破坏内容
+
+                // 过滤匹配判断
+                bool tileMatch = GameMain.Wand_Tile && tile.active() && (filterTile < 0 || tile.type == filterTile);
+                bool wallMatch = GameMain.Wand_Wall && (tile.wall > 0) && (filterWall < 0 || tile.wall == filterWall);
+
+                if (GameMain.Wand_MatchFilter)
+                {
+                    if (filterTile >= 0 && !tileMatch) continue;
+                    if (filterWall > 0 && !wallMatch) continue;
+                    if (filterTile < 0 && filterWall < 0 && !tileMatch && !wallMatch) continue;
+                }
+                else
+                {
+                    if (!tileMatch && !wallMatch) continue;
+                }
 
                 Vector2 pos = new Vector2(p.X * 16, p.Y * 16) - Main.screenPosition;
                 Rectangle rect = new Rectangle((int)pos.X, (int)pos.Y, 16, 16);

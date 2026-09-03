@@ -103,8 +103,6 @@ namespace WandsTool.Content
             Snow
         }
 
-        public static bool UI_WandsPanel1_isOpen = false;
-
         public static bool Wand_isEnable = false;
         public static int Wand_UpdateCount = 1;         // 更新循环次数
         public static int Wand_BatchSize = 64;          // 单次批量操作图格数
@@ -113,12 +111,7 @@ namespace WandsTool.Content
         public static bool Wand_Wall = false;           // 操作墙壁
         public static bool Wand_FillEmpty = true;       // 允许填充空处（默认开启）
         public static bool Wand_ReplaceExisting = true; // 允许替换已有物块/背景墙（默认开启）
-        public static bool Wand_ReplaceFilterMatch = false; // 仅替换同材质（白名单过滤与家具保护，以鼠标起点材质为准，默认关闭）
-        public static bool Wand_BlockReplace            // 兼容别名属性
-        {
-            get => Wand_ReplaceExisting;
-            set => Wand_ReplaceExisting = value;
-        }
+        public static bool Wand_MatchFilter = false;    // 同材质过滤（放置仅替换同材质，破坏仅清除同材质，以鼠标起点材质为准，默认关闭）
         public static bool Wand_CollectDrops = true;    // 破坏时自动吸附收集掉落物
         public static LiquidMode Wand_LiquidMode = LiquidMode.None; // 当前液体操作模式
         public static bool Wand_InfiniteLiquid = false; // 无限液体模式（免消耗背包桶）
@@ -173,7 +166,7 @@ namespace WandsTool.Content
                 LastActiveStructureMode = StructureMode.Copy;
                 CutSourceRect = null;
                 Wand_BiomeMode = BiomeMode.None;
-                Wand_ReplaceFilterMatch = false;
+                Wand_MatchFilter = false;
                 WandsPanel.BlueprintManager?.Close();
 
                 if (showMsg)

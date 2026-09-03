@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using System.Collections.Generic;
 using TPML;
 
@@ -36,7 +36,7 @@ namespace WandsTool
                 if (v == null || v.Length < 1) return;
                 if (v[0] is bool r)
                 {
-                    Content.GameMain.Wand_BlockReplace = r;
+                    Content.GameMain.Wand_ReplaceExisting = r;
                 }
             };
             root.SubCommand.Add(replace);

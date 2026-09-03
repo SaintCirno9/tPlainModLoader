@@ -300,15 +300,35 @@ namespace WandsTool.Content
                         if (GameMain.Wand_Tile || GameMain.Wand_Wall)
                         {
                             WandHistory.BeginRecord(Main.LocalPlayer, shapes);
+
+                            int fTile = -1;
+                            int fWall = -1;
+                            if (GameMain.Wand_MatchFilter)
+                            {
+                                // 层级优先：起点有物块则仅破坏/替换同类物块（保护背景墙）；
+                                // 仅当起点无物块（纯背景墙）时才破坏/替换同类背景墙；
+                                // 起点为空白空气时，退化为全量操作（fTile = -1, fWall = -1）
+                                if (startTileType >= 0)
+                                {
+                                    fTile = startTileType;
+                                    fWall = -1;
+                                }
+                                else if (startWallType > 0)
+                                {
+                                    fTile = -1;
+                                    fWall = startWallType;
+                                }
+                            }
+
                             if (GameMain.Wand_isPlace)
                             {
-                                int fTile = GameMain.Wand_ReplaceFilterMatch ? startTileType : -1;
-                                int fWall = GameMain.Wand_ReplaceFilterMatch ? startWallType : -1;
                                 WandAction.AddTile(shapes, GameMain.Wand_Tile, GameMain.Wand_Wall, GameMain.Wand_BlockType, GameMain.Wand_ReplaceExisting, fTile, fWall);
                             }
                             else
                             {
-                                WandAction.DelTile(shapes, GameMain.Wand_Tile, GameMain.Wand_Wall, GameMain.Wand_CollectDrops);
+                                bool destroyTile = GameMain.Wand_Tile && (fWall == -1);
+                                bool destroyWall = GameMain.Wand_Wall && (fTile == -1);
+                                WandAction.DelTile(shapes, destroyTile, destroyWall, GameMain.Wand_CollectDrops, fTile, fWall);
                                 Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
                             }
                         }
@@ -469,12 +489,12 @@ namespace WandsTool.Content
                 if (GameMain.Wand_ReplaceExisting && !GameMain.Wand_FillEmpty)
                 {
                     borderColor = new Color(255, 165, 0);
-                    modeName = GameMain.Wand_ReplaceFilterMatch ? "同材质纯替换(保护家具)" : "纯替换";
+                    modeName = GameMain.Wand_MatchFilter ? "同材质纯替换(保护家具)" : "纯替换";
                 }
                 else if (GameMain.Wand_ReplaceExisting)
                 {
                     borderColor = new Color(255, 165, 0);
-                    modeName = GameMain.Wand_ReplaceFilterMatch ? "同材质替换(保护家具)" : "方块/墙替换";
+                    modeName = GameMain.Wand_MatchFilter ? "同材质替换(保护家具)" : "方块/墙替换";
                 }
                 else
                 {
@@ -485,14 +505,66 @@ namespace WandsTool.Content
             else
             {
                 borderColor = new Color(250, 40, 80);
-                modeName = "区域破坏";
+                if (GameMain.Wand_MatchFilter)
+                {
+                    if (startTileType >= 0)
+                    {
+                        string name = GetTargetTileOrWallName(startTileType, -1);
+                        modeName = $"同材质破坏: {name}";
+                    }
+                    else if (startWallType > 0)
+                    {
+                        string name = GetTargetTileOrWallName(-1, startWallType);
+                        modeName = $"同材质破坏: {name}";
+                    }
+                    else
+                    {
+                        modeName = "全选破坏(起点为空)";
+                    }
+                }
+                else
+                {
+                    modeName = "区域破坏";
+                }
             }
             Color backgroundColor = borderColor * 0.35f;
 
             int w = (int)Math.Abs(Math.Floor(position1.X / 16) - Math.Floor(position2.X / 16)) + 1;
             int h = (int)Math.Abs(Math.Floor(position1.Y / 16) - Math.Floor(position2.Y / 16)) + 1;
             int count = shapes?.Count ?? 0;
-            Terraria.Utils.DrawBorderString(Main.spriteBatch, $"[{modeName}] {w} x {h} ({count}格)", new Vector2(Main.mouseX, Main.mouseY + 50), borderColor, anchorx: 0.5f, anchory: 0.5f);
+
+            string countText = $"{count}格";
+            if (!GameMain.Wand_isPlace && GameMain.Wand_MatchFilter && shapes != null && (startTileType >= 0 || startWallType > 0))
+            {
+                int matchCount = 0;
+                if (startTileType >= 0)
+                {
+                    for (int i = 0; i < shapes.Count; i++)
+                    {
+                        Point p = shapes[i];
+                        if (p.X >= 0 && p.X < Main.tile.GetLength(0) && p.Y >= 0 && p.Y < Main.tile.GetLength(1))
+                        {
+                            Tile t = Main.tile[p.X, p.Y];
+                            if (t != null && t.active() && t.type == startTileType) matchCount++;
+                        }
+                    }
+                }
+                else if (startWallType > 0)
+                {
+                    for (int i = 0; i < shapes.Count; i++)
+                    {
+                        Point p = shapes[i];
+                        if (p.X >= 0 && p.X < Main.tile.GetLength(0) && p.Y >= 0 && p.Y < Main.tile.GetLength(1))
+                        {
+                            Tile t = Main.tile[p.X, p.Y];
+                            if (t != null && t.wall == startWallType) matchCount++;
+                        }
+                    }
+                }
+                countText = $"{matchCount} / {count}格目标";
+            }
+
+            Terraria.Utils.DrawBorderString(Main.spriteBatch, $"[{modeName}] {w} x {h} ({countText})", new Vector2(Main.mouseX, Main.mouseY + 50), borderColor, anchorx: 0.5f, anchory: 0.5f);
 
             // 拖拽框选阶段渲染半透明材质施工虚影（放置/破坏/液体），置于边框线下方
             WandPreview.Draw(Main.spriteBatch, shapes);
@@ -675,13 +747,13 @@ namespace WandsTool.Content
 
                 if (GameMain.Wand_ReplaceExisting && !GameMain.Wand_FillEmpty)
                 {
-                    string modeStr = GameMain.Wand_ReplaceFilterMatch ? "纯同材质替换" : "纯替换";
+                    string modeStr = GameMain.Wand_MatchFilter ? "纯同材质替换" : "纯替换";
                     text = (placeItem != null) ? $"{modeStr} ({target})" : $"{modeStr} [缺材料]";
                     textColor = (placeItem != null) ? new Color(255, 175, 20) : new Color(255, 100, 100);
                 }
                 else if (GameMain.Wand_ReplaceExisting)
                 {
-                    string modeStr = GameMain.Wand_ReplaceFilterMatch ? "同材质替换" : "替换";
+                    string modeStr = GameMain.Wand_MatchFilter ? "同材质替换" : "替换";
                     text = (placeItem != null) ? $"{modeStr} ({target})" : $"{modeStr} [缺材料]";
                     textColor = (placeItem != null) ? new Color(255, 175, 20) : new Color(255, 100, 100);
                 }
@@ -749,6 +821,28 @@ namespace WandsTool.Content
 
             textPos = new Vector2(Main.mouseX + 20, Main.mouseY + 20);
             Terraria.Utils.DrawBorderString(sb, text, textPos, textColor, 0.82f);
+        }
+
+        private static string GetTargetTileOrWallName(int tileType, int wallType)
+        {
+            try
+            {
+                if (tileType >= 0)
+                {
+                    string name = Lang.GetMapObjectName(Terraria.Map.MapHelper.TileToLookup(tileType, 0));
+                    if (!string.IsNullOrEmpty(name)) return name;
+                    return $"物块 #{tileType}";
+                }
+                if (wallType > 0 && Terraria.Map.MapHelper.wallLookup != null && wallType < Terraria.Map.MapHelper.wallLookup.Length)
+                {
+                    int lookup = Terraria.Map.MapHelper.wallLookup[wallType];
+                    string name = Lang.GetMapObjectName(lookup);
+                    if (!string.IsNullOrEmpty(name)) return name;
+                    return $"背景墙 #{wallType}";
+                }
+            }
+            catch { }
+            return "未知物块";
         }
     }
 }

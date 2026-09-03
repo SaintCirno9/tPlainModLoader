@@ -73,7 +73,7 @@ namespace WandsTool
                             Wands.DrawCursorModeTooltip(Main.spriteBatch);
                         }
 
-                        if (GameMain.UI_WandsPanel1_isOpen && GameMain.Wand_isEnable)
+                        if (WandsPanel.IsOpen && GameMain.Wand_isEnable)
                         {
                             UI?.Draw(Main.spriteBatch, Main.gameTimeCache);
                         }
@@ -97,10 +97,10 @@ namespace WandsTool
                 return;
             }
 
-            if (GameMain.UI_WandsPanel1_isOpen && GameMain.Wand_isEnable)
+            if (WandsPanel.IsOpen && GameMain.Wand_isEnable)
             {
                 UI?.Update(gameTime);
-                UI?.update(gameTime);
+                UI?.UpdateVisuals(gameTime);
             }
         }
 

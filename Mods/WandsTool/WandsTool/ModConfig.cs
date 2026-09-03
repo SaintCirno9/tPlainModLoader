@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using TPML;
 using TPML.UI;
@@ -67,7 +67,7 @@ namespace WandsTool
         private static void SyncToGameMain()
         {
             if (data == null) return;
-            GameMain.Wand_BlockReplace = data.BlockReplace;
+            GameMain.Wand_ReplaceExisting = data.BlockReplace;
             GameMain.Wand_CollectDrops = data.CollectDrops;
             GameMain.Wand_InfiniteLiquid = data.InfiniteLiquid;
             if (data.BatchSize > 0) GameMain.Wand_BatchSize = data.BatchSize;
@@ -114,7 +114,7 @@ namespace WandsTool
                 if (data == null) return;
                 if (data.BlockReplace == v) return;
                 data.BlockReplace = v;
-                GameMain.Wand_BlockReplace = v;
+                GameMain.Wand_ReplaceExisting = v;
                 NeedSave = true;
                 Save();
             };
