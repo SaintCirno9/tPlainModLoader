@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
@@ -16,6 +16,14 @@ namespace TPML.UI
         public Action OnOpen = null;
         /// <summary/>
         public Action OnClose = null;
+        /// <summary>
+        /// 窗口拖动移动结束时触发
+        /// </summary>
+        public Action OnMoved = null;
+        /// <summary>
+        /// 窗口拖动调整大小结束时触发
+        /// </summary>
+        public Action OnResized = null;
         /// <summary/>
         public UIElement Child { get; protected set; } = null;
         /// <summary/>
@@ -90,7 +98,11 @@ namespace TPML.UI
             {
                 Left.Pixels = Main.mouseX + dragPosOff.X;
                 Top.Pixels = Main.mouseY + dragPosOff.Y;
-                if (Main.mouseLeft == false) dragPos = false;
+                if (Main.mouseLeft == false)
+                {
+                    dragPos = false;
+                    OnMoved?.Invoke();
+                }
             }
             #endregion
 
@@ -99,10 +111,29 @@ namespace TPML.UI
             {
                 Width.Pixels = Main.mouseX + dragSizeOff.X - Left.Pixels;
                 Height.Pixels = Main.mouseY + dragSizeOff.Y - Top.Pixels;
-                if (Main.mouseLeft == false) dragSize = false;
+                if (Main.mouseLeft == false)
+                {
+                    dragSize = false;
+                    OnResized?.Invoke();
+                }
             }
             #endregion
 
+            ClampToScreen();
+
+            //
+            uie.UpdateContainer_Height();
+            Child.Height.Set(-(uie.Height.Pixels + ui_dragSize_img.Height.Pixels), 1);
+            Child.Top.Pixels = uie.Height.Pixels;
+
+            if (IsMouseHovering) Main.LocalPlayer.mouseInterface = true;
+        }
+
+        /// <summary>
+        /// 限制窗口在屏幕范围内
+        /// </summary>
+        public virtual void ClampToScreen()
+        {
             int margin = 10;
 
             //限制大小
@@ -125,13 +156,20 @@ namespace TPML.UI
 
             if (Top.Pixels + Height.Pixels > Main.screenHeight - margin) Top.Pixels = Main.screenHeight - margin - Height.Pixels;
             else if (Top.Pixels < margin) Top.Pixels = margin;
+        }
 
-            //
-            uie.UpdateContainer_Height();
-            Child.Height.Set(-(uie.Height.Pixels + ui_dragSize_img.Height.Pixels), 1);
-            Child.Top.Pixels = uie.Height.Pixels;
+        /// <summary>
+        /// 安全设定窗口几何位置与尺寸（自动应用视口边界约束）
+        /// </summary>
+        public virtual void SetGeometry(float? left, float? top, float? width, float? height)
+        {
+            if (width.HasValue && width.Value >= MinWidth.Pixels) Width.Pixels = width.Value;
+            if (height.HasValue && height.Value >= MinHeight.Pixels) Height.Pixels = height.Value;
 
-            if (IsMouseHovering) Main.LocalPlayer.mouseInterface = true;
+            if (left.HasValue) Left.Pixels = left.Value;
+            if (top.HasValue) Top.Pixels = top.Value;
+
+            ClampToScreen();
         }
 
         ///// <inheritdoc/>

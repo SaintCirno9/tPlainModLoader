@@ -1,4 +1,4 @@
-﻿using ChatAi.Content;
+using ChatAi.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ namespace ChatAi.ModLinkage
             TPML.ModLoad.ModObject mo = mos.FirstOrDefault(i => i.config.key == "StaticTile.QuickSetting");
             if (mo == null) return;
 
-            Type type = mo.assembly.GetType("QuickSetting.QuickSetting.QuickSetting");
+            Type type = mo.assembly.GetType("QuickSetting.QuickSetting");
             if (type == null) return;
 
             System.Reflection.MethodInfo mi = type.GetMethod("AddItem", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);

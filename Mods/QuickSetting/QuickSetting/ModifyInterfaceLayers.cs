@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using QuickSetting.KeyBind;
 using System.Collections.Generic;
 using TPML;
@@ -41,7 +41,7 @@ namespace QuickSetting
                 // 监听统一 ModKeybind 快捷键输入
                 if (QuickSettingKeybind.ToggleKeybind?.JustPressed == true)
                 {
-                    QuickSetting.QuickSetting.SwitchOpenOrClose();
+                    QuickSetting.SwitchOpenOrClose();
                 }
             }
         }

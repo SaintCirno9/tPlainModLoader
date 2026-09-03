@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ProjectGuid>{5CE623EC-BDD6-4A59-ACFE-1D9FF2E369FE}</ProjectGuid>
@@ -29,7 +29,7 @@
     <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
-      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\..\Libs\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -40,7 +40,7 @@
   <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickSetting 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
-      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))</ModSourceDir>
+      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>
       <ModDeployDir>$(TerrariaDir)\tPlainModLoader\Mods\$(MSBuildProjectName)</ModDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />

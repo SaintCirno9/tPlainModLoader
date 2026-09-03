@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Linq;
 using TPML;
@@ -40,7 +40,7 @@ namespace QuickSetting.ModLinkage
             ui_img.OnLeftClick += (e, s) =>
             {
                 SoundEngine.PlaySound(12);
-                QuickSetting.QuickSetting.SwitchOpenOrClose();
+                QuickSetting.SwitchOpenOrClose();
             };
 
             mi.Invoke(null, new object[] { "QuickSetting.SwitchOpenOrClose", ui_img });

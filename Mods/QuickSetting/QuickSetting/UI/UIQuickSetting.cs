@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -8,9 +8,9 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.UI;
 
-namespace QuickSetting.QuickSetting
+namespace QuickSetting.UI
 {
-    internal class UIQuickSetting : UIWindow
+    public class UIQuickSetting : UIWindow
     {
         public Action<string> OnAddItem = null;
         public Action<string, string> OnSwitchItem = null;
@@ -38,6 +38,10 @@ namespace QuickSetting.QuickSetting
 
             Child.Append(ui_wp);
             Child.Append(ui_children);
+
+            // 拖动移动或调整尺寸松手时通知即时落盘
+            OnMoved += () => QuickSetting.OnWindowGeometryChanged?.Invoke();
+            OnResized += () => QuickSetting.OnWindowGeometryChanged?.Invoke();
         }
 
         public override void Update(GameTime gameTime)
@@ -104,6 +108,7 @@ namespace QuickSetting.QuickSetting
 
         public void KeyOrder(List<string> keyOrder)
         {
+            if (keyOrder == null) return;
             int index = 0;
 
             foreach (string key in keyOrder)

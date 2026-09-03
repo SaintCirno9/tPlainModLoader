@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelArt", "..\Mods\PixelAr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickButton", "..\Mods\QuickButton\QuickButton\QuickButton\QuickButton.csproj", "{6852A9D1-BD82-46A0-8F98-CEECF0360875}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickSetting", "..\Mods\QuickSetting\QuickSetting\QuickSetting\QuickSetting.csproj", "{5CE623EC-BDD6-4A59-ACFE-1D9FF2E369FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickSetting", "..\Mods\QuickSetting\QuickSetting\QuickSetting.csproj", "{5CE623EC-BDD6-4A59-ACFE-1D9FF2E369FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skil", "..\Mods\Skil\Skil\Skil\Skil.csproj", "{3771B7AC-ED1A-4C2E-88F4-CE5921867160}"
 EndProject
