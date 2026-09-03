@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skil", "..\Mods\Skil\Skil\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuspiciousPlayer", "..\Mods\SuspiciousPlayer\SuspiciousPlayer\SuspiciousPlayer\SuspiciousPlayer.csproj", "{1E23795A-8758-45DE-B962-B799C09CC923}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WandsTool", "..\Mods\WandsTool\WandsTool\WandsTool\WandsTool.csproj", "{9EDB6614-8022-472D-956C-64C4EAA482BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WandsTool", "..\Mods\WandsTool\WandsTool\WandsTool.csproj", "{9EDB6614-8022-472D-956C-64C4EAA482BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "批量生成", "..\Mods\批量生成\批量生成\批量生成.csproj", "{E8E81B66-2513-464C-BB08-B6D6F900480B}"
 EndProject

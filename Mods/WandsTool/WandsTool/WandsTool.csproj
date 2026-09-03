@@ -1,20 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{A8F1C3E2-9B7D-4C6A-8E1F-2D3C4B5A6E7F}</ProjectGuid>
+    <ProjectGuid>{9EDB6614-8022-472D-956C-64C4EAA482BA}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>TPMLBridge</RootNamespace>
-    <AssemblyName>TPMLBridge</AssemblyName>
+    <RootNamespace>WandsTool</RootNamespace>
+    <AssemblyName>WandsTool</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <NoWarn>NU1605</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="Microsoft.CSharp" />
+    <!-- XNA 4.0 仅存在于 GAC（随 XNA Redistributable 安装），无 NuGet 分发，此处使用 GAC 确定性物理路径 -->
     <Reference Include="Microsoft.Xna.Framework">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
@@ -24,25 +25,28 @@
     <Reference Include="Microsoft.Xna.Framework.Graphics">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Graphics\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Graphics.dll</HintPath>
     </Reference>
+    <!-- 原版 Terraria exe：路径由 monorepo 根 Directory.Build.props 的 TerrariaDir 注入；Private=false 避免复制游戏文件到输出目录 -->
     <Reference Include="Terraria">
       <HintPath>$(TerrariaDir)\Terraria.exe</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
       <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
-    <ProjectReference Include="..\..\WandsTool\WandsTool\WandsTool.csproj" Private="false" />
-    <ProjectReference Include="..\..\RecipeBrowser\RecipeBrowser\RecipeBrowser.csproj" Private="false" />
-    <ProjectReference Include="..\..\FishingMachine\FishingMachine\FishingMachine.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" />
+  </ItemGroup>
+
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\WandsTool 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
       <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>
