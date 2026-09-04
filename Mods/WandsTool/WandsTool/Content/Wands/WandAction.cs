@@ -207,6 +207,253 @@ namespace WandsTool.Content
             }
         }
 
+        /// <summary>
+        /// 判定物品是否属于草种、地被植物（苔藓）或绿化法杖
+        /// </summary>
+        public static bool IsGroundCoverItem(Item item)
+        {
+            if (item == null || item.IsAir) return false;
+            if (item.type == ItemID.StaffofRegrowth || item.type == ItemID.AcornAxe) return true;
+            if (item.type > 0 && item.type < ItemID.Count)
+            {
+                if (ItemID.Sets.GrassSeeds[item.type]) return true;
+                if (ItemID.Sets.Moss[item.type]) return true;
+            }
+            if (item.createTile >= 0 && item.createTile < Main.tileMoss.Length && Main.tileMoss[item.createTile]) return true;
+            return false;
+        }
+
+        private static bool IsDirtFamily(int type)
+        {
+            return type == TileID.Dirt || type == TileID.Grass || type == TileID.CorruptGrass || 
+                   type == TileID.CrimsonGrass || type == TileID.HallowedGrass;
+        }
+
+        private static bool IsMudFamily(int type)
+        {
+            return type == TileID.Mud || type == TileID.JungleGrass || type == TileID.MushroomGrass || 
+                   type == TileID.CorruptJungleGrass || type == TileID.CrimsonJungleGrass;
+        }
+
+        private static bool IsAshFamily(int type)
+        {
+            return type == TileID.Ash || type == TileID.AshGrass;
+        }
+
+        private static int GetBrickMossType(int mossTile)
+        {
+            if (mossTile == 381) return 517;
+            if (mossTile == 534) return 535;
+            if (mossTile == 536) return 537;
+            if (mossTile == 539) return 540;
+            if (mossTile == 625) return 626;
+            if (mossTile == 627) return 628;
+            if (mossTile >= 179 && mossTile <= 184) return 512 + mossTile - 179;
+            return mossTile;
+        }
+
+        private static void CleanIncompatibleVegetationAbove(int x, int y, int grassType)
+        {
+            if (y <= 0) return;
+            Tile above = Main.tile[x, y - 1];
+            if (above == null || !above.active()) return;
+
+            int aboveType = above.type;
+            bool kill = false;
+
+            if (aboveType == TileID.Plants || aboveType == TileID.Plants2)
+            {
+                if (grassType != TileID.Grass && grassType != TileID.HallowedGrass) kill = true;
+            }
+            else if (aboveType == TileID.CorruptPlants || aboveType == TileID.CorruptThorns)
+            {
+                if (grassType != TileID.CorruptGrass && grassType != TileID.CorruptJungleGrass) kill = true;
+            }
+            else if (aboveType == TileID.CrimsonPlants || aboveType == TileID.CrimsonThorns)
+            {
+                if (grassType != TileID.CrimsonGrass && grassType != TileID.CrimsonJungleGrass) kill = true;
+            }
+            else if (aboveType == TileID.HallowedPlants || aboveType == TileID.HallowedPlants2)
+            {
+                if (grassType != TileID.HallowedGrass) kill = true;
+            }
+            else if (aboveType == TileID.JunglePlants || aboveType == TileID.JunglePlants2)
+            {
+                if (grassType != TileID.JungleGrass) kill = true;
+            }
+            else if (aboveType == TileID.MushroomPlants)
+            {
+                if (grassType != TileID.MushroomGrass) kill = true;
+            }
+            else if (aboveType == TileID.AshPlants)
+            {
+                if (grassType != TileID.AshGrass) kill = true;
+            }
+
+            if (kill)
+            {
+                WorldGen.KillTile(x, y - 1, fail: false, effectOnly: false, noItem: false);
+                if (Main.netMode == 1)
+                {
+                    NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 0, x, y - 1);
+                }
+            }
+            else
+            {
+                WorldGen.TileFrame(x, y - 1, resetFrame: true);
+            }
+        }
+
+        private static bool TryPlantGroundCover(tile t, Player player, Item item)
+        {
+            if (!WorldGen.InWorld(t.x, t.y)) return false;
+            Tile tile = Main.tile[t.x, t.y];
+            if (tile == null || !tile.active()) return false; // 严格跳过空气/空地
+
+            int curType = tile.type;
+            int targetTileType = -1;
+            bool isRegrowth = item.type == ItemID.StaffofRegrowth || item.type == ItemID.AcornAxe;
+
+            // 1. 计算目标方块类型与基质智能适配
+            if (isRegrowth)
+            {
+                if (IsDirtFamily(curType) || IsMudFamily(curType))
+                {
+                    targetTileType = TileID.Grass;
+                }
+                else if (curType == TileID.Stone)
+                {
+                    targetTileType = TileID.GreenMoss;
+                }
+                else if (curType == TileID.GrayBrick)
+                {
+                    targetTileType = 512;
+                }
+            }
+            else if (item.type == ItemID.GrassSeeds)
+            {
+                if (IsDirtFamily(curType) || IsMudFamily(curType))
+                {
+                    targetTileType = TileID.Grass;
+                }
+            }
+            else if (item.type == ItemID.HallowedSeeds)
+            {
+                if (IsDirtFamily(curType) || IsMudFamily(curType))
+                {
+                    targetTileType = TileID.HallowedGrass;
+                }
+            }
+            else if (item.type == ItemID.JungleGrassSeeds)
+            {
+                if (IsMudFamily(curType) || IsDirtFamily(curType))
+                {
+                    targetTileType = TileID.JungleGrass;
+                }
+            }
+            else if (item.type == ItemID.MushroomGrassSeeds)
+            {
+                if (IsMudFamily(curType) || IsDirtFamily(curType))
+                {
+                    targetTileType = TileID.MushroomGrass;
+                }
+            }
+            else if (item.type == ItemID.CorruptSeeds)
+            {
+                if (IsMudFamily(curType))
+                {
+                    targetTileType = TileID.CorruptJungleGrass;
+                }
+                else if (IsDirtFamily(curType))
+                {
+                    targetTileType = TileID.CorruptGrass;
+                }
+            }
+            else if (item.type == ItemID.CrimsonSeeds)
+            {
+                if (IsMudFamily(curType))
+                {
+                    targetTileType = TileID.CrimsonJungleGrass;
+                }
+                else if (IsDirtFamily(curType))
+                {
+                    targetTileType = TileID.CrimsonGrass;
+                }
+            }
+            else if (item.type == ItemID.AshGrassSeeds)
+            {
+                if (IsAshFamily(curType))
+                {
+                    targetTileType = TileID.AshGrass;
+                }
+            }
+            else if ((item.type > 0 && item.type < ItemID.Count && ItemID.Sets.Moss[item.type]) ||
+                     (item.createTile >= 0 && item.createTile < Main.tileMoss.Length && Main.tileMoss[item.createTile]))
+            {
+                int mossTile = item.createTile;
+                if (curType == TileID.Stone || (curType >= 0 && curType < Main.tileMoss.Length && Main.tileMoss[curType]))
+                {
+                    targetTileType = mossTile;
+                }
+                else if (curType == TileID.GrayBrick)
+                {
+                    targetTileType = GetBrickMossType(mossTile);
+                }
+            }
+
+            // 非合法底土或无法转化的方块，安全跳过
+            if (targetTileType < 0) return false;
+
+            // 已经是同种草/苔藓，只校准坡度
+            if (curType == targetTileType)
+            {
+                SetSlopeFor(t.x, t.y, t.bt);
+                return true;
+            }
+
+            // 2. 准入模式判断：
+            // 裸土（纯泥土、纯泥块、纯灰烬、纯石头、纯灰砖）在常规放置模式和替换模式下均可直接播种；
+            // 已经长了草/苔藓的方块，必须开启替换模式（isReplace 或 Wand_ReplaceExisting）才允许替换
+            bool isBareSubstrate = curType == TileID.Dirt || curType == TileID.Mud || curType == TileID.Ash || 
+                                   curType == TileID.Stone || curType == TileID.GrayBrick;
+            if (!isBareSubstrate && !t.isReplace && !GameMain.Wand_ReplaceExisting)
+            {
+                return false;
+            }
+
+            // 3. 同材质过滤：若开启且起点有效，当前方块类型不匹配则跳过
+            if (GameMain.Wand_MatchFilter && t.filterTileType >= 0 && curType != t.filterTileType)
+            {
+                return false;
+            }
+
+            // 4. 执行方块类型变更与坡度设置
+            tile.type = (ushort)targetTileType;
+            SetSlopeFor(t.x, t.y, t.bt);
+            WorldGen.SquareTileFrame(t.x, t.y, resetFrame: true);
+
+            // 5. 检查并清理上方不兼容的地表野生植物
+            CleanIncompatibleVegetationAbove(t.x, t.y, targetTileType);
+
+            // 6. 网络同步
+            ActionUtils.updateData_placeTile(t.x, t.y, 0);
+            if (Main.netMode == 1)
+            {
+                NetMessage.SendTileSquare(-1, t.x, t.y, 1);
+            }
+
+            // 7. 物料扣除
+            if (!isRegrowth)
+            {
+                ConsumeMaterial(player, item);
+            }
+
+            // 8. 音效反馈
+            Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, new Vector2(t.x * 16, t.y * 16));
+
+            return true;
+        }
+
         private static void placeTile(tile t, Player player)
         {
             if (canTile(t) == false) return;
@@ -214,7 +461,15 @@ namespace WandsTool.Content
             Tile tile = Main.tile[t.x, t.y];
             Item item = FirstItem_Tile(player);
 
-            if (item == null || item.createTile < 0) return;
+            if (item == null) return;
+            if (item.createTile < 0 && !IsGroundCoverItem(item)) return;
+
+            // 专属草种/地被植物/法杖播种与转换管线（纯转化/播种，绝不执行 KillTile 破坏土壤成空气）
+            if (IsGroundCoverItem(item))
+            {
+                TryPlantGroundCover(t, player, item);
+                return;
+            }
 
             if (tile?.active() == true) // 目标已有方块
             {
@@ -1022,7 +1277,7 @@ namespace WandsTool.Content
             {
                 if (isTile)
                 {
-                    if (mouse.createTile >= 0)
+                    if (mouse.createTile >= 0 || IsGroundCoverItem(mouse))
                     {
                         _lastFusionSource = null;
                         return mouse;
@@ -1045,7 +1300,7 @@ namespace WandsTool.Content
             {
                 if (isTile)
                 {
-                    if (item.createTile >= 0)
+                    if (item.createTile >= 0 || IsGroundCoverItem(item))
                     {
                         _lastFusionSource = null;
                         return item;
@@ -1071,7 +1326,7 @@ namespace WandsTool.Content
 
                 if (isTile)
                 {
-                    if (item.createTile >= 0)
+                    if (item.createTile >= 0 || IsGroundCoverItem(item))
                     {
                         _lastFusionSource = null;
                         return item;
@@ -1102,7 +1357,7 @@ namespace WandsTool.Content
 
                     if (isTile)
                     {
-                        if (item.createTile >= 0)
+                        if (item.createTile >= 0 || IsGroundCoverItem(item))
                         {
                             _lastFusionSource = src;
                             return item;
