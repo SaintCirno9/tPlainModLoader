@@ -39,7 +39,14 @@ namespace WandsTool.Content
                 // 2. 蓝图/结构模式（复制/剪切/删除）保持原有边框与方块提示，不渲染材质虚影
                 if (GameMain.Wand_StructureMode != GameMain.StructureMode.None) return;
 
-                // 3. 放置模式：真实物块/背景墙半透明材质虚影 + 淡绿微光
+                // 3. 电线与机关模式：拆除时对有效电线图格高亮，铺设时保持纯净选框，彻底杜绝物块虚影
+                if (GameMain.Wand_ToolMode != 0)
+                {
+                    DrawWirePreview(sb, shapes);
+                    return;
+                }
+
+                // 4. 放置模式：真实物块/背景墙半透明材质虚影 + 淡绿微光
                 if (GameMain.Wand_isPlace)
                 {
                     if (!GameMain.Wand_Tile && !GameMain.Wand_Wall) return;
@@ -52,7 +59,7 @@ namespace WandsTool.Content
                     return;
                 }
 
-                // 4. 破坏模式：对选区既有物块/背景墙覆盖红色高亮遮罩与裂纹虚影
+                // 5. 破坏模式：对选区既有物块/背景墙覆盖红色高亮遮罩与裂纹虚影
                 DrawBreak(sb, shapes);
             }
             catch
@@ -323,6 +330,50 @@ namespace WandsTool.Content
                 // 水体半透明色块 + 上方高光细边模拟液面
                 sb.Draw(magicPixel, new Rectangle((int)pos.X, (int)pos.Y, 16, 16), liquidColor * 0.45f);
                 sb.Draw(magicPixel, new Rectangle((int)pos.X, (int)pos.Y, 16, 2), liquidColor * 0.85f);
+            }
+        }
+
+        /// <summary>
+        /// 电线与机关模式专属预览：拆除模式下仅对选区内实际带有对应电线/促动器的图格进行半透明发光高亮，绝不触碰物块破坏遮罩；
+        /// 铺设模式下保持纯净边框提示。
+        /// </summary>
+        private static void DrawWirePreview(SpriteBatch sb, List<Point> shapes)
+        {
+            if (GameMain.Wand_isPlace) return; // 铺设模式保持纯净边框与光标提示
+
+            Texture2D magicPixel = TextureAssets.MagicPixel.Value;
+            if (magicPixel == null) return;
+
+            GetViewportTileRange(out int minX, out int minY, out int maxX, out int maxY);
+            var mode = GameMain.Wand_ToolMode;
+
+            foreach (Point p in shapes)
+            {
+                if (p.X < minX || p.X > maxX || p.Y < minY || p.Y > maxY) continue; // 视口裁剪
+
+                Tile tile = Main.tile[p.X, p.Y];
+                if (tile == null) continue;
+
+                // 检查当前图格是否含有选中的电线/促动器
+                bool hasRed = mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red) && tile.wire();
+                bool hasGreen = mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green) && tile.wire3();
+                bool hasBlue = mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue) && tile.wire2();
+                bool hasYellow = mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow) && tile.wire4();
+                bool hasActuator = mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator) && tile.actuator();
+
+                if (!hasRed && !hasGreen && !hasBlue && !hasYellow && !hasActuator) continue;
+
+                Vector2 pos = new Vector2(p.X * 16, p.Y * 16) - Main.screenPosition;
+                Rectangle rect = new Rectangle((int)pos.X, (int)pos.Y, 16, 16);
+
+                // 半透明浅橙红微光 (OrangeRed * 0.35f) 轻度高亮含线图格，提示即将拆除的电线
+                sb.Draw(magicPixel, rect, Color.OrangeRed * 0.35f);
+
+                // 外框细线包边，清晰界定待拆除电线图格（无物块裂纹虚影）
+                Terraria.Utils.DrawLine(sb, pos, pos + new Vector2(16, 0), Color.OrangeRed * 0.75f, Color.OrangeRed * 0.75f, 1f);
+                Terraria.Utils.DrawLine(sb, pos + new Vector2(0, 16), pos + new Vector2(16, 16), Color.OrangeRed * 0.75f, Color.OrangeRed * 0.75f, 1f);
+                Terraria.Utils.DrawLine(sb, pos, pos + new Vector2(0, 16), Color.OrangeRed * 0.75f, Color.OrangeRed * 0.75f, 1f);
+                Terraria.Utils.DrawLine(sb, pos + new Vector2(16, 0), pos + new Vector2(16, 16), Color.OrangeRed * 0.75f, Color.OrangeRed * 0.75f, 1f);
             }
         }
     }

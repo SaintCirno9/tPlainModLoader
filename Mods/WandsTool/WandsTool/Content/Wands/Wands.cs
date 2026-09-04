@@ -142,6 +142,7 @@ namespace WandsTool.Content
                     (GameMain.Wand_StructureMode == GameMain.StructureMode.Delete) ? "取消删除" :
                     (GameMain.Wand_BiomeMode != GameMain.BiomeMode.None) ? "取消环境改造" :
                     (GameMain.Wand_LiquidMode != GameMain.LiquidMode.None) ? "取消液体操作" :
+                    (GameMain.Wand_ToolMode != 0) ? $"取消{(GameMain.Wand_isPlace ? "铺设电线" : "拆除电线")}" :
                     $"取消{(GameMain.Wand_isPlace ? "放置" : "破坏")}";
 
                 CombatText.NewText(player.getRect(), Color.Red, cancelMsg, true, false);
@@ -284,76 +285,65 @@ namespace WandsTool.Content
                         WandHistory.BeginRecord(Main.LocalPlayer, shapes);
                         WandAction.HandleLiquid(shapes, GameMain.Wand_LiquidMode, GameMain.Wand_InfiniteLiquid);
                     }
-                    else
+                    // 3. 电线与促动器独立操作（与物块/背景墙彻底解耦互斥，并支持一键撤销）
+                    else if (GameMain.Wand_ToolMode != 0)
                     {
-                        // 2. 电线与制动器
-                        bool wire =
-                            GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red) ||
-                            GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green) ||
-                            GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue) ||
-                            GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow) ||
-                            GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator);
+                        WandHistory.BeginRecord(Main.LocalPlayer, shapes);
 
-                        bool wireLine = shapes_s == Shapes.rectangle;
+                        string toolName = "";
+                        if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red)) toolName += "红";
+                        if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green)) toolName += "绿";
+                        if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue)) toolName += "蓝";
+                        if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow)) toolName += "黄";
+                        if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator)) toolName += "促动器";
 
-                        // 3. 物块与背景墙操作
-                        if (GameMain.Wand_Tile || GameMain.Wand_Wall)
+                        if (GameMain.Wand_isPlace)
                         {
-                            WandHistory.BeginRecord(Main.LocalPlayer, shapes);
+                            WandAction.AddWire(shapes, GameMain.Wand_ToolMode);
+                            Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
+                            CombatText.NewText(Main.LocalPlayer.getRect(), Color.Cyan, $"已铺设电线 [{toolName}]", true, false);
+                        }
+                        else
+                        {
+                            WandAction.DelWire(shapes, GameMain.Wand_ToolMode);
+                            Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
+                            CombatText.NewText(Main.LocalPlayer.getRect(), Color.OrangeRed, $"已拆除电线 [{toolName}]", true, false);
+                        }
+                    }
+                    // 4. 常规物块与背景墙操作
+                    else if (GameMain.Wand_Tile || GameMain.Wand_Wall)
+                    {
+                        WandHistory.BeginRecord(Main.LocalPlayer, shapes);
 
-                            int fTile = -1;
-                            int fWall = -1;
-                            if (GameMain.Wand_MatchFilter)
+                        int fTile = -1;
+                        int fWall = -1;
+                        if (GameMain.Wand_MatchFilter)
+                        {
+                            // 层级优先：起点有物块则仅破坏/替换同类物块（保护背景墙）；
+                            // 仅当起点无物块（纯背景墙）时才破坏/替换同类背景墙；
+                            // 起点为空白空气时，退化为全量操作（fTile = -1, fWall = -1）
+                            if (startTileType >= 0)
                             {
-                                // 层级优先：起点有物块则仅破坏/替换同类物块（保护背景墙）；
-                                // 仅当起点无物块（纯背景墙）时才破坏/替换同类背景墙；
-                                // 起点为空白空气时，退化为全量操作（fTile = -1, fWall = -1）
-                                if (startTileType >= 0)
-                                {
-                                    fTile = startTileType;
-                                    fWall = -1;
-                                }
-                                else if (startWallType > 0)
-                                {
-                                    fTile = -1;
-                                    fWall = startWallType;
-                                }
+                                fTile = startTileType;
+                                fWall = -1;
                             }
-
-                            if (GameMain.Wand_isPlace)
+                            else if (startWallType > 0)
                             {
-                                WandAction.AddTile(shapes, GameMain.Wand_Tile, GameMain.Wand_Wall, GameMain.Wand_BlockType, GameMain.Wand_ReplaceExisting, fTile, fWall);
-                            }
-                            else
-                            {
-                                bool destroyTile = GameMain.Wand_Tile && (fWall == -1);
-                                bool destroyWall = GameMain.Wand_Wall && (fTile == -1);
-                                WandAction.DelTile(shapes, destroyTile, destroyWall, GameMain.Wand_CollectDrops, fTile, fWall);
-                                Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
+                                fTile = -1;
+                                fWall = startWallType;
                             }
                         }
 
-                        if (wire)
+                        if (GameMain.Wand_isPlace)
                         {
-                            if (wireLine)
-                            {
-                                Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode toolMode = GameMain.Wand_ToolMode;
-
-                                if (GameMain.Wand_isPlace == false) toolMode |= Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Cutter;
-
-                                WandAction.AddWireLine(position1, position2, toolMode);
-                            }
-                            else
-                            {
-                                if (GameMain.Wand_isPlace)
-                                {
-                                    WandAction.AddWire(shapes, GameMain.Wand_ToolMode);
-                                }
-                                else
-                                {
-                                    WandAction.DelWire(shapes, GameMain.Wand_ToolMode);
-                                }
-                            }
+                            WandAction.AddTile(shapes, GameMain.Wand_Tile, GameMain.Wand_Wall, GameMain.Wand_BlockType, GameMain.Wand_ReplaceExisting, fTile, fWall);
+                        }
+                        else
+                        {
+                            bool destroyTile = GameMain.Wand_Tile && (fWall == -1);
+                            bool destroyWall = GameMain.Wand_Wall && (fTile == -1);
+                            WandAction.DelTile(shapes, destroyTile, destroyWall, GameMain.Wand_CollectDrops, fTile, fWall);
+                            Terraria.Audio.SoundEngine.PlaySound(SoundID.Dig, Main.LocalPlayer.position);
                         }
                     }
                 }
@@ -484,6 +474,19 @@ namespace WandsTool.Content
                         break;
                 }
             }
+            else if (GameMain.Wand_ToolMode != 0)
+            {
+                bool isCut = !GameMain.Wand_isPlace;
+                string toolName = "";
+                if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red)) toolName += "红";
+                if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green)) toolName += "绿";
+                if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue)) toolName += "蓝";
+                if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow)) toolName += "黄";
+                if (GameMain.Wand_ToolMode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator)) toolName += "促动器";
+
+                borderColor = isCut ? new Color(255, 110, 110) : new Color(100, 220, 255);
+                modeName = isCut ? $"拆除电线 [{toolName}]" : $"铺设电线 [{toolName}]";
+            }
             else if (GameMain.Wand_isPlace)
             {
                 if (GameMain.Wand_ReplaceExisting && !GameMain.Wand_FillEmpty)
@@ -534,7 +537,30 @@ namespace WandsTool.Content
             int count = shapes?.Count ?? 0;
 
             string countText = $"{count}格";
-            if (!GameMain.Wand_isPlace && GameMain.Wand_MatchFilter && shapes != null && (startTileType >= 0 || startWallType > 0))
+            if (GameMain.Wand_ToolMode != 0 && !GameMain.Wand_isPlace && shapes != null)
+            {
+                int wireMatchCount = 0;
+                var mode = GameMain.Wand_ToolMode;
+                for (int i = 0; i < shapes.Count; i++)
+                {
+                    Point p = shapes[i];
+                    if (p.X >= 0 && p.X < Main.tile.GetLength(0) && p.Y >= 0 && p.Y < Main.tile.GetLength(1))
+                    {
+                        Tile t = Main.tile[p.X, p.Y];
+                        if (t != null &&
+                            ((t.wire() && mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Red)) ||
+                             (t.wire3() && mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Green)) ||
+                             (t.wire2() && mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Blue)) ||
+                             (t.wire4() && mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Yellow)) ||
+                             (t.actuator() && mode.HasFlag(Terraria.GameContent.UI.WiresUI.Settings.MultiToolMode.Actuator))))
+                        {
+                            wireMatchCount++;
+                        }
+                    }
+                }
+                countText = $"{wireMatchCount} / {count}格电线";
+            }
+            else if (!GameMain.Wand_isPlace && GameMain.Wand_MatchFilter && shapes != null && (startTileType >= 0 || startWallType > 0))
             {
                 int matchCount = 0;
                 if (startTileType >= 0)
