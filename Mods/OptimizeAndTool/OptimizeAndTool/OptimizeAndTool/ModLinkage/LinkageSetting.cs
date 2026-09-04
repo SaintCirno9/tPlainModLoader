@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +26,6 @@ namespace OptimizeAndTool.ModLinkage
             {
                 (a => ModQuickSetting.IsLinkage_OptimizeAndTool_QuickSetting = a, "Images/Item_3611", "添加到快捷设置"),
                 (a => ModQuickButton.EnableBigBagBtn = a, "Images/Item_4131", "添加到快速按钮: 巨大背包"),
-                (a => ModQuickButton.EnableAccessoryBoxBtn = a, "Images/Item_1862", "添加到快速按钮: 饰品箱"),
                 (a => ModQuickButton.EnableCreativeInventoryBtn = a, "Images/Item_306", "添加到快速按钮: 创造物品栏"),
             };
 

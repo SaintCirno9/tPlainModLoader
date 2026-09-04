@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using TPML;
 using Terraria;
 using Terraria.UI;
+using TPML.Content;
 using TPML.Content.Fusion;
 using TPML.Content.IO;
 using OptimizeAndTool.Content.Storage.ItemContainer;
@@ -742,52 +743,33 @@ namespace OptimizeAndTool.Content.BigBag
     }
 
     /// <summary>
-    /// 巨大背包角色伴随存档持久化 (Sidecar Containers: "BigBag")
-    /// 完全绑定角色生命周期，杜绝跨人物共享，支持原版与模组实体物品无损存读档
+    /// 巨大背包角色独立数据持久化管理器：
+    /// 配合标准 BigBagPlayer (ModPlayer) 完成角色生命周期绑定与即时保存
+    /// 作者: SaintCirno9
     /// </summary>
     public static class BigBagStorage
     {
         public const string ContainerKey = "BigBag";
 
         /// <summary>当前在内存中持有 BigBag.Slots 的玩家名称</summary>
-        public static string ActivePlayerName { get; private set; }
-
-        static BigBagStorage()
-        {
-            ModItemSidecarEngine.OnResetContainers += Reset;
-            ModItemSidecarEngine.OnLoadContainers += LoadForPlayer;
-            ModItemSidecarEngine.OnCollectPlayerSidecarData += CollectForPlayerSave;
-        }
+        public static string ActivePlayerName { get; internal set; }
 
         /// <summary>
-        /// 当玩家伴随数据保存落盘前统一收集大背包最新槽位（单次原子写盘）
-        /// </summary>
-        public static void CollectForPlayerSave(Player player, PlayerSidecarData data)
-        {
-            if (player == null || data == null) return;
-
-            if (string.IsNullOrEmpty(ActivePlayerName) && (player == Main.LocalPlayer || player == Main.ActivePlayerFileData?.Player))
-            {
-                ActivePlayerName = player.name;
-            }
-
-            if (!string.IsNullOrEmpty(ActivePlayerName) && player.name == ActivePlayerName)
-            {
-                if (data.Containers == null) data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
-                data.Containers[ContainerKey] = ModItemSidecarEngine.SerializeSlots(BigBag.Slots);
-            }
-        }
-
-        /// <summary>
-        /// 立即将当前活动玩家的大背包数据保存落盘至 Sidecar 伴随文件
+        /// 立即将当前活动玩家的大背包数据保存落盘至 Sidecar
         /// </summary>
         public static void SaveNow()
         {
             Player player = Main.LocalPlayer;
-            if (player == null) return;
-            if (string.IsNullOrEmpty(ActivePlayerName)) ActivePlayerName = player.name;
-            if (player.name != ActivePlayerName) return;
-            ModItemSidecarEngine.SavePlayerContainer(player, ContainerKey, BigBag.Slots);
+            if (player == null || !player.active) return;
+            var modPlayer = player.GetModPlayer<BigBagPlayer>();
+            if (modPlayer != null)
+            {
+                var tag = new TagCompound();
+                modPlayer.SaveData(tag);
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(tag);
+                string key = $"ModPlayer_{modPlayer.GetType().FullName}";
+                ModItemSidecarEngine.SavePlayerCustomProperty(player, key, json);
+            }
         }
 
         /// <summary>
@@ -802,10 +784,12 @@ namespace OptimizeAndTool.Content.BigBag
             }
 
             ActivePlayerName = player.name;
-            int cap = BigBag.Capacity.val;
-            Item[] slots = ModItemSidecarEngine.LoadPlayerContainer(player, ContainerKey, cap);
-            BigBag.SetItems(slots);
-            BigBag.EnsureTrailingEmptySlots(10);
+            var modPlayer = player.GetModPlayer<BigBagPlayer>();
+            if (modPlayer?.Slots != null)
+            {
+                BigBag.SetItems(modPlayer.Slots);
+                BigBag.EnsureTrailingEmptySlots(10);
+            }
         }
 
         /// <summary>
@@ -819,41 +803,116 @@ namespace OptimizeAndTool.Content.BigBag
     }
 
     /// <summary>
-    /// 巨大背包角色生命周期监听器：
-    /// 角色保存、加载、切换时自动存取属于该角色的独立大背包数据
+    /// 巨大背包角色独立数据管理：
+    /// 继承自标准 ModPlayer，通过 TagCompound 自主序列化与反序列化，彻底与平台 Sidecar 解耦
+    /// 作者: SaintCirno9
     /// </summary>
     public class BigBagPlayer : TPML.Content.ModPlayer
     {
-        public override void SavePlayer(Terraria.IO.PlayerFileData playerFile, bool skipMapSave)
-        {
-            base.SavePlayer(playerFile, skipMapSave);
-            if (playerFile?.Player != null)
-            {
-                if (string.IsNullOrEmpty(BigBagStorage.ActivePlayerName) && (playerFile.Player == Main.LocalPlayer || playerFile.Player == Main.ActivePlayerFileData?.Player))
-                {
-                    BigBagStorage.LoadForPlayer(playerFile.Player);
-                }
+        public Item[] Slots;
 
-                if (!string.IsNullOrEmpty(BigBagStorage.ActivePlayerName) && playerFile.Player.name == BigBagStorage.ActivePlayerName)
-                {
-                    ModItemSidecarEngine.SavePlayerContainer(playerFile.Player, BigBagStorage.ContainerKey, BigBag.Slots);
-                }
-            }
+        public override void Initialize()
+        {
+            int cap = Math.Max(100, Math.Min(300, BigBag.Capacity.val));
+            Slots = new Item[cap];
+            for (int i = 0; i < cap; i++) Slots[i] = new Item();
         }
 
-        public override void LoadPlayerPostfix(Terraria.IO.PlayerFileData playerFile)
+        public override void SaveData(TagCompound tag)
         {
-            if (playerFile?.Player != null)
+            // 若当前为本地活动玩家，将当前正在使用的 BigBag.Slots 同步到本玩家数据中
+            if (Player == Main.LocalPlayer && BigBag.Slots != null)
             {
-                BigBagStorage.LoadForPlayer(playerFile.Player);
+                Slots = BigBag.Slots;
+            }
+
+            if (Slots == null) return;
+
+            var list = new List<TagCompound>();
+            for (int i = 0; i < Slots.Length; i++)
+            {
+                Item it = Slots[i];
+                if (it != null && !it.IsAir && it.stack > 0)
+                {
+                    var itemTag = ItemIO.Save(it);
+                    itemTag["slot"] = i;
+                    list.Add(itemTag);
+                }
+            }
+            tag["items"] = list;
+        }
+
+        public override void LoadData(TagCompound tag)
+        {
+            int cap = Math.Max(100, Math.Min(300, BigBag.Capacity.val));
+            Slots = new Item[cap];
+            for (int i = 0; i < cap; i++) Slots[i] = new Item();
+
+            if (tag != null && tag.TryGetValue("items", out object rawList))
+            {
+                if (rawList is Newtonsoft.Json.Linq.JArray jArr)
+                {
+                    int maxSlot = -1;
+                    foreach (var token in jArr)
+                    {
+                        if (token is Newtonsoft.Json.Linq.JObject jObj)
+                        {
+                            int slot = jObj["slot"]?.ToObject<int>() ?? -1;
+                            if (slot > maxSlot) maxSlot = slot;
+                        }
+                    }
+                    if (maxSlot >= cap)
+                    {
+                        Array.Resize(ref Slots, maxSlot + 1);
+                        for (int i = cap; i < Slots.Length; i++) Slots[i] = new Item();
+                    }
+
+                    foreach (var token in jArr)
+                    {
+                        if (token is Newtonsoft.Json.Linq.JObject jObj)
+                        {
+                            int slot = jObj["slot"]?.ToObject<int>() ?? -1;
+                            if (slot >= 0 && slot < Slots.Length)
+                            {
+                                var itemTag = new TagCompound();
+                                foreach (var prop in jObj.Properties())
+                                {
+                                    itemTag[prop.Name] = prop.Value;
+                                }
+                                Slots[slot] = ItemIO.Load(itemTag);
+                            }
+                        }
+                    }
+                }
+                else if (rawList is IEnumerable<TagCompound> tagList)
+                {
+                    foreach (var itemTag in tagList)
+                    {
+                        int slot = itemTag.GetInt("slot");
+                        if (slot >= 0 && slot < Slots.Length)
+                        {
+                            Slots[slot] = ItemIO.Load(itemTag);
+                        }
+                    }
+                }
+            }
+
+            // 若当前为本地玩家或当前选中的活动玩家，立即将槽位挂接至全局静态 BigBag.Slots
+            if (Player == Main.LocalPlayer || Player == Main.ActivePlayerFileData?.Player)
+            {
+                BigBagStorage.ActivePlayerName = Player.name;
+                BigBag.SetItems(Slots);
+                BigBag.EnsureTrailingEmptySlots(10);
             }
         }
 
         public override void SetAsActivePostfix(Terraria.IO.PlayerFileData playerFile)
         {
-            if (playerFile?.Player != null)
+            if (Player != null && Slots != null)
             {
-                BigBagStorage.LoadForPlayer(playerFile.Player);
+                BigBagStorage.ActivePlayerName = Player.name;
+                BigBag.SetItems(Slots);
+                BigBag.EnsureTrailingEmptySlots(10);
             }
         }
     }

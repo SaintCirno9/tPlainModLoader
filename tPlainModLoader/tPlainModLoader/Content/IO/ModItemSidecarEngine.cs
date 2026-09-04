@@ -51,12 +51,6 @@ namespace TPML.Content.IO
         public List<ModItemSaveEntry> Items { get; set; } = new List<ModItemSaveEntry>();
 
         /// <summary>
-        /// 玩家绑定的独立命名扩展容器（如 "BigBag", "AccessoryBox" 等）
-        /// 键为容器标识，值为槽位物品数据列表
-        /// </summary>
-        public Dictionary<string, List<ContainerSlotEntry>> Containers { get; set; } = new Dictionary<string, List<ContainerSlotEntry>>();
-
-        /// <summary>
         /// 模组挂载在玩家上的通用自定义键值对数据
         /// </summary>
         public Dictionary<string, string> CustomProperties { get; set; } = new Dictionary<string, string>();
@@ -121,12 +115,7 @@ namespace TPML.Content.IO
         public static event Action OnResetContainers;
 
         /// <summary>
-        /// 当玩家数据载入或进入世界时触发的扩展容器载入事件
-        /// </summary>
-        public static event Action<Player> OnLoadContainers;
-
-        /// <summary>
-        /// 当玩家伴随数据保存落盘前触发的扩展数据统一收集事件（大背包/扩展容器直接将当前槽位写入，实现单次原子写盘）
+        /// 当玩家伴随数据保存落盘前触发的扩展数据统一收集事件
         /// </summary>
         public static event Action<Player, PlayerSidecarData> OnCollectPlayerSidecarData;
 
@@ -357,83 +346,6 @@ namespace TPML.Content.IO
         }
 
         /// <summary>
-        /// 安全保存指定玩家的命名扩展容器数据至其伴随存档文件
-        /// </summary>
-        public static void SavePlayerContainer(Player player, string containerKey, Item[] items)
-        {
-            if (player == null || string.IsNullOrEmpty(containerKey)) return;
-
-            try
-            {
-                lock (_ioLock)
-                {
-                    string path = GetPlayerSidecarPath(player);
-                    PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
-                    if (data == null)
-                    {
-                        data = new PlayerSidecarData { PlayerName = player.name };
-                    }
-
-                    if (data.Containers == null)
-                    {
-                        data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
-                    }
-
-                    data.Containers[containerKey] = SerializeSlots(items);
-                    WritePlayerSidecar(path, data);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[Sidecar] 保存玩家容器 [{containerKey}] 伴随数据异常: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 从伴随存档文件加载指定玩家的命名扩展容器物品数组（根据存档内最大槽位索引动态自适应扩展容量，绝不丢物）
-        /// </summary>
-        public static Item[] LoadPlayerContainer(Player player, string containerKey, int capacity)
-        {
-            int baseCap = Math.Max(0, capacity);
-            if (player == null || string.IsNullOrEmpty(containerKey))
-            {
-                Item[] defSlots = new Item[baseCap];
-                for (int i = 0; i < baseCap; i++) defSlots[i] = new Item();
-                return defSlots;
-            }
-
-            try
-            {
-                string path = GetPlayerSidecarPath(player);
-                PlayerSidecarData data = TryReadPlayerSidecar(path, backupCorrupt: true);
-                if (data?.Containers != null && data.Containers.TryGetValue(containerKey, out List<ContainerSlotEntry> entries) && entries != null)
-                {
-                    int maxSlot = -1;
-                    for (int i = 0; i < entries.Count; i++)
-                    {
-                        if (entries[i] != null && entries[i].Slot > maxSlot)
-                        {
-                            maxSlot = entries[i].Slot;
-                        }
-                    }
-
-                    int actualCapacity = Math.Max(baseCap, maxSlot + 1);
-                    Item[] slots = new Item[actualCapacity];
-                    DeserializeSlots(entries, slots);
-                    return slots;
-                }
-            }
-            catch (Exception ex)
-            {
-                ModLoader.Log($"[Sidecar] 加载玩家容器 [{containerKey}] 伴随数据异常: {ex.Message}");
-            }
-
-            Item[] fallbackSlots = new Item[baseCap];
-            for (int i = 0; i < baseCap; i++) fallbackSlots[i] = new Item();
-            return fallbackSlots;
-        }
-
-        /// <summary>
         /// 保存指定玩家的伴随自定义属性键值对（存入 PlayerSidecarData.CustomProperties）
         /// </summary>
         public static void SavePlayerCustomProperty(Player player, string key, string value)
@@ -635,15 +547,14 @@ namespace TPML.Content.IO
                 }
             }
 
-            // 广播收集所有扩展容器（如 BigBag）与模组挂载的 Sidecar 伴随数据
+            // 广播收集模组附加的 Sidecar 伴随数据
             try
             {
-                if (data.Containers == null) data.Containers = new Dictionary<string, List<ContainerSlotEntry>>();
                 OnCollectPlayerSidecarData?.Invoke(player, data);
             }
             catch (Exception ex)
             {
-                ModLoader.Log($"[Sidecar] 收集扩展容器伴随数据异常: {ex.Message}");
+                ModLoader.Log($"[Sidecar] 收集模组附加伴随数据异常: {ex.Message}");
             }
 
             // 保存所有已注册 ModPlayer 的自定义数据
@@ -877,18 +788,6 @@ namespace TPML.Content.IO
             catch (Exception ex)
             {
                 ModLoader.Log($"[Sidecar] 加载玩家伴随数据异常: {ex.Message}");
-            }
-            finally
-            {
-                // 广播扩展容器加载事件，确保大背包与饰品箱等扩展容器同步为该玩家载入数据
-                try
-                {
-                    OnLoadContainers?.Invoke(player);
-                }
-                catch (Exception ex)
-                {
-                    ModLoader.Log($"[Sidecar] 扩展容器加载事件广播异常: {ex.Message}");
-                }
             }
         }
 

@@ -27,7 +27,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         {
             if (bag == null)
             {
-                bag = AccessoryBagCacheManager.GetFirstCarriedBag();
+                bag = CarriedBagCacheManager.GetFirstCarriedBag<AccessoryBagItem>();
             }
 
             if (IsOpen && Instance.CurrentBag == bag && bag != null)

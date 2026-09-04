@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
@@ -38,9 +38,8 @@ namespace OptimizeAndTool
             ui_game_state = new UIState();
             ui_game.SetState(ui_game_state);
 
-            // 注册原生按键绑定与背包融合源
+            // 注册原生按键绑定
             BigBagKeybind.Initialize();
-            TPML.Content.Fusion.InventoryFusionManager.RegisterSource(new AccessoryBagFusionSource());
             CreativeInventoryKeybind.Initialize();
             PipetteKeybind.Register();
             InfiniteBuffKeybind.Initialize();
@@ -129,7 +128,7 @@ namespace OptimizeAndTool
                 SwitchBigBag(fromKeybind: true);
             }
 
-            AccessoryBagInteractionHooks.UpdateKeybinds();
+            Content.Storage.Core.CarriedBagInteractionHooks.UpdateKeybinds();
             PipetteKeybind.Update();
 
             if (CreativeInventoryKeybind.ToggleKeybind?.JustPressed == true)

@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,6 @@ namespace OptimizeAndTool.ModLinkage
     public class ModQuickButton : Mod
     {
         public static bool EnableBigBagBtn = true;
-        public static bool EnableAccessoryBoxBtn = true;
         public static bool EnableCreativeInventoryBtn = true;
         public static bool EnableTownNPCHomeBtn = true;
         public override void Loaded()
@@ -59,26 +58,7 @@ namespace OptimizeAndTool.ModLinkage
                 mi.Invoke(null, new object[] { "OptimizeAndTool.BigBag.Switch", ui_bag });
             }
 
-            // 2. 随身饰品袋按钮
-            if (EnableAccessoryBoxBtn)
-            {
-                UIImage ui_box = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_1862", ReLogic.Content.AssetRequestMode.ImmediateLoad));
-                ui_box.Width.Pixels = 32;
-                ui_box.Height.Pixels = 32;
-                ui_box.ScaleToFit = true;
-                ui_box.OnUpdate += _ =>
-                {
-                    if (ui_box.IsMouseHovering) Main.instance.MouseText("随身饰品袋");
-                };
-                ui_box.OnLeftClick += (e, s) =>
-                {
-                    SoundEngine.PlaySound(SoundID.MenuTick);
-                    AccessoryBagWindow.Toggle();
-                };
-                mi.Invoke(null, new object[] { "OptimizeAndTool.AccessoryBox.Switch", ui_box });
-            }
-
-            // 3. 创造物品栏按钮
+            // 2. 创造物品栏按钮
             if (EnableCreativeInventoryBtn)
             {
                 UIImage ui_creative = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_306", ReLogic.Content.AssetRequestMode.ImmediateLoad));
@@ -97,7 +77,7 @@ namespace OptimizeAndTool.ModLinkage
                 mi.Invoke(null, new object[] { "OptimizeAndTool.CreativeInventory.Switch", ui_creative });
             }
 
-            // 4. 城镇 NPC 全员回家按钮
+            // 3. 城镇 NPC 全员回家按钮
             if (EnableTownNPCHomeBtn)
             {
                 UIImage ui_npcHome = new UIImage(Main.Assets.Request<Texture2D>("Images/Item_2350", ReLogic.Content.AssetRequestMode.ImmediateLoad));

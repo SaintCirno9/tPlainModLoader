@@ -26,7 +26,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public override void SetStaticDefaults()
         {
             ItemLoader.SetDisplayName(Type, "随身垃圾桶");
-            ItemLoader.SetTooltip(Type, "便携式过滤收纳垃圾桶，可存储多达 200 格物品作为过滤样本\n[c/88ff88:【操作提示】] 物品栏右键或悬停中键打开垃圾桶面板\n可将任意物品放入其中作为黑名单过滤样本\n随身携带且开启自动收纳时，拾取同类物品将[c/ffdd66:自动按商店卖价折算金币]\n拾取无价值垃圾物品（售价为0）时将[c/aaaaaa:直接就地销毁吞噬]\n放入垃圾桶中的样本不会被消耗，随时可以取出");
+            ItemLoader.SetTooltip(Type, "便携式过滤收纳垃圾桶，可存储多达 200 格物品作为过滤样本\n[c/88ff88:【操作提示】] 物品栏右键或悬停中键打开垃圾桶面板\n可将任意物品放入其中作为黑名单过滤样本\n随身携带且开启自动收纳时，拾取同类物品将[c/ffdd66:自动按商店卖价折算金币]\n拾取无价值垃圾物品（售价为0）时将[c/aaaaaa:直接就地销毁吞噬]\n[c/88ff88:【制作支持】] 桶内未收藏物品直接参与配方制作与扣料\n若需长期保留为过滤样本，请在桶内对该物品 [c/ffdd66:Alt+左键] 收藏锁定以防消耗");
             CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;
         }
 

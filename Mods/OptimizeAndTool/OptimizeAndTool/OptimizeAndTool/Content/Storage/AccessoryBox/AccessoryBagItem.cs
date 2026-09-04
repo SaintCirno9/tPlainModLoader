@@ -392,7 +392,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
         public override void SetStaticDefaults()
         {
             ItemLoader.SetDisplayName(Type, "随身饰品袋");
-            ItemLoader.SetTooltip(Type, "便携式饰品与装备收纳与被动属性挂载袋\n[c/88ff88:【核心特性】] 支持饰品与装备（头盔/胸甲/护腿），自动激活属性与套装奖励\n[c/88ff88:【操作提示】] 物品栏右键或中键打开面板，每格右上角眼睛可切换外观\n光标悬停在饰品/装备上按快捷键 (默认 ]) 可极速转移，袋内物品直连参与配方合成");
+            ItemLoader.SetTooltip(Type, "便携式饰品与装备收纳与被动属性挂载袋\n[c/88ff88:【核心特性】] 支持饰品与装备（头盔/胸甲/护腿），自动激活属性与套装奖励\n[c/88ff88:【操作提示】] 物品栏右键或中键打开面板，每格右上角眼睛可切换外观\n支持 Shift+左键 快速存取，袋内未收藏物品直连参与配方合成");
             CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;
         }
 

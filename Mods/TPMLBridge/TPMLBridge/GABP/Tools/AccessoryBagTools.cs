@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json.Linq;
 using OptimizeAndTool;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Storage.Core;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
@@ -231,7 +232,7 @@ namespace TPMLBridge.GABP.Tools
                 return new { success = false, message = "玩家未进入世界" };
             }
 
-            AccessoryBagItem bag = AccessoryBagCacheManager.GetFirstCarriedBag();
+            AccessoryBagItem bag = CarriedBagCacheManager.GetFirstCarriedBag<AccessoryBagItem>();
             var items = new List<object>();
             if (bag?.personalInventory != null)
             {
@@ -400,7 +401,7 @@ namespace TPMLBridge.GABP.Tools
 
         private static AccessoryBagItem EnsurePlayerHasAccessoryBag(Player player)
         {
-            var carried = AccessoryBagCacheManager.GetFirstCarriedBag();
+            var carried = CarriedBagCacheManager.GetFirstCarriedBag<AccessoryBagItem>();
             if (carried != null) return carried;
 
             int bagType = ItemLoader.ItemType("OptimizeAndTool", "AccessoryBag");
@@ -414,7 +415,7 @@ namespace TPMLBridge.GABP.Tools
                     Item bagIt = new Item();
                     bagIt.SetDefaults(bagType);
                     player.inventory[i] = bagIt;
-                    AccessoryBagCacheManager.UpdateCache();
+                    CarriedBagCacheManager.UpdateCache();
                     return ItemLoader.GetModItem(bagIt) as AccessoryBagItem;
                 }
             }

@@ -38,39 +38,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
         public static IItemContainer FindCarriedContainer()
         {
-            Player player = Main.LocalPlayer;
-            if (player == null) return null;
-
-            int targetType = ModContent.ItemType<T>();
-            if (targetType <= 0) return null;
-
-            if (player.inventory != null)
-            {
-                for (int i = 0; i < player.inventory.Length; i++)
-                {
-                    Item it = player.inventory[i];
-                    if (it != null && !it.IsAir && it.type == targetType)
-                    {
-                        return ItemLoader.GetModItem(it) as IItemContainer;
-                    }
-                }
-            }
-
-            Item[][] banks = new[] { player.bank?.item, player.bank2?.item, player.bank3?.item, player.bank4?.item };
-            foreach (var bank in banks)
-            {
-                if (bank == null) continue;
-                for (int i = 0; i < bank.Length; i++)
-                {
-                    Item it = bank[i];
-                    if (it != null && !it.IsAir && it.type == targetType)
-                    {
-                        return ItemLoader.GetModItem(it) as IItemContainer;
-                    }
-                }
-            }
-
-            return null;
+            return CarriedBagCacheManager.GetFirstCarriedBag<T>();
         }
     }
 

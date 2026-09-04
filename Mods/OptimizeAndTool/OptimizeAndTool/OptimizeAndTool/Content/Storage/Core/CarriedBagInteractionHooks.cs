@@ -1,50 +1,115 @@
-﻿using Microsoft.Xna.Framework;
-using OptimizeAndTool.Content.QoL;
-using TPML;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Storage.ItemContainer;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using Terraria.UI;
+using TPML;
 using TPML.Content;
+using TPML.Content.Fusion;
 
-namespace OptimizeAndTool.Content.Storage.ItemContainer
+namespace OptimizeAndTool.Content.Storage.Core
 {
     /// <summary>
-    /// 容器交互门控（基于 HookGen 强类型 On_ 门控）：
-    /// 1. 物品栏右键点击任意 ItemContainerItem 打开/关闭对应实体界面
-    /// 2. 鼠标悬停中键快捷开闭对应实体界面
-    /// 3. 手持物品左键点击收纳袋直接存入该实体
-    /// 4. 容器打开时 Shift+左键 快速存入当前打开的容器实体
-    /// 5. 拾取物品时统一派发至各容器的 OnPickupIntercept 进行自动收纳或售卖销毁
-    /// 6. 阻止玩家将非空的容器实体误丢弃
+    /// 全局随身实体容器统一交互门控（基于 HookGen 强类型 On_ 门控，零反射）：<br/>
+    /// 统一管理随身饰品袋、随身垃圾桶、药水袋、旗帜盒等全部实体容器物品的交互：<br/>
+    /// 1. 物品栏右键/中键快捷打开对应实体界面；<br/>
+    /// 2. 手持匹配物品左键点击容器直接存入；<br/>
+    /// 3. 容器窗口打开时 Shift+左键 背包物品快速存入当前打开的容器；<br/>
+    /// 4. 彻底阻止玩家将非空的随身容器误丢弃或丢入垃圾桶；<br/>
+    /// 5. 拾取物品时统一派发至各容器的自动过滤与售卖/销毁拦截逻辑；<br/>
+    /// 6. 统一绑定随身实体容器背包融合源生命周期。
     /// 作者: SaintCirno9
     /// </summary>
-    internal static class ItemContainerInteractionHooks
+    public static class CarriedBagInteractionHooks
     {
+        public static ModKeybind ToggleAccessoryBagKey { get; private set; }
         private static bool _registered = false;
+        private static readonly ItemContainerFusionSource FusionSource = new ItemContainerFusionSource();
+
+        static CarriedBagInteractionHooks()
+        {
+            ToggleAccessoryBagKey = KeybindLoader.RegisterKeybind("OptimizeAndTool", "ToggleAccessoryBag", "P", "打开/关闭随身饰品袋 (AccessoryBag)");
+        }
 
         public static void RegisterAll()
         {
             if (_registered) return;
+
             On_ItemSlot.RightClick += Hook_RightClick;
             On_ItemSlot.LeftClick += Hook_LeftClick;
             On_ItemSlot.GetAlternateClickAction += Hook_GetAlternateClickAction;
             On_ItemSlot.MouseHover_ItemArray_int_int += Hook_MouseHover;
             On_Player.GetItem += Hook_GetItem;
             On_Player.DropSelectedItem += Hook_DropSelectedItem;
+
+            InventoryFusionManager.RegisterSource(FusionSource);
             _registered = true;
         }
 
         public static void UnregisterAll()
         {
             if (!_registered) return;
+
             On_ItemSlot.RightClick -= Hook_RightClick;
             On_ItemSlot.LeftClick -= Hook_LeftClick;
             On_ItemSlot.GetAlternateClickAction -= Hook_GetAlternateClickAction;
             On_ItemSlot.MouseHover_ItemArray_int_int -= Hook_MouseHover;
             On_Player.GetItem -= Hook_GetItem;
             On_Player.DropSelectedItem -= Hook_DropSelectedItem;
+
+            InventoryFusionManager.UnregisterSource(FusionSource.Id);
             _registered = false;
+        }
+
+        public static void UpdateKeybinds()
+        {
+            if (Main.gameMenu || Main.drawingPlayerChat) return;
+
+            if (ToggleAccessoryBagKey?.JustPressed == true)
+            {
+                AccessoryBagItem bag = CarriedBagCacheManager.GetFirstCarriedBag<AccessoryBagItem>();
+                if (bag != null)
+                {
+                    AccessoryBagWindow.Toggle(bag);
+                }
+                else if (AccessoryBagWindow.IsOpen)
+                {
+                    AccessoryBagWindow.Instance.Close();
+                }
+            }
+        }
+
+        private static void ToggleBag(IBagInventory bag)
+        {
+            if (bag == null) return;
+
+            if (bag is AccessoryBagItem accBag)
+            {
+                AccessoryBagWindow.Toggle(accBag);
+            }
+            else if (bag is IItemContainer container)
+            {
+                ItemContainerWindow.Toggle(container);
+            }
+            SoundEngine.PlaySound(SoundID.MenuOpen);
+        }
+
+        private static IBagInventory GetCurrentOpenBag()
+        {
+            if (AccessoryBagWindow.IsOpen && AccessoryBagWindow.Instance.CurrentBag != null)
+            {
+                return AccessoryBagWindow.Instance.CurrentBag;
+            }
+
+            if (ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container != null)
+            {
+                return ItemContainerWindow.Instance.Container;
+            }
+
+            return null;
         }
 
         private static void Hook_RightClick(On_ItemSlot.orig_RightClick orig, Item[] inv, int context, int slot)
@@ -52,15 +117,14 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (inv != null && slot >= 0 && slot < inv.Length)
             {
                 Item item = inv[slot];
-                if (item != null && !item.IsAir && ItemLoader.GetModItem(item) is ItemContainerItem container)
+                if (item != null && !item.IsAir && ItemLoader.GetModItem(item) is IBagInventory bag)
                 {
                     if (Main.mouseRight)
                     {
                         if (Main.mouseRightRelease && Main.player[Main.myPlayer].itemAnimation <= 0)
                         {
                             Main.mouseRightRelease = false;
-                            ItemContainerWindow.Toggle(container);
-                            SoundEngine.PlaySound(SoundID.MenuOpen);
+                            ToggleBag(bag);
                         }
                         return;
                     }
@@ -77,12 +141,12 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 Item item = inv[slot];
                 if (item != null)
                 {
-                    // 1. 手持物品左键点击收纳袋：存入对应容器实体（杜绝触发原版 MouseItemSwap 交换位置）
+                    // 1. 手持物品左键点击随身容器：存入对应容器实体（杜绝触发原版 MouseItemSwap 交换位置）
                     if (!Main.mouseItem.IsAir && Main.mouseLeft && Main.mouseLeftRelease && !ItemSlot.ShiftInUse && !ItemSlot.ControlInUse)
                     {
-                        if (ItemLoader.GetModItem(item) is ItemContainerItem container && container.MeetEntryCriteria(Main.mouseItem))
+                        if (ItemLoader.GetModItem(item) is IBagInventory bag && bag.MeetEntryCriteria(Main.mouseItem))
                         {
-                            if (container.TryDeposit(Main.mouseItem, sort: true))
+                            if (bag.TryDeposit(Main.mouseItem, sort: true))
                             {
                                 SoundEngine.PlaySound(SoundID.Grab);
                                 if (Main.mouseItem.stack <= 0) Main.mouseItem.TurnToAir();
@@ -93,12 +157,13 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                         }
                     }
 
-                    // 2. 当收纳窗口打开时，Shift+左键背包物品快速存入当前打开的容器实体
+                    // 2. 当任意容器窗口打开时，Shift+左键 背包物品快速存入当前打开的容器实体
                     if (Main.mouseLeft && Main.mouseLeftRelease && ItemSlot.ShiftInUse && Main.mouseItem.IsAir)
                     {
-                        if (ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container != null)
+                        IBagInventory openBag = GetCurrentOpenBag();
+                        if (openBag != null && openBag.MeetEntryCriteria(item))
                         {
-                            if (ItemContainerWindow.Instance.Container.TryDepositFromSlot(inv, slot, justCheck: false))
+                            if (openBag.TryDepositFromSlot(inv, slot, justCheck: false))
                             {
                                 SoundEngine.PlaySound(SoundID.Grab);
                                 Main.mouseLeftRelease = false;
@@ -125,7 +190,8 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
 
             if (ItemSlot.ShiftInUse)
             {
-                if (ItemContainerWindow.IsOpen && ItemContainerWindow.Instance.Container != null && ItemContainerWindow.Instance.Container.TryDepositFromSlot(inv, slot, justCheck: true))
+                IBagInventory openBag = GetCurrentOpenBag();
+                if (openBag != null && openBag.MeetEntryCriteria(item) && openBag.TryDepositFromSlot(inv, slot, justCheck: true))
                 {
                     return ItemSlot.AlternateClickAction.TransferToChest;
                 }
@@ -142,14 +208,13 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             Item item = inv[slot];
             if (item == null || item.IsAir) return;
 
-            if (Terraria.GameInput.PlayerInput.MouseInfo.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed &&
-                Terraria.GameInput.PlayerInput.MouseInfoOld.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
+            if (Terraria.GameInput.PlayerInput.MouseInfo.MiddleButton == ButtonState.Pressed &&
+                Terraria.GameInput.PlayerInput.MouseInfoOld.MiddleButton == ButtonState.Released)
             {
-                if (ItemLoader.GetModItem(item) is ItemContainerItem container)
+                if (ItemLoader.GetModItem(item) is IBagInventory bag)
                 {
                     Terraria.GameInput.PlayerInput.MouseInfoOld = Terraria.GameInput.PlayerInput.MouseInfo;
-                    ItemContainerWindow.Toggle(container);
-                    SoundEngine.PlaySound(SoundID.MenuOpen);
+                    ToggleBag(bag);
                 }
             }
         }
@@ -159,10 +224,27 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
             if (self.inventory != null && self.selectedItem >= 0 && self.selectedItem < self.inventory.Length)
             {
                 Item held = self.inventory[self.selectedItem];
-                if (held != null && !held.IsAir && ItemLoader.GetModItem(held) is ItemContainerItem container && container.GetStoredCount() > 0)
+                if (held != null && !held.IsAir && ItemLoader.GetModItem(held) is IBagInventory bag)
                 {
-                    Main.NewText($"[提示] 无法丢弃非空的 [{held.Name}]，请先清空内部存储物。", 255, 200, 100);
-                    return;
+                    bool hasItems = false;
+                    if (bag.Slots != null)
+                    {
+                        for (int i = 0; i < bag.Slots.Length; i++)
+                        {
+                            if (bag.Slots[i] != null && !bag.Slots[i].IsAir && bag.Slots[i].stack > 0)
+                            {
+                                hasItems = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (hasItems)
+                    {
+                        Main.NewText($"[提示] 无法丢弃非空的 [{held.Name}]，请先清空内部物品。", 255, 200, 100);
+                        SoundEngine.PlaySound(SoundID.MenuTick);
+                        return;
+                    }
                 }
             }
             orig(self);
@@ -178,30 +260,14 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
                 return orig(self, newItem, settings);
             }
 
-            bool TryProcessContainers(Item[] array)
+            var containers = CarriedBagCacheManager.GetAllItemContainers(self);
+            for (int i = 0; i < containers.Count; i++)
             {
-                if (array == null) return false;
-                for (int i = 0; i < array.Length; i++)
+                var container = containers[i];
+                if (container != null && container.OnPickupIntercept(self, newItem))
                 {
-                    Item it = array[i];
-                    if (it != null && !it.IsAir && ItemLoader.GetModItem(it) is ItemContainerItem container)
-                    {
-                        if (container.OnPickupIntercept(self, newItem))
-                        {
-                            return true;
-                        }
-                    }
+                    return new Item();
                 }
-                return false;
-            }
-
-            if (TryProcessContainers(self.inventory) ||
-                (self.bank?.item != null && TryProcessContainers(self.bank.item)) ||
-                (self.bank2?.item != null && TryProcessContainers(self.bank2.item)) ||
-                (self.bank3?.item != null && TryProcessContainers(self.bank3.item)) ||
-                (self.bank4?.item != null && TryProcessContainers(self.bank4.item)))
-            {
-                return new Item();
             }
 
             return orig(self, newItem, settings);

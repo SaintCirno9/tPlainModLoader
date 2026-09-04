@@ -1,5 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Storage.Core;
 using System;
 using System.Collections.Generic;
 using TPML;
@@ -80,7 +81,7 @@ namespace OptimizeAndTool.Content.EnhancedTooltips
                 }
             }
 
-            var bags = AccessoryBagCacheManager.GetAllBags();
+            var bags = CarriedBagCacheManager.GetAllAccessoryBags();
             if (bags != null)
             {
                 for (int b = 0; b < bags.Count; b++)

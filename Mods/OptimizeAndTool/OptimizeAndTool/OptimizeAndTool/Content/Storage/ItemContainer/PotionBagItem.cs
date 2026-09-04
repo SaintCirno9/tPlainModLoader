@@ -25,7 +25,7 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public override void SetStaticDefaults()
         {
             ItemLoader.SetDisplayName(Type, "药水袋");
-            ItemLoader.SetTooltip(Type, "便携式药水收纳袋，可存储多达 200 格药水\n[c/88ff88:【操作提示】] 物品栏右键或悬停中键打开收纳面板\n手持药水左键点击药水袋可直接存入\n若开启自动收纳，拾取药水时将自动存入袋中\n存入的药水自动参与无尽药水续杯判定");
+            ItemLoader.SetTooltip(Type, "便携式药水收纳袋，可存储多达 200 格药水\n[c/88ff88:【操作提示】] 物品栏右键或悬停中键打开收纳面板\n手持药水左键点击药水袋可直接存入\n若开启自动收纳，拾取药水时将自动存入袋中\n存入的药水自动参与无尽药水续杯判定\n[c/88ff88:【制作支持】] 袋内未收藏药水直接参与工作台配方合成与自动扣料");
             CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;
         }
 

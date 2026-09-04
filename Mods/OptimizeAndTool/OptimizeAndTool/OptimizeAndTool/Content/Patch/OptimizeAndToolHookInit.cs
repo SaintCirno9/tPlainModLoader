@@ -42,8 +42,7 @@ namespace OptimizeAndTool.Content.Patch
                     typeof(BigBag.BigBagPickupHooks),
                     typeof(BigBag.BigBagShiftTransferHooks),
                     typeof(BigBag.HotbarScrollHooks),
-                    typeof(Storage.AccessoryBox.AccessoryBagInteractionHooks),
-                    typeof(Storage.ItemContainer.ItemContainerInteractionHooks),
+                    typeof(Storage.Core.CarriedBagInteractionHooks),
                     typeof(QoL.PortableContainerHooks),
 
                     // 批次 3: 钓鱼增强子系统

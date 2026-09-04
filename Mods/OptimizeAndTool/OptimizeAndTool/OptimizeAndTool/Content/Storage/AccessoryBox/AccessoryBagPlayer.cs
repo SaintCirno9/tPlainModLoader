@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using TPML;
@@ -7,6 +7,7 @@ using Terraria.Audio;
 using Terraria.ID;
 using TPML.Content;
 using TPML.Core.Logging;
+using OptimizeAndTool.Content.Storage.Core;
 
 namespace OptimizeAndTool.Content.Storage.AccessoryBox
 {
@@ -23,7 +24,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
 
             AccessoryBagDuplicateCleaner.CheckAndCleanDuplicates(This);
 
-            var bags = AccessoryBagCacheManager.GetAllBags();
+            var bags = CarriedBagCacheManager.GetAllAccessoryBags();
             if (bags == null || bags.Count == 0) return;
 
             var equippedTypes = new HashSet<int>();
@@ -102,7 +103,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             if (This != Main.LocalPlayer || Main.dedServ) return;
             if (!AccessoryBagConfig.EnablePassive.val) return;
 
-            var bags = AccessoryBagCacheManager.GetAllBags();
+            var bags = CarriedBagCacheManager.GetAllAccessoryBags();
             if (bags == null || bags.Count == 0) return;
 
             var equippedTypes = new HashSet<int>();
@@ -215,7 +216,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             if (This != Main.LocalPlayer || Main.dedServ) return;
             if (!AccessoryBagConfig.EnablePassive.val || !AccessoryBagConfig.EnableArmorSetBonuses.val) return;
 
-            var bags = AccessoryBagCacheManager.GetAllBags();
+            var bags = CarriedBagCacheManager.GetAllAccessoryBags();
             if (bags == null || bags.Count == 0) return;
 
             // 收集所有可用装备类型：包括身上穿的防具与饰品袋内的防具

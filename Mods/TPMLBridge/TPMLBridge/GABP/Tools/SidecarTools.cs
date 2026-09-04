@@ -10,6 +10,7 @@ using Terraria.ID;
 using Terraria.IO;
 using TPML.Content;
 using TPML.Content.IO;
+using OptimizeAndTool.Content.Storage.Core;
 
 namespace TPMLBridge.GABP.Tools
 {
@@ -316,8 +317,8 @@ namespace TPMLBridge.GABP.Tools
                     exists = playerFileExists,
                     entryCount = playerData?.Items?.Count ?? 0,
                     entries = playerData?.Items,
-                    containers = playerData?.Containers,
-                    containerNames = playerData?.Containers?.Keys?.ToList() ?? new List<string>()
+                    customProperties = playerData?.CustomProperties,
+                    customPropertyKeys = playerData?.CustomProperties?.Keys?.ToList() ?? new List<string>()
                 },
                 worldSidecar = new
                 {
@@ -338,7 +339,7 @@ namespace TPMLBridge.GABP.Tools
                     bank3 = ExtractModItems(player?.bank3?.item, "bank3"),
                     bank4 = ExtractModItems(player?.bank4?.item, "bank4"),
                     bigBag = ExtractContainerItems(OptimizeAndTool.Content.BigBag.BigBag.Slots),
-                    accessoryBox = ExtractContainerItems(OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.personalInventory)
+                    accessoryBox = ExtractContainerItems(CarriedBagCacheManager.GetFirstCarriedBag<OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagItem>()?.personalInventory)
                 }
             };
         }
@@ -357,7 +358,7 @@ namespace TPMLBridge.GABP.Tools
             if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(containerName, "accessoryBag", StringComparison.OrdinalIgnoreCase))
             {
-                var carried = OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag();
+                var carried = CarriedBagCacheManager.GetFirstCarriedBag<OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagItem>();
                 if (carried == null && Main.LocalPlayer != null)
                 {
                     int bagType = TPML.Content.ItemLoader.ItemType("OptimizeAndTool", "AccessoryBag");
@@ -370,7 +371,7 @@ namespace TPMLBridge.GABP.Tools
                                 Item bagIt = new Item();
                                 bagIt.SetDefaults(bagType);
                                 Main.LocalPlayer.inventory[i] = bagIt;
-                                OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.UpdateCache();
+                                CarriedBagCacheManager.UpdateCache();
                                 carried = TPML.Content.ItemLoader.GetModItem(bagIt) as OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagItem;
                                 break;
                             }
@@ -413,7 +414,7 @@ namespace TPMLBridge.GABP.Tools
                 else if (string.Equals(containerName, "accessoryBox", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(containerName, "accessoryBag", StringComparison.OrdinalIgnoreCase))
                 {
-                    OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagCacheManager.GetFirstCarriedBag()?.TriggerSlotsChanged();
+                    CarriedBagCacheManager.GetFirstCarriedBag<OptimizeAndTool.Content.Storage.AccessoryBox.AccessoryBagItem>()?.TriggerSlotsChanged();
                 }
             }
 

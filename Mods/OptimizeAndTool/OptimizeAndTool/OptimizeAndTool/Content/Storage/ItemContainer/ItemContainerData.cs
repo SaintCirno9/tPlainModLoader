@@ -52,7 +52,14 @@ namespace OptimizeAndTool.Content.Storage.ItemContainer
         public static bool IsTransferringOut = false;
 
         public event Action OnSlotsChanged;
-        public void TriggerSlotsChanged() => OnSlotsChanged?.Invoke();
+        public void TriggerSlotsChanged()
+        {
+            OnSlotsChanged?.Invoke();
+            if (Main.netMode != 2 && !Main.gameMenu)
+            {
+                Recipe.UpdateRecipeList();
+            }
+        }
 
         public ItemContainerItem()
         {

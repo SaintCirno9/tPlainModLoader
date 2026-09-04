@@ -368,6 +368,7 @@ namespace TPML.Content.Fusion
                             it.stack--;
                             if (it.stack <= 0)
                             {
+                                it.TurnToAir();
                                 slots[i] = new Item();
                             }
 
@@ -424,6 +425,7 @@ namespace TPML.Content.Fusion
 
                             if (it.stack <= 0)
                             {
+                                it.TurnToAir();
                                 slots[i] = new Item();
                             }
 
@@ -482,6 +484,7 @@ namespace TPML.Content.Fusion
 
                             if (it.stack <= 0)
                             {
+                                it.TurnToAir();
                                 slots[i] = new Item();
                             }
 
@@ -533,6 +536,7 @@ namespace TPML.Content.Fusion
                             it.stack--;
                             if (it.stack <= 0)
                             {
+                                it.TurnToAir();
                                 slots[i] = new Item();
                             }
 
