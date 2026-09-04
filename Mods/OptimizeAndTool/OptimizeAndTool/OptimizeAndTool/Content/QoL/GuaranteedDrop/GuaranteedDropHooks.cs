@@ -46,6 +46,10 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
 
         #region 1. 怪物掉落规则底层拦截 (ItemDropResolver)
 
+        private static readonly HashSet<IItemDropRule> _visitingRules = new HashSet<IItemDropRule>();
+        private static int _recursionDepth = 0;
+        private const int MaxRecursionDepth = 32;
+
         private static ItemDropAttemptResult Hook_ResolveRule(On_ItemDropResolver.orig_ResolveRule orig, ItemDropResolver self, IItemDropRule rule, DropAttemptInfo info)
         {
             if (!GuaranteedDropSystem.EnableGuaranteedDrop.val || rule == null || info.player == null || info.npc == null || info.IsInSimulation)
@@ -59,130 +63,275 @@ namespace OptimizeAndTool.Content.QoL.GuaranteedDrop
                 return orig(self, rule, info);
             }
 
-            // A. 单物品普通掉落规则 (CommonDrop 及其派生类)
-            if (rule is CommonDrop commonDrop)
+            // 防环与递归深度保护
+            if (_recursionDepth >= MaxRecursionDepth || _visitingRules.Contains(rule))
             {
-                int itemId = commonDrop.itemId;
-                if (itemId > 0)
+                return new ItemDropAttemptResult
                 {
-                    int stack = commonDrop.amountDroppedMaximum;
-                    if (stack <= 0) stack = 1;
-                    CommonCode.DropItemFromNPC(info.npc, itemId, stack);
-
-                    var result = new ItemDropAttemptResult
-                    {
-                        State = ItemDropAttemptResultState.Success
-                    };
-                    self.ResolveRuleChains(rule, info, result);
-                    return result;
-                }
+                    State = ItemDropAttemptResultState.DidNotRunCode
+                };
             }
-            // B. 多选一掉落规则 (OneFromOptionsDropRule)
-            else if (rule is OneFromOptionsDropRule optionsRule)
+
+            _visitingRules.Add(rule);
+            _recursionDepth++;
+
+            try
             {
-                int[] options = optionsRule.dropIds;
-                if (options != null && options.Length > 0)
+                // A. 单物品普通掉落规则 (CommonDrop 及其派生类)
+                if (rule is CommonDrop commonDrop)
                 {
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                    int itemId = commonDrop.itemId;
+                    if (itemId > 0)
                     {
-                        // 全量大爆特爆：掉出该池中所有物品
-                        for (int i = 0; i < options.Length; i++)
+                        int stack = commonDrop.amountDroppedMaximum;
+                        if (stack <= 0) stack = 1;
+                        CommonCode.DropItemFromNPC(info.npc, itemId, stack);
+
+                        var result = new ItemDropAttemptResult
                         {
-                            int id = options[i];
-                            if (id > 0)
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // B. 多选一掉落规则 (OneFromOptionsDropRule)
+                else if (rule is OneFromOptionsDropRule optionsRule)
+                {
+                    int[] options = optionsRule.dropIds;
+                    if (options != null && options.Length > 0)
+                    {
+                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                        {
+                            // 全量大爆特爆：掉出该池中所有物品
+                            for (int i = 0; i < options.Length; i++)
                             {
-                                CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                int id = options[i];
+                                if (id > 0)
+                                {
+                                    CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        int chosen = options[info.rng.Next(options.Length)];
-                        if (chosen > 0)
+                        else
                         {
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
-                        }
-                    }
-
-                    var result = new ItemDropAttemptResult
-                    {
-                        State = ItemDropAttemptResultState.Success
-                    };
-                    self.ResolveRuleChains(rule, info, result);
-                    return result;
-                }
-            }
-            // C. 多选一不随幸运缩放规则 (OneFromOptionsNotScaledWithLuckDropRule)
-            else if (rule is OneFromOptionsNotScaledWithLuckDropRule optionsNotLuckRule)
-            {
-                int[] options = optionsNotLuckRule.dropIds;
-                if (options != null && options.Length > 0)
-                {
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                    {
-                        for (int i = 0; i < options.Length; i++)
-                        {
-                            int id = options[i];
-                            if (id > 0)
+                            int chosen = options[info.rng.Next(options.Length)];
+                            if (chosen > 0)
                             {
-                                CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                CommonCode.DropItemFromNPC(info.npc, chosen, 1);
                             }
                         }
-                    }
-                    else
-                    {
-                        int chosen = options[info.rng.Next(options.Length)];
-                        if (chosen > 0)
-                        {
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
-                        }
-                    }
 
-                    var result = new ItemDropAttemptResult
-                    {
-                        State = ItemDropAttemptResultState.Success
-                    };
-                    self.ResolveRuleChains(rule, info, result);
-                    return result;
-                }
-            }
-            // D. 不重复多选规则 (FromOptionsWithoutRepeatsDropRule)
-            else if (rule is FromOptionsWithoutRepeatsDropRule withoutRepeatsRule)
-            {
-                int[] options = withoutRepeatsRule.dropIds;
-                if (options != null && options.Length > 0)
-                {
-                    if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
-                    {
-                        for (int i = 0; i < options.Length; i++)
+                        var result = new ItemDropAttemptResult
                         {
-                            int id = options[i];
-                            if (id > 0)
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // C. 多选一不随幸运缩放规则 (OneFromOptionsNotScaledWithLuckDropRule)
+                else if (rule is OneFromOptionsNotScaledWithLuckDropRule optionsNotLuckRule)
+                {
+                    int[] options = optionsNotLuckRule.dropIds;
+                    if (options != null && options.Length > 0)
+                    {
+                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                        {
+                            for (int i = 0; i < options.Length; i++)
                             {
-                                CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                int id = options[i];
+                                if (id > 0)
+                                {
+                                    CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        int chosen = options[info.rng.Next(options.Length)];
-                        if (chosen > 0)
+                        else
                         {
-                            CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                            int chosen = options[info.rng.Next(options.Length)];
+                            if (chosen > 0)
+                            {
+                                CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                            }
                         }
+
+                        var result = new ItemDropAttemptResult
+                        {
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // D. 不重复多选规则 (FromOptionsWithoutRepeatsDropRule)
+                else if (rule is FromOptionsWithoutRepeatsDropRule withoutRepeatsRule)
+                {
+                    int[] options = withoutRepeatsRule.dropIds;
+                    if (options != null && options.Length > 0)
+                    {
+                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                        {
+                            for (int i = 0; i < options.Length; i++)
+                            {
+                                int id = options[i];
+                                if (id > 0)
+                                {
+                                    CommonCode.DropItemFromNPC(info.npc, id, 1);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            int chosen = options[info.rng.Next(options.Length)];
+                            if (chosen > 0)
+                            {
+                                CommonCode.DropItemFromNPC(info.npc, chosen, 1);
+                            }
+                        }
+
+                        var result = new ItemDropAttemptResult
+                        {
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // E. 规则池多选一规则 (OneFromRulesRule)
+                else if (rule is OneFromRulesRule oneFromRules)
+                {
+                    IItemDropRule[] options = oneFromRules.options;
+                    if (options != null && options.Length > 0)
+                    {
+                        if (GuaranteedDropSystem.EnableMultiOptionBurst.val)
+                        {
+                            // 全量大爆特爆：触发该规则池中的所有规则
+                            for (int i = 0; i < options.Length; i++)
+                            {
+                                var subRule = options[i];
+                                if (subRule != null)
+                                {
+                                    self.ResolveRule(subRule, info);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var chosen = options[info.rng.Next(options.Length)];
+                            if (chosen != null)
+                            {
+                                self.ResolveRule(chosen, info);
+                            }
+                        }
+
+                        var result = new ItemDropAttemptResult
+                        {
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // F. 批量多散落掉落规则 (DropOneByOne)
+                else if (rule is DropOneByOne dropOneByOne)
+                {
+                    int itemId = dropOneByOne.itemId;
+                    if (itemId > 0)
+                    {
+                        int count = dropOneByOne.parameters.MaximumItemDropsCount;
+                        int activePlayersCount = Main.CurrentFrameFlags.ActivePlayersCount;
+                        int maxStack = dropOneByOne.parameters.MaximumStackPerChunkBase + activePlayersCount * dropOneByOne.parameters.BonusMaxDropsPerChunkPerPlayer;
+                        if (maxStack <= 0) maxStack = 1;
+                        for (int i = 0; i < count; i++)
+                        {
+                            CommonCode.DropItemFromNPC(info.npc, itemId, maxStack, scattered: true);
+                        }
+
+                        var result = new ItemDropAttemptResult
+                        {
+                            State = ItemDropAttemptResultState.Success
+                        };
+                        CustomResolveRuleChains(self, rule, info, result);
+                        return result;
+                    }
+                }
+                // G. 机械三王召唤物掉落规则 (MechBossSpawnersDropRule)
+                else if (rule is MechBossSpawnersDropRule)
+                {
+                    if (!NPC.downedMechBoss1)
+                    {
+                        CommonCode.DropItemFromNPC(info.npc, ItemID.MechanicalWorm, 1);
+                    }
+                    if (!NPC.downedMechBoss2)
+                    {
+                        CommonCode.DropItemFromNPC(info.npc, ItemID.MechanicalEye, 1);
+                    }
+                    if (!NPC.downedMechBoss3)
+                    {
+                        CommonCode.DropItemFromNPC(info.npc, ItemID.MechanicalSkull, 1);
                     }
 
                     var result = new ItemDropAttemptResult
                     {
                         State = ItemDropAttemptResultState.Success
                     };
-                    self.ResolveRuleChains(rule, info, result);
+                    CustomResolveRuleChains(self, rule, info, result);
                     return result;
                 }
-            }
 
-            // 其他嵌套规则继续由原版派发（会自动递归调用 ResolveRule）
-            return orig(self, rule, info);
+                // 其他嵌套规则继续由原版派发（会自动递归调用 ResolveRule）
+                return orig(self, rule, info);
+            }
+            finally
+            {
+                _recursionDepth--;
+                _visitingRules.Remove(rule);
+            }
+        }
+
+        /// <summary>
+        /// 自定义链条派发器：支持全量大爆穿透 OnFailedRoll（TryIfFailedRandomRoll）链条
+        /// </summary>
+        private static void CustomResolveRuleChains(ItemDropResolver self, IItemDropRule rule, DropAttemptInfo info, ItemDropAttemptResult parentResult)
+        {
+            var chains = rule.ChainedRules;
+            if (chains == null || chains.Count == 0) return;
+
+            for (int i = 0; i < chains.Count; i++)
+            {
+                var chain = chains[i];
+                if (chain == null || chain.RuleToChain == null) continue;
+
+                bool shouldExecute = false;
+
+                // 1. 遇到随机失败链（如不死矿工的衣服/裤子/炸弹，鲨鱼鳍，食人鱼抓钩等）：
+                //    全量大爆模式下强制穿透！
+                if (chain is Chains.TryIfFailedRandomRoll)
+                {
+                    shouldExecute = true;
+                }
+                // 2. 遇到成功链：只要父级成功（在我们的 Hook 拦截中，大爆基本都是 Success）
+                else if (chain is Chains.TryIfSucceeded)
+                {
+                    shouldExecute = parentResult.State == ItemDropAttemptResultState.Success;
+                }
+                // 3. 遇到条件不满足链：只有条件不满足时才链入
+                else if (chain is Chains.TryIfDoesntFillConditions)
+                {
+                    shouldExecute = parentResult.State == ItemDropAttemptResultState.DoesntFillConditions;
+                }
+                // 4. 其他自定义链条类型（兜底判定）
+                else
+                {
+                    shouldExecute = chain.CanChainIntoRule(parentResult);
+                }
+
+                if (shouldExecute)
+                {
+                    self.ResolveRule(chain.RuleToChain, info);
+                }
+            }
         }
 
         #endregion

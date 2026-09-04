@@ -324,3 +324,23 @@
   `dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`
 - **构建结果**：
   `[构建验证]` **0 错误、0 警告**，23 个工程全量构建并在 ~7.32s 内完成自动热部署。
+
+---
+
+# GuaranteedDrop 掉落互斥链条穿透与全量大爆修复记录
+
+## 1. 问题排查
+- **不死矿工（UndeadMiner = 44）规则拓扑**：
+  - 矿工头盔（88）为独立的顶级 `CommonDrop`，击杀时 100% 触发；
+  - 矿工衣（410）、矿工裤（411）和炸弹（166）挂在顶级规则抓钩（118）的 `.OnFailedRoll(...)`（`Chains.TryIfFailedRandomRoll`）链条上；
+- **短路根因**：原 Hook 将抓钩直接置为 `State = Success`，原版 `ResolveRuleChains` 判定 `parentResult.State == FailedRandomRoll` 失败，导致整个后置链条被短路跳过，衣服、裤子、炸弹无法掉落。
+
+## 2. 修复实施
+- **`CustomResolveRuleChains`**：实现自定义链条派发器，在全量大爆模式下无视父级成功状态，强制穿透 `TryIfFailedRandomRoll` 递归执行后置规则；
+- **`OneFromRulesRule` 扩展**：支持规则池多选一在 `EnableMultiOptionBurst` 开启时全部触发；
+- **专属规则适配**：适配 `DropOneByOne`（天界柱碎片散落）与 `MechBossSpawnersDropRule`（机械三王召唤物）；
+- **防环保护**：引入 `_visitingRules` 与 `_recursionDepth`（最大 32 层）确保递归绝对安全。
+
+## 3. 构建验证
+- `dotnet build tPlainModLoader/Mods/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool/OptimizeAndTool.csproj -c Release`：`[构建验证]` 0 警告 0 错误；
+- `dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`：`[构建验证]` 23 个工程全部 0 警告 0 错误，自动热部署完成。
