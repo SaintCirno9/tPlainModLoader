@@ -73,9 +73,9 @@ namespace OptimizeAndTool.Content.Storage.Core
             float searchToolbarTopMargin = 4f;
             float searchToolbarHeight = 22f;
 
-            // 1. 第一行：顶部操作按钮栏
+            // 1. 第一行：顶部操作按钮栏（右侧预留 26px 避让右上角 X 关闭按钮）
             topToolbar = new UIElement();
-            topToolbar.Width.Set(0, 1);
+            topToolbar.Width.Set(-26f, 1f);
             topToolbar.Top.Set(toolbarTopMargin, 0);
             topToolbar.Height.Set(toolbarHeight, 0);
             Child.Append(topToolbar);
@@ -578,7 +578,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             float gridW = SLOTS_PER_ROW * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 436px
             int totalDisplaySlots = displaySlotIndices.Count;
             int rowCount = Math.Max(1, (int)Math.Ceiling((double)totalDisplaySlots / SLOTS_PER_ROW));
-            int visibleRows = Math.Min(rowCount, MAX_VISIBLE_ROWS);
+            int visibleRows = MAX_VISIBLE_ROWS; // 锁定固定 7 行高度，杜绝筛选/搜索少量物品时窗口高度塌陷与视觉抖动，并为 Mod 侧栏提供充足展示空间
             float gridH = visibleRows * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN; // 7 行约 304px
 
             bool needScrollbar = rowCount > MAX_VISIBLE_ROWS;

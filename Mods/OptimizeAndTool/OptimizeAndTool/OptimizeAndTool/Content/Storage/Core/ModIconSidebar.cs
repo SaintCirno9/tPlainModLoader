@@ -27,6 +27,10 @@ namespace OptimizeAndTool.Content.Storage.Core
         public bool HasMultipleMods { get; private set; } = false;
 
         private IBagInventory bag;
+        private UIElement contentContainer;
+        private float scrollOffset = 0f;
+        private float maxScroll = 0f;
+        private float totalItemsHeight = 0f;
 
         public ModIconSidebar(IBagInventory bag)
         {
@@ -37,6 +41,11 @@ namespace OptimizeAndTool.Content.Storage.Core
             BackgroundColor = new Color(20, 25, 45) * 0.85f;
             BorderColor = new Color(43, 60, 120);
             OverflowHidden = true;
+
+            contentContainer = new UIElement();
+            contentContainer.Width.Set(0, 1f);
+            contentContainer.Height.Set(0, 1f);
+            Append(contentContainer);
         }
 
         public void SetBag(IBagInventory bag)
@@ -44,13 +53,79 @@ namespace OptimizeAndTool.Content.Storage.Core
             this.bag = bag;
         }
 
+        private void UpdateScrollRange()
+        {
+            CalculatedStyle inner = GetInnerDimensions();
+            float visibleH = inner.Height > 0 ? inner.Height : 300f;
+            maxScroll = Math.Max(0f, totalItemsHeight - visibleH);
+            scrollOffset = MathHelper.Clamp(scrollOffset, 0f, maxScroll);
+            contentContainer.Top.Set(-scrollOffset, 0f);
+        }
+
+        public override void Recalculate()
+        {
+            base.Recalculate();
+            UpdateScrollRange();
+        }
+
+        public override void ScrollWheel(UIScrollWheelEvent evt)
+        {
+            base.ScrollWheel(evt);
+            UpdateScrollRange();
+            if (maxScroll > 0f && evt.ScrollWheelValue != 0)
+            {
+                // 滚轮每次滚动一个按钮的距离（36px）
+                float delta = Math.Sign(evt.ScrollWheelValue) * 36f;
+                scrollOffset = MathHelper.Clamp(scrollOffset - delta, 0f, maxScroll);
+                contentContainer.Top.Set(-scrollOffset, 0f);
+                RecalculateChildren();
+
+                // 消耗滚轮输入，防止同时触发右侧物品栏滚动
+                Terraria.GameInput.PlayerInput.ScrollWheelDeltaForUI = 0;
+                Terraria.GameInput.PlayerInput.ScrollWheelDelta = 0;
+            }
+        }
+
+        protected override void DrawChildren(SpriteBatch sb)
+        {
+            base.DrawChildren(sb);
+
+            // 当列表超出可视区域时，在侧栏右边缘绘制 3px 宽的极简半透明指示滑块
+            if (maxScroll > 0f)
+            {
+                CalculatedStyle dim = GetDimensions();
+                float barW = 3f;
+                float barX = dim.X + dim.Width - barW - 2f;
+                float barTrackY = dim.Y + 4f;
+                float barTrackH = dim.Height - 8f;
+
+                if (barTrackH > 10f)
+                {
+                    // 轨道槽深色底
+                    sb.Draw(TextureAssets.MagicPixel.Value, new Rectangle((int)barX, (int)barTrackY, (int)barW, (int)barTrackH), Color.Black * 0.3f);
+
+                    // 计算滑块高度与位置
+                    float viewRatio = Math.Min(1f, totalItemsHeight > 0f ? (barTrackH / totalItemsHeight) : 0.5f);
+                    float thumbH = Math.Max(14f, barTrackH * viewRatio);
+                    float thumbProgress = maxScroll > 0f ? (scrollOffset / maxScroll) : 0f;
+                    float thumbY = barTrackY + (barTrackH - thumbH) * thumbProgress;
+
+                    Color thumbColor = IsMouseHovering ? (Color.LightSkyBlue * 0.75f) : (Color.White * 0.35f);
+                    sb.Draw(TextureAssets.MagicPixel.Value, new Rectangle((int)barX, (int)thumbY, (int)barW, (int)thumbH), thumbColor);
+                }
+            }
+        }
+
         public void Rebuild()
         {
-            Elements.Clear();
+            contentContainer.Elements.Clear();
             if (bag?.Slots == null || !bag.ShowModSidebar)
             {
                 HasMultipleMods = false;
                 CurrentFilter = "All";
+                scrollOffset = 0f;
+                maxScroll = 0f;
+                totalItemsHeight = 0f;
                 return;
             }
 
@@ -80,6 +155,9 @@ namespace OptimizeAndTool.Content.Storage.Core
             if (!HasMultipleMods)
             {
                 CurrentFilter = "All";
+                scrollOffset = 0f;
+                maxScroll = 0f;
+                totalItemsHeight = 0f;
                 return;
             }
 
@@ -99,9 +177,12 @@ namespace OptimizeAndTool.Content.Storage.Core
                     OnFilterChanged?.Invoke(CurrentFilter);
                     Rebuild();
                 };
-                Append(btn);
+                contentContainer.Append(btn);
                 top += 36f;
             }
+
+            totalItemsHeight = top + 2f;
+            UpdateScrollRange();
         }
     }
 
