@@ -1,17 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{0222CAFC-DB2C-4BA4-B527-3EB4197303E4}</ProjectGuid>
+    <ProjectGuid>{6852A9D1-BD82-46A0-8F98-CEECF0360875}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>ChatAi</RootNamespace>
-    <AssemblyName>ChatAi</AssemblyName>
+    <RootNamespace>QuickButton</RootNamespace>
+    <AssemblyName>QuickButton</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="System.Net.Http" />
@@ -33,19 +29,18 @@
     <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
-      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\..\Libs\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
   </ItemGroup>
 
-  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\ChatAi 文件夹 -->
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickButton 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
-      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))</ModSourceDir>
+      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>
       <ModDeployDir>$(TerrariaDir)\tPlainModLoader\Mods\$(MSBuildProjectName)</ModDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />

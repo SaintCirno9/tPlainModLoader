@@ -1,16 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{6852A9D1-BD82-46A0-8F98-CEECF0360875}</ProjectGuid>
+    <ProjectGuid>{0957943E-47A8-4049-A05A-8CBFF989E0E9}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>QuickButton</RootNamespace>
-    <AssemblyName>QuickButton</AssemblyName>
+    <RootNamespace>MapAtlasTool</RootNamespace>
+    <AssemblyName>MapAtlasTool</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Net.Http" />
     <!-- XNA 4.0 仅存在于 GAC（随 XNA Redistributable 安装），无 NuGet 分发，此处使用 GAC 确定性物理路径 -->
     <Reference Include="Microsoft.Xna.Framework">
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
@@ -29,7 +28,7 @@
     <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
-      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\..\Libs\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -37,10 +36,10 @@
   <ItemGroup>
   </ItemGroup>
 
-  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\QuickButton 文件夹 -->
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\MapAtlasTool 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
-      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))</ModSourceDir>
+      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>
       <ModDeployDir>$(TerrariaDir)\tPlainModLoader\Mods\$(MSBuildProjectName)</ModDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />

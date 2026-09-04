@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{1E23795A-8758-45DE-B962-B799C09CC923}</ProjectGuid>
+    <ProjectGuid>{3771B7AC-ED1A-4C2E-88F4-CE5921867160}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>SuspiciousPlayer</RootNamespace>
-    <AssemblyName>SuspiciousPlayer</AssemblyName>
+    <RootNamespace>Skil</RootNamespace>
+    <AssemblyName>Skil</AssemblyName>
     <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -29,19 +29,19 @@
     <!-- ReLogic：原版 Terraria 专用的 .NET Framework 4.0 托管程序集（由 Directory.Build.props 的 ReLogicPath 注入，或 fallback 至 Libs\ReLogic.dll） -->
     <Reference Include="ReLogic">
       <HintPath Condition="'$(ReLogicPath)' != '' and Exists('$(ReLogicPath)')">$(ReLogicPath)</HintPath>
-      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\..\Libs\ReLogic.dll</HintPath>
+      <HintPath Condition="'$(ReLogicPath)' == '' or !Exists('$(ReLogicPath)')">$(MSBuildThisFileDirectory)..\..\..\Libs\ReLogic.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
+    <ProjectReference Include="..\..\..\tPlainModLoader\CommandHelp\CommandHelp.csproj" Private="false" />
   </ItemGroup>
 
-  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\SuspiciousPlayer 文件夹 -->
+  <!-- 构建后部署：产物及模组元数据复制发布到游戏目录下的 tPlainModLoader\Mods\Skil 文件夹 -->
   <Target Name="DeployToGameDir" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(TerrariaDir)' != ''">
     <PropertyGroup>
-      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..'))</ModSourceDir>
+      <ModSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</ModSourceDir>
       <ModDeployDir>$(TerrariaDir)\tPlainModLoader\Mods\$(MSBuildProjectName)</ModDeployDir>
     </PropertyGroup>
     <MakeDir Directories="$(ModDeployDir)" />

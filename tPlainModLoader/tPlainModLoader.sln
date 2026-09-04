@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -15,19 +14,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastWin32", "FastWin32-mast
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tPlainModLoaderInjector", "tPlainModLoaderInjector\tPlainModLoaderInjector.csproj", "{F00447E9-BA2A-41FB-AE78-933BFED21611}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatAi", "..\Mods\ChatAi\ChatAi\ChatAi\ChatAi.csproj", "{0222CAFC-DB2C-4BA4-B527-3EB4197303E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatAi", "..\Mods\ChatAi\ChatAi\ChatAi.csproj", "{0222CAFC-DB2C-4BA4-B527-3EB4197303E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptimizeAndTool", "..\Mods\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj", "{B0B47F89-A282-41CF-B495-FE3780C2618A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptimizeAndTool", "..\Mods\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj", "{B0B47F89-A282-41CF-B495-FE3780C2618A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelArt", "..\Mods\PixelArt\PixelArt\PixelArt\PixelArt.csproj", "{F928DF69-9069-42BA-B344-DE6D2C9797A6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PixelArt", "..\Mods\PixelArt\PixelArt\PixelArt.csproj", "{F928DF69-9069-42BA-B344-DE6D2C9797A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickButton", "..\Mods\QuickButton\QuickButton\QuickButton\QuickButton.csproj", "{6852A9D1-BD82-46A0-8F98-CEECF0360875}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickButton", "..\Mods\QuickButton\QuickButton\QuickButton.csproj", "{6852A9D1-BD82-46A0-8F98-CEECF0360875}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickSetting", "..\Mods\QuickSetting\QuickSetting\QuickSetting.csproj", "{5CE623EC-BDD6-4A59-ACFE-1D9FF2E369FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skil", "..\Mods\Skil\Skil\Skil\Skil.csproj", "{3771B7AC-ED1A-4C2E-88F4-CE5921867160}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skil", "..\Mods\Skil\Skil\Skil.csproj", "{3771B7AC-ED1A-4C2E-88F4-CE5921867160}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuspiciousPlayer", "..\Mods\SuspiciousPlayer\SuspiciousPlayer\SuspiciousPlayer\SuspiciousPlayer.csproj", "{1E23795A-8758-45DE-B962-B799C09CC923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuspiciousPlayer", "..\Mods\SuspiciousPlayer\SuspiciousPlayer\SuspiciousPlayer.csproj", "{1E23795A-8758-45DE-B962-B799C09CC923}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WandsTool", "..\Mods\WandsTool\WandsTool\WandsTool.csproj", "{9EDB6614-8022-472D-956C-64C4EAA482BA}"
 EndProject
@@ -41,7 +40,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeBrowser", "..\Mods\Re
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingMachine", "..\Mods\FishingMachine\FishingMachine\FishingMachine.csproj", "{B1C2D3E4-F5A6-4B7C-8D9E-0F1A2B3C4D5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapAtlasTool", "..\Mods\MapAtlasTool\MapAtlasTool\MapAtlasTool\MapAtlasTool.csproj", "{0957943E-47A8-4049-A05A-8CBFF989E0E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapAtlasTool", "..\Mods\MapAtlasTool\MapAtlasTool\MapAtlasTool.csproj", "{0957943E-47A8-4049-A05A-8CBFF989E0E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPML.TerrariaHooks", "TPML.TerrariaHooks\TPML.TerrariaHooks.csproj", "{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}"
 EndProject

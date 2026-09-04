@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
+    <ProjectReference Include="..\..\OptimizeAndTool\OptimizeAndTool\OptimizeAndTool.csproj" Private="false" />
     <ProjectReference Include="..\..\WandsTool\WandsTool\WandsTool.csproj" Private="false" />
     <ProjectReference Include="..\..\RecipeBrowser\RecipeBrowser\RecipeBrowser.csproj" Private="false" />
     <ProjectReference Include="..\..\FishingMachine\FishingMachine\FishingMachine.csproj" Private="false" />
