@@ -399,12 +399,24 @@ namespace OptimizeAndTool.Content.QoL
                     totalActiveProj++;
                     if (itemId > 0)
                     {
-                        // 原版星尘之龙的头 (625) 与尾 (628) 不计入栏位数，仅身节各计 0.5 栏位
-                        float slots = (p.type == 625 || p.type == 628) ? 0f : (p.minionSlots > 0 ? p.minionSlots : 1f);
-                        if (minionSlotsByItem.ContainsKey(itemId))
-                            minionSlotsByItem[itemId] += slots;
-                        else
-                            minionSlotsByItem[itemId] = slots;
+                        // 原版特殊附属/实体弹幕不计入栏位数（由其计数弹幕提供栏位统计）：
+                        // - 星尘之龙的头 (625) 与尾 (628) 占 0 栏位（身节 626/627 各占 0.5 栏位）
+                        // - 阿比盖尔本体 (963) 占 0 栏位（由计数弹幕 970 各占 1 栏位）
+                        // - 沙漠之虎本体 (833, 834, 835) 占 0 栏位（由计数弹幕 831 各占 1 栏位）
+                        bool isZeroSlotMinion = p.type == 625 || p.type == 628 ||
+                                                p.type == ProjectileID.AbigailMinion ||
+                                                p.type == ProjectileID.StormTigerTier1 ||
+                                                p.type == ProjectileID.StormTigerTier2 ||
+                                                p.type == ProjectileID.StormTigerTier3;
+
+                        float slots = isZeroSlotMinion ? 0f : (p.minionSlots > 0 ? p.minionSlots : 1f);
+                        if (slots > 0f)
+                        {
+                            if (minionSlotsByItem.ContainsKey(itemId))
+                                minionSlotsByItem[itemId] += slots;
+                            else
+                                minionSlotsByItem[itemId] = slots;
+                        }
 
                         int pDmg = p.originalDamage > 0 ? p.originalDamage : p.damage;
                         if (pDmg > 0)
@@ -842,13 +854,18 @@ namespace OptimizeAndTool.Content.QoL
             // 5. 单体成长型仆从：阿比盖尔的花（Abigail's Flower）与沙漠之虎（Desert Tiger / StormTigerStaff）
             if (entry.ItemId == ItemID.AbigailsFlower || entry.ItemId == ItemID.StormTigerStaff)
             {
-                float randX = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
-                float randY = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
-                Vector2 spawnPos = player.Center + new Vector2(randX, randY);
-                int p = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, shootProj, originalDamage, knockBack, player.whoAmI);
-                if (p >= 0 && p < Main.maxProjectiles)
+                for (int k = 0; k < count; k++)
                 {
-                    Main.projectile[p].originalDamage = originalDamage;
+                    float randX = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
+                    float randY = (float)(Main.rand.NextDouble() * 20.0 - 10.0);
+                    Vector2 spawnPos = player.Center + new Vector2(randX, randY);
+                    int p = Projectile.NewProjectile(source, spawnPos.X, spawnPos.Y, 0f, -2f, shootProj, originalDamage, knockBack, player.whoAmI);
+                    if (p >= 0 && p < Main.maxProjectiles)
+                    {
+                        Main.projectile[p].originalDamage = originalDamage;
+                        // 标记 localAI[0] = 1f 抑制单帧内多个计数弹幕连续触发原版升级音效 (SoundID.AbigailUpgrade) 导致的爆音
+                        Main.projectile[p].localAI[0] = 1f;
+                    }
                 }
                 return true;
             }
