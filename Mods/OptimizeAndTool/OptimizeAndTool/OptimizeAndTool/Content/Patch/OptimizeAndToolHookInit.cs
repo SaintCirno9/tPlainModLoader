@@ -116,12 +116,6 @@ namespace OptimizeAndTool.Content.Patch
         }
     }
 
-    /// <summary>
-    /// 兼容旧入口类型
-    /// </summary>
-    internal class PatchInit : OptimizeAndToolHookInit
-    {
-    }
 
     public class OptimizeAndToolContentMod : TPML.Content.Mod
     {
