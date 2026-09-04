@@ -45,6 +45,10 @@ namespace OptimizeAndTool.Content.Storage.Core
             ScanArray(player.bank3?.item);
             ScanArray(player.bank4?.item);
             ScanArray(BigBag.BigBag.Slots);
+            if (Main.mouseItem != null && !Main.mouseItem.IsAir)
+            {
+                ScanArray(new Item[] { Main.mouseItem });
+            }
         }
 
         private static void ScanArray(Item[] items)

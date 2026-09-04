@@ -62,6 +62,7 @@ namespace OptimizeAndTool.Content.QoL
             if (_registered) return;
             On_SceneMetrics.Scan += Hook_Scan;
             On_Player.UpdateBuffs += Hook_UpdateBuffs;
+            On_Player.AddBuff += Hook_AddBuff;
             On_Main.DrawBuffIcon += Hook_DrawBuffIcon;
             On_Main.DrawInterface_Resources_Buffs += Hook_DrawInterface_Resources_Buffs;
             _registered = true;
@@ -72,6 +73,7 @@ namespace OptimizeAndTool.Content.QoL
             if (!_registered) return;
             On_SceneMetrics.Scan -= Hook_Scan;
             On_Player.UpdateBuffs -= Hook_UpdateBuffs;
+            On_Player.AddBuff -= Hook_AddBuff;
             On_Main.DrawBuffIcon -= Hook_DrawBuffIcon;
             On_Main.DrawInterface_Resources_Buffs -= Hook_DrawInterface_Resources_Buffs;
             _registered = false;
@@ -339,85 +341,29 @@ namespace OptimizeAndTool.Content.QoL
 
         private static void Hook_UpdateBuffs(On_Player.orig_UpdateBuffs orig, Player self, int i)
         {
-            if (i == 0 && self != null && self.active && self.whoAmI == Main.myPlayer)
+            orig(self, i);
+
+            if (self != null && self.active && self.whoAmI == Main.myPlayer)
             {
                 PerformUpdateBuffs(self);
             }
-
-            orig(self, i);
         }
 
         /// <summary>
-        /// 在玩家更新增益时扫描背包并赋予交互类增益与无尽药水（并执行黑名单拦截与清理）
+        /// 在玩家更新增益时扫描背包并直接赋予交互类增益与无尽药水效果（物理槽位 0 消耗，并执行短命残留清理与黑名单拦截）
         /// </summary>
         private static void PerformUpdateBuffs(Player self)
         {
             UpdateAvailableBuffs(self);
 
-            int threshold = PotionThreshold.val;
-            if (threshold <= 0) threshold = 30;
+            ActiveInfiniteBuffs.Clear();
 
-            if (EnableInfinitePotions.val)
-            {
-                // 食物跨槽堆叠合并判断（从高阶向低阶判定，若被黑名单禁用则尝试低阶）
-                int foodToApply = 0;
-                if (foodCounts[3] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) foodToApply = BuffID.WellFed3;
-                else if (foodCounts[2] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) foodToApply = BuffID.WellFed2;
-                else if (foodCounts[1] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) foodToApply = BuffID.WellFed;
+            // 1. 清理旧版或偶发残留的短命(<= 2 帧)无尽增益物理槽位，彻底释放 44 个物理槽位给召唤物与战斗状态
+            ClearResidualShortLivedBuffs(self);
 
-                if (foodToApply > 0 && !HasNaturalFoodBuff(self))
-                {
-                    // 存在自然进食(时长>2帧)的食物 Buff 时跳过续杯：
-                    // 原版 AddBuff 对食物类(IsFedState)会先清除玩家全部已存在食物再添加，
-                    // 直接续杯会把刚吃下的高阶/更持久美食立刻覆盖抹除
-                    self.AddBuff(foodToApply, 2, false);
-                    ActiveInfiniteBuffs.Add(foodToApply);
-                }
-
-                // 仅清理无尽系统赋予的极短时间(<=2帧)食物 Buff，保留玩家正常进食获得的 Buff
-                int[] foods = { BuffID.WellFed, BuffID.WellFed2, BuffID.WellFed3 };
-                foreach (int f in foods)
-                {
-                    if (InfiniteBuffStorage.Blacklist.Contains(f))
-                    {
-                        ClearShortLivedBuff(self, f);
-                    }
-                }
-
-                foreach (KeyValuePair<int, int> kvp in potionCounts)
-                {
-                    if (kvp.Value >= threshold)
-                    {
-                        if (!InfiniteBuffStorage.Blacklist.Contains(kvp.Key))
-                        {
-                            self.AddBuff(kvp.Key, 2, false);
-                            ActiveInfiniteBuffs.Add(kvp.Key);
-                        }
-                        else
-                        {
-                            ClearShortLivedBuff(self, kvp.Key);
-                        }
-                    }
-                }
-            }
-
-            // 交互类增益站生效与黑名单停止赋予
+            // 2. 场景光环增益（篝火、心灯等由 Hook_Scan 注入 SceneMetrics，此处记录入 ActiveInfiniteBuffs 供 UI 与黑名单状态）
             if (EnableBuffStations.val)
             {
-                foreach (int stationBuff in carriedInteractiveStations)
-                {
-                    if (!InfiniteBuffStorage.Blacklist.Contains(stationBuff))
-                    {
-                        self.AddBuff(stationBuff, 2, false);
-                        ActiveInfiniteBuffs.Add(stationBuff);
-                    }
-                    else
-                    {
-                        ClearShortLivedBuff(self, stationBuff);
-                    }
-                }
-
-                // 场景光环增益记录入 ActiveInfiniteBuffs
                 foreach (int sceneBuff in carriedSceneStations)
                 {
                     if (!InfiniteBuffStorage.Blacklist.Contains(sceneBuff))
@@ -431,12 +377,11 @@ namespace OptimizeAndTool.Content.QoL
                 }
             }
 
-            // 随身旗帜在生效时记录入 ActiveInfiniteBuffs
+            // 3. 随身旗帜（由 Hook_Scan 注入 metrics.hasBanner，此处记录入 ActiveInfiniteBuffs）
             if (EnableMonsterBanners.val && carriedMonsterBanner)
             {
                 if (!InfiniteBuffStorage.Blacklist.Contains(BuffID.MonsterBanner))
                 {
-                    self.AddBuff(BuffID.MonsterBanner, 2, false);
                     ActiveInfiniteBuffs.Add(BuffID.MonsterBanner);
                 }
                 else
@@ -444,6 +389,533 @@ namespace OptimizeAndTool.Content.QoL
                     ClearShortLivedBuff(self, BuffID.MonsterBanner);
                 }
             }
+
+            // 4. 虚拟赋予药水、食物与交互增益站的全部效果（0 物理槽位占用）
+            ApplyVirtualBuffEffects(self);
+        }
+
+        /// <summary>
+        /// 清理玩家身上由无尽系统赋予的极短时间(<=2帧)的物理 Buff，释放物理槽位
+        /// </summary>
+        private static void ClearResidualShortLivedBuffs(Player player)
+        {
+            if (player?.buffType == null || player.buffTime == null) return;
+
+            for (int i = 0; i < player.buffType.Length; i++)
+            {
+                int bType = player.buffType[i];
+                if (bType <= 0) continue;
+
+                if (player.buffTime[i] <= 2)
+                {
+                    if (potionCounts.ContainsKey(bType) || carriedInteractiveStations.Contains(bType) ||
+                        bType == BuffID.WellFed || bType == BuffID.WellFed2 || bType == BuffID.WellFed3)
+                    {
+                        player.DelBuff(i);
+                        i--;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 虚拟应用达标的食物、药水与交互增益站效果（直接修改玩家属性，0 物理槽位占用）
+        /// </summary>
+        private static void ApplyVirtualBuffEffects(Player self)
+        {
+            int threshold = PotionThreshold.val > 0 ? PotionThreshold.val : 30;
+
+            // 1. 食物虚拟生效
+            if (EnableInfinitePotions.val)
+            {
+                int foodToApply = 0;
+                if (foodCounts[3] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) foodToApply = BuffID.WellFed3;
+                else if (foodCounts[2] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) foodToApply = BuffID.WellFed2;
+                else if (foodCounts[1] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) foodToApply = BuffID.WellFed;
+
+                if (foodToApply > 0)
+                {
+                    ActiveInfiniteBuffs.Add(foodToApply);
+                    // 仅当玩家未处于自然进食(>2帧)状态时虚拟应用
+                    if (!HasNaturalFoodBuff(self))
+                    {
+                        ApplySingleBuffEffect(self, foodToApply);
+                    }
+                }
+
+                // 2. 药水虚拟生效
+                foreach (KeyValuePair<int, int> kvp in potionCounts)
+                {
+                    if (kvp.Value >= threshold)
+                    {
+                        if (!InfiniteBuffStorage.Blacklist.Contains(kvp.Key))
+                        {
+                            ActiveInfiniteBuffs.Add(kvp.Key);
+                            // 若玩家身上已有该物理 Buff（例如玩家刚喝了真实药水），原版 UpdateBuffs 已处理过，避免重复叠加
+                            if (self.FindBuffIndex(kvp.Key) == -1)
+                            {
+                                if (!ApplySingleBuffEffect(self, kvp.Key))
+                                {
+                                    // 未知/模组药水兜底：若不是已知原版增益，降级走 AddBuff 确保其自定义逻辑能正常运行
+                                    self.AddBuff(kvp.Key, 2, false);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ClearShortLivedBuff(self, kvp.Key);
+                        }
+                    }
+                }
+            }
+
+            // 3. 交互增益站虚拟生效
+            if (EnableBuffStations.val)
+            {
+                foreach (int stationBuff in carriedInteractiveStations)
+                {
+                    if (!InfiniteBuffStorage.Blacklist.Contains(stationBuff))
+                    {
+                        ActiveInfiniteBuffs.Add(stationBuff);
+                        if (self.FindBuffIndex(stationBuff) == -1)
+                        {
+                            if (!ApplySingleBuffEffect(self, stationBuff))
+                            {
+                                self.AddBuff(stationBuff, 2, false);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ClearShortLivedBuff(self, stationBuff);
+                    }
+                }
+            }
+        }
+
+        private static bool ApplySingleBuffEffect(Player player, int buffId)
+        {
+            switch (buffId)
+            {
+                case BuffID.ObsidianSkin: // 1 黑曜石皮
+                    player.lavaImmune = true;
+                    player.fireWalk = true;
+                    player.buffImmune[BuffID.OnFire] = true;
+                    return true;
+
+                case BuffID.Regeneration: // 2 生命再生
+                    player.lifeRegen += 4;
+                    return true;
+
+                case BuffID.Swiftness: // 3 敏捷
+                    player.moveSpeed += 0.25f;
+                    return true;
+
+                case BuffID.Gills: // 4 鱼鳃
+                    player.gills = true;
+                    return true;
+
+                case BuffID.Ironskin: // 5 铁皮
+                    player.statDefense += 8;
+                    return true;
+
+                case BuffID.ManaRegeneration: // 6 魔力再生
+                    player.manaRegenBuff = true;
+                    return true;
+
+                case BuffID.MagicPower: // 7 魔力
+                    player.magicDamage += 0.2f;
+                    return true;
+
+                case BuffID.Featherfall: // 8 羽落
+                    player.slowFall = true;
+                    return true;
+
+                case BuffID.Spelunker: // 9 洞穴探险
+                    player.findTreasure = true;
+                    return true;
+
+                case BuffID.Invisibility: // 10 隐身
+                    player.invis = true;
+                    return true;
+
+                case BuffID.Shine: // 11 光芒
+                    Lighting.AddLight((int)(player.position.X + (float)(player.width / 2)) / 16, (int)(player.position.Y + (float)(player.height / 2)) / 16, 0.8f, 0.95f, 1f);
+                    return true;
+
+                case BuffID.NightOwl: // 12 夜猫子
+                    player.nightVision = true;
+                    return true;
+
+                case BuffID.Battle: // 13 战斗
+                    player.enemySpawns = true;
+                    return true;
+
+                case BuffID.Thorns: // 14 荆棘
+                    if (player.thorns < 1f) player.thorns = 1f;
+                    return true;
+
+                case BuffID.WaterWalking: // 15 水上行走
+                    player.waterWalk = true;
+                    return true;
+
+                case BuffID.Archery: // 16 箭术
+                    player.archery = true;
+                    player.arrowDamage *= 1.1f;
+                    return true;
+
+                case BuffID.Hunter: // 17 狩猎
+                    player.detectCreature = true;
+                    return true;
+
+                case BuffID.Gravitation: // 18 重力
+                    player.gravControl = true;
+                    return true;
+
+                case BuffID.Mining: // 104 采矿
+                    player.pickSpeed -= 0.25f;
+                    return true;
+
+                case BuffID.Heartreach: // 105 拾心
+                    player.lifeMagnet = true;
+                    return true;
+
+                case BuffID.Calm: // 106 镇静
+                    player.calmed = true;
+                    return true;
+
+                case BuffID.Builder: // 107 建筑工
+                    player.tileSpeed += 0.25f;
+                    player.wallSpeed += 0.25f;
+                    player.blockRange++;
+                    return true;
+
+                case BuffID.Titan: // 108 泰坦
+                    player.kbBuff = true;
+                    return true;
+
+                case BuffID.Flipper: // 109 脚蹼
+                    player.ignoreWater = true;
+                    player.accFlipper = true;
+                    return true;
+
+                case BuffID.Summoning: // 110 召唤
+                    player.maxMinions++;
+                    return true;
+
+                case BuffID.Dangersense: // 111 危险感知
+                    player.dangerSense = true;
+                    return true;
+
+                case BuffID.AmmoReservation: // 112 弹药储备
+                    player.ammoPotion = true;
+                    return true;
+
+                case BuffID.Lifeforce: // 113 生命力
+                    player.lifeForce = true;
+                    player.statLifeMax2 += player.statLifeMax / 5 / 20 * 20;
+                    return true;
+
+                case BuffID.Endurance: // 114 耐力
+                    player.endurance += 0.1f;
+                    return true;
+
+                case BuffID.Rage: // 115 暴怒
+                    player.meleeCrit += 10;
+                    player.rangedCrit += 10;
+                    player.magicCrit += 10;
+                    return true;
+
+                case BuffID.Inferno: // 116 狱火
+                    player.inferno = true;
+                    Lighting.AddLight((int)(player.Center.X / 16f), (int)(player.Center.Y / 16f), 0.65f, 0.4f, 0.1f);
+                    if (player.whoAmI == Main.myPlayer)
+                    {
+                        int hellfireId = 323;
+                        float infernoRange = 200f;
+                        bool shouldDamage = player.infernoCounter % 60 == 0;
+                        int infernoDamage = 20;
+                        for (int k = 0; k < Main.maxNPCs; k++)
+                        {
+                            NPC nPC = Main.npc[k];
+                            if (nPC.active && !nPC.friendly && nPC.damage > 0 && !nPC.dontTakeDamage && !nPC.buffImmune[hellfireId] && player.CanNPCBeHitByPlayerOrPlayerProjectile(nPC) && Vector2.Distance(player.Center, nPC.Center) <= infernoRange)
+                            {
+                                if (nPC.FindBuffIndex(hellfireId) == -1)
+                                {
+                                    nPC.AddBuff(hellfireId, 120);
+                                }
+                                if (shouldDamage)
+                                {
+                                    player.ApplyDamageToNPC(nPC, infernoDamage, 0f, 0, crit: false, null, ItemID.InfernoPotion);
+                                }
+                            }
+                        }
+                    }
+                    return true;
+
+                case BuffID.Wrath: // 117 怒气
+                    player.meleeDamage += 0.1f;
+                    player.rangedDamage += 0.1f;
+                    player.magicDamage += 0.1f;
+                    player.minionDamage += 0.1f;
+                    return true;
+
+                case BuffID.Lovestruck: // 119 坠入爱河
+                    player.loveStruck = true;
+                    return true;
+
+                case BuffID.Stinky: // 120 恶臭
+                    player.talkNPC = -1;
+                    player.stinky = true;
+                    return true;
+
+                case BuffID.Fishing: // 121 声呐/钓鱼
+                    player.fishingSkill += 15;
+                    return true;
+
+                case BuffID.Sonar: // 122 声呐
+                    player.sonarPotion = true;
+                    return true;
+
+                case BuffID.Crate: // 123 宝匣
+                    player.cratePotion = true;
+                    return true;
+
+                case BuffID.Warmth: // 124 保暖
+                    player.resistCold = true;
+                    return true;
+
+                case BuffID.Lucky: // 257 幸运
+                    if (Main.myPlayer == player.whoAmI)
+                    {
+                        player.luckPotion = 3;
+                        if (player.luckPotion != player.oldLuckPotion)
+                        {
+                            player.luckNeedsSync = true;
+                            player.oldLuckPotion = player.luckPotion;
+                        }
+                    }
+                    return true;
+
+                case BuffID.BiomeSight: // 343 环境视觉
+                    player.biomeSight = true;
+                    return true;
+
+                case BuffID.Tipsy: // 25 踉跄 (麦芽酒/清酒)
+                    player.tipsy = true;
+                    player.statDefense -= 4;
+                    player.meleeCrit += 2;
+                    player.meleeDamage += 0.1f;
+                    player.meleeSpeed += 0.1f;
+                    if (player.HeldItem != null && player.HeldItem.type == ItemID.AleThrowingGlove)
+                    {
+                        player.rangedDamage += 0.1f;
+                        player.rangedCrit += 5;
+                    }
+                    return true;
+
+                case BuffID.WellFed: // 26 吃得好
+                    player.wellFed = true;
+                    player.statDefense += 2;
+                    player.meleeCrit += 2;
+                    player.meleeDamage += 0.05f;
+                    player.meleeSpeed += 0.05f;
+                    player.magicCrit += 2;
+                    player.magicDamage += 0.05f;
+                    player.rangedCrit += 2;
+                    player.rangedDamage += 0.05f;
+                    player.minionDamage += 0.05f;
+                    player.minionKB += 0.5f;
+                    player.moveSpeed += 0.2f;
+                    player.pickSpeed -= 0.05f;
+                    return true;
+
+                case BuffID.WellFed2: // 206 充分饱腹
+                    player.wellFed = true;
+                    player.statDefense += 3;
+                    player.meleeCrit += 3;
+                    player.meleeDamage += 0.075f;
+                    player.meleeSpeed += 0.075f;
+                    player.magicCrit += 3;
+                    player.magicDamage += 0.075f;
+                    player.rangedCrit += 3;
+                    player.rangedDamage += 0.075f;
+                    player.minionDamage += 0.075f;
+                    player.minionKB += 0.75f;
+                    player.moveSpeed += 0.3f;
+                    player.pickSpeed -= 0.1f;
+                    return true;
+
+                case BuffID.WellFed3: // 207 极其饱腹
+                    player.wellFed = true;
+                    player.statDefense += 4;
+                    player.meleeCrit += 4;
+                    player.meleeDamage += 0.1f;
+                    player.meleeSpeed += 0.1f;
+                    player.magicCrit += 4;
+                    player.magicDamage += 0.1f;
+                    player.rangedCrit += 4;
+                    player.rangedDamage += 0.1f;
+                    player.minionDamage += 0.1f;
+                    player.minionKB++;
+                    player.moveSpeed += 0.4f;
+                    player.pickSpeed -= 0.15f;
+                    return true;
+
+                // 交互类增益站
+                case BuffID.Sharpened: // 159 磨刀石
+                    player.meleeArmorPenetration += 12;
+                    return true;
+
+                case BuffID.Clairvoyance: // 29 水晶球
+                    player.magicCrit += 2;
+                    player.magicDamage += 0.05f;
+                    player.statManaMax2 += 20;
+                    player.manaCost -= 0.02f;
+                    return true;
+
+                case BuffID.AmmoBox: // 93 弹药箱
+                    player.ammoBox = true;
+                    return true;
+
+                case BuffID.Bewitched: // 150 施法桌
+                    player.maxMinions++;
+                    return true;
+
+                case BuffID.SugarRush: // 192 蛋糕块
+                    player.pickSpeed -= 0.2f;
+                    player.moveSpeed += 0.2f;
+                    return true;
+
+                case BuffID.WarTable: // 348 战争桌
+                    player.maxTurrets++;
+                    return true;
+
+                // 武器附魔瓶 (Flasks)
+                case BuffID.WeaponImbueVenom: // 71
+                    player.meleeEnchant = 1;
+                    return true;
+                case BuffID.WeaponImbueCursedFlames: // 73
+                    player.meleeEnchant = 2;
+                    return true;
+                case BuffID.WeaponImbueFire: // 74
+                    player.meleeEnchant = 3;
+                    return true;
+                case BuffID.WeaponImbueGold: // 75
+                    player.meleeEnchant = 4;
+                    return true;
+                case BuffID.WeaponImbueIchor: // 76
+                    player.meleeEnchant = 5;
+                    return true;
+                case BuffID.WeaponImbueNanites: // 77
+                    player.meleeEnchant = 6;
+                    return true;
+                case BuffID.WeaponImbueConfetti: // 78
+                    player.meleeEnchant = 7;
+                    return true;
+                case BuffID.WeaponImbuePoison: // 79
+                    player.meleeEnchant = 8;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 判断是否为受保护的核心 Buff（仆从、哨兵、坐骑、宠物、照明宠物），绝对禁止在槽位满载时被顶替驱逐
+        /// </summary>
+        public static bool IsProtectedBuff(int buffType)
+        {
+            if (buffType <= 0) return false;
+            if (Main.lightPet.IndexInRange(buffType) && Main.lightPet[buffType]) return true;
+            if (Main.vanityPet.IndexInRange(buffType) && Main.vanityPet[buffType]) return true;
+            if (BuffID.Sets.MountType.IndexInRange(buffType) && BuffID.Sets.MountType[buffType] != -1) return true;
+            if (MinionMemoryTracker.FindItemIdForBuff(buffType) > 0) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 拦截原版 AddBuff：当 Buff 槽位满额时，绝对保护玩家的仆从、哨兵、坐骑与宠物 Buff 不被驱逐顶替
+        /// </summary>
+        private static void Hook_AddBuff(On_Player.orig_AddBuff orig, Player self, int type, int time, bool fromNetPvP)
+        {
+            if (self == null || !self.active || self.buffType == null || self.buffTime == null)
+            {
+                orig(self, type, time, fromNetPvP);
+                return;
+            }
+
+            // 仅针对本机玩家执行防剔除保护
+            if (Main.netMode == 1 && self.whoAmI != Main.myPlayer)
+            {
+                orig(self, type, time, fromNetPvP);
+                return;
+            }
+
+            if (type <= 0 || type >= BuffID.Count || self.buffImmune[type])
+            {
+                orig(self, type, time, fromNetPvP);
+                return;
+            }
+
+            // 若已经存在该 Buff，原版直接刷新时间，绝不会触发槽位驱逐，安全透传
+            if (self.FindBuffIndex(type) != -1)
+            {
+                orig(self, type, time, fromNetPvP);
+                return;
+            }
+
+            // 检查是否有可用空槽位
+            bool hasEmptySlot = false;
+            for (int i = 0; i < Player.maxBuffs; i++)
+            {
+                if (self.buffType[i] <= 0)
+                {
+                    hasEmptySlot = true;
+                    break;
+                }
+            }
+
+            if (!hasEmptySlot)
+            {
+                // 所有槽位已满，原版即将执行 DelBuff 剔除旧 Buff
+                // 查找最适合牺牲的非保护、非 Debuff 槽位
+                int victimSlot = -1;
+                int minDuration = int.MaxValue;
+
+                for (int i = 0; i < Player.maxBuffs; i++)
+                {
+                    int bType = self.buffType[i];
+                    if (bType <= 0) continue;
+                    if (Main.debuff[bType]) continue;
+                    if (IsProtectedBuff(bType)) continue;
+
+                    // 优先选择剩余时间最短的普通非保护增益
+                    if (self.buffTime[i] < minDuration)
+                    {
+                        minDuration = self.buffTime[i];
+                        victimSlot = i;
+                    }
+                }
+
+                if (victimSlot != -1)
+                {
+                    // 提前主动剔除低优先级临时增益，腾出末尾空槽，原版将直接入驻空槽，100% 保护仆从与坐骑
+                    self.DelBuff(victimSlot);
+                }
+                else
+                {
+                    // 若 44 个槽位全被核心仆从/宠物/Debuff 填满，且无任何可牺牲的普通增益：
+                    // 若新增益不是 Debuff 且不是新仆从，则绝对禁止顶替已有仆从，直接拒绝入驻
+                    if (!Main.debuff[type] && !IsProtectedBuff(type))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            orig(self, type, time, fromNetPvP);
         }
 
         private static void ScanPlayerBuffItems(Player player, Item[] items)

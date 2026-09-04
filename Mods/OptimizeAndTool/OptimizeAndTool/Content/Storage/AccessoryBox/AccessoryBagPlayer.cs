@@ -56,6 +56,7 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                 for (int i = 0; i < limit; i++)
                 {
                     Item it = bag.personalInventory[i];
+                    if (it == null || it.IsAir || it.type <= ItemID.None) continue;
 
                     if (AccessoryBagConfig.PreventPlayerBagDuplicates.val && equippedTypes.Contains(it.type))
                         continue;
@@ -290,11 +291,17 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
             This.UpdateArmorSets_Always_Vortex();
         }
 
+        private int _lastStableMaxMinions = 1;
+        private int _minionGraceTimer = 0;
+        private int _lastStableMaxTurrets = 1;
+        private int _turretGraceTimer = 0;
+        private const int GraceDurationFrames = 600; // 10 秒 = 600 帧
+
         public override void UpdatePostfix(Player This, int playerI)
         {
             if (This != Main.LocalPlayer || Main.dedServ || Main.gameMenu) return;
 
-            // 垃圾桶误丢保护：若拖入垃圾桶，自动弹出饰品并重置空包
+            // 1. 垃圾桶误丢保护：若拖入垃圾桶，自动弹出饰品并重置空包
             Item trash = This.trashItem;
             if (trash != null && !trash.IsAir)
             {
@@ -304,6 +311,49 @@ namespace OptimizeAndTool.Content.Storage.AccessoryBox
                     bag.DropAllItems(This);
                     bag.ResetBagData();
                     Main.NewText("[饰品袋] 饰品袋已被清空，内部饰品已安全掉落至脚下。", Color.Orange);
+                }
+            }
+
+            // 2. 10 秒智能召唤与哨兵上限平滑缓冲（Grace Period，防止挪动装备、交换槽位或整理背包时误杀仆从）
+            if (This.dead)
+            {
+                _minionGraceTimer = 0;
+                _turretGraceTimer = 0;
+                _lastStableMaxMinions = 1;
+                _lastStableMaxTurrets = 1;
+            }
+            else
+            {
+                // 仆从上限平滑缓冲
+                if (This.maxMinions >= _lastStableMaxMinions)
+                {
+                    _lastStableMaxMinions = This.maxMinions;
+                    _minionGraceTimer = GraceDurationFrames;
+                }
+                else if (_minionGraceTimer > 0)
+                {
+                    _minionGraceTimer--;
+                    This.maxMinions = _lastStableMaxMinions;
+                }
+                else
+                {
+                    _lastStableMaxMinions = This.maxMinions;
+                }
+
+                // 哨兵上限平滑缓冲
+                if (This.maxTurrets >= _lastStableMaxTurrets)
+                {
+                    _lastStableMaxTurrets = This.maxTurrets;
+                    _turretGraceTimer = GraceDurationFrames;
+                }
+                else if (_turretGraceTimer > 0)
+                {
+                    _turretGraceTimer--;
+                    This.maxTurrets = _lastStableMaxTurrets;
+                }
+                else
+                {
+                    _lastStableMaxTurrets = This.maxTurrets;
                 }
             }
         }
