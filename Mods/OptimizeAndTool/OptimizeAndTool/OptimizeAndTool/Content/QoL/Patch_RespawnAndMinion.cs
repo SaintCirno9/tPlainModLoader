@@ -91,13 +91,13 @@ namespace OptimizeAndTool.Content.QoL
             // 在 UpdatePostfix 中执行：装备、饰品、套装及作弊修改已完全结算，This.maxMinions 为真实全量上限
             if (!This.dead)
             {
-                // 刚复活瞬间：触发重新召唤
+                // 刚复活瞬间：标记重新召唤（交由 MinionMemoryTracker 统一调度 60 帧缓冲，确保装备与饰品袋属性充分结算）
                 if (_wasDead)
                 {
                     MinionMemoryTracker.OnRespawn(This);
                 }
 
-                // 存活期间：持续同步活跃仆从并感知进世界就绪后的恢复召唤
+                // 存活期间：持续更新计时并感知进世界/复活就绪后的恢复召唤
                 MinionMemoryTracker.Update(This);
             }
 

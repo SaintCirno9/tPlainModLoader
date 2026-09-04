@@ -36,7 +36,7 @@ namespace OptimizeAndTool.Content.QoL
         private static string _currentLoadedPlayerName = null;
         private static bool _isDirty = false;
         private static int _aliveFrames = 0;
-        private static bool _needsWorldJoinResummon = false;
+        private static bool _needsResummon = false;
 
         private static bool _lookupInitialized = false;
         private static readonly Dictionary<int, int> _buffToItem = new Dictionary<int, int>();
@@ -219,7 +219,7 @@ namespace OptimizeAndTool.Content.QoL
         /// </summary>
         public static void OnEnterWorld()
         {
-            _needsWorldJoinResummon = true;
+            _needsResummon = true;
             _aliveFrames = 0;
             if (Main.LocalPlayer != null)
             {
@@ -311,38 +311,113 @@ namespace OptimizeAndTool.Content.QoL
 
             _aliveFrames++;
 
-            // 进世界等待 5 帧，确保装备、饰品、模组属性完全结算就绪后再执行恢复召唤
-            if (_needsWorldJoinResummon && _aliveFrames >= 5)
+            // 进世界或复活统一等待 60 帧（1秒），确保装备、随身饰品袋、药水与模组被动属性完全充分结算完毕
+            if (_needsResummon && _aliveFrames >= 60)
             {
-                _needsWorldJoinResummon = false;
+                _needsResummon = false;
                 if (QoLValSet.autoResummonMinions.val && _activeMemory != null && _activeMemory.Count > 0)
                 {
-                    if (CountActiveMinions(player) == 0)
+                    // 检查仆从槽位是否未满上限：若未达上限，先清理残余旧仆从再按记忆精准召满
+                    float activeSlots = CountActiveMinionSlots(player);
+                    int activeSentries = CountActiveSentries(player);
+                    if (activeSlots < player.maxMinions || activeSentries < player.maxTurrets)
                     {
+                        CleanActiveMinionsAndBuffs(player);
                         ExecuteResummon(player);
                     }
                 }
             }
 
-            // 存活超过 60 帧后，每 30 帧进行一次内存快照比对与同步（纯内存操作，零同步磁盘 I/O）
-            if (_aliveFrames > 60 && _aliveFrames % 30 == 0)
+            // 存活超过 120 帧（2秒）后，且无待重召任务时，每 30 帧进行一次内存快照比对与同步（纯内存操作，零同步磁盘 I/O）
+            if (_aliveFrames >= 120 && !_needsResummon && _aliveFrames % 30 == 0)
             {
                 SyncActiveMinions(player);
             }
         }
 
         /// <summary>
-        /// 角色复活瞬间触发重新召唤
+        /// 角色复活瞬间标记待重新召唤（统一延迟 60 帧以待装备完全结算）
         /// </summary>
         public static void OnRespawn(Player player)
         {
             if (player == null || player != Main.LocalPlayer) return;
 
-            _aliveFrames = 1;
+            _needsResummon = true;
+            _aliveFrames = 0;
+        }
 
-            if (QoLValSet.autoResummonMinions.val && _activeMemory != null && _activeMemory.Count > 0)
+        /// <summary>
+        /// 统计玩家当前活跃仆从所实际占用的总栏位数
+        /// </summary>
+        public static float CountActiveMinionSlots(Player player)
+        {
+            if (player == null) return 0f;
+            float totalSlots = 0f;
+            for (int i = 0; i < Main.maxProjectiles; i++)
             {
-                ExecuteResummon(player);
+                Projectile p = Main.projectile[i];
+                if (p != null && p.active && p.owner == player.whoAmI && p.minion)
+                {
+                    bool isZeroSlotMinion = p.type == 625 || p.type == 628 ||
+                                            p.type == ProjectileID.AbigailMinion ||
+                                            p.type == ProjectileID.StormTigerTier1 ||
+                                            p.type == ProjectileID.StormTigerTier2 ||
+                                            p.type == ProjectileID.StormTigerTier3;
+
+                    float slots = isZeroSlotMinion ? 0f : (p.minionSlots > 0 ? p.minionSlots : 1f);
+                    totalSlots += slots;
+                }
+            }
+            return totalSlots;
+        }
+
+        /// <summary>
+        /// 统计玩家当前活跃哨兵数量
+        /// </summary>
+        public static int CountActiveSentries(Player player)
+        {
+            if (player == null) return 0;
+            int count = 0;
+            for (int i = 0; i < Main.maxProjectiles; i++)
+            {
+                Projectile p = Main.projectile[i];
+                if (p != null && p.active && p.owner == player.whoAmI && p.sentry)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// 清理玩家场上已有的仆从与哨兵弹幕及其对应 Buff，确保干净重建
+        /// </summary>
+        public static void CleanActiveMinionsAndBuffs(Player player)
+        {
+            if (player == null) return;
+            EnsureLookup();
+
+            // 1. 清除仆从与哨兵弹幕
+            for (int i = 0; i < Main.maxProjectiles; i++)
+            {
+                Projectile p = Main.projectile[i];
+                if (p != null && p.active && p.owner == player.whoAmI && (p.minion || p.sentry))
+                {
+                    p.Kill();
+                }
+            }
+
+            // 2. 清除仆从 Buff（避免残留旧 Buff 导致计数混乱）
+            for (int b = 0; b < player.buffType.Length; b++)
+            {
+                int buff = player.buffType[b];
+                if (buff <= 0) continue;
+                if (Main.vanityPet[buff] || Main.lightPet[buff]) continue;
+                if (FindItemIdForBuff(buff) > 0)
+                {
+                    player.DelBuff(b);
+                    b--;
+                }
             }
         }
 
@@ -447,8 +522,11 @@ namespace OptimizeAndTool.Content.QoL
             }
 
             // 3. 若场上完全无仆从弹幕且无仆从 Buff -> 玩家主动驱散，标记清空记忆
+            // 保护机制：若处于待重召缓冲期或存活不足 120 帧，严禁误清空伴随记忆
             if (summonBuffCount == 0 && totalActiveProj == 0)
             {
+                if (_needsResummon || _aliveFrames < 120) return;
+
                 if (_activeMemory != null && _activeMemory.Count > 0)
                 {
                     lock (_lock)
