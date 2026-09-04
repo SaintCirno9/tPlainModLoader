@@ -1,9 +1,10 @@
 using System;
-using OptimizeAndTool.Content.Storage.ItemContainer;
-using TPML;
-using TPML.Patch;
-using TPML.Content;
 using OptimizeAndTool.Content.Storage.AccessoryBox;
+using OptimizeAndTool.Content.Storage.ItemContainer;
+using OptimizeAndTool.Utils;
+using TPML;
+using TPML.Content;
+using TPML.Patch;
 
 namespace OptimizeAndTool.Content.Patch
 {
@@ -14,6 +15,82 @@ namespace OptimizeAndTool.Content.Patch
     internal class OptimizeAndToolHookInit : TPML.Mod
     {
         public static OptimizeAndToolContentMod ContentModInstance { get; private set; }
+
+        private static bool _hooksDeclared = false;
+        private static readonly object _declareLock = new object();
+
+        /// <summary>
+        /// 集中声明全部 Hook 门控类型，由 HookLifecycleRegistry 统一按序激活与 LIFO 逆序注销
+        /// </summary>
+        private static void EnsureHooksDeclared()
+        {
+            if (_hooksDeclared) return;
+            lock (_declareLock)
+            {
+                if (_hooksDeclared) return;
+
+                HookLifecycleRegistry.RegisterTypes(
+                    // 批次 1: 渲染与客户端优化
+                    typeof(Optimize.ReduceMouseLag.ReduceMouseLagHooks),
+                    typeof(GameViewMatrixZoomLimitHooks),
+                    typeof(Cheat.HeldItemModify.SmartSelectRangeHooks),
+                    typeof(QoL.KeepRunningWhenUnfocused),
+                    typeof(QoL.PortableCraftingStation),
+                    typeof(QoL.UniversalCraftingEnvironmentHooks),
+
+                    // 批次 2: 背包与存储系统
+                    typeof(BigBag.BigBagPickupHooks),
+                    typeof(BigBag.BigBagShiftTransferHooks),
+                    typeof(BigBag.HotbarScrollHooks),
+                    typeof(Storage.AccessoryBox.AccessoryBagInteractionHooks),
+                    typeof(Storage.ItemContainer.ItemContainerInteractionHooks),
+                    typeof(QoL.PortableContainerHooks),
+
+                    // 批次 3: 钓鱼增强子系统
+                    typeof(QoL.Fishing.AutoFishingSuppliesHooks),
+                    typeof(QoL.Fishing.AutoFishingSystemHooks),
+                    typeof(QoL.Fishing.FishingCrateModifierHooks),
+                    typeof(QoL.Fishing.FishingInfoHUDHooks),
+                    typeof(QoL.Fishing.MultipleFishingLinesHooks),
+                    typeof(QoL.AnglerQuestOptimizationHooks),
+
+                    // 批次 4: 物块破坏与防作祟
+                    typeof(QoL.VeinMining.PlayerPickTileHooks),
+                    typeof(QoL.AntiGriefHooks),
+                    typeof(QoL.UnsafeWallDropHooks),
+
+                    // 批次 5.1: 世界规则与生态优化
+                    typeof(QoL.EcologyHooks),
+                    typeof(QoL.PylonHooks),
+                    typeof(QoL.PylonRuleHooks),
+                    typeof(QoL.EcoGrowthHooks),
+                    typeof(QoL.SlimeAndLavaHooks),
+                    typeof(QoL.BedRulesHooks),
+                    typeof(QoL.TownNPCOptimizationHooks),
+                    typeof(QoL.TownNPCSpawnSpeedHooks),
+                    typeof(QoL.FasterExtractinatorHooks),
+
+                    // 批次 5.2: 玩家战斗、Buff 与团队
+                    typeof(QoL.DeathAndDamageHooks),
+                    typeof(QoL.ExpertDebuffTimeHooks),
+                    typeof(QoL.KeepBuffsOnDeathHooks),
+                    typeof(QoL.NoConditionTeamTPHooks),
+                    typeof(QoL.NoConsumeItemHooks),
+                    typeof(QoL.TeamShareHooks),
+                    typeof(QoL.UncapMaxLifeHooks),
+                    typeof(QoL.ItemMaxStackHooks),
+                    typeof(QoL.BannerAndBestiaryHooks),
+
+                    // 批次 5.3: 无限 Buff、保底掉落与重铸
+                    typeof(QoL.InfiniteBuff.BuffInteractionHooks),
+                    typeof(QoL.InfinitePotionAndBuffHooks),
+                    typeof(QoL.GuaranteedDrop.GuaranteedDropHooks),
+                    typeof(QoL.Reforge.ReforgeHooks)
+                );
+
+                _hooksDeclared = true;
+            }
+        }
 
         public override void Load()
         {
@@ -30,122 +107,13 @@ namespace OptimizeAndTool.Content.Patch
 
         public override void AddPatch(IAddPatch addPatch) // 添加强类型 MonoMod 门控
         {
-            // 批次 1: 渲染与客户端优化
-            Optimize.ReduceMouseLag.ReduceMouseLagHooks.RegisterAll();
-            GameViewMatrixZoomLimitHooks.RegisterAll();
-            Cheat.HeldItemModify.SmartSelectRangeHooks.RegisterAll();
-            QoL.KeepRunningWhenUnfocused.RegisterAll();
-            QoL.PortableCraftingStation.RegisterAll();
-            QoL.UniversalCraftingEnvironmentHooks.RegisterAll();
-
-            // 批次 2: 背包与存储系统
-            BigBag.BigBagPickupHooks.RegisterAll();
-            BigBag.BigBagShiftTransferHooks.RegisterAll();
-            BigBag.HotbarScrollHooks.RegisterAll();
-            Storage.AccessoryBox.AccessoryBagInteractionHooks.RegisterAll();
-            Storage.ItemContainer.ItemContainerInteractionHooks.RegisterAll();
-            QoL.PortableContainerHooks.RegisterAll();
-
-            // 批次 3: 钓鱼增强子系统
-            QoL.Fishing.AutoFishingSuppliesHooks.RegisterAll();
-            QoL.Fishing.AutoFishingSystemHooks.RegisterAll();
-            QoL.Fishing.FishingCrateModifierHooks.RegisterAll();
-            QoL.Fishing.FishingInfoHUDHooks.RegisterAll();
-            QoL.Fishing.MultipleFishingLinesHooks.RegisterAll();
-            QoL.AnglerQuestOptimizationHooks.RegisterAll();
-
-            // 批次 4: 物块破坏与防作祟
-            QoL.VeinMining.PlayerPickTileHooks.RegisterAll();
-            Cheat.QoL.AntiGriefHooks.RegisterAll();
-            Cheat.QoL.UnsafeWallDropHooks.RegisterAll();
-
-            // 批次 5.1: 世界规则与生态优化
-            Cheat.QoL.EcologyHooks.RegisterAll();
-            Cheat.QoL.PylonHooks.RegisterAll();
-            QoL.PylonRuleHooks.RegisterAll();
-            QoL.EcoGrowthHooks.RegisterAll();
-            QoL.SlimeAndLavaHooks.RegisterAll();
-            QoL.BedRulesHooks.RegisterAll();
-            QoL.TownNPCOptimizationHooks.RegisterAll();
-            QoL.TownNPCSpawnSpeedHooks.RegisterAll();
-            QoL.FasterExtractinatorHooks.RegisterAll();
-
-            // 批次 5.2: 玩家战斗、Buff 与团队
-            QoL.DeathAndDamageHooks.RegisterAll();
-            QoL.ExpertDebuffTimeHooks.RegisterAll();
-            QoL.KeepBuffsOnDeathHooks.RegisterAll();
-            QoL.NoConditionTeamTPHooks.RegisterAll();
-            QoL.NoConsumeItemHooks.RegisterAll();
-            QoL.TeamShareHooks.RegisterAll();
-            QoL.UncapMaxLifeHooks.RegisterAll();
-            QoL.ItemMaxStackHooks.RegisterAll();
-            QoL.BannerAndBestiaryHooks.RegisterAll();
-
-            // 批次 5.3: 无限 Buff、保底掉落与重铸
-            QoL.InfiniteBuff.BuffInteractionHooks.RegisterAll();
-            QoL.InfinitePotionAndBuffHooks.RegisterAll();
-            QoL.GuaranteedDrop.GuaranteedDropHooks.RegisterAll();
-            QoL.Reforge.ReforgeHooks.RegisterAll();
+            EnsureHooksDeclared();
+            HookLifecycleRegistry.RegisterAll();
         }
 
         public override void Unload()
         {
-            // 批次 5.3 注销
-            QoL.Reforge.ReforgeHooks.UnregisterAll();
-            QoL.GuaranteedDrop.GuaranteedDropHooks.UnregisterAll();
-            QoL.InfinitePotionAndBuffHooks.UnregisterAll();
-            QoL.InfiniteBuff.BuffInteractionHooks.UnregisterAll();
-
-            // 批次 5.2 注销
-            QoL.BannerAndBestiaryHooks.UnregisterAll();
-            QoL.ItemMaxStackHooks.UnregisterAll();
-            QoL.UncapMaxLifeHooks.UnregisterAll();
-            QoL.TeamShareHooks.UnregisterAll();
-            QoL.NoConsumeItemHooks.UnregisterAll();
-            QoL.NoConditionTeamTPHooks.UnregisterAll();
-            QoL.KeepBuffsOnDeathHooks.UnregisterAll();
-            QoL.ExpertDebuffTimeHooks.UnregisterAll();
-            QoL.DeathAndDamageHooks.UnregisterAll();
-
-            // 批次 5.1 注销
-            QoL.FasterExtractinatorHooks.UnregisterAll();
-            QoL.TownNPCSpawnSpeedHooks.UnregisterAll();
-            QoL.TownNPCOptimizationHooks.UnregisterAll();
-            QoL.BedRulesHooks.UnregisterAll();
-            QoL.SlimeAndLavaHooks.UnregisterAll();
-            QoL.EcoGrowthHooks.UnregisterAll();
-            QoL.PylonRuleHooks.UnregisterAll();
-            Cheat.QoL.PylonHooks.UnregisterAll();
-            Cheat.QoL.EcologyHooks.UnregisterAll();
-
-            // 批次 4 注销
-            Cheat.QoL.UnsafeWallDropHooks.UnregisterAll();
-            Cheat.QoL.AntiGriefHooks.UnregisterAll();
-            QoL.VeinMining.PlayerPickTileHooks.UnregisterAll();
-
-            // 批次 3 注销
-            QoL.AnglerQuestOptimizationHooks.UnregisterAll();
-            QoL.Fishing.MultipleFishingLinesHooks.UnregisterAll();
-            QoL.Fishing.FishingInfoHUDHooks.UnregisterAll();
-            QoL.Fishing.FishingCrateModifierHooks.UnregisterAll();
-            QoL.Fishing.AutoFishingSystemHooks.UnregisterAll();
-            QoL.Fishing.AutoFishingSuppliesHooks.UnregisterAll();
-
-            // 批次 2 注销
-            QoL.PortableContainerHooks.UnregisterAll();
-            Storage.ItemContainer.ItemContainerInteractionHooks.UnregisterAll();
-            Storage.AccessoryBox.AccessoryBagInteractionHooks.UnregisterAll();
-            BigBag.HotbarScrollHooks.UnregisterAll();
-            BigBag.BigBagShiftTransferHooks.UnregisterAll();
-            BigBag.BigBagPickupHooks.UnregisterAll();
-
-            // 批次 1 注销
-            QoL.UniversalCraftingEnvironmentHooks.UnregisterAll();
-            QoL.PortableCraftingStation.UnregisterAll();
-            QoL.KeepRunningWhenUnfocused.UnregisterAll();
-            Cheat.HeldItemModify.SmartSelectRangeHooks.UnregisterAll();
-            GameViewMatrixZoomLimitHooks.UnregisterAll();
-            Optimize.ReduceMouseLag.ReduceMouseLagHooks.UnregisterAll();
+            HookLifecycleRegistry.UnregisterAll();
         }
     }
 

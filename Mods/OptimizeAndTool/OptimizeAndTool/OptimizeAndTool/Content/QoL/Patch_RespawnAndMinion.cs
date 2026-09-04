@@ -1,11 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 脱战 1.5s 极速复活 & 复活/进世界自动重新召唤仆从与哨兵

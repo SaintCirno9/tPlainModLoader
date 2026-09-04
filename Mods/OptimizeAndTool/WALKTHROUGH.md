@@ -236,3 +236,91 @@
 ## 2. 编译验证
 - **全量解决方案构建**：`dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release`
 - **验证结果**：`[构建验证]` **0 警告、0 错误**，19 个工程全量构建完成并自动热部署至游戏目录。
+
+---
+
+# OptimizeAndTool 阶段三：Hook 生命周期门控标准化实施记录
+
+> **作者**：SaintCirno9  
+> **核心目标**：消除 `OptimizeAndToolHookInit.cs` 双向硬编码维护的脆弱性，建立统一的 Hook 生命周期管理器 `HookLifecycleRegistry`，实现成对自动化自省与 LIFO 严格逆序注销，消灭样板代码并提供故障隔离保护。
+
+## 1. 痛点与架构改造
+1. **痛点消除**：原先 `OptimizeAndToolHookInit.cs` 中 `AddPatch` 手动写了 43 处 `XHooks.RegisterAll()`，`Unload` 又手动逆序写了 43 处 `XHooks.UnregisterAll()`，容易在增删门控时遗漏或顺序错乱。
+2. **新增统一生命周期管理器**（`OptimizeAndTool/Utils/HookLifecycleRegistry.cs`）：
+   - 支持 `RegisterType(Type)`、`RegisterTypes(params Type[])`、`RegisterType<T>()` 以及自定义委托显式注册 `Register(Action, Action, name)`；
+   - 启动期自省获取各门控类型的静态无参 `RegisterAll` 与 `UnregisterAll` 方法，并通过 `Delegate.CreateDelegate` 编译为轻量委托高效缓存，杜绝运行时反射开销；
+   - `RegisterAll()`：按声明顺序（FIFO）正序激活所有门控，单门控异常独立捕获并输出日志，不阻断后续门控注册；
+   - `UnregisterAll()`：严格按照注册逆序（LIFO）执行注销，单门控异常独立捕获并输出日志，确保依赖拓扑反向卸载无遗漏；
+   - 提供状态跟踪（`IsRegistered`、`Count`、`IsActive`）与清空支持（`Clear()`）。
+3. **入口类彻底精炼**（`Content/Patch/OptimizeAndToolHookInit.cs`）：
+   - 集中声明 43 个门控类型（按批次清晰划分）；
+   - `AddPatch` 单行调用 `HookLifecycleRegistry.RegisterAll()`；
+   - `Unload` 单行调用 `HookLifecycleRegistry.UnregisterAll()`；
+   - 彻底消除了原先 120 余行手工双向书写的样板代码。
+
+## 2. 门控清单核对（43/43 完整对齐）
+- **批次 1（渲染与客户端优化，6个）**：`ReduceMouseLagHooks`、`GameViewMatrixZoomLimitHooks`、`SmartSelectRangeHooks`、`KeepRunningWhenUnfocused`、`PortableCraftingStation`、`UniversalCraftingEnvironmentHooks`；
+- **批次 2（背包与存储系统，6个）**：`BigBagPickupHooks`、`BigBagShiftTransferHooks`、`HotbarScrollHooks`、`AccessoryBagInteractionHooks`、`ItemContainerInteractionHooks`、`PortableContainerHooks`；
+- **批次 3（钓鱼增强子系统，6个）**：`AutoFishingSuppliesHooks`、`AutoFishingSystemHooks`、`FishingCrateModifierHooks`、`FishingInfoHUDHooks`、`MultipleFishingLinesHooks`、`AnglerQuestOptimizationHooks`；
+- **批次 4（物块破坏与防作祟，3个）**：`PlayerPickTileHooks`、`AntiGriefHooks`、`UnsafeWallDropHooks`；
+- **批次 5.1（世界规则与生态优化，9个）**：`EcologyHooks`、`PylonHooks`、`PylonRuleHooks`、`EcoGrowthHooks`、`SlimeAndLavaHooks`、`BedRulesHooks`、`TownNPCOptimizationHooks`、`TownNPCSpawnSpeedHooks`、`FasterExtractinatorHooks`；
+- **批次 5.2（玩家战斗、Buff 与团队，9个）**：`DeathAndDamageHooks`、`ExpertDebuffTimeHooks`、`KeepBuffsOnDeathHooks`、`NoConditionTeamTPHooks`、`NoConsumeItemHooks`、`TeamShareHooks`、`UncapMaxLifeHooks`、`ItemMaxStackHooks`、`BannerAndBestiaryHooks`；
+- **批次 5.3（无限 Buff、保底掉落与重铸，4个）**：`BuffInteractionHooks`、`InfinitePotionAndBuffHooks`、`GuaranteedDropHooks`、`ReforgeHooks`。
+
+## 3. 构建验证
+- **全量解决方案构建**：`dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`
+- **构建结果**：`[构建验证]` **0 错误**，23 个工程极速多核图构建完成，全量自动热部署成功。
+
+---
+
+# OptimizeAndTool 阶段四：目录语义收拢与历史技术债清理实施记录
+
+> **作者**：SaintCirno9  
+> **核心目标**：消除 OptimizeAndTool 模组中的目录割裂（`Content/Cheat/QoL/` 与 `Content/QoL/`）、消除同名 `Function` 类冲突并重命名为语义化类名，收敛命名空间并消灭历史技术债与编译警告。
+
+## 1. 核心变更总结
+1. **目录割裂收拢（9 个文件平滑并入 `Content/QoL/`）**：
+   - 迁移清单：`AntiGriefHooks.cs`、`EcologyHooks.cs`、`InstantRecallPlayer.cs`、`MinionMemoryTracker.cs`、`Patch_AltRightClickTeleport.cs`、`Patch_RespawnAndMinion.cs`、`PylonHooks.cs`、`QoLValSet.cs`、`UnsafeWallDropHooks.cs`；
+   - 命名空间收敛：统一更新为 `namespace OptimizeAndTool.Content.QoL`；
+   - 彻底删除原已空的 `Content/Cheat/QoL/` 目录；
+   - 消除 `Cheat/` 目录下的 QoL 误放问题，职责彻底明确为作弊/调试模块。
+2. **同名类 `Function` 语义规范化**：
+   - `Content/Cheat/Function1/Function.cs` 重命名为 `PlayerCheatFunctions.cs`，类名更名为 `PlayerCheatFunctions`，并保留 `[Obsolete]` 的 `Function` 派生垫片以兼容历史外部调用与内部派生；
+   - `Content/Cheat/Function2/Function.cs` 重命名为 `WorldCheatFunctions.cs`，类名更名为 `WorldCheatFunctions`，并保留 `[Obsolete]` 的 `Function` 派生垫片；
+   - 更新 `Function_newProjectileToPlay.cs`、`Function_damagePlay.cs`、`Function_mouseToPlayAngle.cs` 内部对静态成员的直接调用点（改为 `WorldCheatFunctions.*`）。
+3. **全局引用与特性绑定同步**：
+   - `SettingUI.cs`：移除废弃的 `using OptimizeAndTool.Content.Cheat.QoL;`，`[ConfigBind]` 绑定目标同步更新为 `PlayerCheatFunctions`；
+   - `Content/Function.cs`：移除废弃的 `Cheat.QoL` 引用，将 `CheatFunction1` 和 `CheatFunction2` 模块注册委托更新为 `PlayerCheatFunctions` 与 `WorldCheatFunctions`；
+   - `OptimizeAndToolHookInit.cs`：更新批次 4 与批次 5.1 中的门控类型为 `QoL.AntiGriefHooks`、`QoL.UnsafeWallDropHooks`、`QoL.EcologyHooks`、`QoL.PylonHooks`。
+4. **编译警告彻底消除**：
+   - 修复 `UnsafeWallDropHooks.cs` 中 `Item.NewItem` 调用匹配到过时重载导致的 `CS0618: Unergonomic` 警告，改用现代 `Vector2` 重载；全工程警告归零。
+
+## 2. 变更文件清单
+- **文件迁移与命名空间重构（9个）**：
+  - `Content/Cheat/QoL/AntiGriefHooks.cs` -> `Content/QoL/AntiGriefHooks.cs`
+  - `Content/Cheat/QoL/EcologyHooks.cs` -> `Content/QoL/EcologyHooks.cs`
+  - `Content/Cheat/QoL/InstantRecallPlayer.cs` -> `Content/QoL/InstantRecallPlayer.cs`
+  - `Content/Cheat/QoL/MinionMemoryTracker.cs` -> `Content/QoL/MinionMemoryTracker.cs`
+  - `Content/Cheat/QoL/Patch_AltRightClickTeleport.cs` -> `Content/QoL/Patch_AltRightClickTeleport.cs`
+  - `Content/Cheat/QoL/Patch_RespawnAndMinion.cs` -> `Content/QoL/Patch_RespawnAndMinion.cs`
+  - `Content/Cheat/QoL/PylonHooks.cs` -> `Content/QoL/PylonHooks.cs`
+  - `Content/Cheat/QoL/QoLValSet.cs` -> `Content/QoL/QoLValSet.cs`
+  - `Content/Cheat/QoL/UnsafeWallDropHooks.cs` -> `Content/QoL/UnsafeWallDropHooks.cs`
+- **同名类语义重命名（2个）**：
+  - `Content/Cheat/Function1/Function.cs` -> `Content/Cheat/Function1/PlayerCheatFunctions.cs`
+  - `Content/Cheat/Function2/Function.cs` -> `Content/Cheat/Function2/WorldCheatFunctions.cs`
+- **调用与绑定更新（6个）**：
+  - `Content/Cheat/Function2/Function_newProjectileToPlay.cs`
+  - `Content/Cheat/Function2/Function_damagePlay.cs`
+  - `Content/Cheat/Function2/Function_mouseToPlayAngle.cs`
+  - `Content/Function.cs`
+  - `SettingUI.cs`
+  - `Content/Patch/OptimizeAndToolHookInit.cs`
+- **清理目录**：
+  - `Content/Cheat/QoL/`（已彻底删除）
+
+## 3. 构建验证
+- **全量多核图构建命令**：
+  `dotnet build tPlainModLoader/tPlainModLoader/tPlainModLoader.sln -c Release -m /graph`
+- **构建结果**：
+  `[构建验证]` **0 错误、0 警告**，23 个工程全量构建并在 ~7.32s 内完成自动热部署。

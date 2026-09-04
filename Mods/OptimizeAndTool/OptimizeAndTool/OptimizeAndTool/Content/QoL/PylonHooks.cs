@@ -3,7 +3,7 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 全图晶塔无限制传送与放置上限解除门控（基于 HookGen 强类型 On_ 门控）

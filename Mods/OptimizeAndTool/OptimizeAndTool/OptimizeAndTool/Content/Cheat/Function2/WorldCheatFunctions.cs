@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -8,7 +8,11 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function2
 {
-    internal class Function : TPML.Content.ModPlayer
+    /// <summary>
+    /// 世界与环境作弊功能集合（功能伤害、全图开图、透视感染、宝箱操作等）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class WorldCheatFunctions : TPML.Content.ModPlayer
     {
         public static GetSetReset<int> functionDamage = new GetSetReset<int>();
         public static GetSetReset<bool> aimAdvance = new GetSetReset<bool>();
@@ -72,5 +76,13 @@ namespace OptimizeAndTool.Content.Cheat.Function2
 
             return uis;
         }
+    }
+
+    /// <summary>
+    /// 旧版同名类兼容垫片
+    /// </summary>
+    [System.Obsolete("请改用 WorldCheatFunctions")]
+    internal class Function : WorldCheatFunctions
+    {
     }
 }

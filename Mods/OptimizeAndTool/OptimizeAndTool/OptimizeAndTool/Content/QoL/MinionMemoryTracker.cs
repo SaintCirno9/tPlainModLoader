@@ -8,7 +8,7 @@ using Terraria.ID;
 using TPML.Content.IO;
 using TPML.Core.Logging;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 单个仆从/哨兵记忆条目

@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using OptimizeAndTool.Content.Cheat.Function1;
 using System;
@@ -7,7 +7,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// Alt + 右键微距精准传送（智能吸附空位，防滑出小角落）

@@ -1,9 +1,9 @@
-﻿using TPML;
+using TPML;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 魔镜 / 回程药水 / 海螺 / 手机瞬传（消除施法前摇延迟）

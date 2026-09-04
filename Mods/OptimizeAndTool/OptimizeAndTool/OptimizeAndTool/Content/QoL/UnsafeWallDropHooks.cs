@@ -1,8 +1,9 @@
+using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 天然危险背景墙掉落门控与映射引擎
@@ -140,7 +141,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             {
                 if (TryGetUnsafeWallDrop(tileCache.wall, out int dropItemId))
                 {
-                    Item.NewItem(WorldGen.GetItemSource_FromWallBreak(i, j), i * 16, j * 16, 16, 16, dropItemId);
+                    Item.NewItem(WorldGen.GetItemSource_FromWallBreak(i, j), new Vector2(i * 16, j * 16), dropItemId);
                     return;
                 }
             }

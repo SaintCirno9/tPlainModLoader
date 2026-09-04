@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -34,8 +34,8 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             if (damagePlay_set.val >= Main.player.Length) return;
 
             Player target = Main.player[damagePlay_set.val];
-            Vector2 targetP = Function.aimAdvance.val ?
-                target.Center + target.velocity * Function.aimAdvance_val.val :
+            Vector2 targetP = WorldCheatFunctions.aimAdvance.val ?
+                target.Center + target.velocity * WorldCheatFunctions.aimAdvance_val.val :
                 target.Center;
 
             int id = Projectile.NewProjectile(null, targetP, Vector2.Zero,

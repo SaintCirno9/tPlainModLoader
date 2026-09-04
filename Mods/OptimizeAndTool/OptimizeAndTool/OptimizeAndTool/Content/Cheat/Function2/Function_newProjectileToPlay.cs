@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -39,7 +39,7 @@ namespace OptimizeAndTool.Content.Cheat.Function2
             if (player?.active == false) return;
 
             int i = Projectile.NewProjectile(null, player.Center, Vector2.Zero,
-                nptp_id.val, Function.functionDamage.val, 1, player.whoAmI);
+                nptp_id.val, WorldCheatFunctions.functionDamage.val, 1, player.whoAmI);
             Main.projectile[i].timeLeft = 50;
         }
 

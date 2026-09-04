@@ -4,9 +4,7 @@ using MonoMod.Cil;
 using TPML;
 using Terraria;
 using Terraria.ID;
-using OptimizeAndTool.Content.QoL;
-
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 生态与植被增强门控（草药极速生长/开花/补种、全树种生长/最高高度锁定/掉果/宝石树掉宝石、移除墓地暗角与音乐，基于 HookGen 强类型 On_ / IL_ 门控）
@@ -19,6 +17,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         public static void RegisterAll()
         {
             if (_registered) return;
+            On_WorldGen.PlaceTile += Hook_PlaceTile;
             On_WorldGen.GrowAlch += Hook_GrowAlch;
             On_WorldGen.IsHarvestableHerbWithSeed += Hook_IsHarvestableHerbWithSeed;
             On_WorldGen.IsAlchemyPlantHarvestable += Hook_IsAlchemyPlantHarvestable;
@@ -35,6 +34,7 @@ namespace OptimizeAndTool.Content.Cheat.QoL
         public static void UnregisterAll()
         {
             if (!_registered) return;
+            On_WorldGen.PlaceTile -= Hook_PlaceTile;
             On_WorldGen.GrowAlch -= Hook_GrowAlch;
             On_WorldGen.IsHarvestableHerbWithSeed -= Hook_IsHarvestableHerbWithSeed;
             On_WorldGen.IsAlchemyPlantHarvestable -= Hook_IsAlchemyPlantHarvestable;
@@ -77,8 +77,15 @@ namespace OptimizeAndTool.Content.Cheat.QoL
             bool growTree = QoLValSet.treeFastGrow.val;
             bool growHerb = QoLValSet.herbFastGrow.val;
             bool growPumpkin = EcoGrowthHooks.EnablePumpkinFastGrow.val;
+            bool naturalBoost = QoLValSet.naturalGrowthBoost.val;
+            bool mushroomBoost = QoLValSet.mushroomWeightBoost.val;
+            bool evilMushroomBoost = QoLValSet.evilMushroomWeightBoost.val;
+            bool wildHerbBoost = QoLValSet.wildHerbSpawnBoost.val;
 
-            if (!growTree && !growHerb && !growPumpkin) return;
+            if (!growTree && !growHerb && !growPumpkin && !naturalBoost && !mushroomBoost && !evilMushroomBoost && !wildHerbBoost) return;
+
+            int speedMult = naturalBoost ? Math.Max(1, Math.Min(30, QoLValSet.naturalGrowthMultiplier.val)) : 1;
+            int sampleCount = naturalBoost ? Math.Min(250, 40 + speedMult * 7) : 50;
 
             for (int p = 0; p < Main.maxPlayers; p++)
             {
@@ -88,8 +95,8 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 int playerTileX = (int)(player.Center.X / 16f);
                 int playerTileY = (int)(player.Center.Y / 16f);
 
-                // 视野缓冲范围内随机采样 50 个坐标
-                for (int k = 0; k < 50; k++)
+                // 视野缓冲范围内随机采样
+                for (int k = 0; k < sampleCount; k++)
                 {
                     int rx = playerTileX + Main.rand.Next(-70, 71);
                     int ry = playerTileY + Main.rand.Next(-50, 51);
@@ -99,18 +106,20 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                     if (tile == null || !tile.active()) continue;
 
                     // 1. 树苗生长（支持森林/针叶/丛林/腐化/猩红/神圣/棕榈/灰烬/樱花/黄柳/7种宝石树）
-                    if (growTree && (tile.type == TileID.Saplings || tile.type == TileID.GemSaplings || tile.type == TileID.VanityTreeSakuraSaplings || tile.type == TileID.VanityTreeWillowSaplings))
+                    if ((growTree || naturalBoost) && (tile.type == TileID.Saplings || tile.type == TileID.GemSaplings || tile.type == TileID.VanityTreeSakuraSaplings || tile.type == TileID.VanityTreeWillowSaplings))
                     {
-                        if (Main.rand.Next(4) == 0)
+                        int treeChance = Math.Max(1, 4 - (speedMult - 1) / 5);
+                        if (Main.rand.Next(treeChance) == 0)
                         {
                             bool isUnderground = (double)ry > Main.worldSurface;
                             WorldGen.AttemptToGrowTreeFromSapling(rx, ry, isUnderground);
                         }
                     }
                     // 2. 草药平滑两阶段生长（幼苗 -> 成熟 -> 开花）
-                    else if (growHerb && (tile.type == TileID.ImmatureHerbs || tile.type == TileID.MatureHerbs))
+                    else if ((growHerb || naturalBoost) && (tile.type == TileID.ImmatureHerbs || tile.type == TileID.MatureHerbs))
                     {
-                        if (Main.rand.Next(3) == 0)
+                        int herbChance = Math.Max(1, 3 - (speedMult - 1) / 8);
+                        if (Main.rand.Next(herbChance) == 0)
                         {
                             if (tile.type == TileID.ImmatureHerbs)
                             {
@@ -125,35 +134,80 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                         }
                     }
                     // 3. 南瓜平滑生长
-                    else if (growPumpkin && tile.type == TileID.Pumpkins)
+                    else if ((growPumpkin || naturalBoost) && tile.type == TileID.Pumpkins)
                     {
-                        if (Main.rand.Next(3) == 0)
+                        int pumpkinChance = Math.Max(1, 3 - (speedMult - 1) / 8);
+                        if (Main.rand.Next(pumpkinChance) == 0)
                         {
                             WorldGen.GrowPumpkin(rx, ry, tile.type);
                         }
                     }
                     // 4. 仙人掌平滑生长
-                    else if (growHerb && tile.type == TileID.Cactus)
+                    else if ((growHerb || naturalBoost) && tile.type == TileID.Cactus)
                     {
-                        if (Main.rand.Next(6) == 0)
+                        int cactusChance = Math.Max(1, 6 - (speedMult - 1) / 4);
+                        if (Main.rand.Next(cactusChance) == 0)
                         {
                             WorldGen.GrowCactus(rx, ry);
                         }
                     }
                     // 5. 竹子平滑生长
-                    else if (growHerb && (tile.type == 571 || tile.type == 572))
+                    else if ((growHerb || naturalBoost) && (tile.type == 571 || tile.type == 572))
                     {
-                        if (Main.rand.Next(6) == 0 && (!Main.tile[rx, ry - 1].active() || Main.tile[rx, ry - 1].type == 61 || Main.tile[rx, ry - 1].type == 74))
+                        int bambooChance = Math.Max(1, 6 - (speedMult - 1) / 4);
+                        if (Main.rand.Next(bambooChance) == 0 && (!Main.tile[rx, ry - 1].active() || Main.tile[rx, ry - 1].type == 61 || Main.tile[rx, ry - 1].type == 74))
                         {
                             WorldGen.PlaceBamboo(rx, ry - 1);
                         }
                     }
-                    // 6. 巨型发光蘑菇生长（地下发光蘑菇草皮上的蘑菇）
-                    else if (growTree && tile.type == TileID.MushroomPlants && (double)ry > Main.worldSurface)
+                    // 6. 巨型发光蘑菇生长（地下发光蘑菇草皮上的蘑菇树）
+                    else if ((growTree || naturalBoost) && tile.type == TileID.MushroomPlants && (double)ry > Main.worldSurface)
                     {
-                        if (Main.rand.Next(8) == 0)
+                        int mushroomTreeChance = Math.Max(1, 8 - (speedMult - 1) / 3);
+                        if (Main.rand.Next(mushroomTreeChance) == 0)
                         {
                             WorldGen.GrowEpicTree(rx, ry);
+                        }
+                    }
+                    // 7. 草坪自然作物与地表蘑菇主动催生（隔离腐化蔓延，仅生成植物与蘑菇）
+                    else if ((naturalBoost || mushroomBoost || evilMushroomBoost) && (tile.type == TileID.Grass || tile.type == TileID.CorruptGrass || tile.type == TileID.CrimsonGrass || tile.type == TileID.HallowedGrass || tile.type == TileID.MushroomGrass))
+                    {
+                        int aboveY = ry - 1;
+                        if (aboveY >= 5 && !Main.tile[rx, aboveY].active() && Main.tile[rx, aboveY].liquid == 0)
+                        {
+                            int grassPlantChance = Math.Max(1, 14 - speedMult / 2);
+                            if (Main.rand.Next(grassPlantChance) == 0)
+                            {
+                                ushort plantType = 0;
+                                if (tile.type == TileID.Grass) plantType = TileID.Plants;
+                                else if (tile.type == TileID.CorruptGrass) plantType = TileID.CorruptPlants;
+                                else if (tile.type == TileID.CrimsonGrass) plantType = TileID.CrimsonPlants;
+                                else if (tile.type == TileID.HallowedGrass) plantType = TileID.HallowedPlants;
+                                else if (tile.type == TileID.MushroomGrass) plantType = TileID.MushroomPlants;
+
+                                if (plantType > 0)
+                                {
+                                    WorldGen.PlaceTile(rx, aboveY, plantType, mute: true);
+                                    if (Main.tile[rx, aboveY].active())
+                                    {
+                                        Main.tile[rx, aboveY].CopyPaintAndCoating(tile);
+                                        if (Main.netMode == 2) NetMessage.SendTileSquare(-1, rx, aboveY, 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 8. 野生药草平滑自然播种加倍
+                if (wildHerbBoost)
+                {
+                    int herbSpawnMult = Math.Max(1, Math.Min(10, QoLValSet.wildHerbSpawnMultiplier.val));
+                    for (int h = 0; h < herbSpawnMult; h++)
+                    {
+                        if (Main.rand.Next(25) == 0)
+                        {
+                            WorldGen.PlantAlch();
                         }
                     }
                 }
@@ -437,6 +491,76 @@ namespace OptimizeAndTool.Content.Cheat.QoL
                 self.GraveyardTileCount = 0;
                 self.ZoneGraveyard = false;
             }
+        }
+
+        #endregion
+
+        #region 地表蘑菇与邪恶植物权重置换门控
+
+        private static bool Hook_PlaceTile(On_WorldGen.orig_PlaceTile orig, int i, int j, int Type, bool mute, bool forced, int plr, int style)
+        {
+            bool result = orig(i, j, Type, mute, forced, plr, style);
+            if (!result) return false;
+
+            if (i < 0 || i >= Main.maxTilesX || j < 0 || j >= Main.maxTilesY) return result;
+            Tile tile = Main.tile[i, j];
+            if (tile == null || !tile.active()) return result;
+
+            // 1. 地表普通植物 (TileID.Plants = 3) 置换为地表红蘑菇 (frameX = 144)
+            if (Type == TileID.Plants && QoLValSet.mushroomWeightBoost.val)
+            {
+                int mult = QoLValSet.mushroomWeightMultiplier.val;
+                if (mult > 1 && tile.frameX != 144)
+                {
+                    // 原版基础概率为 1/50 (2%)。50x 对应 100% 转化。
+                    // 目标几率 targetChance = Math.Min(1.0f, 0.02f * mult)
+                    // 条件几率：在未命中原版 2% 的情况下，转化几率为 (targetChance - 0.02) / 0.98
+                    float targetChance = Math.Min(1.0f, 0.02f * mult);
+                    float extraChance = (targetChance - 0.02f) / 0.98f;
+                    if (Main.rand.NextFloat() < extraChance)
+                    {
+                        tile.frameX = 144;
+                        if (Main.netMode == 2) NetMessage.SendTileSquare(-1, i, j, 1);
+                        else if (Main.netMode == 1) NetMessage.SendTileSquare(Main.myPlayer, i, j, 1);
+                    }
+                }
+            }
+            // 2. 腐化植物 (TileID.CorruptPlants = 24) 置换为魔菇 (frameX = 144)
+            else if (Type == TileID.CorruptPlants && QoLValSet.evilMushroomWeightBoost.val)
+            {
+                int mult = QoLValSet.evilMushroomWeightMultiplier.val;
+                if (mult > 1 && tile.frameX != 144)
+                {
+                    // 原版基础概率为 1/40 (2.5%)。25x 对应 62.5% 转化。
+                    float targetChance = Math.Min(1.0f, 0.025f * mult);
+                    float extraChance = (targetChance - 0.025f) / 0.975f;
+                    if (Main.rand.NextFloat() < extraChance)
+                    {
+                        tile.frameX = 144;
+                        if (Main.netMode == 2) NetMessage.SendTileSquare(-1, i, j, 1);
+                        else if (Main.netMode == 1) NetMessage.SendTileSquare(Main.myPlayer, i, j, 1);
+                    }
+                }
+            }
+            // 3. 猩红植物 (TileID.CrimsonPlants = 201) 置换为毒蘑菇 (frameX = 270)
+            else if (Type == TileID.CrimsonPlants && QoLValSet.evilMushroomWeightBoost.val)
+            {
+                int mult = QoLValSet.evilMushroomWeightMultiplier.val;
+                if (mult > 1 && tile.frameX != 270)
+                {
+                    // 原版基础概率为 1/40 (2.5%)
+                    float targetChance = Math.Min(1.0f, 0.025f * mult);
+                    float extraChance = (targetChance - 0.025f) / 0.975f;
+                    if (Main.rand.NextFloat() < extraChance)
+                    {
+                        tile.frameX = 270;
+                        if (Main.netMode == 2) NetMessage.SendTileSquare(-1, i, j, 1);
+                        else if (Main.netMode == 1) NetMessage.SendTileSquare(Main.myPlayer, i, j, 1);
+                    }
+                }
+            }
+
+            return result;
         }
 
         #endregion

@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
 using System.Collections.Generic;
@@ -8,7 +8,11 @@ using Terraria.UI;
 
 namespace OptimizeAndTool.Content.Cheat.Function1
 {
-    internal partial class Function : TPML.Content.ModPlayer
+    /// <summary>
+    /// 玩家能力作弊功能集合（无敌不死、法力满溢、地图传送、飞行等）
+    /// 作者: SaintCirno9
+    /// </summary>
+    internal class PlayerCheatFunctions : TPML.Content.ModPlayer
     {
         public static GetSetReset<bool> noDead = new GetSetReset<bool>();
         public static GetSetReset<bool> manaMax = new GetSetReset<bool>();
@@ -58,5 +62,14 @@ namespace OptimizeAndTool.Content.Cheat.Function1
 
             return uis;
         }
+    }
+
+    /// <summary>
+    /// 旧版同名类兼容垫片
+    /// </summary>
+    [System.Obsolete("请改用 PlayerCheatFunctions")]
+    internal class Function : PlayerCheatFunctions
+    {
+        public override void UpdatePrefix(Player This, int playerI) { }
     }
 }

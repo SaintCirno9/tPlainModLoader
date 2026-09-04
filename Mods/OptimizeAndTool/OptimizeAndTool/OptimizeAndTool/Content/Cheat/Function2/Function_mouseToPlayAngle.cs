@@ -1,4 +1,4 @@
-﻿using CommandHelp;
+using CommandHelp;
 using Microsoft.Xna.Framework;
 using OptimizeAndTool.Utils;
 using OptimizeAndTool.Utils.quickBuild;
@@ -32,8 +32,8 @@ namespace OptimizeAndTool.Content.Cheat.Function2
 
             Player target = Main.player[mtpa_play.val];
 
-            Vector2 targetP = Function.aimAdvance.val ?
-                Utils.aimAdvance(This.Center, Function.aimAdvance_val.val, target.Center, target.velocity) :
+            Vector2 targetP = WorldCheatFunctions.aimAdvance.val ?
+                Utils.aimAdvance(This.Center, WorldCheatFunctions.aimAdvance_val.val, target.Center, target.velocity) :
                 target.Center;
 
             Vector2 mouseP = targetP - Main.screenPosition;

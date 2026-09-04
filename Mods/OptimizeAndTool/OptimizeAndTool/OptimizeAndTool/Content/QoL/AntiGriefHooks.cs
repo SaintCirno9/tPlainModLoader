@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 
-namespace OptimizeAndTool.Content.Cheat.QoL
+namespace OptimizeAndTool.Content.QoL
 {
     /// <summary>
     /// 防非玩家爆炸物破坏地形门控（拦截小丑炸弹、机械骷髅王炸弹、非玩家敌怪爆炸物，基于 HookGen 强类型 On_ 门控）
