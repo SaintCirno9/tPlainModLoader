@@ -1,5 +1,7 @@
+using Microsoft.Xna.Framework;
 using OptimizeAndTool.Content.Storage.ItemContainer;
 using Terraria;
+using Terraria.ID;
 using TPML.Core.Diagnostics;
 
 namespace OptimizeAndTool.Content.BigBag
@@ -37,6 +39,26 @@ namespace OptimizeAndTool.Content.BigBag
                 settings.NoText)
             {
                 return orig(self, newItem, settings);
+            }
+
+            // 0. 拾取即变现（就地折现）：若开启自动售卖且为符合条件的带前缀装备/工具，且全量持有数 >= 保留阈值
+            if (BigBag.CurrentAutoSellPrefixed && BigBag.IsSellablePrefixedItem(newItem) &&
+                BigBag.CountTotalItemCopies(self, newItem.type, newItem) >= BigBag.CurrentKeepCopiesThreshold)
+            {
+                Item itemInfo = newItem.Clone();
+                int originalStack = newItem.stack;
+                if (BigBag.SellSingleItem(self, newItem, out long earned))
+                {
+                    newItem.TurnToAir();
+                    Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Coins);
+                    Vector2 pos = self.Center;
+                    PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, originalStack, false, false);
+                    if (earned > 0)
+                    {
+                        BigBag.PopupCoins(pos, earned);
+                    }
+                    return new Item();
+                }
             }
 
             // 1. 若开启「拾取自动堆叠」：大背包已有同类物品优先堆入（钱币除外，钱币优先走原生专用槽）

@@ -222,8 +222,8 @@ namespace OptimizeAndTool.Content.BigBag
                 Item pItem = inv[i];
                 if (pItem == null || pItem.IsAir || pItem.favorited) continue;
 
-                // 若开启了自动售卖且满足条件且大背包已有 >= CurrentKeepCopiesThreshold 件，直接折现进玩家钱币栏
-                if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(pItem) && CountItemInBigBag(pItem.type) >= CurrentKeepCopiesThreshold)
+                // 若开启了自动售卖且满足条件且剩余持有总数 >= CurrentKeepCopiesThreshold 件，直接折现进玩家钱币栏
+                if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(pItem) && CountTotalItemCopies(player, pItem.type, pItem) >= CurrentKeepCopiesThreshold)
                 {
                     if (SellSingleItem(player, pItem, out _))
                     {
@@ -477,16 +477,20 @@ namespace OptimizeAndTool.Content.BigBag
             Item itemInfo = newItem.Clone();
             int originalStack = newItem.stack;
 
-            // 若开启了自动售卖且为符合条件的带前缀装备，且大背包中已有同类数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
-            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(newItem) && CountItemInBigBag(newItem.type) >= CurrentKeepCopiesThreshold)
+            // 若开启了自动售卖且为符合条件的带前缀装备，且全量持有数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
+            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(newItem) && CountTotalItemCopies(Main.LocalPlayer, newItem.type, newItem) >= CurrentKeepCopiesThreshold)
             {
                 Player localPlayer = Main.LocalPlayer;
-                if (localPlayer != null && SellSingleItem(localPlayer, newItem, out _))
+                if (localPlayer != null && SellSingleItem(localPlayer, newItem, out long earned))
                 {
                     newItem.TurnToAir();
                     Terraria.Audio.SoundEngine.PlaySound(Terraria.ID.SoundID.Coins);
                     Vector2 pos = localPlayer.Center;
                     PopupText.NewText(PopupTextContext.RegularItemPickup, itemInfo, pos, originalStack, false, false);
+                    if (earned > 0)
+                    {
+                        PopupCoins(pos, earned);
+                    }
                     return true;
                 }
             }
@@ -576,8 +580,8 @@ namespace OptimizeAndTool.Content.BigBag
 
             if (justCheck) return true;
 
-            // 若开启了自动售卖且为符合条件的带前缀装备，且大背包中已有同类数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
-            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(item) && CountItemInBigBag(item.type) >= CurrentKeepCopiesThreshold)
+            // 若开启了自动售卖且为符合条件的带前缀装备，且剩余持有数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
+            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(item) && CountTotalItemCopies(Main.LocalPlayer, item.type, item) >= CurrentKeepCopiesThreshold)
             {
                 Player localPlayer = Main.LocalPlayer;
                 if (localPlayer != null && SellSingleItem(localPlayer, item, out _))
@@ -677,14 +681,47 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
+        /// 统计玩家背包 (0~49 全格位，涵盖快捷栏与收藏) 与巨大背包中指定物品类型的当前持有总数量 (可排除指定项自身)
+        /// </summary>
+        public static int CountTotalItemCopies(Player player, int itemType, Item excludeItem = null)
+        {
+            if (itemType <= 0) return 0;
+            if (player == null) player = Main.LocalPlayer;
+            int count = 0;
+            if (player != null && player.inventory != null)
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    Item it = player.inventory[i];
+                    if (it != null && !it.IsAir && it.type == itemType && (excludeItem == null || !ReferenceEquals(it, excludeItem)))
+                    {
+                        count += it.stack;
+                    }
+                }
+            }
+            if (Slots != null)
+            {
+                for (int i = 0; i < Slots.Length; i++)
+                {
+                    Item it = Slots[i];
+                    if (it != null && !it.IsAir && it.type == itemType && (excludeItem == null || !ReferenceEquals(it, excludeItem)))
+                    {
+                        count += it.stack;
+                    }
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
         /// 将物品存入大背包（优先存入指定首选槽位，次选同类堆叠，再选空格，不足时自动动态扩容）
         /// </summary>
         public static bool DepositItem(Item item, int preferredSlot = -1)
         {
             if (item == null || item.IsAir || item.stack <= 0) return true;
 
-            // 若开启了自动售卖且为符合条件的带前缀装备，且大背包中已有同类数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
-            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(item) && CountItemInBigBag(item.type) >= CurrentKeepCopiesThreshold)
+            // 若开启了自动售卖且为符合条件的带前缀装备，且剩余持有数量 >= CurrentKeepCopiesThreshold，直接折现进玩家钱币栏
+            if (CurrentAutoSellPrefixed && IsSellablePrefixedItem(item) && CountTotalItemCopies(Main.LocalPlayer, item.type, item) >= CurrentKeepCopiesThreshold)
             {
                 Player localPlayer = Main.LocalPlayer;
                 if (localPlayer != null && SellSingleItem(localPlayer, item, out _))
@@ -977,6 +1014,46 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
+        /// 触发钱币浮动文字提示 (对齐原版标准钱币结算显示)
+        /// </summary>
+        public static void PopupCoins(Vector2 position, long coins)
+        {
+            if (coins <= 0) return;
+            long remaining = coins;
+            long plat = remaining / 1000000;
+            remaining %= 1000000;
+            long gold = remaining / 10000;
+            remaining %= 10000;
+            long silver = remaining / 100;
+            long copper = remaining % 100;
+
+            if (plat > 0)
+            {
+                Item c = new Item();
+                c.SetDefaults(ItemID.PlatinumCoin);
+                PopupText.NewText(PopupTextContext.RegularItemPickup, c, position, (int)plat);
+            }
+            if (gold > 0)
+            {
+                Item c = new Item();
+                c.SetDefaults(ItemID.GoldCoin);
+                PopupText.NewText(PopupTextContext.RegularItemPickup, c, position, (int)gold);
+            }
+            if (silver > 0)
+            {
+                Item c = new Item();
+                c.SetDefaults(ItemID.SilverCoin);
+                PopupText.NewText(PopupTextContext.RegularItemPickup, c, position, (int)silver);
+            }
+            if (copper > 0)
+            {
+                Item c = new Item();
+                c.SetDefaults(ItemID.CopperCoin);
+                PopupText.NewText(PopupTextContext.RegularItemPickup, c, position, (int)copper);
+            }
+        }
+
+        /// <summary>
         /// 格式化钱币金额展示文本
         /// </summary>
         public static string FormatCoins(long coins)
@@ -999,7 +1076,7 @@ namespace OptimizeAndTool.Content.BigBag
         }
 
         /// <summary>
-        /// 手动售卖巨大背包中带修饰语的武器、饰品与生产工具（受白名单、收藏保护，且严格保留售卖后剩余数量 >= 2）
+        /// 手动售卖玩家主背包 (10~49) 与巨大背包中带修饰语的武器、饰品与生产工具（严格保护 0~9 快捷栏、白名单与收藏，保留同类剩余数量 >= CurrentKeepCopiesThreshold）
         /// </summary>
         public static int SellPrefixedItems(Player player, bool quiet = false)
         {
@@ -1009,8 +1086,22 @@ namespace OptimizeAndTool.Content.BigBag
             int soldCount = 0;
             long totalEarned = 0;
 
-            // 1. 统计大背包中每种物品类型的当前总数量（涵盖带前缀、无前缀、锁定与白名单）
+            // 1. 统计玩家背包 (0~49 全格位，涵盖快捷栏与收藏) 以及大背包中每种物品类型的当前持有总数量
             Dictionary<int, int> totalCountByType = new Dictionary<int, int>();
+
+            if (player.inventory != null)
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    Item it = player.inventory[i];
+                    if (it != null && !it.IsAir && it.type > 0)
+                    {
+                        totalCountByType.TryGetValue(it.type, out int c);
+                        totalCountByType[it.type] = c + it.stack;
+                    }
+                }
+            }
+
             for (int i = 0; i < Slots.Length; i++)
             {
                 Item it = Slots[i];
@@ -1021,7 +1112,7 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            // 2. 计算每种物品允许售卖的最大预算额度 (保证售卖后剩余总数 >= CurrentKeepCopiesThreshold)
+            // 2. 计算每种物品允许售卖的最大预算额度 (保证售卖后全库存剩余总数 >= CurrentKeepCopiesThreshold)
             int keepThreshold = CurrentKeepCopiesThreshold;
             Dictionary<int, int> sellBudgetByType = new Dictionary<int, int>();
             foreach (var kvp in totalCountByType)
@@ -1033,11 +1124,52 @@ namespace OptimizeAndTool.Content.BigBag
                 }
             }
 
-            // 3. 遍历大背包，只出售在预算额度内的可售卖物品（超额部分按槽位顺序出售）
+            // 3. 优先遍历玩家个人主背包 (10~49 号槽位，绝对保护 0~9 号快捷栏与收藏标记)
+            // 优先腾出玩家随身背包格子
+            if (player.inventory != null)
+            {
+                for (int i = 10; i < 50; i++)
+                {
+                    Item item = player.inventory[i];
+                    if (item == null || item.IsAir || item.type <= 0 || item.favorited) continue;
+
+                    if (sellBudgetByType.TryGetValue(item.type, out int budget) && budget > 0)
+                    {
+                        if (IsSellablePrefixedItem(item))
+                        {
+                            int toSell = Math.Min(item.stack, budget);
+                            if (toSell >= item.stack)
+                            {
+                                if (SellSingleItem(player, item, out long earned))
+                                {
+                                    soldCount += toSell;
+                                    totalEarned += earned;
+                                    player.inventory[i] = new Item();
+                                    sellBudgetByType[item.type] = budget - toSell;
+                                }
+                            }
+                            else
+                            {
+                                Item itemToSell = item.Clone();
+                                itemToSell.stack = toSell;
+                                if (SellSingleItem(player, itemToSell, out long earned))
+                                {
+                                    soldCount += toSell;
+                                    totalEarned += earned;
+                                    item.stack -= toSell;
+                                    sellBudgetByType[item.type] = budget - toSell;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. 接着遍历巨大背包 Slots，出售在剩余预算额度内的超额带修饰语物品
             for (int i = 0; i < Slots.Length; i++)
             {
                 Item item = Slots[i];
-                if (item == null || item.IsAir || item.type <= 0) continue;
+                if (item == null || item.IsAir || item.type <= 0 || item.favorited) continue;
 
                 if (sellBudgetByType.TryGetValue(item.type, out int budget) && budget > 0)
                 {
@@ -1079,12 +1211,12 @@ namespace OptimizeAndTool.Content.BigBag
                 if (!quiet)
                 {
                     string coinText = FormatCoins(totalEarned);
-                    Main.NewText($"[巨大背包] 已售出 {soldCount} 件带修饰语装备/工具，获得 {coinText} (保留 >= {keepThreshold} 件)。", 100, 255, 100);
+                    Main.NewText($"[自动售卖] 已售出 {soldCount} 件带修饰语装备/工具，获得 {coinText} (保留 >= {keepThreshold} 件)。", 100, 255, 100);
                 }
             }
             else if (!quiet)
             {
-                Main.NewText($"[巨大背包] 未在大背包中找到可售卖的带修饰语装备/工具 (受白名单、收藏或保留 >= {keepThreshold} 件限制)。", 220, 220, 100);
+                Main.NewText($"[自动售卖] 未在背包或大背包中找到可售卖的带修饰语装备/工具 (受白名单、快捷栏保护、收藏或保留 >= {keepThreshold} 件限制)。", 220, 220, 100);
             }
 
             return soldCount;
