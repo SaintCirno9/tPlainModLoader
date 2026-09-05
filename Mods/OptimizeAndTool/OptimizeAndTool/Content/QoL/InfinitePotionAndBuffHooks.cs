@@ -341,23 +341,126 @@ namespace OptimizeAndTool.Content.QoL
 
         private static void Hook_UpdateBuffs(On_Player.orig_UpdateBuffs orig, Player self, int i)
         {
+            if (self != null && self.active && self.whoAmI == Main.myPlayer)
+            {
+                // 在原版 UpdateBuffs 前更新可用增益并维护食物物理槽位，
+                // 确保原版内部的 UpdateStarvingState 判定进食状态，并直接由原版逻辑计算食物数值加成与 wellFed 标记
+                UpdateAvailableBuffs(self);
+                UpdatePhysicalFoodBuff(self);
+            }
+
             orig(self, i);
 
             if (self != null && self.active && self.whoAmI == Main.myPlayer)
             {
-                PerformUpdateBuffs(self);
+                PerformPostUpdateBuffs(self);
             }
         }
 
         /// <summary>
-        /// 在玩家更新增益时扫描背包并直接赋予交互类增益与无尽药水效果（物理槽位 0 消耗，并执行短命残留清理与黑名单拦截）
+        /// 物理槽位长效维护食物增益（18000 帧长效维护，彻底抵消饥荒种子饥饿 Debuff，天生互斥仅占 1 物理槽位）
         /// </summary>
-        private static void PerformUpdateBuffs(Player self)
+        private static void UpdatePhysicalFoodBuff(Player self)
         {
-            UpdateAvailableBuffs(self);
+            // 黑名单中的食物主动从物理槽清除
+            if (InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) ClearBuff(self, BuffID.WellFed3);
+            if (InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) ClearBuff(self, BuffID.WellFed2);
+            if (InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) ClearBuff(self, BuffID.WellFed);
 
-            ActiveInfiniteBuffs.Clear();
+            if (!EnableInfinitePotions.val) return;
 
+            int threshold = PotionThreshold.val > 0 ? PotionThreshold.val : 30;
+            int foodToApply = 0;
+            if (foodCounts[3] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) foodToApply = BuffID.WellFed3;
+            else if (foodCounts[2] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) foodToApply = BuffID.WellFed2;
+            else if (foodCounts[1] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) foodToApply = BuffID.WellFed;
+
+            if (foodToApply <= 0) return;
+
+            // 1. 记录已激活无尽增益（供 UI 展示与隐藏图标）
+            ActiveInfiniteBuffs.Add(foodToApply);
+
+            // 2. 免疫并清理饥荒世界中的饥饿 Debuff (332 NeutralHunger, 333 Hunger, 334 Starving)
+            self.buffImmune[BuffID.NeutralHunger] = true;
+            self.buffImmune[BuffID.Hunger] = true;
+            self.buffImmune[BuffID.Starving] = true;
+            ClearHungerDebuffs(self);
+
+            // 3. 检查当前物理槽位中的食物增益情况
+            int currentFoodBuff = -1;
+            int currentFoodIndex = -1;
+            for (int i = 0; i < Player.maxBuffs; i++)
+            {
+                int b = self.buffType[i];
+                if (b == BuffID.WellFed || b == BuffID.WellFed2 || b == BuffID.WellFed3)
+                {
+                    currentFoodBuff = b;
+                    currentFoodIndex = i;
+                    break;
+                }
+            }
+
+            int targetTier = GetFoodTier(foodToApply);
+            int currentTier = currentFoodBuff > 0 ? GetFoodTier(currentFoodBuff) : 0;
+
+            // 4. 若玩家当前已有更高品级的食物增益（例如随身食物为 Tier 1，但玩家手动食用了高阶食物），保留现有高阶增益
+            if (currentTier > targetTier)
+            {
+                return;
+            }
+
+            // 5. 若已存在同阶食物 Buff，平滑维持时间，严禁每帧调用 AddBuff（防止 IsFedState 触发 DelBuff 导致槽位震荡）
+            if (currentTier == targetTier && currentFoodIndex != -1)
+            {
+                if (self.buffTime[currentFoodIndex] < 120)
+                {
+                    self.buffTime[currentFoodIndex] = 18000;
+                }
+                return;
+            }
+
+            // 6. 无食物或现有食物品级更低：调用一次 AddBuff 升级/入驻真实物理槽位
+            // 原版 AddBuff 内部会对 IsFedState 自动清理旧食物与饥饿 Debuff，并入驻新槽位
+            self.AddBuff(foodToApply, 18000, false);
+        }
+
+        private static int GetFoodTier(int buffId)
+        {
+            if (buffId == BuffID.WellFed3) return 3;
+            if (buffId == BuffID.WellFed2) return 2;
+            if (buffId == BuffID.WellFed) return 1;
+            return 0;
+        }
+
+        private static void ClearBuff(Player player, int buffType)
+        {
+            if (player?.buffType == null) return;
+            int idx = player.FindBuffIndex(buffType);
+            if (idx != -1)
+            {
+                player.DelBuff(idx);
+            }
+        }
+
+        private static void ClearHungerDebuffs(Player player)
+        {
+            if (player?.buffType == null) return;
+            for (int i = 0; i < Player.maxBuffs; i++)
+            {
+                int b = player.buffType[i];
+                if (b == BuffID.NeutralHunger || b == BuffID.Hunger || b == BuffID.Starving)
+                {
+                    player.DelBuff(i);
+                    i--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 在原版 UpdateBuffs 执行后执行短命残留清理、场景/旗帜激活记录与药水/增益站虚拟生效（0 物理槽位占用）
+        /// </summary>
+        private static void PerformPostUpdateBuffs(Player self)
+        {
             // 1. 清理旧版或偶发残留的短命(<= 2 帧)无尽增益物理槽位，彻底释放 44 个物理槽位给召唤物与战斗状态
             ClearResidualShortLivedBuffs(self);
 
@@ -390,12 +493,13 @@ namespace OptimizeAndTool.Content.QoL
                 }
             }
 
-            // 4. 虚拟赋予药水、食物与交互增益站的全部效果（0 物理槽位占用）
+            // 4. 虚拟赋予药水与交互增益站的全部效果（0 物理槽位占用）
             ApplyVirtualBuffEffects(self);
         }
 
         /// <summary>
         /// 清理玩家身上由无尽系统赋予的极短时间(<=2帧)的物理 Buff，释放物理槽位
+        /// 注意：食物类增益为长效物理槽位维护，不在此处进行短命清理
         /// </summary>
         private static void ClearResidualShortLivedBuffs(Player player)
         {
@@ -408,8 +512,7 @@ namespace OptimizeAndTool.Content.QoL
 
                 if (player.buffTime[i] <= 2)
                 {
-                    if (potionCounts.ContainsKey(bType) || carriedInteractiveStations.Contains(bType) ||
-                        bType == BuffID.WellFed || bType == BuffID.WellFed2 || bType == BuffID.WellFed3)
+                    if (potionCounts.ContainsKey(bType) || carriedInteractiveStations.Contains(bType))
                     {
                         player.DelBuff(i);
                         i--;
@@ -419,31 +522,15 @@ namespace OptimizeAndTool.Content.QoL
         }
 
         /// <summary>
-        /// 虚拟应用达标的食物、药水与交互增益站效果（直接修改玩家属性，0 物理槽位占用）
+        /// 虚拟应用达标的药水与交互增益站效果（直接修改玩家属性，0 物理槽位占用）
         /// </summary>
         private static void ApplyVirtualBuffEffects(Player self)
         {
             int threshold = PotionThreshold.val > 0 ? PotionThreshold.val : 30;
 
-            // 1. 食物虚拟生效
+            // 1. 药水虚拟生效
             if (EnableInfinitePotions.val)
             {
-                int foodToApply = 0;
-                if (foodCounts[3] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed3)) foodToApply = BuffID.WellFed3;
-                else if (foodCounts[2] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed2)) foodToApply = BuffID.WellFed2;
-                else if (foodCounts[1] >= threshold && !InfiniteBuffStorage.Blacklist.Contains(BuffID.WellFed)) foodToApply = BuffID.WellFed;
-
-                if (foodToApply > 0)
-                {
-                    ActiveInfiniteBuffs.Add(foodToApply);
-                    // 仅当玩家未处于自然进食(>2帧)状态时虚拟应用
-                    if (!HasNaturalFoodBuff(self))
-                    {
-                        ApplySingleBuffEffect(self, foodToApply);
-                    }
-                }
-
-                // 2. 药水虚拟生效
                 foreach (KeyValuePair<int, int> kvp in potionCounts)
                 {
                     if (kvp.Value >= threshold)
@@ -469,7 +556,7 @@ namespace OptimizeAndTool.Content.QoL
                 }
             }
 
-            // 3. 交互增益站虚拟生效
+            // 2. 交互增益站虚拟生效
             if (EnableBuffStations.val)
             {
                 foreach (int stationBuff in carriedInteractiveStations)
@@ -715,51 +802,11 @@ namespace OptimizeAndTool.Content.QoL
                     return true;
 
                 case BuffID.WellFed: // 26 吃得好
-                    player.wellFed = true;
-                    player.statDefense += 2;
-                    player.meleeCrit += 2;
-                    player.meleeDamage += 0.05f;
-                    player.meleeSpeed += 0.05f;
-                    player.magicCrit += 2;
-                    player.magicDamage += 0.05f;
-                    player.rangedCrit += 2;
-                    player.rangedDamage += 0.05f;
-                    player.minionDamage += 0.05f;
-                    player.minionKB += 0.5f;
-                    player.moveSpeed += 0.2f;
-                    player.pickSpeed -= 0.05f;
-                    return true;
-
                 case BuffID.WellFed2: // 206 充分饱腹
-                    player.wellFed = true;
-                    player.statDefense += 3;
-                    player.meleeCrit += 3;
-                    player.meleeDamage += 0.075f;
-                    player.meleeSpeed += 0.075f;
-                    player.magicCrit += 3;
-                    player.magicDamage += 0.075f;
-                    player.rangedCrit += 3;
-                    player.rangedDamage += 0.075f;
-                    player.minionDamage += 0.075f;
-                    player.minionKB += 0.75f;
-                    player.moveSpeed += 0.3f;
-                    player.pickSpeed -= 0.1f;
-                    return true;
-
                 case BuffID.WellFed3: // 207 极其饱腹
-                    player.wellFed = true;
-                    player.statDefense += 4;
-                    player.meleeCrit += 4;
-                    player.meleeDamage += 0.1f;
-                    player.meleeSpeed += 0.1f;
-                    player.magicCrit += 4;
-                    player.magicDamage += 0.1f;
-                    player.rangedCrit += 4;
-                    player.rangedDamage += 0.1f;
-                    player.minionDamage += 0.1f;
-                    player.minionKB++;
-                    player.moveSpeed += 0.4f;
-                    player.pickSpeed -= 0.15f;
+                    // 食物类增益已恢复为真实物理 Buff 槽位（天生互斥最多占 1 槽），
+                    // 属性加成由原版 UpdateBuffs 统一计算并完美兼容饥饿判定与生命恢复；
+                    // 此处直接返回 true，避免数值重复叠加
                     return true;
 
                 // 交互类增益站
@@ -823,7 +870,7 @@ namespace OptimizeAndTool.Content.QoL
         }
 
         /// <summary>
-        /// 判断是否为受保护的核心 Buff（仆从、哨兵、坐骑、宠物、照明宠物），绝对禁止在槽位满载时被顶替驱逐
+        /// 判断是否为受保护的核心 Buff（仆从、哨兵、坐骑、宠物、照明宠物以及常驻食物），绝对禁止在槽位满载时被顶替驱逐
         /// </summary>
         public static bool IsProtectedBuff(int buffType)
         {
@@ -832,6 +879,7 @@ namespace OptimizeAndTool.Content.QoL
             if (Main.vanityPet.IndexInRange(buffType) && Main.vanityPet[buffType]) return true;
             if (BuffID.Sets.MountType.IndexInRange(buffType) && BuffID.Sets.MountType[buffType] != -1) return true;
             if (MinionMemoryTracker.FindItemIdForBuff(buffType) > 0) return true;
+            if (buffType == BuffID.WellFed || buffType == BuffID.WellFed2 || buffType == BuffID.WellFed3) return true;
             return false;
         }
 
@@ -906,9 +954,9 @@ namespace OptimizeAndTool.Content.QoL
                 }
                 else
                 {
-                    // 若 44 个槽位全被核心仆从/宠物/Debuff 填满，且无任何可牺牲的普通增益：
-                    // 若新增益不是 Debuff 且不是新仆从，则绝对禁止顶替已有仆从，直接拒绝入驻
-                    if (!Main.debuff[type] && !IsProtectedBuff(type))
+                    // 若 44 个槽位全被核心仆从/宠物/Debuff/食物填满，且无任何可牺牲的普通增益：
+                    // 若新增益不是 Debuff、不是受保护增益且不是食物替换，则绝对禁止顶替已有仆从与食物，直接拒绝入驻
+                    if (!Main.debuff[type] && !IsProtectedBuff(type) && !BuffID.Sets.IsFedState[type])
                     {
                         return;
                     }
@@ -1121,25 +1169,6 @@ namespace OptimizeAndTool.Content.QoL
             }
         }
 
-        /// <summary>
-        /// 是否存在自然进食获得的食物 Buff（时长 > 2 帧）。
-        /// 本系统自续的食物每帧仅保留 <=2 帧，故以此阈值区分自然 buff 与系统续杯
-        /// </summary>
-        private static bool HasNaturalFoodBuff(Player player)
-        {
-            if (player?.buffType == null || player.buffTime == null) return false;
-
-            for (int i = 0; i < player.buffType.Length; i++)
-            {
-                int t = player.buffType[i];
-                if ((t == BuffID.WellFed || t == BuffID.WellFed2 || t == BuffID.WellFed3) && player.buffTime[i] > 2)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
 
         /// <summary>
         /// 绘制 Buff 栏图标时若开启隐藏无尽 Buff，则拦截对应图标的绘制
