@@ -360,6 +360,34 @@ namespace OptimizeAndTool.Content.Storage.Core
 
             query = query.Trim();
 
+            // 0. 前缀专属检索语法：若以 '#' 或 '@' 开头，专门匹配物品前缀修饰语
+            if (query.StartsWith("#") || query.StartsWith("@"))
+            {
+                if (item.prefix <= 0) return false;
+
+                string prefixQuery = query.Substring(1).Trim();
+                // 若仅输入 '#' 或 '@'，匹配所有带有修饰语的装备
+                if (string.IsNullOrEmpty(prefixQuery)) return true;
+
+                // 纯数字匹配前缀 ID
+                if (int.TryParse(prefixQuery, out int targetPrefixId) && item.prefix == targetPrefixId)
+                {
+                    return true;
+                }
+
+                // 本地化前缀名称与拼音匹配
+                if (item.prefix < Lang.prefix.Length)
+                {
+                    string prefixName = Lang.prefix[item.prefix]?.Value;
+                    if (!string.IsNullOrEmpty(prefixName) && PinyinHelper.Matches(prefixName, prefixQuery))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             // 1. 纯数字精确匹配 ItemID
             if (int.TryParse(query, out int queryId) && item.type == queryId)
             {
@@ -421,6 +449,16 @@ namespace OptimizeAndTool.Content.Storage.Core
                     {
                         return true;
                     }
+                }
+            }
+
+            // 6. 前缀修饰语名称与拼音匹配（常规搜索兼容）
+            if (item.prefix > 0 && item.prefix < Lang.prefix.Length)
+            {
+                string prefixName = Lang.prefix[item.prefix]?.Value;
+                if (!string.IsNullOrEmpty(prefixName) && PinyinHelper.Matches(prefixName, query))
+                {
+                    return true;
                 }
             }
 

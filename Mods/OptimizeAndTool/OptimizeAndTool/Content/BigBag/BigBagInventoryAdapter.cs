@@ -88,14 +88,56 @@ namespace OptimizeAndTool.Content.BigBag
         {
             yield return new BagToolbarButton(
                 () => $"拾取时自动堆入大背包: {(BigBag.AutoStackOnPickup.val ? "[开启]" : "[关闭]")}",
-                () => "Images/Item_5010",
+                "Images/Item_5010",
                 () =>
                 {
                     BigBag.AutoStackOnPickup.val = !BigBag.AutoStackOnPickup.val;
                     SoundEngine.PlaySound(SoundID.MenuTick);
                     TriggerSlotsChanged();
                 },
-                () => BigBag.AutoStackOnPickup.val ? Color.White : Color.Gray * 0.5f
+                () => BigBag.AutoStackOnPickup.val ? Color.White : Color.Gray * 0.5f,
+                isActiveFunc: () => BigBag.AutoStackOnPickup.val
+            );
+
+            yield return new BagToolbarButton(
+                () =>
+                {
+                    bool auto = BigBag.CurrentAutoSellPrefixed;
+                    int keep = BigBag.CurrentKeepCopiesThreshold;
+                    return $"售卖带修饰语装备与工具: {(auto ? "[自动售卖: 开启]" : "[自动售卖: 关闭]")}\n" +
+                           $"【左键】立即手动售卖大背包所有带修饰语的武器/饰品/工具 (保留同类>={keep}件，排除白名单与收藏)\n" +
+                           $"【右键】切换自动售卖模式开关 (新入包且同类>={keep}件时自动变现，持久化至人物 Sidecar 存档)\n" +
+                           "【中键】打开/关闭词条保护白名单与保留数量设置窗口";
+                },
+                "Images/Item_73",
+                () =>
+                {
+                    BigBag.SellPrefixedItems(Main.LocalPlayer, quiet: false);
+                    TriggerSlotsChanged();
+                },
+                () => BigBag.CurrentAutoSellPrefixed ? Color.Gold : Color.White * 0.75f,
+                onRightClick: () =>
+                {
+                    BigBag.ToggleAutoSellPrefixed(Main.LocalPlayer);
+                    TriggerSlotsChanged();
+                },
+                onMiddleClick: () =>
+                {
+                    PrefixWhitelistWindow.Instance.OpenOrClose(ModifyInterfaceLayers.ui_state ?? ModifyInterfaceLayers.ui_game_state);
+                },
+                isActiveFunc: () => BigBag.CurrentAutoSellPrefixed
+            );
+
+            yield return new BagToolbarButton(
+                () => "便携重铸台 (白名单直达):\n" +
+                      "【左键】打开/关闭便携重铸台 (随时随地重铸装备，支持一键极速洗至白名单极品词条)",
+                "Images/Item_361",
+                () =>
+                {
+                    ReforgeWindow.Instance.OpenOrClose(ModifyInterfaceLayers.ui_state ?? ModifyInterfaceLayers.ui_game_state);
+                },
+                () => ReforgeWindow.Instance.IsOpen ? Color.Gold : Color.White * 0.85f,
+                isActiveFunc: () => ReforgeWindow.Instance.IsOpen
             );
         }
     }

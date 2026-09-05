@@ -391,6 +391,9 @@ namespace OptimizeAndTool
             // 无限 Buff 偏好设置 (全局配置)
             public List<int> InfiniteBuffBlacklist = new List<int>();
             public List<int> InfiniteBuffFavorites = new List<int>();
+
+            // 巨大背包词条保护白名单 (全局配置)
+            public List<int> BigBagPrefixWhitelist = null;
         }
 
         public override string Name => "设置";
@@ -432,6 +435,7 @@ namespace OptimizeAndTool
 
             // 专属业务逻辑处理
             InfiniteBuffStorage.LoadFromConfig(data.InfiniteBuffBlacklist, data.InfiniteBuffFavorites);
+            OptimizeAndTool.Content.BigBag.PrefixWhitelistManager.LoadFromConfig(data.BigBagPrefixWhitelist);
             BigBagPosX = data.BigBagPosX;
             BigBagPosY = data.BigBagPosY;
             BigBagWidth = data.BigBagWidth;
@@ -448,7 +452,8 @@ namespace OptimizeAndTool
                 BigBagHeight = BigBagHeight,
                 AccessoryBox = true,
                 InfiniteBuffBlacklist = InfiniteBuffStorage.ExportBlacklist(),
-                InfiniteBuffFavorites = InfiniteBuffStorage.ExportFavorites()
+                InfiniteBuffFavorites = InfiniteBuffStorage.ExportFavorites(),
+                BigBagPrefixWhitelist = OptimizeAndTool.Content.BigBag.PrefixWhitelistManager.ExportWhitelist()
             };
 
             // 批量从各个 GetSetReset 实例收集最新值写回 data
