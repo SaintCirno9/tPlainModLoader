@@ -68,3 +68,21 @@
 
 - **子模块 `tPlainModLoader`**：`feat(tPlainModLoader,FargoItems): 迁移 FargoItems 核心矩阵并修复 ProjectileLoader 弹幕生命周期与对象池复用`
 - **主仓库 `Cirno9TerrariaMods`**：`feat(tPlainModLoader): 更新子模块，收敛 FargoItems 迁移与 TPML 弹幕生命周期修复`
+
+---
+
+## 5. FargoItems 便携 Boss 召唤物重构与环境维持修复
+
+### 5.1 根因分析与问题清单
+1. **浓缩松露虫精华 (`TruffleWorm2`)**：原版 `NPC.SpawnOnPlayer(plr, 370)` 强制要求玩家存在激活的钓鱼浮漂（bobber），无浮漂直接静默 return 导致手持使用完全无反应。
+2. **蜥蜴电池包 (`LihzahrdPowerCell2`)**：原版 `NPC.SpawnOnPlayer(plr, 245)` 强制要求周围 20 格存在蜥蜴祭坛，在神庙外使用直接失效。
+3. **机械魔眼 (`MechEye`)**：硬编码了 `int type = 0;`，且未同时生成激光眼与魔焰眼。
+4. **全生物群落维持 (`WormyFood` / `GoreySpine` / `DeerThing2` / `Abeemination2`)**：原版 Boss AI 在脱离对应群落时会立即下潜逃跑或暴怒。
+
+### 5.2 实施方案
+1. **创建 `FargoSummonHelper` 统一调度**：
+   - 定向生成：猪鲨在玩家左右侧高空直接 `NPC.NewNPC`；石巨人向上扫描安全空旷方块坐标；双子魔眼同时生成激光眼与魔焰眼；
+   - 网络支持：多人模式下向服务端发送 `PacketId_SummonBoss` 数据包，由服务端统一安全生成并广播 `Announcement.HasAwoken` / `LegacyMisc.48`。
+2. **创建 `FargoItemsBiomePlayer : ModPlayer`**：
+   - 监听世吞、克脑、蜂王、巨鹿等 Boss 存活状态并在玩家附近维持 `ZoneCorrupt / ZoneCrimson / ZoneJungle / ZoneSnow`，彻底兑现“在任何生物群落中召唤”且不逃跑/不暴怒的设定。
+3. **重构 12 款召唤物物品类**：统一接入 `FargoSummonHelper`，并在 `CanUseItem` 中严格校验 Boss 唯一性与时间条件。
