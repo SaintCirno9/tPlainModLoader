@@ -50,11 +50,9 @@ namespace OptimizeAndTool.Content.Storage.Core
         private string searchQuery = string.Empty;
         private string searchPendingQuery = string.Empty;
         private int searchDebounceTimer = 0;
-        private bool isDuplicateFilterActive = false;
 
         public BagItemCategory CurrentCategory => currentCategory;
         public string SearchQuery => searchQuery;
-        public bool IsDuplicateFilterActive => isDuplicateFilterActive;
 
         public UniversalBagWindow(string defaultTitle = "收纳容器") : base(defaultTitle, 476, 420)
         {
@@ -265,23 +263,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             btnSort.OnClick += () => CurrentBag?.Sort();
             sp.Append(btnSort);
 
-            // 5. 查重过滤按钮（仅显示拥有 >= 2 件的重复同类物品）
-            UIBoxButton btnDuplicate = new UIBoxButton(
-                height,
-                () => isDuplicateFilterActive ? "查重过滤: [开启] (当前仅显示大背包中拥有 >= 2 件的重复物品，点击还原)" : "查重过滤: [关闭] (点击仅显示大背包中拥有 >= 2 件的重复物品)",
-                () => "Images/Item_1309",
-                () => isDuplicateFilterActive ? Color.Gold : Color.White * 0.75f,
-                isActiveFunc: () => isDuplicateFilterActive
-            );
-            btnDuplicate.OnClick += () =>
-            {
-                isDuplicateFilterActive = !isDuplicateFilterActive;
-                SoundEngine.PlaySound(SoundID.MenuTick);
-                RebuildSlots();
-            };
-            sp.Append(btnDuplicate);
-
-            // 6. 外观显隐扩展按钮（若实现 IIVisualToggleable）
+            // 5. 外观显隐扩展按钮（若实现 IIVisualToggleable）
             if (CurrentBag is IVisualToggleable vis)
             {
                 UIBoxButton btnAllVisuals = new UIBoxButton(
@@ -328,8 +310,7 @@ namespace OptimizeAndTool.Content.Storage.Core
             string modFilter = sidebar != null ? sidebar.CurrentFilter : "All";
             return currentCategory != BagItemCategory.All ||
                    !string.IsNullOrWhiteSpace(searchQuery) ||
-                   modFilter != "All" ||
-                   isDuplicateFilterActive;
+                   modFilter != "All";
         }
 
         private void BuildCategoryToolbar()
@@ -508,41 +489,6 @@ namespace OptimizeAndTool.Content.Storage.Core
             int filledCount = 0;
             List<int> displaySlotIndices = new List<int>();
 
-            bool isDuplicateSearch = !string.IsNullOrWhiteSpace(searchQuery) &&
-                (searchQuery.Equals("@dup", StringComparison.OrdinalIgnoreCase) ||
-                 searchQuery.Equals("@重复", StringComparison.OrdinalIgnoreCase) ||
-                 searchQuery.StartsWith("dup:", StringComparison.OrdinalIgnoreCase) ||
-                 searchQuery.StartsWith("dup：", StringComparison.OrdinalIgnoreCase));
-
-            string effectiveSearchQuery = searchQuery;
-            if (isDuplicateSearch)
-            {
-                if (searchQuery.StartsWith("dup:", StringComparison.OrdinalIgnoreCase) || searchQuery.StartsWith("dup：", StringComparison.OrdinalIgnoreCase))
-                {
-                    effectiveSearchQuery = searchQuery.Substring(4).Trim();
-                }
-                else
-                {
-                    effectiveSearchQuery = string.Empty;
-                }
-            }
-
-            bool duplicateMode = isDuplicateFilterActive || isDuplicateSearch;
-            Dictionary<int, int> typeCounts = null;
-            if (duplicateMode)
-            {
-                typeCounts = new Dictionary<int, int>();
-                for (int j = 0; j < inv.Length; j++)
-                {
-                    Item sIt = inv[j];
-                    if (sIt != null && !sIt.IsAir && sIt.type > 0)
-                    {
-                        typeCounts.TryGetValue(sIt.type, out int c);
-                        typeCounts[sIt.type] = c + sIt.stack;
-                    }
-                }
-            }
-
             for (int i = 0; i < inv.Length; i++)
             {
                 Item it = inv[i];
@@ -577,16 +523,10 @@ namespace OptimizeAndTool.Content.Storage.Core
                             pass = BagCategoryHelper.MatchesCategory(it, currentCategory);
                         }
 
-                        // 2.5 查重筛选（仅保留在大背包中总数量 >= 2 的同类物品）
-                        if (pass && duplicateMode)
-                        {
-                            pass = (typeCounts != null && typeCounts.TryGetValue(it.type, out int totalCount) && totalCount >= 2);
-                        }
-
                         // 3. 拼音/ID/词条搜索匹配
-                        if (pass && !string.IsNullOrWhiteSpace(effectiveSearchQuery))
+                        if (pass && !string.IsNullOrWhiteSpace(searchQuery))
                         {
-                            pass = BagCategoryHelper.MatchesSearch(it, effectiveSearchQuery);
+                            pass = BagCategoryHelper.MatchesSearch(it, searchQuery);
                         }
 
                         if (pass)

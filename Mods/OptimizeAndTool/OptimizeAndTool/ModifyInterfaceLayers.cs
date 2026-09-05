@@ -162,7 +162,7 @@ namespace OptimizeAndTool
             List<UIWindow> toClose = new List<UIWindow>();
             foreach (var elem in ui_game_state.Children)
             {
-                if (elem is UIWindow win && win.IsOpen && (elem is BigBagWindow || elem is UniversalBagWindow))
+                if (elem is UIWindow win && win.IsOpen && (elem is BigBagWindow || elem is UniversalBagWindow || elem is ReforgeWindow || elem is PrefixWhitelistWindow))
                 {
                     toClose.Add(win);
                 }

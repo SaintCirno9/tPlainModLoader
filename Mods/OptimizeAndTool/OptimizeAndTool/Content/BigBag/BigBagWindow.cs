@@ -33,6 +33,18 @@ namespace OptimizeAndTool.Content.BigBag
                     SoundEngine.PlaySound(SoundID.MenuOpen);
                 }
             };
+
+            OnClose += () =>
+            {
+                if (ReforgeWindow.Instance.IsOpen)
+                {
+                    ReforgeWindow.Instance.Close();
+                }
+                if (PrefixWhitelistWindow.Instance.IsOpen)
+                {
+                    PrefixWhitelistWindow.Instance.Close();
+                }
+            };
         }
 
         public void Open(UIState parentState)
