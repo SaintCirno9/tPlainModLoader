@@ -134,7 +134,6 @@ namespace TPML
             ModPatch.MainHooks.RegisterAll();
             ModPatch.CreativeAndCraftingSearchHooks.RegisterAll();
             ModPatch.ChatCommandHooks.RegisterAll();
-            ModPatch.SecretSeedsHooks.RegisterAll();
 
             // 3. 注册 UI 与控制台 HookGen 强类型门面钩子
             Content.TitleInfo.RegisterAll();
