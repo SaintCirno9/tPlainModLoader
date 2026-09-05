@@ -52,6 +52,9 @@ namespace RecipeBrowser
         internal int slowUpdateNeeded;
         internal int resultCount;
 
+        private int _lastDownstreamQueryType = -1;
+        private Dictionary<int, RecipeDerivationEngine.DerivationInfo> _cachedDownstreamRecipes;
+
         internal int Tile
         {
             get => tile;
@@ -261,6 +264,8 @@ namespace RecipeBrowser
                 queryItem.ReplaceWithFake(0);
             }
             queryLootItem = null;
+            _cachedDownstreamRecipes = null;
+            _lastDownstreamQueryType = -1;
             updateNeeded = true;
         }
 
@@ -343,9 +348,9 @@ namespace RecipeBrowser
                 slowUpdateNeeded = 0;
 
                 List<int> groups = new List<int>();
-                if (queryItem.item.stack > 0)
+                if (!queryItem.item.IsAir && queryItem.item.stack > 0)
                 {
-                    int qType = queryItem.item.type;
+                    int qType = queryItem.CanonicalItemType;
                     foreach (var rg in RecipeGroup.recipeGroups)
                     {
                         if (rg.Value.ValidItems.Contains(qType))
@@ -353,6 +358,17 @@ namespace RecipeBrowser
                             groups.Add(rg.Key);
                         }
                     }
+
+                    if (_cachedDownstreamRecipes == null || _lastDownstreamQueryType != qType)
+                    {
+                        _lastDownstreamQueryType = qType;
+                        _cachedDownstreamRecipes = RecipeDerivationEngine.ComputeDownstreamRecipes(qType, maxDepth: 10);
+                    }
+                }
+                else
+                {
+                    _lastDownstreamQueryType = -1;
+                    _cachedDownstreamRecipes = null;
                 }
 
                 using (RBProfiler.Step("UpdateLootSourceGrid"))
@@ -496,9 +512,29 @@ namespace RecipeBrowser
 
             if (!queryItem.item.IsAir)
             {
-                int qType = queryItem.CanonicalItemType;
-                bool match = (recipe.createItem.type == qType) || (recipe.requiredItem != null && recipe.requiredItem.Any(ing => ing != null && ing.type == qType)) || (recipe.acceptedGroups != null && recipe.acceptedGroups.Intersect(groups).Any());
-                if (!match) return false;
+                int rIdx = recipeSlot.index;
+                if (_cachedDownstreamRecipes != null)
+                {
+                    if (!_cachedDownstreamRecipes.TryGetValue(rIdx, out var derivInfo))
+                    {
+                        return false;
+                    }
+                    recipeSlot.derivationDepth = derivInfo.Depth;
+                    recipeSlot.derivationPath = derivInfo.Path;
+                }
+                else
+                {
+                    int qType = queryItem.CanonicalItemType;
+                    bool match = (recipe.createItem.type == qType) || (recipe.requiredItem != null && recipe.requiredItem.Any(ing => ing != null && ing.type == qType)) || (recipe.acceptedGroups != null && recipe.acceptedGroups.Intersect(groups).Any());
+                    if (!match) return false;
+                    recipeSlot.derivationDepth = (recipe.createItem.type == qType) ? 0 : 1;
+                    recipeSlot.derivationPath = new List<int> { qType, recipe.createItem.type };
+                }
+            }
+            else
+            {
+                recipeSlot.derivationDepth = 0;
+                recipeSlot.derivationPath = null;
             }
 
             Category selectedCategory = SharedUI.instance?.SelectedCategory;

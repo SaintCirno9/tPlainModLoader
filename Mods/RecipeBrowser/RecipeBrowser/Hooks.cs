@@ -1,7 +1,11 @@
 using System;
+using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RecipeBrowser.Common;
+using RecipeBrowser.UIElements;
 using Terraria;
+using Terraria.ID;
 using Terraria.UI;
 using TPML.Content;
 using TPML.Core.Logging;
@@ -33,6 +37,7 @@ namespace RecipeBrowser
             On_UIElement.GetClippingRectangle += Hook_GetClippingRectangle;
             On_Recipe.UpdateRecipeList += Hook_UpdateRecipeList;
             On_Player.AdjTiles += Hook_AdjTiles;
+            On_Main.MouseText_DrawItemTooltip_GetLinesInfo += Hook_MouseText_DrawItemTooltip_GetLinesInfo;
 
             _registered = true;
             Logger.Info("★ RecipeBrowser MonoMod On_ 门控已成功注册");
@@ -48,6 +53,7 @@ namespace RecipeBrowser
             On_UIElement.GetClippingRectangle -= Hook_GetClippingRectangle;
             On_Recipe.UpdateRecipeList -= Hook_UpdateRecipeList;
             On_Player.AdjTiles -= Hook_AdjTiles;
+            On_Main.MouseText_DrawItemTooltip_GetLinesInfo -= Hook_MouseText_DrawItemTooltip_GetLinesInfo;
 
             _registered = false;
         }
@@ -146,6 +152,54 @@ namespace RecipeBrowser
             finally
             {
                 AdjTilesActive = false;
+            }
+        }
+
+        private static void Hook_MouseText_DrawItemTooltip_GetLinesInfo(
+            On_Main.orig_MouseText_DrawItemTooltip_GetLinesInfo orig,
+            Item item, ref int yoyoLogo, float oldKB, ref int numLines, string[] toolTipLine, Color[] lineColors)
+        {
+            orig(item, ref yoyoLogo, oldKB, ref numLines, toolTipLine, lineColors);
+
+            try
+            {
+                var slot = UIRecipeSlot.hoveredRecipeSlot;
+                if (slot != null && slot.IsMouseHovering && slot.item != null && slot.item.type == item.type)
+                {
+                    if (slot.derivationDepth > 0 && slot.derivationPath != null && slot.derivationPath.Count > 1)
+                    {
+                        if (numLines < toolTipLine.Length)
+                        {
+                            string tierText = (slot.derivationDepth == 1)
+                                ? RBLanguage.GetText("RecipeCatalogueUI", "DirectProduct")
+                                : RBLanguage.GetText("RecipeCatalogueUI", "DerivationTier", slot.derivationDepth);
+                            if (string.IsNullOrEmpty(tierText) || tierText.StartsWith("Mods."))
+                            {
+                                tierText = (slot.derivationDepth == 1) ? "直接产物" : $"衍生第 {slot.derivationDepth} 阶";
+                            }
+
+                            StringBuilder sb = new StringBuilder();
+                            sb.Append($"[c/70D0FF:● {tierText}:] ");
+                            for (int i = 0; i < slot.derivationPath.Count; i++)
+                            {
+                                if (i > 0) sb.Append(" [c/808080:→] ");
+                                int pId = slot.derivationPath[i];
+                                string pName = Lang.GetItemNameValue(pId);
+                                if (string.IsNullOrEmpty(pName)) pName = (pId < ItemID.Count) ? ItemID.Search.GetName(pId) : (TPML.Content.ItemLoader.GetModItem(pId)?.DisplayName ?? "Item");
+                                string colorHex = (i == slot.derivationPath.Count - 1) ? "FFFFFF" : (i == 0 ? "FFD700" : "A0C0E0");
+                                sb.Append($"[c/{colorHex}:{pName}]");
+                            }
+
+                            toolTipLine[numLines] = sb.ToString();
+                            lineColors[numLines] = Color.White;
+                            numLines++;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // 防御性保护
             }
         }
     }

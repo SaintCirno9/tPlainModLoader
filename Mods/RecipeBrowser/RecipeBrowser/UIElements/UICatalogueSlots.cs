@@ -225,7 +225,9 @@ namespace RecipeBrowser.UIElements
 
             if (IsMouseHovering && npc != null)
             {
-                UICommon.DrawHoverStringInBounds(spriteBatch, Lang.GetNPCNameValue(npc.netID));
+                string npcName = Lang.GetNPCNameValue(npc.netID);
+                if (string.IsNullOrEmpty(npcName)) npcName = npc.TypeName;
+                UICommon.TooltipMouseText(npcName);
             }
         }
 

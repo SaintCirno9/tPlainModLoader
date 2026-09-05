@@ -52,6 +52,9 @@ Mods: {
 			HistoryEmpty: 尚无查询历史
 			HistoryReachedStart: 抵达查询历史起点
 			HistoryReachedEnd: 抵达查询历史终点
+			DirectProduct: 直接产物
+			DerivationTier: 衍生第 {0} 阶
+			DerivationPath: 衍生路径: {0}
 		}
 
 		RecipeCatalogueFilters: {

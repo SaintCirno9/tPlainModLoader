@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -49,10 +49,15 @@ namespace RecipeBrowser.UIElements
             }
         }
 
+        public static UIRecipeSlot hoveredRecipeSlot;
+
         public int index;
         public bool selected;
         public bool favorited;
         public bool recentlyDiscovered;
+
+        public int derivationDepth;
+        public List<int> derivationPath;
 
         public bool craftPathNeeded;
         public bool craftPathCalculated;
@@ -70,6 +75,15 @@ namespace RecipeBrowser.UIElements
         {
             using (RBProfiler.Step($"UIRecipeSlot.LeftClick [Recipe #{index} ({item?.Name})]"))
             {
+                if (Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftAlt) || Main.keyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightAlt))
+                {
+                    RecipeCatalogueUI.instance.itemDescriptionFilter?.SetText("");
+                    RecipeCatalogueUI.instance.itemNameFilter?.SetText("");
+                    RecipeCatalogueUI.instance.queryItem.ReplaceWithFake(item.type);
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    return;
+                }
+
                 if (Main.keyState.IsKeyDown(Main.FavoriteKey))
                 {
                     if (Main.drawingPlayerChat)
@@ -159,6 +173,10 @@ namespace RecipeBrowser.UIElements
                 return RecipeBrowserUI.instance.localPlayerFavoritedRecipes.IndexOf(index)
                     .CompareTo(RecipeBrowserUI.instance.localPlayerFavoritedRecipes.IndexOf(other.index));
             }
+            if (derivationDepth != other.derivationDepth)
+            {
+                return derivationDepth.CompareTo(other.derivationDepth);
+            }
             return 0;
         }
 
@@ -237,6 +255,8 @@ namespace RecipeBrowser.UIElements
 
             if (IsMouseHovering)
             {
+                hoveredRecipeSlot = this;
+
                 // 收藏键悬停时切换光标（对齐原版），并上报悬停配方索引
                 if (Main.keyState.IsKeyDown(Main.FavoriteKey))
                 {
@@ -264,6 +284,18 @@ namespace RecipeBrowser.UIElements
             }
 
             base.DrawSelf(spriteBatch);
+        }
+
+        internal override void DrawAdditionalBadges(SpriteBatch spriteBatch, Vector2 position, float scale)
+        {
+            base.DrawAdditionalBadges(spriteBatch, position, scale);
+            if (derivationDepth > 1)
+            {
+                string badge = $"T{derivationDepth}";
+                Vector2 badgeSize = ChatManager.GetStringSize(FontAssets.ItemStack.Value, badge, new Vector2(0.65f * scale));
+                Vector2 badgePos = position + new Vector2(48f * scale - badgeSize.X, 4f * scale);
+                ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.ItemStack.Value, badge, badgePos, new Color(112, 208, 255) * 0.95f, 0f, Vector2.Zero, new Vector2(0.65f * scale), -1f, scale);
+            }
         }
 
         internal override void DrawAdditionalOverlays(SpriteBatch spriteBatch, Vector2 position, float scale)

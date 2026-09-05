@@ -52,6 +52,9 @@ Mods: {
 			HistoryEmpty: There is no query history yet
 			HistoryReachedStart: Query history start reached
 			HistoryReachedEnd: Query history end reached
+			DirectProduct: Direct Product
+			DerivationTier: Tier {0} Derivation
+			DerivationPath: "Derivation Path: {0}"
 		}
 
 		RecipeCatalogueFilters: {
