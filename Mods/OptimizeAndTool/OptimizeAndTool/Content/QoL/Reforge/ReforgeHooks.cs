@@ -82,14 +82,43 @@ namespace OptimizeAndTool.Content.QoL.Reforge
             return defaultY;
         }
 
+        public static int ModifyTalkNPCResult(int talkNPC)
+        {
+            if (talkNPC >= 0)
+                return talkNPC;
+
+            if (ReforgeOptimization.PortableReforgeActive)
+                return 0; // 伪造非负索引，绕过 talkNPC == -1 退出判定
+
+            return -1;
+        }
+
         private static void Hook_DrawInventory_IL(ILContext il)
         {
             var cursor = new ILCursor(il);
+
+            // 1. 便携重铸支持：拦截 InReforgeMenu 分支中对 talkNPC == -1 的阻断
+            var inReforgeMenuField = typeof(Main).GetField(nameof(Main.InReforgeMenu), BindingFlags.Public | BindingFlags.Static);
+            var getTalkNPCMethod = typeof(Player).GetProperty(nameof(Player.talkNPC))?.GetGetMethod()
+                ?? typeof(Player).GetMethod("get_talkNPC", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var modifyTalkNPCMethod = typeof(ReforgeHooks).GetMethod(nameof(ModifyTalkNPCResult), BindingFlags.Public | BindingFlags.Static);
+
+            if (inReforgeMenuField != null && getTalkNPCMethod != null && modifyTalkNPCMethod != null)
+            {
+                if (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdsfld(inReforgeMenuField)))
+                {
+                    if (cursor.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt(getTalkNPCMethod)))
+                    {
+                        cursor.Emit(OpCodes.Call, modifyTalkNPCMethod);
+                    }
+                }
+            }
+
+            // 2. 移动游标到 DrawSavings 调用之后（重铸锤位置重定向）
             var drawSavingsMethod = typeof(ItemSlot).GetMethod(nameof(ItemSlot.DrawSavings), new[] { typeof(SpriteBatch), typeof(float), typeof(float), typeof(bool) });
             var modifyXMethod = typeof(ReforgeHooks).GetMethod(nameof(ModifyHammerX), BindingFlags.Public | BindingFlags.Static);
             var modifyYMethod = typeof(ReforgeHooks).GetMethod(nameof(ModifyHammerY), BindingFlags.Public | BindingFlags.Static);
 
-            // 移动游标到 DrawSavings 调用之后
             if (!cursor.TryGotoNext(MoveType.After, instr => instr.MatchCall(drawSavingsMethod)))
                 return;
 

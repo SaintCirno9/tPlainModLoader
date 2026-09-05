@@ -42,6 +42,32 @@ namespace OptimizeAndTool.Content.QoL.Reforge
         private static List<PrefixOption> cachedOptions = new List<PrefixOption>();
         private static int cachedForType = -1;
 
+        /// <summary>
+        /// 便携重铸菜单是否处于激活状态（允许野外无哥布林工匠随时重铸）
+        /// </summary>
+        public static bool PortableReforgeActive = false;
+
+        /// <summary>
+        /// 切换便携哥布林重铸状态
+        /// </summary>
+        public static void TogglePortableReforge()
+        {
+            if (Main.InReforgeMenu && PortableReforgeActive)
+            {
+                Main.InReforgeMenu = false;
+                PortableReforgeActive = false;
+                Main.LocalPlayer?.dropItemCheck();
+                SoundEngine.PlaySound(SoundID.MenuClose);
+            }
+            else
+            {
+                Main.playerInventory = true;
+                Main.InReforgeMenu = true;
+                PortableReforgeActive = true;
+                SoundEngine.PlaySound(SoundID.MenuOpen);
+            }
+        }
+
         public static List<CommandObject> GetCO()
         {
             return new List<CommandObject>
@@ -293,6 +319,7 @@ namespace OptimizeAndTool.Content.QoL.Reforge
             {
                 SelectedPrefixId = 0;
                 lastItemType = -1;
+                PortableReforgeActive = false;
                 return;
             }
 

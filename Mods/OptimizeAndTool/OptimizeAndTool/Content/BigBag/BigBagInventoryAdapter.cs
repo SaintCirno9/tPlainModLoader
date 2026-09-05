@@ -105,8 +105,8 @@ namespace OptimizeAndTool.Content.BigBag
                     bool auto = BigBag.CurrentAutoSellPrefixed;
                     int keep = BigBag.CurrentKeepCopiesThreshold;
                     return $"售卖带修饰语装备与工具: {(auto ? "[自动售卖: 开启]" : "[自动售卖: 关闭]")}\n" +
-                           $"【左键】立即手动售卖大背包所有带修饰语的武器/饰品/工具 (保留同类>={keep}件，排除白名单与收藏)\n" +
-                           $"【右键】切换自动售卖模式开关 (新入包且同类>={keep}件时自动变现，持久化至人物 Sidecar 存档)\n" +
+                           $"【左键】立即手动售卖背包与大背包中带修饰语的装备/工具 (保护快捷栏与收藏，保留同类>={keep}件，排除白名单)\n" +
+                           $"【右键】切换自动售卖模式开关 (拾取或入包且同类>={keep}件时就地变现，持久化至人物 Sidecar 存档)\n" +
                            "【中键】打开/关闭词条保护白名单与保留数量设置窗口";
                 },
                 "Images/Item_73",
@@ -129,15 +129,15 @@ namespace OptimizeAndTool.Content.BigBag
             );
 
             yield return new BagToolbarButton(
-                () => "便携重铸台 (白名单直达):\n" +
-                      "【左键】打开/关闭便携重铸台 (随时随地重铸装备，支持一键极速洗至白名单极品词条)",
+                () => "便携哥布林重铸:\n" +
+                      "【左键】随时随地打开/关闭原版重铸界面 (整合前缀目标选单，点击直达极品词条)",
                 "Images/Item_361",
                 () =>
                 {
-                    ReforgeWindow.Instance.OpenOrClose(ModifyInterfaceLayers.ui_state ?? ModifyInterfaceLayers.ui_game_state);
+                    OptimizeAndTool.Content.QoL.Reforge.ReforgeOptimization.TogglePortableReforge();
                 },
-                () => ReforgeWindow.Instance.IsOpen ? Color.Gold : Color.White * 0.85f,
-                isActiveFunc: () => ReforgeWindow.Instance.IsOpen
+                () => (Main.InReforgeMenu && OptimizeAndTool.Content.QoL.Reforge.ReforgeOptimization.PortableReforgeActive) ? Color.Gold : Color.White * 0.85f,
+                isActiveFunc: () => Main.InReforgeMenu && OptimizeAndTool.Content.QoL.Reforge.ReforgeOptimization.PortableReforgeActive
             );
         }
     }

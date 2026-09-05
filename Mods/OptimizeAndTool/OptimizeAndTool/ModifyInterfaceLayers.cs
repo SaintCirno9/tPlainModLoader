@@ -158,11 +158,16 @@ namespace OptimizeAndTool
         /// </summary>
         public static void CloseInventoryBoundWindows()
         {
+            if (Content.QoL.Reforge.ReforgeOptimization.PortableReforgeActive)
+            {
+                Content.QoL.Reforge.ReforgeOptimization.TogglePortableReforge();
+            }
+
             if (ui_game_state?.Children == null) return;
             List<UIWindow> toClose = new List<UIWindow>();
             foreach (var elem in ui_game_state.Children)
             {
-                if (elem is UIWindow win && win.IsOpen && (elem is BigBagWindow || elem is UniversalBagWindow || elem is ReforgeWindow || elem is PrefixWhitelistWindow))
+                if (elem is UIWindow win && win.IsOpen && (elem is BigBagWindow || elem is UniversalBagWindow || elem is PrefixWhitelistWindow))
                 {
                     toClose.Add(win);
                 }

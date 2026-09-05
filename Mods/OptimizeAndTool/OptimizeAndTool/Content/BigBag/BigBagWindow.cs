@@ -36,9 +36,9 @@ namespace OptimizeAndTool.Content.BigBag
 
             OnClose += () =>
             {
-                if (ReforgeWindow.Instance.IsOpen)
+                if (OptimizeAndTool.Content.QoL.Reforge.ReforgeOptimization.PortableReforgeActive)
                 {
-                    ReforgeWindow.Instance.Close();
+                    OptimizeAndTool.Content.QoL.Reforge.ReforgeOptimization.TogglePortableReforge();
                 }
                 if (PrefixWhitelistWindow.Instance.IsOpen)
                 {
