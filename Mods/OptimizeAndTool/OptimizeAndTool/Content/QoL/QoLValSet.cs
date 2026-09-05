@@ -28,6 +28,8 @@ namespace OptimizeAndTool.Content.QoL
         public static GetSetReset<bool> quickRespawn = new GetSetReset<bool>(true, true);
         public static GetSetReset<int> quickRespawnFrames = new GetSetReset<int>(90, 90, v => v < 1 ? 1 : v);
         public static GetSetReset<bool> autoResummonMinions = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> minionPhasing = new GetSetReset<bool>(true, true);
+        public static GetSetReset<bool> minionRangeBoost = new GetSetReset<bool>(true, true);
 
         // 4. 生态与植被增强
         public static GetSetReset<bool> naturalGrowthBoost = new GetSetReset<bool>(true, true);
@@ -63,6 +65,8 @@ namespace OptimizeAndTool.Content.QoL
                 CommandBuild.get2("altRightClickTeleport", altRightClickTeleport),
                 CommandBuild.get1("quickRespawn", quickRespawn, quickRespawnFrames, new CommandInt()),
                 CommandBuild.get2("autoResummonMinions", autoResummonMinions),
+                CommandBuild.get2("minionPhasing", minionPhasing),
+                CommandBuild.get2("minionRangeBoost", minionRangeBoost),
                 CommandBuild.get1("naturalGrowthBoost", naturalGrowthBoost, naturalGrowthMultiplier, new CommandInt()),
                 CommandBuild.get1("mushroomWeightBoost", mushroomWeightBoost, mushroomWeightMultiplier, new CommandInt()),
                 CommandBuild.get1("evilMushroomWeightBoost", evilMushroomWeightBoost, evilMushroomWeightMultiplier, new CommandInt()),
@@ -109,9 +113,11 @@ namespace OptimizeAndTool.Content.QoL
                 UIBuild.get2(altRightClickTeleport, "在游戏世界中按住 Alt 并右击鼠标，瞬移至光标位置（自动智能吸附空位，便于钻入狭窄小角落）", "Images/Item_1326", "Alt+右键微距传送"),
 
                 // 复活 & 仆从
-                new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Buff_48", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "脱战复活与仆从召回"),
+                new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Buff_48", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "脱战复活与召唤物增强 (Minion & Sentry)"),
                 UIBuild.get1(quickRespawn, quickRespawnFrames, int.Parse, "场上无存活Boss时的复活帧数(60帧=1秒，默认90帧=1.5s)<int>", "Images/Buff_48", "脱战极速复活"),
                 UIBuild.get2(autoResummonMinions, "记录死亡前使用的召唤杖，复活后自动重新召唤仆从至上限", "Images/Buff_150", "复活自动召唤仆从"),
+                UIBuild.get2(minionPhasing, "所有仆从、哨兵及衍生弹幕智能穿墙：飞行完全穿墙，走地仆从遇阻相位突进，发射物穿墙命中", "Images/Buff_150", "召唤物与弹幕智能穿墙"),
+                UIBuild.get2(minionRangeBoost, "全屏级透视索敌与脱战防拉扯：索敌范围扩展至~1800像素(全屏视野)，脱战拉回上限放宽至2500像素，并优先集火威胁目标", "Images/Buff_150", "召唤物全屏索敌与防拉回"),
 
                 // 防破坏与危险墙
                 new UIItemTitle(Main.Assets.Request<Texture2D>("Images/Item_166", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value, "防地形破坏与危险墙掉落"),

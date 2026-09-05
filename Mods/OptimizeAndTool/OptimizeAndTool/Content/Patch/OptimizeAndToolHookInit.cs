@@ -84,7 +84,10 @@ namespace OptimizeAndTool.Content.Patch
                     typeof(QoL.InfiniteBuff.BuffInteractionHooks),
                     typeof(QoL.InfinitePotionAndBuffHooks),
                     typeof(QoL.GuaranteedDrop.GuaranteedDropHooks),
-                    typeof(QoL.Reforge.ReforgeHooks)
+                    typeof(QoL.Reforge.ReforgeHooks),
+
+                    // 批次 5.4: 召唤物穿墙与智能透视索敌
+                    typeof(QoL.MinionPhasingAndTargetingHooks)
                 );
 
                 _hooksDeclared = true;

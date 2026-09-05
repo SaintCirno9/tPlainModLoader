@@ -247,6 +247,10 @@ namespace OptimizeAndTool
             public int QuickRespawnFrames = 90;
             [ConfigBind(typeof(QoLValSet), nameof(QoLValSet.autoResummonMinions))]
             public bool AutoResummonMinions = true;
+            [ConfigBind(typeof(QoLValSet), nameof(QoLValSet.minionPhasing))]
+            public bool MinionPhasing = true;
+            [ConfigBind(typeof(QoLValSet), nameof(QoLValSet.minionRangeBoost))]
+            public bool MinionRangeBoost = true;
             [ConfigBind(typeof(QoLValSet), nameof(QoLValSet.naturalGrowthBoost))]
             public bool NaturalGrowthBoost = true;
             [ConfigBind(typeof(QoLValSet), nameof(QoLValSet.naturalGrowthMultiplier))]
