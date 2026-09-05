@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.IO;
 using TPML.UI;
@@ -89,7 +89,7 @@ namespace WandsTool.Content.Structure.UI
             };
 
             // 【载入放置】按钮
-            UIButton1 btnLoad = new UIButton1("载入放置", 0.8f)
+            UIButton btnLoad = new UIButton("载入放置", 0.8f)
             {
                 Height = { Pixels = 30 },
                 EnableColorBack = new Color(35, 140, 70) * 0.9f,
@@ -119,7 +119,7 @@ namespace WandsTool.Content.Structure.UI
             };
 
             // 【重命名】按钮
-            UIButton1 btnRename = new UIButton1("重命名", 0.8f)
+            UIButton btnRename = new UIButton("重命名", 0.8f)
             {
                 Height = { Pixels = 30 },
                 EnableColorBack = new Color(40, 90, 150) * 0.85f,
@@ -131,7 +131,7 @@ namespace WandsTool.Content.Structure.UI
             };
 
             // 【删除】按钮
-            UIButton1 btnDelete = new UIButton1("删除", 0.8f)
+            UIButton btnDelete = new UIButton("删除", 0.8f)
             {
                 Height = { Pixels = 30 },
                 EnableColorBack = new Color(150, 40, 40) * 0.8f,
@@ -219,7 +219,7 @@ namespace WandsTool.Content.Structure.UI
             };
 
             // 【确认保存】按钮
-            UIButton1 btnSave = new UIButton1("保存", 0.8f)
+            UIButton btnSave = new UIButton("保存", 0.8f)
             {
                 Height = { Pixels = 32 },
                 EnableColorBack = new Color(35, 140, 70) * 0.95f,
@@ -231,7 +231,7 @@ namespace WandsTool.Content.Structure.UI
             };
 
             // 【取消】按钮
-            UIButton1 btnCancel = new UIButton1("取消", 0.8f)
+            UIButton btnCancel = new UIButton("取消", 0.8f)
             {
                 Height = { Pixels = 32 },
                 EnableColorBack = new Color(100, 100, 110) * 0.85f,

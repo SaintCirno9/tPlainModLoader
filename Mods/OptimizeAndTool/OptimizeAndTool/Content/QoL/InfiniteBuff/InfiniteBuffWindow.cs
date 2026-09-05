@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -30,9 +30,9 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
         private UIElement topControls = null;
         private UITextBox searchBox = null;
         private UIClearButton btnClearSearch = null;
-        private UIButton1 btnEnableAll = null;
-        private UIButton1 btnDisableAll = null;
-        private UIButton1 btnToggleHideBuffs = null;
+        private UIButton btnEnableAll = null;
+        private UIButton btnDisableAll = null;
+        private UIButton btnToggleHideBuffs = null;
         private UIText summaryText = null;
 
         private UIPanel gridContainer = null;
@@ -105,7 +105,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             btnStack.ItemMargin = 6;
             row2.Append(btnStack);
 
-            btnEnableAll = new UIButton1("全部启用", 0.7f);
+            btnEnableAll = new UIButton("全部启用", 0.7f);
             btnEnableAll.Height.Set(24, 0);
             btnEnableAll.SetPadding(4);
             btnEnableAll.OnLeftClick += (evt, el) =>
@@ -116,7 +116,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             };
             btnStack.Append(btnEnableAll);
 
-            btnDisableAll = new UIButton1("全部禁用", 0.7f);
+            btnDisableAll = new UIButton("全部禁用", 0.7f);
             btnDisableAll.Height.Set(24, 0);
             btnDisableAll.SetPadding(4);
             btnDisableAll.OnLeftClick += (evt, el) =>
@@ -127,7 +127,7 @@ namespace OptimizeAndTool.Content.QoL.InfiniteBuff
             };
             btnStack.Append(btnDisableAll);
 
-            btnToggleHideBuffs = new UIButton1(GetHideBuffsButtonText(), 0.7f);
+            btnToggleHideBuffs = new UIButton(GetHideBuffsButtonText(), 0.7f);
             btnToggleHideBuffs.Height.Set(24, 0);
             btnToggleHideBuffs.SetPadding(4);
             btnToggleHideBuffs.OnLeftClick += (evt, el) =>

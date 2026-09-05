@@ -24,7 +24,7 @@ namespace TPML.UI.Menus.ModManager
         private UIScrollViewer2 ui_sv = null;
 
         private UIWrapPanel ui_buttons_wrap = null;
-        private UIButton1[] ui_buttons = null;
+        private UIButton[] ui_buttons = null;
 
         public UIModManager()
         {
@@ -51,14 +51,14 @@ namespace TPML.UI.Menus.ModManager
             ui_buttons_wrap.HAlign = 0.5f;
             ui_buttons_wrap.ItemMargin = 4;
 
-            ui_buttons = new UIButton1[]
+            ui_buttons = new UIButton[]
             {
-                new UIButton1("启用全部模组"),
-                new UIButton1("禁用全部模组"),
-                new UIButton1("重新加载模组"),
-                new UIButton1("返回"),
-                new UIButton1("打开模组文件夹"),
-                new UIButton1("模组设置"),
+                new UIButton("启用全部模组"),
+                new UIButton("禁用全部模组"),
+                new UIButton("重新加载模组"),
+                new UIButton("返回"),
+                new UIButton("打开模组文件夹"),
+                new UIButton("模组设置"),
             };
 
             ui_buttons[0].TextColor = color_isEnable;
@@ -77,7 +77,7 @@ namespace TPML.UI.Menus.ModManager
             ui_panel.Append(ui_panel_title);
             ui_panel.Append(ui_sv);
 
-            foreach (UIButton1 i in ui_buttons) ui_buttons_wrap.Append(i);
+            foreach (UIButton i in ui_buttons) ui_buttons_wrap.Append(i);
         }
 
         public void InitializeModList(List<ModObject> mos)
@@ -96,7 +96,7 @@ namespace TPML.UI.Menus.ModManager
 
             ui_panel_title.Top.Pixels = -ui_panel_title.GetOuterDimensions().Height / 2 - 20;
 
-            foreach (UIButton1 i in ui_buttons) i.Width.Pixels = (int)(ui_buttons_wrap.GetInnerDimensions().Width - ((3 - 1) * ui_buttons_wrap.ItemMargin)) / 3;
+            foreach (UIButton i in ui_buttons) i.Width.Pixels = (int)(ui_buttons_wrap.GetInnerDimensions().Width - ((3 - 1) * ui_buttons_wrap.ItemMargin)) / 3;
 
             ui_buttons_wrap.UpdateContainer_Height();
 

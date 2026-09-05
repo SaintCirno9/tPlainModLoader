@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +23,9 @@ namespace TPML.UI.Menus.ModSet
         private UIElement ui_set = null;
         private UIElement ui_btns1 = null;
         private UIElement ui_btns2 = null;
-        private UIButton1 btn_save = null;
-        private UIButton1 btn_prev = null;
-        private UIButton1 btn_next = null;
+        private UIButton btn_save = null;
+        private UIButton btn_prev = null;
+        private UIButton btn_next = null;
 
         public UIModSet()
         {
@@ -66,12 +66,12 @@ namespace TPML.UI.Menus.ModSet
             ui_btns1.VAlign = 1f;
             ui_btns1.Top.Pixels = -42;
 
-            btn_prev = new UIButton1("<", 0.9f);
+            btn_prev = new UIButton("<", 0.9f);
             btn_prev.Width.Set(-4, 0.5f);
             btn_prev.Height.Precent = 1f;
             btn_prev.OnLeftClick += (e, s) => SetItem(mssIndex - 1);
 
-            btn_next = new UIButton1(">", 0.9f);
+            btn_next = new UIButton(">", 0.9f);
             btn_next.Width.Set(-4, 0.5f);
             btn_next.Height.Precent = 1f;
             btn_next.HAlign = 1f;
@@ -87,18 +87,18 @@ namespace TPML.UI.Menus.ModSet
             ui_btns2.VAlign = 1f;
             ui_btns2.Top.Pixels = 0; // 紧贴容器最底边
 
-            UIButton1 btn_back = new UIButton1("返回", 0.9f);
+            UIButton btn_back = new UIButton("返回", 0.9f);
             btn_back.Width.Set(-4, 1 / 3f);
             btn_back.Height.Precent = 1f;
             btn_back.OnLeftClick += (e, s) => Back(backUI);
 
-            btn_save = new UIButton1("保存", 0.9f);
+            btn_save = new UIButton("保存", 0.9f);
             btn_save.Width.Set(-4, 1 / 3f);
             btn_save.Height.Precent = 1f;
             btn_save.HAlign = 0.5f;
             btn_save.OnLeftClick += (e, s) => ModSet.SaveData(mss);
 
-            UIButton1 btn2_setDeft = new UIButton1("恢复默认", 0.9f);
+            UIButton btn2_setDeft = new UIButton("恢复默认", 0.9f);
             btn2_setDeft.Width.Set(-4, 1 / 3f);
             btn2_setDeft.Height.Precent = 1f;
             btn2_setDeft.HAlign = 1f;

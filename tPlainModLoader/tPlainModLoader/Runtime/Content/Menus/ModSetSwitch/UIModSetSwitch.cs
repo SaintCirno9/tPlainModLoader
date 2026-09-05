@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ namespace TPML.UI.Menus.ModSetSwitch
             ui_modSet.Height.Precent = 1;
             initModSet = ui_modSet.InitializeList;
 
-            UIButton1 ui_back = new UIButton1("返回", 0.8f, true);
+            UIButton ui_back = new UIButton("返回", 0.8f, true);
             ui_back.Top.Set(ui_panel.Height.Pixels / 2 + 4, 1);
             ui_back.HAlign = 0.5f;
             ui_back.PaddingLeft = 50;

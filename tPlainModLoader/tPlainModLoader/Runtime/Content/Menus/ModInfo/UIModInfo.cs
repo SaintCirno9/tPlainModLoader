@@ -20,8 +20,8 @@ namespace TPML.UI.Menus.ModInfo
         private ModObject mo = null;
         private UIScrollViewer2 ui_sv = null;
         private Action<string> SetTitle = null;
-        private UIButton1 ui_btn3 = null;
-        private UIButton1 ui_btn4 = null;
+        private UIButton ui_btn3 = null;
+        private UIButton ui_btn4 = null;
 
         public UIModInfo()
         {
@@ -55,16 +55,16 @@ namespace TPML.UI.Menus.ModInfo
             ui_wp.Top.Set(-(100 - 4), 1);
             ui_wp.ItemMargin = 2;
 
-            Func<string, Action, UIButton1> getBtn = (text, action) =>
+            Func<string, Action, UIButton> getBtn = (text, action) =>
             {
-                UIButton1 btn = new UIButton1(text);
+                UIButton btn = new UIButton(text);
                 btn.Width.Set(-ui_wp.ItemMargin, 1f / 3);
                 btn.OnLeftClick += (e, s) => action();
                 return btn;
             };
 
-            UIButton1 ui_btn1 = getBtn("返回", () => Back(BackUI));
-            UIButton1 ui_btn2 = getBtn("打开文件夹", () => ModInfo.OpenModDirectory(mo));
+            UIButton ui_btn1 = getBtn("返回", () => Back(BackUI));
+            UIButton ui_btn2 = getBtn("打开文件夹", () => ModInfo.OpenModDirectory(mo));
             ui_btn3 = getBtn("删除", () =>
             {
                 ActionDelMod?.Invoke(mo);

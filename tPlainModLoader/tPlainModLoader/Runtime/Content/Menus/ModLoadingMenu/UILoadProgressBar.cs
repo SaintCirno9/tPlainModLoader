@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using TPML.UI;
 using TPML.ModLoad;
@@ -12,7 +12,7 @@ namespace TPML.UI.Menus.ModLoadingMenu
         private UIPanel ui_panel = null;
         private UIText ui_tip = null;
         private UIProgressBar ui_progressBar = null;
-        private UIButton1 ui_button_cancel = null;//取消加载
+        private UIButton ui_button_cancel = null;//取消加载
         private IModLoaderState loadState = null;
         private Action OnCancelLoad = null;
 
@@ -35,7 +35,7 @@ namespace TPML.UI.Menus.ModLoadingMenu
             ui_progressBar.HAlign = 0.5f;
             ui_progressBar.VAlign = 0.5f;
 
-            ui_button_cancel = new UIButton1("取消");
+            ui_button_cancel = new UIButton("取消");
             ui_button_cancel.Top.Set(-1, 0);
             ui_button_cancel.HAlign = 0.5f;
             ui_button_cancel.VAlign = 1;

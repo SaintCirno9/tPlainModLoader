@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using TPML.UI;
 using Terraria.GameContent.UI.Elements;
@@ -47,10 +47,10 @@ namespace TPML.UI.Menus.ModLoadException
             ui_button_sp.Horizontal = true;
             ui_button_sp.ItemMargin = 10;
 
-            UIButton1 ui_btn1 = new UIButton1("确认");
+            UIButton ui_btn1 = new UIButton("确认");
             ui_btn1.OnLeftClick += (e, s) => onClose?.Invoke();
 
-            UIButton1 ui_btn2 = new UIButton1("打开模组文件夹");
+            UIButton ui_btn2 = new UIButton("打开模组文件夹");
             ui_btn2.OnLeftClick += (e, s) => ModLoadException.OpenModDirectory();
 
             Append(ui_panel);

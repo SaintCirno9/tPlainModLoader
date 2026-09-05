@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,14 +36,14 @@ namespace WandsTool.Content.Structure.UI
                 IsAutoUpdateSize = true
             };
 
-            UIButton1 btnRefresh = new UIButton1("刷新", 0.85f)
+            UIButton btnRefresh = new UIButton("刷新", 0.85f)
             {
                 Height = { Pixels = 34 },
                 EnableColorBack = new Color(40, 70, 130) * 0.9f
             };
             btnRefresh.OnLeftClick += (e, s) => RefreshList();
 
-            UIButton1 btnSaveClip = new UIButton1("保存剪贴板", 0.85f)
+            UIButton btnSaveClip = new UIButton("保存剪贴板", 0.85f)
             {
                 Height = { Pixels = 34 },
                 EnableColorBack = new Color(40, 120, 70) * 0.9f
@@ -65,7 +65,7 @@ namespace WandsTool.Content.Structure.UI
                 }
             };
 
-            UIButton1 btnFolder = new UIButton1("打开文件夹", 0.85f)
+            UIButton btnFolder = new UIButton("打开文件夹", 0.85f)
             {
                 Height = { Pixels = 34 },
                 EnableColorBack = new Color(100, 80, 40) * 0.9f
