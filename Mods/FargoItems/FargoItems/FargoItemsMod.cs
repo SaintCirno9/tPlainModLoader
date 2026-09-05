@@ -62,6 +62,40 @@ namespace FargoItems
             Logger.Info("[FargoItems] 模组已由统一 ContentHost 载入，自动扫描并注册模组内容矩阵");
         }
 
+        public const byte PacketId_SummonBoss = 1;
+
+        public override void HandlePacket(System.IO.BinaryReader reader, int whoAmI)
+        {
+            byte packetType = reader.ReadByte();
+            if (packetType == PacketId_SummonBoss)
+            {
+                int playerIndex = reader.ReadByte();
+                int bossType = reader.ReadInt16();
+                int spawnX = reader.ReadInt32();
+                int spawnY = reader.ReadInt32();
+
+                if (Main.netMode == NetmodeID.Server)
+                {
+                    Player plr = (playerIndex >= 0 && playerIndex < Main.maxPlayers) ? Main.player[playerIndex] : null;
+                    if (plr != null && plr.active)
+                    {
+                        if (bossType == FargoItems.Content.Items.Summons.FargoSummonHelper.TwinsPseudoId)
+                        {
+                            Vector2 leftPos = plr.Center + new Vector2(-400f, -400f);
+                            Vector2 rightPos = plr.Center + new Vector2(400f, -400f);
+                            FargoItems.Content.Items.Summons.FargoSummonHelper.SpawnBossInternal(plr, Terraria.ID.NPCID.Retinazer, leftPos, broadcast: false);
+                            FargoItems.Content.Items.Summons.FargoSummonHelper.SpawnBossInternal(plr, Terraria.ID.NPCID.Spazmatism, rightPos, broadcast: false);
+                            FargoItems.Content.Items.Summons.FargoSummonHelper.BroadcastBossAwoken("LegacyMisc.48");
+                        }
+                        else
+                        {
+                            FargoItems.Content.Items.Summons.FargoSummonHelper.SpawnBossInternal(plr, bossType, new Vector2(spawnX, spawnY));
+                        }
+                    }
+                }
+            }
+        }
+
         public override void PostSetupContent()
         {
             // 由框架统一 RecipeLoader 管理，无需手动调用

@@ -29,27 +29,17 @@ namespace FargoItems.Content.Items.Summons
             Item.rare = ItemRarityID.Blue;
             Item.useAnimation = 30;
             Item.useTime = 30;
-            Item.useStyle = ItemUseStyleID.HoldUp;
+            Item.useStyle = ItemUseStyleID.DrinkLiquid;
+            Item.UseSound = SoundID.Item3;
             Item.consumable = true;
         }
 
         public override bool? UseItem(Player player)
         {
-            if (player.whoAmI == Main.myPlayer)
-            {
-                SoundEngine.PlaySound(SoundID.Roar, player.position);
-                int type = NPCID.DukeFishron;
-                if (Main.netMode != NetmodeID.MultiplayerClient)
-                {
-                    NPC.SpawnOnPlayer(player.whoAmI, type);
-                }
-                else
-                {
-                    NetMessage.SendData(MessageID.SpawnBossUseLicenseStartEvent, number: player.whoAmI, number2: type);
-                }
-            }
-            return true;
+            return FargoSummonHelper.SummonBoss(player, NPCID.DukeFishron);
         }
+
+        public override bool CanUseItem(Player player) => !NPC.AnyNPCs(NPCID.DukeFishron);
 
         public override void AddRecipes()
         {
